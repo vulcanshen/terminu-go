@@ -7,7 +7,7 @@ terminu design（tdp）的 Go 實作：一個像 bubbletea 那樣讓 app 直接�
 - 建在 bubbletea **v1**（`github.com/charmbracelet/bubbletea` v1.3.10）與 lipgloss v1（v1.1.0）上，跟五個 app 相同。
   原本定 v2，2026-10-08 改回 v1（紀錄的 C1、G22）：v2 的 renderer 與 lipgloss v2 的合成都處理不了 icon 佔兩格，要用 v2 就得
   自己重寫輸出層。user：v2 還不成熟，不該為了它打破既有狀態、重新造輪；等 v2 成熟再升。
-- 規範：`~/Documents/sideproj/terminu`，目前實作的版本是 **tdp v0.3.0**
+- 規範：`~/Documents/sideproj/terminu`，目前實作的版本是 **tdp v0.5.0**（tag 只在本機，user 要等展示場做出來、反覆調整定案後才 push）
 
 上面這些與下面「lib 的範圍」都已經跟 user 定案，不要重提。
 
@@ -16,7 +16,9 @@ terminu design（tdp）的 Go 實作：一個像 bubbletea 那樣讓 app 直接�
 這個 repo 有兩個目的，順序不能顛倒：
 
 1. **驗證規範。** 完全照 tdp 的文字寫出 lib 與展示場，找出規範沒寫、寫得模糊、前後矛盾、或做出來不好用的地方（下面叫「盲點」）。
-   tdp v0.3.0 剛從零改寫過，還沒有任何 app 照它做過；這個 repo 是第一個。
+   tdp v0.3.0 從零改寫過，v0.4.0 補上了這個 repo 第一批回報的 22 條盲點（紀錄裡 G1–G22 都在「已定」），v0.5.0 換了外觀；
+   還沒有任何 app 照它做過，
+   這個 repo 是第一個。
 2. **成為家族共用的 lib。** 規範確認之後，家族的五個 app（kbu、filu、sshu、webu、locku）改用這個 lib，不再各自實作規範。
    第一個改用的是 locku。
 
@@ -24,8 +26,10 @@ terminu design（tdp）的 Go 實作：一個像 bubbletea 那樣讓 app 直接�
 
 ### 讀什麼
 
-- 讀 terminu **最新 tag** 的內容（現在是 v0.3.0）。main 上還沒發版的改動不算；不確定時用
-  `git -C ~/Documents/sideproj/terminu diff v0.3.0 -- principle components` 看有沒有差。
+- 讀 terminu **最新 tag** 的內容（現在是 v0.5.0）。main 上還沒發版的改動不算；不確定時用
+  `git -C ~/Documents/sideproj/terminu diff v0.5.0 -- principle components` 看有沒有差。
+- **v0.5.0 換了外觀**（配色不變）：框線、膠囊、menu 區塊標題、cursor 尾端的箭頭、標題大寫、固定的開關動畫。規範的圖現在用真的
+  Nerd Font 字形。畫框、膠囊、cursor 的程式集中在少數幾個地方，不要散在各元件裡寫死 —— 外觀之後可能還會調。
 - 規定只認這些檔的文字：`principle/README-zh_TW.md`、`principle/rules-zh_TW.md`、`components/` 底下全部。
   照 `components/README-zh_TW.md` 的順序讀：color → layout → dialog → input。
 - 繁中是原文，英文（檔名沒有 `-zh_TW` 的）是翻譯；兩邊說的不一樣，也是盲點。
@@ -70,7 +74,7 @@ terminu design（tdp）的 Go 實作：一個像 bubbletea 那樣讓 app 直接�
 ```
 ### G<n> <一句話標題>
 - 狀態：待定
-- 規範：<檔案> 的 <段落或規則編號>（tdp v0.3.0）
+- 規範：<檔案> 的 <段落或規則編號>（tdp v0.5.0）
 - 卡在：lib 需要知道什麼才能做下去
 - 可能：A …；B …（各附一句後果）
 - 暫時：跳過／暫時照 A 做（程式裡標 `TODO(tdp G<n>)`）
@@ -145,11 +149,11 @@ terminu design（tdp）的 Go 實作：一個像 bubbletea 那樣讓 app 直接�
 2. 紀錄裡的 C 都驗完了；G 都已定案、補進 tdp 並發版，lib 也跟上了。
 3. user 親自走過展示場，確認沒問題。
 
-## 已知的第一個盲點（G1）
+## lib 與展示場適用哪些規定（rules E8）
 
-tdp 寫的對象都是 app，lib 與範例 app 適用哪些規定，規範沒寫（例：E6 的 goreleaser、`install.sh`、Homebrew、`docs/icon.svg`
-與 splash；E7 的 README 結構）。已經記成 G1。定案前暫時這樣做：展示場照 E1–E5 與 E6 的畫面測試做，不發布、不做安裝腳本；
-lib 本身提供 E2、E5 的實作給 app 用。
+原本的盲點 G1，已補進 tdp v0.4.0 的 **rules E8**：一張表寫 lib、展示場、用 lib 的 app 各負責哪些規定。照 E8 做。要點：
+lib 做到畫面的規定與 E5；展示場不發布，照 E1、E2 與 L4 的畫面測試做；**lib 不偏離 tdp**，做不到或不好用的一律記成盲點，
+規範改了 lib 才跟著改。
 
 ## repo 一開始要做的
 

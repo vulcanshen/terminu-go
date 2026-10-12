@@ -1,44 +1,63 @@
 # terminu-go 開發者備忘
 
 terminu-go 是 terminu design principle（tdp）的 Go 實作：給 app 呼叫的 lib，加上展示場 `examples/showcase`。遵循 terminu design
-principle，目前對應 tdp v0.3.0。這個 repo 的任務與規範的讀法見 [`CLAUDE.md`](../CLAUDE.md)。
+principle，目前對應 tdp v0.5.0。這個 repo 的任務與規範的讀法見 [`CLAUDE.md`](../CLAUDE.md)。
 
 ## 運作方式
 
-lib 的程式還沒開始寫。目前只有 `proto/c1`：驗證規範盲點紀錄 C1 的拋棄式原型（lipgloss v2 的圖層合成在 icon 佔兩格時框歪不歪）。
-定案後刪掉，不會變成 lib 的一部分。
+lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族的五個 app 一樣。
 
-C1 驗出來的、lib 會照著做的方向：
+- **寬度**：所有量寬度的地方走同一個函式（tdp E5）：補空白、截斷、置中、並排、框線、疊 popup。Nerd Font 的 icon（PUA）照探測到的
+  格數算，其他照 `x/ansi`。lip gloss 只拿來上色（`Foreground`、`Background`、`Bold` 套在量好寬度的字串上）；`Style` 的
+  `Width`、`Padding`、`Border`、`Align`，`JoinHorizontal`／`JoinVertical`、`Place`，以及 bubbletea-overlay 都不用 —— 它們用自己的
+  寬度，icon 一律算一格。
+- **畫到終端機**：用 bubbletea v1 的 renderer。它把改變的列從第 0 欄整列重寫，終端機自己決定每個字落在哪一格，所以 icon 佔兩格
+  也對得上（`proto/c1` 在 icon 兩格的 tmux 裡逐字比對過，見盲點紀錄 C1 的「v1 重驗」）。
 
-- **寬度**：所有量寬度的地方走同一個函式（tdp E5）。lipgloss v2 的排版（`Style` 的 `Width`、`Padding`、`Border`、`Align`，
-  `Join*`、`Place`）與合成（`Compositor`、`Canvas`、`Layer`）都用 `x/ansi` 的寬度，Nerd Font 的 icon 一律算一格，而且沒有掛鉤可以換：
-  ultraviolet 有 `WidthMethod` 介面，但 `printString` 只用它量截斷的尾巴，每一格的寬度一律照 `ansi.WcWidth` / `ansi.GraphemeWidth`。
-  所以 lip gloss 只拿來上色（`Foreground`、`Background`、`Bold` 套在量好寬度的字串上），補空白、截斷、框線、並排、疊 popup 都用自己的函式。
-- **畫到終端機**：bubbletea v2 的 renderer 把 `View` 的字串拆成自己的格子（icon 一樣算一格），再用游標移動（含 hard tab）只補
-  改變的格子。終端機讓 icon 佔兩格時，就算字串本身是對的，含 icon 的列框線也會畫歪、更新幾次之後框線會不見（`proto/c1/tmux-check.sh`
-  可以重現）。`tea.WithoutRenderer()` 加上自己逐列從第 0 欄整列寫出，在同一個環境裡是對的。採哪一種：待定，見規範盲點紀錄 G22。
+- **App 是一個 bubbletea model**：app 登記畫面（`Screen`）、panel（`Panel`，內容是 `Body`：`List`、`Values`、`Pager` 或 app 自己的）、
+  動作（`Action`：鍵、名稱、說明、範圍、要不要先問、做什麼）。Space menu、global operation popup、`?` 的 key reference、panel 下框的 hint、
+  footer 都從這一份登記產生（`app.go`、`menu.go`、`note.go`）。
+- **一個畫面怎麼畫出來**（`App.Frame`）：最上面一列（畫面 chip 列加分隔線，或 statusbar）、panel 區（每個 panel 畫好框再用 `Composite`
+  放上去；失焦的 panel 內容淡化一次，串流除外）、footer。有 popup 時整個底下淡化一次，再由下往上疊每一層 popup（最上層以外都淡化），
+  最後疊 toast。每一層都照開關動畫的那一格畫（`layer.drawFrame`）。
+- **按鍵**（`handleKey`）：開到一半的 popup 不收鍵 → 離開流程裡的第二個 `Ctrl-C` → toast 先收 `Esc` → `Ctrl-C` 進離開流程 → 最上層
+  popup → focus 的 panel（輸入態、模式、一般）。`g` 開頭的兩鍵組合（`gg`、`go`）在 app 這一層接起來，body 收到的是 `gg`。
+- **上色**：自己寫 SGR（`Style.Render`，一律 24-bit），淡化（`Dim`）就是改寫每一列的 SGR。
+
+`proto/c1` 是驗證盲點紀錄 C1 的拋棄式原型，不是 lib 的一部分；lib 寫好後刪掉（go.mod 裡的 lipgloss 只有它在用）。
 
 ## 設計決定
 
-- **寬度與疊 popup 不用 lipgloss v2，自己做**（C1）：理由見上面「運作方式」。lip gloss 只負責顏色與字型屬性。
+- **bubbletea v1，不是 v2**（盲點紀錄 C1、G22）：bubbletea v2 的 renderer 把 `View` 拆成自己的格子、只補改變的格子，lipgloss v2 的
+  排版與 `Compositor`／`Canvas` 也是；兩者的寬度都換不了，icon 佔兩格時框線歪掉、更新後消失。要用 v2 就得自己重寫輸出層。
+  user：v2 還不成熟，不為它打破既有狀態、重新造輪；等 v2 的 renderer 與排版能指定寬度函式（或正確處理 icon 佔兩格）時再升。
+  輸出那一層盡量寫成換得掉的。
+- **寬度與疊 popup 自己做**：理由見上面「運作方式」。
+- **連上色也不用 lip gloss**：lip gloss v1 的顏色要先設全域的 color profile（`lipgloss.SetColorProfile`），lib 去改它會改到用 lib 的 app；
+  `Style.Render` 碰到多列字串還會用自己的寬度補空白。lib 要的只有「這段字用這個顏色」，自己寫 SGR 就夠了，輸出也一定是 24-bit
+  （淡化的前提）。app 內容的顏色要用 lip gloss 照用，淡化照樣改得到它的 SGR。
+- **powerline 符號另外量**（盲點紀錄 G28 的暫時做法）：探測時印一個 file icon、一個 powerline 符號各問一次游標位置。
 
 ## 已否決，不要重提
 
-- **用 lipgloss v2 的 `Compositor` / `Canvas` 疊 popup**：icon 佔兩格時框歪，而且換不了寬度函式（C1）。
+- **bubbletea v2 與 lipgloss v2**：見「設計決定」。
+- **用 lipgloss 的 `Style` 排版、`Join*`、`Place`，或 bubbletea-overlay 疊 popup**：icon 佔兩格時框歪，而且換不了寬度函式（C1）。
 
 ## 已知的牆與未做
 
-- bubbletea v2 的 renderer 跟 icon 佔兩格的終端機對不上（見「運作方式」）。
-- lipgloss v2 的坑（原型踩到的）：`Canvas.Compose(layer)` 不看 layer 的 `X`/`Y`，而且先清掉整塊；要定位得包進 `Compositor`。
-  `Canvas.Render()` 會剪掉每一列結尾的空白，輸出的列不一定等於畫面寬（L4）。
+- **v1 的 renderer 在列尾補的「清到行尾」**：renderer 用 `ansi.StringWidth`（icon 算一格）量每一列，比終端機寬短的列後面補
+  `ESC [ K`。icon 兩格時含 icon 的列一定量得比較短，整列寫滿之後還會送一次 `ESC [ K`。tmux 不會因此擦掉最後一格；照 xterm 的規矩
+  的終端機可能會（右框不見）。要在真的終端機上確認（盲點紀錄 C1、C2）。
+- 還沒做的元件：表單、finder／select、textarea、日期時間、color picker、slider、note viewer 的熱鍵與選取模式、PTY、splash、
+  popup 上的 tab。展示場的 Inputs、Dialogs、Terminal 三個畫面還是空的。
 
 ## 偏離 tdp
 
-（沒有）
+（沒有。lib 不偏離 tdp（rules E8）：做不到或不好用的記成盲點，規範改了 lib 才跟著改。）
 
 ## 設計文件導讀
 
-- [`coverage.md`](coverage.md)：tdp v0.3.0 逐條的清單 —— 規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱。也是展示場「所有的組合」的定義。
+- [`coverage.md`](coverage.md)：tdp 逐條的清單 —— 規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱。也是展示場「所有的組合」的定義。
 - 規範盲點紀錄：`~/Documents/sideproj/terminu/.local/family-fix/terminu-go/README.md`（C 待驗證、G 盲點）。程式裡的 `TODO(tdp G<n>)`
   對到那裡的編號。
 - [`../CLAUDE.md`](../CLAUDE.md)：這個 repo 的任務、規範讀哪些、盲點怎麼記。
@@ -51,13 +70,16 @@ go vet ./...
 gofmt -l .
 ```
 
+Go 原始碼裡的 Nerd Font glyph 一律寫成 `\U0000E0B0` 這種 8 位數的 code point（tdp E4）。用工具寫檔時，`\uE0B0` 這種 4 位數的寫法
+會被當成 JSON 的跳脫字元、變成字面的 PUA 字元。
+
 C1 原型：
 
 ```sh
-go run ./proto/c1 dump e5 80 24 menu fits          # 印一個畫面（e5 | lipgloss）
-SHOWCASE__ICON_WIDTH=2 go run ./proto/c1 tui       # bubbletea v2 的 renderer
-SHOWCASE__ICON_WIDTH=2 go run ./proto/c1 raw       # 自己逐列寫
-proto/c1/tmux-check.sh 2 2 tui -- j j p            # 在 icon 佔兩格的 tmux 裡跑、按鍵、擷取畫面
+go run ./proto/c1 dump 80 24 menu fits           # 印一個畫面
+SHOWCASE__ICON_WIDTH=2 go run ./proto/c1 tui     # bubbletea v1 的 renderer
+proto/c1/tmux-check.sh 2 2 tui -- j j p          # 在 icon 佔兩格的 tmux 裡跑、按鍵、擷取畫面
+proto/c1/tmux-check.sh 2 2 replay 80 24 j j p    # 同一串按鍵之後的畫面，整張直接印（跟上一行比對）
 ```
 
 `tmux-check.sh` 要有 `codepoint-widths` 選項的 tmux（在 3.7c 上跑過）。

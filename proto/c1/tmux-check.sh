@@ -5,11 +5,10 @@
 #
 #   proto/c1/tmux-check.sh <terminal icon width> <app icon width> <c1 args> [-- keys]
 #
-#   proto/c1/tmux-check.sh 2 2 dump e5 80 24 menu fits
+#   proto/c1/tmux-check.sh 2 2 dump 80 24 menu fits
 #   proto/c1/tmux-check.sh 2 2 tui -- j j p
 #
-# Each line is printed as "<cells>|<line>|". Lines bubbletea drew with hard tabs
-# can read 81: expand(1) does not know a tab stops at the last column.
+# Each line is printed as "<cells>|<line>|".
 set -e
 TW=$1 AW=$2
 shift 2

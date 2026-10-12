@@ -1,0 +1,541 @@
+package terminu
+
+import (
+	"cmp"
+	"slices"
+	"strconv"
+	"strings"
+
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/x/ansi"
+)
+
+// Column is one column of a List (layout/panel, ordinary lists).
+type Column struct {
+	Title string
+	// Number marks a number column: right-aligned and sorted by value (9
+	// before 10). Text columns are left-aligned and sorted as text.
+	Number bool
+	// Flex lets the column give up room first when the panel is narrow.
+	Flex bool
+	// Path cuts the column's values from the front ("…/.ssh/id_ed25519").
+	Path bool
+}
+
+// Row is one item of a List.
+type Row struct {
+	ID    string   // what marks are kept by; the row's place when empty
+	Cells []string // one per column; may carry the app's own colours
+	// Sort, when set, are the values sorted by instead of the cells (an age
+	// shown as "3d" sorted by seconds).
+	Sort []string
+}
+
+// SortKey is one column the list is sorted by.
+type SortKey struct {
+	Col  int
+	Desc bool
+}
+
+// List is a panel body with one item per row: a header, a cursor, marks, a
+// panel filter (layout/panel).
+type List struct {
+	Columns []Column
+	// Marks keeps a column for marks in front of every row (Principle P3,
+	// batches of marked items).
+	Marks bool
+	// Filterable lets / open a panel filter on the list.
+	Filterable bool
+	// EmptyFact and EmptyHint are what an empty list says (layout/screen,
+	// empty states); keys in the hint written in brackets.
+	EmptyFact, EmptyHint string
+
+	rows   []Row
+	sort   []SortKey
+	view   []int // rows shown, in order: sorted, then filtered
+	cursor int   // index into view
+	top    int   // first row shown
+	marked map[string]bool
+
+	filter *lineEditor
+	typing bool
+	scroll string
+	height int // rows of items the last Draw had room for
+}
+
+// SetRows replaces the list's rows, keeping the cursor on the same row when
+// it is still there.
+func (l *List) SetRows(rows []Row) {
+	cur, ok := l.Current()
+	l.rows = rows
+	l.rebuild()
+	if ok {
+		l.Select(cur.ID)
+	}
+}
+
+// Rows are all the rows, as set.
+func (l *List) Rows() []Row { return l.rows }
+
+// SortBy sorts the list by keys, first key first; nil keeps the rows' order.
+func (l *List) SortBy(keys ...SortKey) {
+	cur, ok := l.Current()
+	l.sort = keys
+	l.rebuild()
+	if ok {
+		l.Select(cur.ID)
+	}
+}
+
+// Sorting is what the list is sorted by.
+func (l *List) Sorting() []SortKey { return l.sort }
+
+// Current is the row under the cursor.
+func (l *List) Current() (Row, bool) {
+	if l.cursor < 0 || l.cursor >= len(l.view) {
+		return Row{}, false
+	}
+	return l.rows[l.view[l.cursor]], true
+}
+
+// Select puts the cursor on the row with this ID, if it is shown.
+func (l *List) Select(id string) {
+	for i, r := range l.view {
+		if l.rowID(r) == id {
+			l.cursor = i
+			return
+		}
+	}
+}
+
+func (l *List) rowID(i int) string {
+	if l.rows[i].ID != "" {
+		return l.rows[i].ID
+	}
+	return strconv.Itoa(i)
+}
+
+// ToggleMark marks or unmarks the row under the cursor.
+func (l *List) ToggleMark() {
+	r, ok := l.Current()
+	if !ok {
+		return
+	}
+	if l.marked == nil {
+		l.marked = map[string]bool{}
+	}
+	id := l.rowID(l.view[l.cursor])
+	_ = r
+	if l.marked[id] {
+		delete(l.marked, id)
+	} else {
+		l.marked[id] = true
+	}
+}
+
+// Marked are the IDs of the marked rows.
+func (l *List) Marked() []string {
+	var out []string
+	for i := range l.rows {
+		if l.marked[l.rowID(i)] {
+			out = append(out, l.rowID(i))
+		}
+	}
+	return out
+}
+
+// ClearMarks unmarks every row.
+func (l *List) ClearMarks() { l.marked = nil }
+
+// Empty reports whether the list has no rows at all.
+func (l *List) Empty() bool { return len(l.rows) == 0 }
+
+// HasItem reports whether the cursor is on a row.
+func (l *List) HasItem() bool { _, ok := l.Current(); return ok }
+
+// Typing reports whether the focus is on the filter's typing row.
+func (l *List) Typing() bool { return l.filter != nil && l.typing }
+
+// Filtering reports whether a filter is set.
+func (l *List) Filtering() bool { return l.filter != nil }
+
+// OpenFilter puts a typing row at the top of the list, or goes back to it
+// to type on (layout/panel, panel filter).
+func (l *List) OpenFilter() {
+	if l.filter == nil {
+		l.filter = newEditor("")
+	}
+	l.typing = true
+}
+
+// ClearFilter takes the filter away.
+func (l *List) ClearFilter() {
+	l.filter, l.typing = nil, false
+	cur, ok := l.Current()
+	l.rebuild()
+	if ok {
+		l.Select(cur.ID)
+	}
+}
+
+// Focus is called when the panel gets the focus: a list with a filter set
+// goes straight back to its typing row.
+func (l *List) Focus() {
+	if l.filter != nil {
+		l.typing = true
+	}
+}
+
+func (l *List) rebuild() {
+	idx := make([]int, len(l.rows))
+	for i := range idx {
+		idx[i] = i
+	}
+	if len(l.sort) > 0 {
+		slices.SortStableFunc(idx, func(a, b int) int {
+			for _, k := range l.sort {
+				c := l.compare(k.Col, a, b)
+				if k.Desc {
+					c = -c
+				}
+				if c != 0 {
+					return c
+				}
+			}
+			return 0
+		})
+	}
+	if l.filter != nil && !l.filter.empty() {
+		q := l.filter.value()
+		kept := idx[:0]
+		for _, i := range idx {
+			if Matches(strings.Join(l.rows[i].Cells, "\t"), q) {
+				kept = append(kept, i)
+			}
+		}
+		idx = kept
+	}
+	l.view = idx
+	l.cursor = min(max(l.cursor, 0), max(len(idx)-1, 0))
+}
+
+func (l *List) sortValue(row, col int) string {
+	if col < len(l.rows[row].Sort) {
+		return l.rows[row].Sort[col]
+	}
+	return l.cell(row, col)
+}
+
+func (l *List) cell(row, col int) string {
+	if col < len(l.rows[row].Cells) {
+		return ansi.Strip(l.rows[row].Cells[col])
+	}
+	return ""
+}
+
+// compare orders two rows by one column: numbers by value, text as text.
+func (l *List) compare(col, a, b int) int {
+	x, y := l.sortValue(a, col), l.sortValue(b, col)
+	if col < len(l.Columns) && l.Columns[col].Number {
+		nx, ex := leadingNumber(x)
+		ny, ey := leadingNumber(y)
+		if ex == nil && ey == nil {
+			return cmp.Compare(nx, ny)
+		}
+	}
+	return strings.Compare(strings.ToLower(x), strings.ToLower(y))
+}
+
+// leadingNumber reads the number a value starts with ("12", "3.5", "9d").
+func leadingNumber(s string) (float64, error) {
+	s = strings.TrimSpace(s)
+	end := 0
+	for end < len(s) && (s[end] >= '0' && s[end] <= '9' || s[end] == '.' || (end == 0 && s[end] == '-')) {
+		end++
+	}
+	return strconv.ParseFloat(s[:end], 64)
+}
+
+// Draw draws the list in w × h: the filter's typing row, the header, the rows.
+func (l *List) Draw(w, h int, focused bool) []string {
+	out := make([]string, 0, h)
+	if l.filter != nil {
+		out = append(out, l.filterRow(w, focused))
+	}
+	if len(l.rows) == 0 {
+		rest := EmptyState(w, h-len(out), l.EmptyFact, l.EmptyHint)
+		l.scroll = ""
+		return append(out, rest...)
+	}
+	arrow := Width(glyphHard)
+	textW := w - 1 - arrow // one cell of padding on the left, the arrow's on the right (G24)
+	markW := 0
+	if l.Marks {
+		markW = IconWidth() + 1
+	}
+	widths := l.widths(textW - markW)
+	if len(l.Columns) > 0 {
+		out = append(out, " "+Repeat(" ", markW)+Pad(Fg(Blue).Render(l.header(widths)), textW-markW)+Repeat(" ", arrow))
+	}
+	rows := h - len(out)
+	l.height = rows
+	if rows <= 0 {
+		l.scroll = ""
+		return out[:h]
+	}
+	// Scroll the least that keeps the cursor in sight.
+	if l.cursor < l.top {
+		l.top = l.cursor
+	}
+	if l.cursor >= l.top+rows {
+		l.top = l.cursor - rows + 1
+	}
+	l.top = min(max(l.top, 0), max(len(l.view)-rows, 0))
+	for i := 0; i < rows; i++ {
+		vi := l.top + i
+		if vi >= len(l.view) {
+			out = append(out, Repeat(" ", w))
+			continue
+		}
+		r := l.view[vi]
+		mark := ""
+		if l.Marks {
+			if l.marked[l.rowID(r)] {
+				mark = glyphMarked + " "
+			} else {
+				mark = Repeat(" ", markW)
+			}
+		}
+		text := l.rowText(r, widths)
+		if vi == l.cursor {
+			cursor := On(Subtext1)
+			arrowStyle := Fg(Subtext1)
+			if l.Typing() {
+				// The focus is on the typing row: the list's cursor is dimmed once (P6).
+				cursor = Style{Fg: Base, Bg: DimColor(Subtext1), Bold: true}
+				arrowStyle = Fg(DimColor(Subtext1))
+			}
+			plain := ansi.Strip(" " + mark + text)
+			out = append(out, cursor.Render(Pad(plain, w-arrow))+arrowStyle.Render(glyphHard))
+			continue
+		}
+		if mark != "" && l.marked[l.rowID(r)] {
+			mark = Fg(Green).Render(glyphMarked) + " "
+		}
+		out = append(out, " "+mark+Pad(text, textW-markW)+Repeat(" ", arrow))
+	}
+	l.scroll = ""
+	if len(l.view) > rows {
+		l.scroll = scrollText(true, l.cursor+1, 0, len(l.view))
+	}
+	return out
+}
+
+// widths are the columns' widths in w cells, two cells apart: each as wide as
+// its widest value or title; flexible columns give up room first, then the
+// last ones.
+func (l *List) widths(w int) []int {
+	n := len(l.Columns)
+	if n == 0 {
+		return []int{w}
+	}
+	ws := make([]int, n)
+	for c := range n {
+		ws[c] = Width(l.title(c))
+		for r := range l.rows {
+			ws[c] = max(ws[c], Width(l.cell(r, c)))
+		}
+	}
+	total := func() int {
+		t := 2 * (n - 1)
+		for _, x := range ws {
+			t += x
+		}
+		return t
+	}
+	for over := total() - w; over > 0; over = total() - w {
+		// Take from a flexible column, else from the widest.
+		pick := -1
+		for c := range n {
+			if l.Columns[c].Flex && ws[c] > 3 && (pick < 0 || ws[c] > ws[pick]) {
+				pick = c
+			}
+		}
+		if pick < 0 {
+			for c := range n {
+				if ws[c] > 3 && (pick < 0 || ws[c] > ws[pick]) {
+					pick = c
+				}
+			}
+		}
+		if pick < 0 {
+			break
+		}
+		ws[pick] = max(ws[pick]-over, 3)
+	}
+	return ws
+}
+
+// title is a column's header: upper case, with its sort order and arrow.
+func (l *List) title(c int) string {
+	t := Upper(l.Columns[c].Title)
+	for i, k := range l.sort {
+		if k.Col != c {
+			continue
+		}
+		if len(l.sort) > 1 {
+			t += " (" + strconv.Itoa(i+1) + ")"
+		}
+		if k.Desc {
+			t += " " + glyphSortDesc
+		} else {
+			t += " " + glyphSortAsc
+		}
+	}
+	return t
+}
+
+func (l *List) header(ws []int) string {
+	parts := make([]string, len(ws))
+	for c := range ws {
+		t := Truncate(l.title(c), ws[c])
+		if l.Columns[c].Number {
+			parts[c] = PadLeft(t, ws[c])
+		} else {
+			parts[c] = Pad(t, ws[c])
+		}
+	}
+	return strings.Join(parts, "  ")
+}
+
+func (l *List) rowText(r int, ws []int) string {
+	if len(l.Columns) == 0 {
+		v := ""
+		if len(l.rows[r].Cells) > 0 {
+			v = l.rows[r].Cells[0]
+		}
+		return Truncate(v, ws[0])
+	}
+	parts := make([]string, len(ws))
+	for c := range ws {
+		v := ""
+		if c < len(l.rows[r].Cells) {
+			v = l.rows[r].Cells[c]
+		}
+		col := l.Columns[c]
+		switch {
+		case col.Path:
+			v = FitLeft(v, ws[c])
+		case col.Number:
+			v = PadLeft(Truncate(v, ws[c]), ws[c])
+		default:
+			v = Fit(v, ws[c])
+		}
+		parts[c] = v
+	}
+	return strings.Join(parts, "  ")
+}
+
+// filterRow is the typing row: the typed words one cell from the frame, the
+// count of matches over the total on the right; grey when the focus is on
+// the list.
+func (l *List) filterRow(w int, focused bool) string {
+	count := strconv.Itoa(len(l.view)) + "/" + strconv.Itoa(len(l.rows))
+	room := w - 2 - Width(count) - 2
+	var text string
+	if l.typing && focused {
+		text = l.filter.view(room, Fg(Lavender), Style{Fg: Base, Bg: Lavender}, true, nil, "")
+		return " " + text + "  " + Fg(Overlay0).Render(count) + " "
+	}
+	text = l.filter.view(room, Fg(Overlay0), Fg(Overlay0), false, nil, "")
+	return " " + text + "  " + Fg(Overlay0).Render(count) + " "
+}
+
+// Scroll is "N of M" when the rows do not all fit.
+func (l *List) Scroll() string { return l.scroll }
+
+// MoveKeys are the list's movement keys.
+func (l *List) MoveKeys() []KeyRow {
+	return []KeyRow{
+		{Key: "j/k", Desc: "down, up"},
+		{Key: "u/d", Desc: "half a page up, down"},
+		{Key: "gg/G", Desc: "to the top, the bottom"},
+	}
+}
+
+// Actions are the list's own panel operations: the filter.
+func (l *List) Actions() []Action {
+	if !l.Filterable {
+		return nil
+	}
+	return []Action{{Key: "/", Label: "Filter", Desc: "narrow the list as you type", Scope: PanelScope,
+		Do: func() tea.Cmd { l.OpenFilter(); return nil }}}
+}
+
+// Key moves the cursor and types in the filter.
+func (l *List) Key(key string, msg tea.KeyMsg) (bool, tea.Cmd) {
+	if l.Typing() {
+		return l.typeKey(key, msg), nil
+	}
+	n := len(l.view)
+	half := max(l.height/2, 1)
+	switch key {
+	case "j", "↓", "l":
+		if n > 0 {
+			l.cursor = (l.cursor + 1) % n
+		}
+	case "k", "↑", "h":
+		if n > 0 {
+			l.cursor = (l.cursor - 1 + n) % n
+		}
+	case "d", "PgDn":
+		l.cursor = min(l.cursor+half, max(n-1, 0))
+	case "u", "PgUp":
+		l.cursor = max(l.cursor-half, 0)
+	case "gg":
+		l.cursor = 0
+	case "G":
+		l.cursor = max(n-1, 0)
+	case "Home":
+		l.cursor = 0
+	case "End":
+		l.cursor = max(n-1, 0)
+	case "/":
+		if l.Filterable {
+			l.OpenFilter()
+			return true, nil
+		}
+		return false, nil
+	default:
+		return false, nil
+	}
+	return true, nil
+}
+
+// typeKey is a key on the filter's typing row (components/input/finder).
+func (l *List) typeKey(key string, msg tea.KeyMsg) bool {
+	n := len(l.view)
+	switch key {
+	case "Enter":
+		if n > 0 {
+			l.typing = false
+		}
+	case "Tab":
+		l.typing = false
+	case "↓":
+		if n > 0 {
+			l.cursor = (l.cursor + 1) % n
+		}
+	case "↑":
+		if n > 0 {
+			l.cursor = (l.cursor - 1 + n) % n
+		}
+	default:
+		if !l.filter.key(key, msg) {
+			return false
+		}
+		l.rebuild()
+		l.cursor, l.top = 0, 0
+	}
+	return true
+}

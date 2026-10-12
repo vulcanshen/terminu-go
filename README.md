@@ -13,7 +13,7 @@ themselves come from the same registration, they cannot drift apart.
 Screens the library does not own (a full-screen lock screen, several terminals side by side) can still use its parts:
 confirm, toast and every kind of input work on their own.
 
-It is built on [Bubble Tea v2](https://github.com/charmbracelet/bubbletea) and [Lip Gloss v2](https://github.com/charmbracelet/lipgloss).
+It is built on [Bubble Tea](https://github.com/charmbracelet/bubbletea) v1 and [Lip Gloss](https://github.com/charmbracelet/lipgloss) v1.
 
 ## Install
 
@@ -24,14 +24,25 @@ go get github.com/vulcanshen/terminu-go
 Requires Go 1.26 or later. Apps built with it need what terminu design needs from the user's terminal: a
 [Nerd Font](https://www.nerdfonts.com/) and 24-bit colour (truecolor).
 
+Some fonts make an icon take two cells. The library measures this when the app starts; the user can set it instead with
+`<APP>__ICON_WIDTH` (for one app, e.g. `LOCKU__ICON_WIDTH=2`) or `TERMINU__ICON_WIDTH` (shared by every terminu app: set
+once, every app in the family reads it). An app that runs a terminal inside itself sets `TERMINU__ICON_WIDTH` for the
+programs it starts.
+
 ## Quick start
 
 The API is not settled yet: the library is still checking the spec against a working implementation. This section will
 show a minimal app once it is.
 
+To see what it does, run the showcase, an example app that shows every component on fake data:
+
+```sh
+go run github.com/vulcanshen/terminu-go/examples/showcase@latest
+```
+
 ## Which terminu design
 
-terminu-go implements **tdp v0.3.0**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
+terminu-go implements **tdp v0.5.0**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
 
 ## Links
 

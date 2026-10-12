@@ -52,19 +52,3 @@ func TestC1E5L4(t *testing.T) {
 		})
 	}
 }
-
-// TestC1LipglossL4 records the finding rather than a goal: lipgloss v2's own
-// layout and compositing hold L4 when an icon is one cell, and break it when
-// an icon is two.
-func TestC1LipglossL4(t *testing.T) {
-	withIconWidth(t, 1)
-	if bad := l4Failures(t, lgScreen); len(bad) > 0 {
-		t.Errorf("icon width 1: %d lines off, first: %s", len(bad), bad[0])
-	}
-	withIconWidth(t, 2)
-	bad := l4Failures(t, lgScreen)
-	if len(bad) == 0 {
-		t.Fatal("icon width 2: expected lipgloss to misplace frames, none found")
-	}
-	t.Logf("icon width 2: %d lines are not the terminal width; e.g. %s", len(bad), bad[0])
-}

@@ -2,14 +2,14 @@ package main
 
 // Usage:
 //
-//	c1 dump <pipeline> <W> <H> <popup> <oversize>   print one frame and exit
-//	c1 tui                                          bubbletea v2's renderer
-//	c1 raw                                          bubbletea v2 input, own line renderer
+//	c1 dump <W> <H> <popup> <oversize>   print one frame and exit
+//	c1 tui                               bubbletea v1's renderer
+//	c1 replay <W> <H> <keys...>          print the frame tui shows after keys
 //
-// pipeline: e5 | lipgloss; popup: menu keys confirm form toast-info toast-warn
-// toast-error terminal loading none; oversize: fits wider taller both.
+// popup: menu keys confirm form toast-info toast-warn toast-error terminal
+// loading none; oversize: fits wider taller both.
 // SHOWCASE__ICON_WIDTH=1|2 sets how many cells an icon takes (default 1).
-// In tui and raw: j/k move the list cursor, p next popup, o next oversize, q quits.
+// In tui: j/k move the list cursor, p next popup, o next oversize, q quits.
 
 import (
 	"fmt"
@@ -18,8 +18,9 @@ import (
 	"strconv"
 	"strings"
 
-	tea "charm.land/bubbletea/v2"
-	"github.com/charmbracelet/x/term"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/termenv"
 )
 
 var cursorRow int
@@ -28,39 +29,31 @@ func main() {
 	if v, err := strconv.Atoi(os.Getenv("SHOWCASE__ICON_WIDTH")); err == nil && (v == 1 || v == 2) {
 		iconWidth = v
 	}
+	lipgloss.SetColorProfile(termenv.TrueColor)
 	if len(os.Args) < 2 {
-		fmt.Fprintln(os.Stderr, "usage: c1 dump|tui|raw ...")
+		fmt.Fprintln(os.Stderr, "usage: c1 dump|tui ...")
 		os.Exit(2)
 	}
 	switch os.Args[1] {
 	case "dump":
 		a := os.Args[2:]
-		w, _ := strconv.Atoi(a[1])
-		h, _ := strconv.Atoi(a[2])
-		k := popupKind(slices.Index(popupNames, a[3]))
-		o := oversize(slices.Index(oversizeNames, a[4]))
-		draw := e5Screen
-		if a[0] == "lipgloss" {
-			draw = lgScreen
+		w, _ := strconv.Atoi(a[0])
+		h, _ := strconv.Atoi(a[1])
+		k := popupKind(slices.Index(popupNames, a[2]))
+		o := oversize(slices.Index(oversizeNames, a[3]))
+		fmt.Print(strings.Join(e5Screen(w, h, k, o), "\r\n"))
+	case "replay":
+		// The frame tui shows after these keys, printed whole: what the
+		// renderer's output is compared against.
+		w, _ := strconv.Atoi(os.Args[2])
+		h, _ := strconv.Atoi(os.Args[3])
+		var m tea.Model = model{w: w, h: h, kind: pMenu}
+		for _, k := range os.Args[4:] {
+			m, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(k)})
 		}
-		fmt.Print(strings.Join(draw(w, h, k, o), "\r\n"))
-	case "tui", "raw":
-		raw := os.Args[1] == "raw"
-		opts := []tea.ProgramOption{}
-		if raw {
-			// Without its renderer bubbletea also skips raw mode and the size.
-			st, err := term.MakeRaw(os.Stdin.Fd())
-			if err != nil {
-				fmt.Fprintln(os.Stderr, err)
-				os.Exit(1)
-			}
-			defer term.Restore(os.Stdin.Fd(), st)
-			w, h, _ := term.GetSize(os.Stdout.Fd())
-			opts = append(opts, tea.WithoutRenderer(), tea.WithWindowSize(w, h))
-			fmt.Print("\x1b[?1049h\x1b[?25l")
-			defer fmt.Print("\x1b[?25h\x1b[?1049l")
-		}
-		if _, err := tea.NewProgram(model{raw: raw, kind: pMenu}, opts...).Run(); err != nil {
+		fmt.Print(strings.ReplaceAll(m.View(), "\n", "\r\n"))
+	case "tui":
+		if _, err := tea.NewProgram(model{kind: pMenu}, tea.WithAltScreen()).Run(); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
@@ -68,7 +61,6 @@ func main() {
 }
 
 type model struct {
-	raw  bool
 	w, h int
 	kind popupKind
 	over oversize
@@ -80,7 +72,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.w, m.h = msg.Width, msg.Height
-	case tea.KeyPressMsg:
+	case tea.KeyMsg:
 		switch msg.String() {
 		case "q", "ctrl+c":
 			return m, tea.Quit
@@ -94,29 +86,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.over = (m.over + 1) % oversize(len(oversizeNames))
 		}
 	}
-	if m.raw && m.w > 0 {
-		// Whole lines from column 0, the way bubbletea v1 drew: the terminal,
-		// not a cell model, decides where each glyph lands.
-		var b strings.Builder
-		b.WriteString("\x1b[?2026h")
-		for i, l := range m.frame() {
-			fmt.Fprintf(&b, "\x1b[%d;1H%s\x1b[0m", i+1, l)
-		}
-		b.WriteString("\x1b[?2026l")
-		fmt.Print(b.String())
-	}
 	return m, nil
 }
 
-func (m model) frame() []string {
-	return e5Screen(m.w, m.h, m.kind, m.over)
-}
-
-func (m model) View() tea.View {
-	if m.raw || m.w == 0 {
-		return tea.NewView("")
+func (m model) View() string {
+	if m.w == 0 {
+		return ""
 	}
-	v := tea.NewView(strings.Join(m.frame(), "\n"))
-	v.AltScreen = true
-	return v
+	return strings.Join(e5Screen(m.w, m.h, m.kind, m.over), "\n")
 }

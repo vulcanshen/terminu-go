@@ -10,7 +10,7 @@
 
 函式庫管不到的畫面（全螢幕的鎖定畫面、好幾個並排的終端機），照樣可以用它的零件：confirm、toast 與每一種 input 都能單獨用。
 
-建在 [Bubble Tea v2](https://github.com/charmbracelet/bubbletea) 與 [Lip Gloss v2](https://github.com/charmbracelet/lipgloss) 上。
+建在 [Bubble Tea](https://github.com/charmbracelet/bubbletea) v1 與 [Lip Gloss](https://github.com/charmbracelet/lipgloss) v1 上。
 
 ## 安裝
 
@@ -21,13 +21,23 @@ go get github.com/vulcanshen/terminu-go
 需要 Go 1.26 以上。用它做的 app，對使用者終端機的需求跟 terminu design 一樣：[Nerd Font](https://www.nerdfonts.com/) 與
 24-bit 色（truecolor）。
 
+有些字型讓 icon 佔兩格。函式庫在 app 啟動時自己量；使用者也可以直接指定：`<APP>__ICON_WIDTH`（只給一個 app，例：
+`LOCKU__ICON_WIDTH=2`）或 `TERMINU__ICON_WIDTH`（terminu 家族共用：設一次，家族每個 app 都讀得到）。在 app 裡面跑終端機的 app，
+會替它開的程式設好 `TERMINU__ICON_WIDTH`。
+
 ## 快速開始
 
 API 還沒定案：函式庫還在用實作檢驗規範。定案後這裡會放一個最小的 app。
 
+想看它做得到什麼，跑展示場（用假資料展示每一個元件的範例 app）：
+
+```sh
+go run github.com/vulcanshen/terminu-go/examples/showcase@latest
+```
+
 ## 實作哪一版 terminu design
 
-terminu-go 實作 **tdp v0.3.0**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
+terminu-go 實作 **tdp v0.5.0**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
 
 ## 相關連結
 
