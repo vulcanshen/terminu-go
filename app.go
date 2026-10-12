@@ -100,6 +100,15 @@ func (a *App) AddScreen(s *Screen) *Screen {
 
 // checkPanelKey refuses a hotkey that a core key or a movement letter owns
 // on a panel.
+// checkPopupKey is checkPanelKey for a popup's hotkey: the digits are free
+// there (Rules K1).
+func checkPopupKey(key string) error {
+	if len(key) == 1 && key[0] >= '1' && key[0] <= '9' {
+		return nil
+	}
+	return checkPanelKey(key)
+}
+
 func checkPanelKey(key string) error {
 	switch {
 	case key == "" || key == "Enter":
@@ -163,7 +172,25 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.spin = true
 		cmd = tea.Batch(cmd, spinTick())
 	}
+	a.growLoading()
 	return a, cmd
+}
+
+// growLoading measures again a popup that is loading, and once more when it
+// stops: only then may its height change while it is open (Rules F7).
+func (a *App) growLoading() {
+	for _, l := range a.stack {
+		v, ok := l.view.(interface{ isLoading() bool })
+		if !ok {
+			continue
+		}
+		now := v.isLoading()
+		if now || l.loading {
+			l.w, l.h = l.view.measure(a.w, a.h)
+			l.place(a.w, a.h)
+		}
+		l.loading = now
+	}
 }
 
 // loading reports whether a loading icon is on screen, so it keeps turning.
@@ -333,6 +360,13 @@ func (a *App) Error(title, message string) tea.Cmd {
 // Menu opens a menu of sections (Rules M8); running a row closes the menu
 // and everything under it.
 func (a *App) Menu(title string, sections ...MenuSection) tea.Cmd {
+	for _, s := range sections {
+		for _, act := range s.Actions {
+			if err := checkPopupKey(act.Key); err != nil {
+				panic(fmt.Sprintf("terminu: menu %s, action %q: %v", title, act.Label, err))
+			}
+		}
+	}
 	m := newMenu(title, sections, nil)
 	m.run = func(a *App, act Action) tea.Cmd { return a.runAction(act, true) }
 	return a.open(m)
@@ -364,7 +398,7 @@ func (a *App) runAction(act Action, fromMenu bool) tea.Cmd {
 		c.accept = func() tea.Cmd { return tea.Batch(a.closeAll(), do()) }
 		return a.open(c)
 	}
-	if fromMenu {
+	if fromMenu && !act.Stay {
 		return tea.Batch(a.closeAll(), do())
 	}
 	return do()

@@ -44,6 +44,7 @@ type layer struct {
 	frame   int // 1–9 while opening, 9 when open, counting down while closing
 	closing bool
 	toast   bool
+	loading bool // it was loading at the last update
 	// below runs when the layer is gone, the one under it on top again.
 	below func() tea.Cmd
 }

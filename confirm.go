@@ -23,6 +23,15 @@ func newConfirm(ask Ask, accept func() tea.Cmd) *confirmView {
 	return &confirmView{ask: ask, accept: accept}
 }
 
+// askKey runs one of the confirm's own hotkeys: as Enter, or as Esc and then
+// its Do.
+func (c *confirmView) askKey(a *App, k AskKey) tea.Cmd {
+	if k.Accept {
+		return a.acceptConfirm(c)
+	}
+	return tea.Batch(a.closeTop(), run(k.Do))
+}
+
 func (c *confirmView) hint() []KeyHint {
 	return []KeyHint{{"Enter", c.ask.Verb}, {"Esc", "cancel"}}
 }
@@ -111,6 +120,11 @@ func (c *confirmView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {
 				return true, k.Do(key)
 			}
 		}
+		for _, k := range c.ask.Keys {
+			if k.Key == key {
+				return true, c.askKey(a, k)
+			}
+		}
 		return false, nil
 	}
 	return true, nil
@@ -121,6 +135,9 @@ func (c *confirmView) surface() string { return c.ask.Title }
 func (c *confirmView) keyRef() []refSection {
 	rows := []KeyRow{{Key: "Enter", Desc: c.ask.Verb}}
 	for _, k := range c.keys {
+		rows = append(rows, KeyRow{Key: k.Key, Desc: k.Desc})
+	}
+	for _, k := range c.ask.Keys {
 		rows = append(rows, KeyRow{Key: k.Key, Desc: k.Desc})
 	}
 	rows = append(rows, KeyRow{Key: "Esc", Desc: "cancel"})

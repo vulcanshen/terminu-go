@@ -513,7 +513,7 @@ func (fv *formView) submit(a *App) tea.Cmd {
 	}
 	cmd, err := fv.f.Submit()
 	if err != nil {
-		return a.Error(fv.f.Title, err.Error())
+		return a.Error(fv.button()+" failed", err.Error())
 	}
 	return tea.Batch(a.closeTop(), cmd)
 }

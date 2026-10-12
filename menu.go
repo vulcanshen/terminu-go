@@ -108,6 +108,7 @@ func (m *menuView) rowWidth(r menuRow) int {
 	return Width(r.label) + 2 + Width(r.desc)
 }
 
+// hint is Enter:run Esc:close, a worklist too (TODO(tdp G40)).
 func (m *menuView) hint() []KeyHint {
 	return []KeyHint{{"Enter", "run"}, {"Esc", "close"}}
 }

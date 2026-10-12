@@ -88,7 +88,7 @@ Error / 長訊息）、`Start task`（畫面 chip 列下的進度條）。global
 | K11 | 模式裡只有模式自己的鍵與上表的 core key 作用：panel 熱鍵與 global 熱鍵都不作用，按了不出聲 | Drag 裡按 `m`（panel 熱鍵）、`I`（global 熱鍵） | `TestK11HotkeysSilentInMode` |
 | K11 | 模式可以暫停 `Tab` 與數字鍵，按了要有回應（toast）；toast 在時第一個 `Esc` 先收 toast | Drag 裡按 `Tab`、`2` | `TestK11TabPausedToast`、`TestK11DigitsPausedToast` |
 | K11 | 模式名在框的上框右側、外框換模式色、離開恢復；不只靠顏色 | Drag；D「Note viewer」的 `v` | `TestK11ModeLabel` |
-| K12 | 不在打字的地方 `j k u d g G h l` 保留給移動，任何動作都不佔 | lib：登記時拒絕 | `TestK12HotkeyCannotTakeMovement` |
+| K12 | 不在打字的地方 `j k u d g G h l` 保留給移動，任何動作都不佔 | lib：登記時拒絕（panel 與 menu；popup 裡數字可以） | `TestK12HotkeyCannotTakeMovement`、`TestK12HotkeyCannotTakeMovementInMenu`、`TestK1DigitsFreeInPopups` |
 | K12 | 有左右結構：`h`/`l` 左右（切 tab、跨側、日曆前後一天） | P `[1] PODS` 的 tab；I 的 `Meeting` | `TestK12HLSwitchTabs`、`TestDatetimePicker` |
 | K12 | 一維清單：`h`/`k` 往前、`j`/`l` 往後；在有 tab 的 panel 裡 `h`/`l` 給 tab | D「Form」；P `[3] SETTINGS`；I `[1] INPUTS` | `TestK12OneDimensional` |
 | K12 | `u`/`d` 半頁、`gg`/`G` 頭尾；單按 `g` 不作用；其他 `g` 開頭可當熱鍵；不收 `Ctrl-U`/`Ctrl-D` | P `[1] PODS`（40 列）；展示場登記一個 `[go]to` | `TestK12HalfPageAndEnds`、`TestK12SingleGNoop`、`TestK12NoCtrlUD` |
@@ -153,7 +153,7 @@ Error / 長訊息）、`Start task`（畫面 chip 列下的進度條）。global
 | F6 | `Enter` 接受、`Esc` 取消；confirm 自己的熱鍵要列在 `?`；寫出接受會做的事；不能被誤觸完成 | D「Confirm: y/n」 | `TestConfirmKeys`、`TestConfirmHotkeysInHelp` |
 | F7 | 寬度兩種：內容確定 = 最寬列 + 4、至少放得下標題與 hint、最多 `min(寬 − 2, 120)`；不確定 = `min(寬 − 2, 120)`；水平置中；開著不變；有整列 cursor 的，右邊的留白跟箭頭一樣寬（powerline 符號寬）；寬度至少 hint + 6（PIN 43 格） | 每種 popup；寬 200 的終端機看 120 上限 | `TestF7WidthKnown`、`TestF7WidthUnknown`、`TestF7WidthCap120` |
 | F7 | 高度打開時定、最高畫面高 − 2，超過捲；loading 期間與使用者操作造成的改變可以變 | D「Menu: long」；I `[/] Find` 打字篩選 | `TestF7HeightFixed`、`TestF7HeightMax` |
-| F7 | loading 時標題後一定有輪轉 icon；只看整個 popup 的內容 | D「Loading popup」 | `TestF7LoadingIcon` |
+| F7 | loading 時標題後一定有輪轉 icon；只看整個 popup 的內容 | D「Loading popup」 | `TestF7LoadingIcon`、`TestF7LoadingGrows` |
 | F7 | 垂直置中；toast 的下框在畫面倒數第三列 | 每種 popup；D「Toast」 | `TestF7Position`、`TestToastPosition` |
 | F7 | 值可能不合格的 popup 預留一列錯誤列；動作失敗開 error popup | I 的 `Port`；D「Form: save fails」 | `TestF7ErrorRowReserved` |
 | F7 | terminal：寬 `寬 − 2`；上面留 statusbar 或 chip 列（含分隔線）、下面到最後一列蓋掉 footer；上下左右都不留白 | T `[2] SESSIONS` 的 `[Alt-t]erm` | `TestTerminalPopupSize`、`TestTerminalPopupNoPadding` |
@@ -314,7 +314,7 @@ Error / 長訊息）、`Start task`（畫面 chip 列下的進度條）。global
 | menu §長相 | 區塊標題：U+F02D8（六角形）+ 一格 + 大寫標題，Overlay0、離框一格、不加粗、cursor 跳過；區塊之間的分隔線 `╌`（U+254C）、不接框、Overlay0、cursor 跳過 | Space menu | `TestMenuHeadings`、`TestMenuSeparator` |
 | menu §長相 | cursor 層色底、Base 粗體，從框貼到框、字離框一格、最右邊一格是箭頭；停用的列整列 Surface2、cursor 跳過、熱鍵不作用 | `Disable` 之後的 Space menu | `TestMenuCursor`、`TestM6DisabledRow` |
 | menu §長相 | 標題 U+F0C9 + 文字（標題膠囊）：Space menu 寫 focus panel 的 `[N] label`、其他寫它做什麼（`GLOBAL OPERATION`、`SORT BY`）；`Global operation` 列說明一律 `actions for the whole app`；寬度照「內容確定」 | Space menu、Global operation、Sort by | `TestMenuTitle`、`TestMenuGlobalRow` |
-| menu §按鍵 | `j/k` 到頭尾繞回；`u/d`（到頭尾停住）、`gg/G`；`Enter` 執行、熱鍵直接執行；`Esc` 關（global 回 Space menu）；Space menu 再按 `Space` 關；hint `Enter:run Esc:close` | 同上 | `TestMenuKeys`、`TestMenuWraps` |
+| menu §按鍵 | `j/k` 到頭尾繞回；`u/d`（到頭尾停住）、`gg/G`；`Enter` 執行、熱鍵直接執行；`Esc` 關（global 回 Space menu）；Space menu 再按 `Space` 關；hint `Enter:run Esc:close`（工作清單也是：G40） | 同上 | `TestMenuKeys`、`TestMenuWraps` |
 
 ## dialog/confirm
 
@@ -330,7 +330,7 @@ Error / 長訊息）、`Start task`（畫面 chip 列下的進度條）。global
 | 出處 | 規定 | 展示場 | 測試 |
 |---|---|---|---|
 | note §長相 | 留白一律有；標題 glyph（app 選）+ 顯示的東西（標題膠囊，`YAML — pod/nginx`）；捲動位置 `N-M of T`；寬度：確定的照內容、viewer 用上限 | D「Note viewer」 | `TestNoteLayout` |
-| note §按鍵 | 捲動 `j/k` `u/d` `gg/G`，選取模式加 `w/b/e` `0/$`；只用 `Esc` 關（`Enter`、`Space` 不關）；error popup（不管怎麼打開的）與表單的打字說明 `Enter` 也能關；hint 熱鍵在前、`Esc:close` 最後 | 同上；D「Error popup」 | `TestNoteKeys`、`TestNoteHint` |
+| note §按鍵 | 捲動 `j/k` `u/d` `gg/G`，選取模式加 `w/b/e` `0/$`（游標、範圍、hint：G39）；只用 `Esc` 關（`Enter`、`Space` 不關）；error popup（不管怎麼打開的）與表單的打字說明 `Enter` 也能關；hint 熱鍵在前、`Esc:close` 最後 | 同上；D「Error popup」 | `TestNoteKeys`、`TestNoteHint` |
 | note §key reference | 標題 U+F059 + `<surface> keys`（`[2] HOSTS KEYS`、`SPACE MENU KEYS`）；每列一個鍵：縮兩格、鍵補到最寬、空兩格、說明（截斷不折行）；從 menu 來的列 `label — 說明`、label 去掉標記、大小寫照原樣 | 每個 surface 按 `?` | `TestKeyReferenceLayout` |
 | note §key reference | panel 上的區塊依序：`item operation`、`panel operation`、`move`（真的能用的移動鍵）、`core keys`（`Space`、`?`、`Tab`、`1–N`、`q/Ctrl-C`；`Esc` 只在有作用時）、`app-wide`；區塊標題同 menu | P `[1] PODS`（有 tab：列 `h/l`）、`[2] LOG`、有篩選時（列 `Esc`） | `TestKeyReferenceSections`、`TestKeyReferenceMoveSection`、`TestKeyReferenceCoreKeys` |
 | note §key reference | popup 上只列它的熱鍵、`Enter`、`Esc`、移動鍵；鍵 Blue 不加粗、說明 Text、按不了的 Surface2；`?`／`Esc` 關、`Enter` 不作用；hint `?/Esc:close` | Space menu 上按 `?` | `TestKeyReferenceKeys` |

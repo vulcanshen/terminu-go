@@ -394,6 +394,9 @@ func TestL4EveryRowFullWidth(t *testing.T) {
 		"screen 2": {"O"},
 	}
 	calls := inputOpeners(t)
+	for name, open := range dialogOpeners() {
+		calls[name] = open
+	}
 	for name := range calls {
 		opens[name] = nil
 	}

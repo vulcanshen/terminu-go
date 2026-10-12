@@ -57,8 +57,7 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
 
 - **自己開 bubbletea program 的 app 沒有那一層輸出**：只拿零件用、畫面自己管的 app（例：locku 的鎖定畫面），renderer 補的「清到
   行尾」不會被拿掉。要不要把 `screenOutput` 開放出去，等第一個這樣用的 app 再決定。
-- 還沒做的元件：note viewer 的熱鍵與選取模式、PTY（panel 裡與 terminal popup）、splash、popup 上的 tab。展示場的 Dialogs、
-  Terminal 兩個畫面還是空的。
+- 還沒做的元件：PTY（panel 裡與 terminal popup）、splash。展示場的 Terminal 畫面還是空的。
 
 ## 偏離 tdp
 

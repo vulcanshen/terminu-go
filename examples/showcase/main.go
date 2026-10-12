@@ -53,6 +53,7 @@ type showcase struct {
 	app      *terminu.App
 	panels   *panelsScreen
 	inputs   *inputsScreen
+	dialogs  *dialogsScreen
 	task     float64
 	taskOn   bool
 	started  time.Time
@@ -74,7 +75,8 @@ func newShowcase() *showcase {
 	a.AddScreen(s.panels.screen)
 	s.inputs = newInputsScreen(s)
 	a.AddScreen(s.inputs.screen)
-	a.AddScreen(placeholder("Dialogs", "D", "every kind of dialog, and how they stack"))
+	s.dialogs = newDialogsScreen(s)
+	a.AddScreen(s.dialogs.screen)
 	a.AddScreen(placeholder("Terminal", "T", "a terminal in a panel and in a popup"))
 	a.Global = []terminu.Action{
 		{Label: "Narrow layout", Desc: "draw one panel at a time, as on a narrow terminal", Scope: terminu.GlobalScope,
@@ -112,6 +114,8 @@ func (s *showcase) onMsg(msg tea.Msg) tea.Cmd {
 		return tea.Tick(time.Second, func(time.Time) tea.Msg { return logTick{} })
 	case indexTick:
 		return s.inputs.indexStep()
+	case toastLater, loadTick:
+		return s.dialogs.onMsg(msg)
 	case taskTick:
 		s.task += 0.04
 		if s.task >= 1 {

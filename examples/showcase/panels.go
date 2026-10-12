@@ -331,7 +331,7 @@ func (ps *panelsScreen) sortMenu() tea.Cmd {
 	var cols []terminu.Action
 	for i, c := range ps.podList.Columns {
 		i, c := i, c
-		cols = append(cols, terminu.Action{Label: c.Title, Desc: "sort by " + strings.ToLower(c.Title),
+		cols = append(cols, terminu.Action{Label: c.Title, Desc: "sort by " + strings.ToLower(c.Title), Stay: true,
 			Do: func() tea.Cmd {
 				return a.Menu("Sort by "+c.Title, terminu.MenuSection{Actions: []terminu.Action{
 					{Label: "Ascending", Desc: "smallest first", Do: func() tea.Cmd { ps.podList.SortBy(terminu.SortKey{Col: i}); return nil }},

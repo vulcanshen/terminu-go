@@ -36,6 +36,9 @@ type Action struct {
 	// Disabled reports that it cannot run now: the row is shown in the
 	// disabled colour, the cursor skips it and its hotkey does nothing.
 	Disabled func() bool
+	// Stay keeps the menu it runs from open: a worklist's row opening its
+	// full text over the menu (Rules F1).
+	Stay bool
 	// Do runs it.
 	Do func() tea.Cmd
 }
@@ -51,4 +54,14 @@ type Ask struct {
 	Verb     string   // Enter:<verb> in the hint: "delete"
 	Details  []string // what to read before answering, above the question
 	Warn     []int    // which lines of Details are warnings (Peach)
+	// Keys are the confirm's own hotkeys (y, n), listed in its ? (Rules F6).
+	Keys []AskKey
+}
+
+// AskKey is a confirm's own hotkey: Accept makes it Enter; otherwise it
+// cancels, running Do (when set) after the confirm closes.
+type AskKey struct {
+	Key, Desc string
+	Accept    bool
+	Do        func() tea.Cmd
 }

@@ -16,4 +16,6 @@ Each release names the version of terminu design (tdp) it implements.
   pickers, color picker and slider
 - Powerline symbols are measured apart from icons, with their own variables `<APP>__POWERLINE_WIDTH` and
   `TERMINU__POWERLINE_WIDTH`
-- The showcase's Panels and Inputs screens
+- Viewers (notes) with tabs, keys of their own and a selection mode; menus whose rows open their full text and
+  multi-step menus; confirms with hotkeys of their own; a loading popup grows with its content
+- The showcase's Panels, Inputs and Dialogs screens
