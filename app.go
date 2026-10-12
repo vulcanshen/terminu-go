@@ -2,6 +2,7 @@ package terminu
 
 import (
 	"fmt"
+	"os"
 	"slices"
 	"strings"
 	"time"
@@ -128,7 +129,7 @@ func (a *App) Size() (w, h int) { return a.w, a.h }
 // runs the app in the alternate screen.
 func (a *App) Run() error {
 	Probe(a.Name)
-	_, err := tea.NewProgram(a, tea.WithAltScreen()).Run()
+	_, err := tea.NewProgram(a, tea.WithAltScreen(), tea.WithOutput(screenOutput{os.Stdout})).Run()
 	return err
 }
 

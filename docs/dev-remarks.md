@@ -13,6 +13,10 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   寬度，icon 一律算一格。
 - **畫到終端機**：用 bubbletea v1 的 renderer。它把改變的列從第 0 欄整列重寫，終端機自己決定每個字落在哪一格，所以 icon 佔兩格
   也對得上（`proto/c1` 在 icon 兩格的 tmux 裡逐字比對過，見盲點紀錄 C1 的「v1 重驗」）。
+  - 例外是 renderer 在列尾補的「清到行尾」：它用 `ansi.StringWidth`（icon 算一格）量每一列，比終端機寬短的列後面補 `ESC [ K`。
+    icon 兩格時，含 icon 的列量起來一定比較短，整列寫滿之後還會送一次 `ESC [ K`，照 xterm 規矩的終端機（Ghostty 也是）會把最後一格
+    （右框）擦掉；tmux 不會。lib 畫的每一列都剛好是終端機寬（L4），這個清除永遠是多餘的，所以 `App.Run` 交給 bubbletea 的輸出
+    （`output.go` 的 `screenOutput`）把它拿掉。
 
 - **App 是一個 bubbletea model**：app 登記畫面（`Screen`）、panel（`Panel`，內容是 `Body`：`List`、`Values`、`Pager` 或 app 自己的）、
   動作（`Action`：鍵、名稱、說明、範圍、要不要先問、做什麼）。Space menu、global operation popup、`?` 的 key reference、panel 下框的 hint、
@@ -45,9 +49,8 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
 
 ## 已知的牆與未做
 
-- **v1 的 renderer 在列尾補的「清到行尾」**：renderer 用 `ansi.StringWidth`（icon 算一格）量每一列，比終端機寬短的列後面補
-  `ESC [ K`。icon 兩格時含 icon 的列一定量得比較短，整列寫滿之後還會送一次 `ESC [ K`。tmux 不會因此擦掉最後一格；照 xterm 的規矩
-  的終端機可能會（右框不見）。要在真的終端機上確認（盲點紀錄 C1、C2）。
+- **自己開 bubbletea program 的 app 沒有那一層輸出**：只拿零件用、畫面自己管的 app（例：locku 的鎖定畫面），renderer 補的「清到
+  行尾」不會被拿掉。要不要把 `screenOutput` 開放出去，等第一個這樣用的 app 再決定。
 - 還沒做的元件：表單、finder／select、textarea、日期時間、color picker、slider、note viewer 的熱鍵與選取模式、PTY、splash、
   popup 上的 tab。展示場的 Inputs、Dialogs、Terminal 三個畫面還是空的。
 
