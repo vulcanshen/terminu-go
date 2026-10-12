@@ -12,4 +12,8 @@ Each release names the version of terminu design (tdp) it implements.
   chip row and footer, panels (lists, one value per row, pagers) with frames, capsules, hints, filter and modes, the
   Space menu, the global operation popup, key references, confirm, toast, the popup animation, and text, password and
   number inputs
-- The showcase's Panels screen
+- Every kind of input: select, checkbox popup, finder with a preview, file-picker, form, textarea, date and datetime
+  pickers, color picker and slider
+- Powerline symbols are measured apart from icons, with their own variables `<APP>__POWERLINE_WIDTH` and
+  `TERMINU__POWERLINE_WIDTH`
+- The showcase's Panels and Inputs screens

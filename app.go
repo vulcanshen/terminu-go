@@ -175,6 +175,11 @@ func (a *App) loading() bool {
 			}
 		}
 	}
+	for _, l := range a.stack {
+		if v, ok := l.view.(interface{ isLoading() bool }); ok && v.isLoading() {
+			return true
+		}
+	}
 	return false
 }
 

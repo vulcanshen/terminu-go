@@ -393,6 +393,10 @@ func TestL4EveryRowFullWidth(t *testing.T) {
 		"panel 3":  {"3"},
 		"screen 2": {"O"},
 	}
+	calls := inputOpeners(t)
+	for name := range calls {
+		opens[name] = nil
+	}
 	for _, widths := range [][2]int{{1, 1}, {2, 1}, {2, 2}} {
 		for name, keys := range opens {
 			for _, sz := range sizes {
@@ -400,6 +404,10 @@ func TestL4EveryRowFullWidth(t *testing.T) {
 				ta := newTestApp(t)
 				ta.resize(sz[0], sz[1])
 				ta.press(keys...)
+				if open := calls[name]; open != nil {
+					open(ta)
+					ta.settle()
+				}
 				ta.Toast(Warning, "a toast that is long enough to wrap on a narrow screen and more")
 				ta.settle()
 				lines := ta.Frame()

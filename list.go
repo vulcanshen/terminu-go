@@ -440,6 +440,7 @@ func (l *List) rowText(r int, ws []int) string {
 // count of matches over the total on the right; grey when the focus is on
 // the list.
 func (l *List) filterRow(w int, focused bool) string {
+	// TODO(tdp G36): the count in Overlay0.
 	count := strconv.Itoa(len(l.view)) + "/" + strconv.Itoa(len(l.rows))
 	room := w - 2 - Width(count) - 2
 	var text string

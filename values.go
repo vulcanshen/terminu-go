@@ -1,6 +1,8 @@
 package terminu
 
 import (
+	"strings"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/x/ansi"
 )
@@ -12,12 +14,16 @@ type Field struct {
 	// shown); Empty is what an empty value means, shown in grey ("not set").
 	Value func() string
 	Empty string
+	// Path cuts a value too long from the front: "…/.ssh/id_ed25519".
+	Path bool
 	// Options make the field a radio drawn in place: Selected is the chosen
 	// one. With Multi it is a group of checkboxes: Checked says which.
 	Options  []string
 	Selected int
 	Multi    bool
 	Checked  []bool
+	// Inline draws the options on one row when they are all short.
+	Inline   bool
 	Disabled func() bool
 	// Err marks the field's value as wrong: its label turns Red.
 	Err func() bool
@@ -123,6 +129,35 @@ func (v *Values) Draw(w, h int, focused bool) []string {
 		}
 		label := Fg(labelColor).Render(Pad(Upper(f.Label), lw))
 		blank := Repeat(" ", lw)
+		if f.Inline && len(f.Options) > 0 {
+			// One row; the focus runs from its option to the edge (as on a
+			// form). TODO(tdp G33): the block covers the options after it.
+			var head, rest []string
+			focus := -1
+			for k := range f.Options {
+				itemRow = append(itemRow, len(rows))
+				if idx == v.cursor && !f.disabled() {
+					focus = k
+				}
+				if focus >= 0 {
+					rest = append(rest, ansi.Strip(v.valueText(f, k)))
+				} else {
+					head = append(head, v.valueText(f, k))
+				}
+				idx++
+			}
+			before := strings.Join(head, "  ")
+			if focus < 0 {
+				rows = append(rows, " "+label+"  "+Fit(before, valW)+Repeat(" ", arrow))
+				continue
+			}
+			if before != "" {
+				before += "  "
+			}
+			block := On(Subtext1).Render(Pad(strings.Join(rest, "  "), valW-Width(before)))
+			rows = append(rows, " "+label+"  "+before+block+Fg(Subtext1).Render(glyphHard))
+			continue
+		}
 		n := f.items()
 		for k := range n {
 			lead := blank
@@ -132,9 +167,17 @@ func (v *Values) Draw(w, h int, focused bool) []string {
 			itemRow = append(itemRow, len(rows))
 			value := v.valueText(f, k)
 			if idx == v.cursor && !f.disabled() {
-				rows = append(rows, " "+lead+"  "+On(Subtext1).Render(Pad(ansi.Strip(value), valW))+Fg(Subtext1).Render(glyphHard))
+				fit := Fit
+				if f.Path {
+					fit = FitLeft
+				}
+				rows = append(rows, " "+lead+"  "+On(Subtext1).Render(fit(ansi.Strip(value), valW))+Fg(Subtext1).Render(glyphHard))
 			} else {
-				rows = append(rows, " "+lead+"  "+Fit(value, valW)+Repeat(" ", arrow))
+				fit := Fit
+				if f.Path {
+					fit = FitLeft
+				}
+				rows = append(rows, " "+lead+"  "+fit(value, valW)+Repeat(" ", arrow))
 			}
 			idx++
 		}
@@ -184,6 +227,9 @@ func (v *Values) valueText(f *Field, k int) string {
 	}
 	if val == "" {
 		return Fg(Overlay0).Render(f.Empty)
+	}
+	if f.Path {
+		return Fg(Text).Render(homeShort(val))
 	}
 	return Fg(Text).Render(val)
 }

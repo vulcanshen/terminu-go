@@ -245,16 +245,18 @@ func (b box) draw() []string {
 	if b.scroll != "" && inner >= Width(b.scroll)+4 {
 		scroll = " " + b.scroll + " "
 	}
-	hintRoom := inner - 1 - Width(scroll) - 1 - 2 // segment, the space either side, a segment before the scroll
+	tail := ls.h
+	if scroll == "" {
+		tail = ""
+	}
+	// A segment, the space either side, at least one segment after it, the
+	// scroll position and its segment.
+	hintRoom := inner - 1 - 2 - 1 - Width(scroll) - Width(tail)
 	hint := ""
 	if len(b.hint) > 0 && hintRoom > 0 {
 		if h := renderHints(b.hint, hintRoom, b.hintKey, b.words()); h != "" {
 			hint = " " + h + " "
 		}
-	}
-	tail := ls.h
-	if scroll == "" {
-		tail = ""
 	}
 	fill := inner - 1 - Width(hint) - Width(scroll) - Width(tail)
 	out = append(out, frame.Render(ls.bl+ls.h)+hint+frame.Render(Repeat(ls.h, fill))+frame.Render(scroll)+frame.Render(tail+ls.br))

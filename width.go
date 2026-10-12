@@ -21,6 +21,9 @@ var (
 // IconWidth is how many cells a Nerd Font icon takes on this terminal.
 func IconWidth() int { return iconCells }
 
+// PowerlineWidth is how many cells a powerline symbol takes on this terminal.
+func PowerlineWidth() int { return powerlineCells }
+
 // SetIconWidth sets how many cells a Nerd Font icon takes, and a powerline
 // symbol. Probe sets them; tests and apps that already know may set them.
 func SetIconWidth(icon, powerline int) {

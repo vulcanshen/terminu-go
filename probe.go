@@ -18,46 +18,58 @@ func EnvName(app, name string) string {
 	return up(app) + "__" + up(name)
 }
 
-// FamilyIconWidth is the variable a family app sets for what runs in its PTY
-// (tdp E2, E5).
-const FamilyIconWidth = "TERMINU__ICON_WIDTH"
+// The variables a family app sets for what runs in its PTY (tdp E2, E5; G28).
+const (
+	FamilyIconWidth      = "TERMINU__ICON_WIDTH"
+	FamilyPowerlineWidth = "TERMINU__POWERLINE_WIDTH"
+)
 
 // ProbeResult is what Probe found out about the terminal.
 type ProbeResult struct {
-	IconCells      int    // cells a Nerd Font icon takes
-	PowerlineCells int    // cells a powerline symbol takes (G28)
-	From           string // where IconCells came from: the variable's name, "probe", or "default"
-	Palette        int    // how many of the 16 colours the terminal reported (OSC 4)
+	IconCells      int // cells a Nerd Font icon takes
+	PowerlineCells int // cells a powerline symbol takes
+	// IconFrom and PowerlineFrom say where each came from: the variable's
+	// name, "probe", or "default".
+	IconFrom, PowerlineFrom string
+	Palette                 int // how many of the 16 colours the terminal reported (OSC 4)
 }
 
 // Probe finds out, before Bubble Tea takes the terminal, how many cells an icon
-// takes (tdp E5) and the terminal's 16 colours (components/color, dimming).
-// The icon width comes from <APP>__ICON_WIDTH, then TERMINU__ICON_WIDTH, then
-// asking the terminal where the cursor ended up after one icon (CPR, unix
-// only). The palette is asked for with OSC 4 at the same time; colours the
-// terminal does not report stay xterm's. Probe sets the lib's widths and
-// palette and reports what it found.
+// and a powerline symbol take (tdp E5, G28) and the terminal's 16 colours
+// (components/color, dimming). Each width comes from the app's variable
+// (<APP>__ICON_WIDTH, <APP>__POWERLINE_WIDTH), then the family's
+// (TERMINU__ICON_WIDTH, TERMINU__POWERLINE_WIDTH), then asking the terminal
+// where the cursor ended up after printing one (CPR, unix only). The palette
+// is asked for with OSC 4 at the same time; colours the terminal does not
+// report stay xterm's. Probe sets the lib's widths and palette and reports
+// what it found.
 func Probe(app string) ProbeResult {
-	res := ProbeResult{IconCells: 1, PowerlineCells: 1, From: "default"}
-	env := ""
-	for _, name := range []string{EnvName(app, "icon width"), FamilyIconWidth} {
-		if n, err := strconv.Atoi(os.Getenv(name)); err == nil && (n == 1 || n == 2) {
-			res.IconCells, res.From, env = n, name, name
-			break
-		}
-	}
-	ans, ok := askTerminal(env == "")
+	res := ProbeResult{IconCells: 1, PowerlineCells: 1, IconFrom: "default", PowerlineFrom: "default"}
+	iconSet := widthFromEnv(&res.IconCells, &res.IconFrom, EnvName(app, "icon width"), FamilyIconWidth)
+	plSet := widthFromEnv(&res.PowerlineCells, &res.PowerlineFrom, EnvName(app, "powerline width"), FamilyPowerlineWidth)
+	ans, ok := askTerminal(!iconSet || !plSet)
 	if ok {
-		if env == "" && ans.icon > 0 {
-			res.IconCells, res.From = ans.icon, "probe"
+		if !iconSet && ans.icon > 0 {
+			res.IconCells, res.IconFrom = ans.icon, "probe"
 		}
-		if env == "" && ans.powerline > 0 {
-			res.PowerlineCells = ans.powerline
+		if !plSet && ans.powerline > 0 {
+			res.PowerlineCells, res.PowerlineFrom = ans.powerline, "probe"
 		}
 		res.Palette = ans.colours
 	}
 	SetIconWidth(res.IconCells, res.PowerlineCells)
 	return res
+}
+
+// widthFromEnv takes the first of the variables that says 1 or 2.
+func widthFromEnv(cells *int, from *string, names ...string) bool {
+	for _, name := range names {
+		if n, err := strconv.Atoi(os.Getenv(name)); err == nil && (n == 1 || n == 2) {
+			*cells, *from = n, name
+			return true
+		}
+	}
+	return false
 }
 
 // answers is what the terminal said: cell widths (0 when not asked or no

@@ -134,12 +134,23 @@ func TestE5WidthOrder(t *testing.T) {
 	withWidths(t, 1, 1)
 	t.Setenv("SHOWCASE__ICON_WIDTH", "2")
 	t.Setenv(FamilyIconWidth, "1")
-	if r := Probe("showcase"); r.IconCells != 2 || r.From != "SHOWCASE__ICON_WIDTH" {
+	t.Setenv("SHOWCASE__POWERLINE_WIDTH", "")
+	t.Setenv(FamilyPowerlineWidth, "2")
+	r := Probe("showcase")
+	if r.IconCells != 2 || r.IconFrom != "SHOWCASE__ICON_WIDTH" {
 		t.Errorf("app variable first: %+v", r)
+	}
+	if r.PowerlineCells != 2 || r.PowerlineFrom != FamilyPowerlineWidth || PowerlineWidth() != 2 {
+		t.Errorf("powerline has its own variables (G28): %+v", r)
 	}
 	t.Setenv("SHOWCASE__ICON_WIDTH", "")
 	t.Setenv(FamilyIconWidth, "2")
-	if r := Probe("showcase"); r.IconCells != 2 || r.From != FamilyIconWidth {
+	t.Setenv("SHOWCASE__POWERLINE_WIDTH", "1")
+	r = Probe("showcase")
+	if r.IconCells != 2 || r.IconFrom != FamilyIconWidth {
 		t.Errorf("then the family's: %+v", r)
+	}
+	if r.PowerlineCells != 1 || r.PowerlineFrom != "SHOWCASE__POWERLINE_WIDTH" {
+		t.Errorf("the app's powerline variable first: %+v", r)
 	}
 }

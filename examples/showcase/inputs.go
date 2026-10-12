@@ -1,0 +1,339 @@
+package main
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+
+	tea "github.com/charmbracelet/bubbletea"
+	terminu "github.com/vulcanshen/terminu-go"
+)
+
+// inputsScreen is [I]NPUTS: every kind of input. [1] INPUTS has one row per
+// input and per way of drawing one, Enter opening its popup; [2] FILES is a
+// list whose [/] Find opens a general finder with a preview.
+type inputsScreen struct {
+	s        *showcase
+	screen   *terminu.Screen
+	values   *terminu.Values
+	inputs   *terminu.Panel
+	files    *terminu.Panel
+	fileList *terminu.List
+	disabled bool
+	index    *terminu.Finder // the slow index, while it fills
+	indexed  int
+}
+
+// The showcase's own glyphs for its inputs (the app's choice: what each
+// input edits).
+const (
+	glyphPerson   = "\U000F0004" // nf-md-account
+	glyphFolder   = "\U000F024B" // nf-md-folder
+	glyphKey      = "\U000F0306" // nf-md-key
+	glyphLan      = "\U000F0317" // nf-md-lan
+	glyphComment  = "\U000F0182" // nf-md-comment_text
+	glyphPalette  = "\U000F03D8" // nf-md-palette
+	glyphCalendar = "\U000F00ED" // nf-md-calendar
+	glyphTune     = "\U000F062E" // nf-md-tune
+	glyphSearch   = "\U0000F002" // nf-fa-search
+	glyphTag      = "\U000F04F9" // nf-md-tag
+)
+
+func newInputsScreen(s *showcase) *inputsScreen {
+	is := &inputsScreen{s: s}
+	a := s.app
+	var (
+		name, nickname = "assets", ""
+		path           = "/srv/projects/showcase/assets/images/backgrounds/very-long-directory-name/landscape-2026.png"
+		password       = true
+		pin            = ""
+		port, ratio    = "22", "0.5"
+		comment        = "Thanks for the quick reply. The new build fixes the crash on start.\n\nOne more thing: the export button"
+		profiles       = []string{"clock", "matrix", "pipes", "rain", "stars", "tunnel", "fire"}
+		profile        = 0
+		namespaces     = []string{"default", "kube-system", "monitoring", "ingress-nginx", "cert-manager", "argocd", "logging", "vault"}
+		nsChecked      = []bool{true, false, false, false, false, false, false, false}
+		brightness     = 70.0
+		opacity        = 0.85
+		today          = time.Now()
+		due            = time.Date(today.Year(), today.Month(), today.Day()+3, 0, 0, 0, 0, time.Local)
+		meeting        = time.Date(today.Year(), today.Month(), today.Day(), 10, 7, 0, 0, time.Local)
+		background     = terminu.Hex("#2A2A3C")
+		sshDir         = fakeSSH()
+		identity       = filepath.Join(sshDir, "id_ed25519")
+	)
+	disabled := func() bool { return is.disabled }
+	is.values = &terminu.Values{Header: [2]string{"Input", "Value"}}
+	is.values.Fields = []*terminu.Field{
+		{Label: "Name", Value: func() string { return name }, Edit: func() tea.Cmd {
+			return a.Text(terminu.TextInput{Title: "Rename", Glyph: glyphPencil, Prompt: "New name for " + name, Verb: "rename", Old: name,
+				Check: func(v string) error {
+					if v == "" {
+						return fmt.Errorf("Name can't be empty")
+					}
+					return nil
+				},
+				Done: func(v string) tea.Cmd { name = v; return nil }})
+		}},
+		{Label: "Nickname", Value: func() string { return nickname }, Empty: "none", Edit: func() tea.Cmd {
+			return a.Text(terminu.TextInput{Title: "Nickname", Glyph: glyphPerson, Prompt: "A nickname, if you like", Verb: "save",
+				Done: func(v string) tea.Cmd { nickname = v; return nil }})
+		}},
+		{Label: "Path", Path: true, Value: func() string { return path }, Edit: func() tea.Cmd {
+			return a.Text(terminu.TextInput{Title: "Path", Glyph: glyphFolder, Prompt: "Where the background image is", Verb: "save", Old: path,
+				Done: func(v string) tea.Cmd { path = v; return nil }})
+		}},
+		{Label: "Password", Value: func() string { return dots(password) }, Empty: "not set", Disabled: disabled, Edit: func() tea.Cmd {
+			return a.Password(terminu.PasswordInput{Title: "Password", Glyph: glyphKey, Prompt: "The password for web-01", Verb: "save", Set: password,
+				Done: func(v string, clear bool) tea.Cmd { password = !clear; return nil }})
+		}},
+		{Label: "PIN", Value: func() string { return dots(pin != "") }, Empty: "not set", Edit: func() tea.Cmd {
+			return a.Password(terminu.PasswordInput{Title: "PIN", Glyph: glyphLock, Prompt: "Up to 12 digits", Verb: "set", Set: pin != "", Unlock: true, MaxLen: 12,
+				Done: func(v string, clear bool) tea.Cmd { pin = v; return nil }})
+		}},
+		{Label: "Port", Value: func() string { return port }, Edit: func() tea.Cmd {
+			return a.Number(terminu.NumberInput{Title: "Port", Glyph: glyphLan, Name: "Port", Prompt: "The SSH port, 1-65535", Verb: "save",
+				Old: port, Min: 1, Max: 65535, Done: func(v string) tea.Cmd { port = v; return nil }})
+		}},
+		{Label: "Ratio", Value: func() string { return ratio }, Edit: func() tea.Cmd {
+			return a.Number(terminu.NumberInput{Title: "Ratio", Glyph: glyphTune, Name: "Ratio", Prompt: "A ratio from -10 to 10", Verb: "save",
+				Old: ratio, Min: -10, Max: 10, Negative: true, Decimal: true, Done: func(v string) tea.Cmd { ratio = v; return nil }})
+		}},
+		{Label: "Comment", Value: func() string { return firstLine(comment) }, Empty: "none", Edit: func() tea.Cmd {
+			return a.Textarea(terminu.Textarea{Title: "Comment", Glyph: glyphComment, Old: comment,
+				Done: func(v string) tea.Cmd { comment = v; return nil }})
+		}},
+		{Label: "Profile", Value: func() string { return profiles[profile] }, Edit: func() tea.Cmd {
+			return a.Select(terminu.Select{Title: "Profile", Glyph: glyphTag, Options: profiles, Selected: profile,
+				Keys: []string{"1", "2", "3", "4", "5", "6", "7"}, Done: func(i int) tea.Cmd { profile = i; return nil }})
+		}},
+		{Label: "Namespaces", Value: func() string { return joinChecked(namespaces, nsChecked) }, Empty: "none", Edit: func() tea.Cmd {
+			return a.Checks(terminu.Checks{Title: "Namespaces", Glyph: glyphTag, Options: namespaces, Checked: nsChecked,
+				Done: func(c []bool) tea.Cmd { nsChecked = c; return nil }})
+		}},
+		{Label: "Layout", Options: []string{"row", "column", "grid"}},
+		{Label: "Order", Options: []string{"asc", "desc"}, Inline: true},
+		{Label: "Notify", Options: []string{"notify on errors"}, Multi: true, Checked: []bool{true}},
+		{Label: "Agent", Options: []string{"forward", "X11", "compression"}, Multi: true, Checked: []bool{true, false, true}},
+		{Label: "Brightness", Value: func() string { return terminu.SliderTrack(brightness, 0, 100, 12, terminu.Text) }, Edit: func() tea.Cmd {
+			return a.Open(terminu.Slider{Title: "Brightness", Glyph: glyphTune, Bottom: 0, Top: 100, Value: brightness,
+				Done: func(v float64) tea.Cmd { brightness = v; return nil }})
+		}},
+		{Label: "Opacity", Value: func() string { return terminu.SliderTrack(opacity, 0, 1, 12, terminu.Text) }, Edit: func() tea.Cmd {
+			return a.Open(terminu.Slider{Title: "Opacity", Glyph: glyphTune, Bottom: 0, Top: 1, Step: 0.05, Value: opacity,
+				Done: func(v float64) tea.Cmd { opacity = v; return nil }})
+		}},
+		{Label: "Due date", Value: func() string { return due.Format("2006-01-02") }, Edit: func() tea.Cmd {
+			return a.PickDate(terminu.DatePicker{Title: "Due date", Glyph: glyphCalendar, Value: due,
+				Min: today.AddDate(0, 0, -7), Max: today.AddDate(0, 0, 40), Done: func(t time.Time) tea.Cmd { due = t; return nil }})
+		}},
+		{Label: "Meeting", Value: func() string { return meeting.Format("2006-01-02 15:04") }, Edit: func() tea.Cmd {
+			return a.PickDate(terminu.DatePicker{Title: "Meeting", Glyph: glyphCalendar, Value: meeting, Time: true,
+				Done: func(t time.Time) tea.Cmd { meeting = t; return nil }})
+		}},
+		{Label: "Background", Value: func() string { return terminu.ColorText(background) }, Edit: func() tea.Cmd {
+			return a.PickColor(terminu.ColorPicker{Title: "Background", Glyph: glyphPalette, Value: background,
+				Done: func(c terminu.Color) tea.Cmd { background = c; return nil }})
+		}},
+		{Label: "Identity file", Path: true, Value: func() string { return identity }, Edit: func() tea.Cmd {
+			return a.PickFile(terminu.FilePicker{Title: "Identity file", Glyph: glyphKey, Root: sshDir, Value: identity,
+				Done: func(p string) tea.Cmd { identity = p; return nil }})
+		}},
+		{Label: "Remote", Value: func() string { return "" }, Empty: "ssh decides", Disabled: disabled},
+	}
+	is.inputs = &terminu.Panel{Label: "Inputs", Body: is.values}
+	is.inputs.Actions = is.stateActions(is.inputs)
+
+	is.fileList = &terminu.List{
+		Columns:   []terminu.Column{{Title: "Name", Flex: true, Path: true}, {Title: "Size", Number: true}, {Title: "Modified"}},
+		EmptyFact: "No files here",
+		EmptyHint: "Press [Space] to see what you can do here",
+	}
+	is.fileList.SetRows(fileRows())
+	is.files = &terminu.Panel{Label: "Files", Body: is.fileList}
+	is.files.Actions = append([]terminu.Action{
+		{Key: "/", Label: "Find", Desc: "search the files, with a preview", Scope: terminu.PanelScope, Hint: "find", Do: is.find},
+		{Key: "S", Label: "Slow index", Desc: "a search whose results keep arriving", Scope: terminu.PanelScope, Do: is.slowIndex},
+		{Key: "L", Label: "Copy URL", Desc: "the file's address", Scope: terminu.ItemScope,
+			Do: func() tea.Cmd { return a.Toast(terminu.Info, "Copied the URL") }},
+	}, is.stateActions(is.files)...)
+
+	is.screen = &terminu.Screen{Name: "Inputs", Key: "I", Desc: "every kind of input",
+		Panels: []*terminu.Panel{is.inputs, is.files}, NarrowBelow: 60, Layout: halves}
+	return is
+}
+
+// halves puts two panels side by side.
+func halves(w, h int) []terminu.Rect {
+	left := w / 2
+	return []terminu.Rect{{X: 0, Y: 0, W: left, H: h}, {X: left, Y: 0, W: w - left, H: h}}
+}
+
+func dots(set bool) string {
+	if set {
+		return "••••••••"
+	}
+	return ""
+}
+
+func firstLine(s string) string {
+	line, rest, more := strings.Cut(s, "\n")
+	if more && rest != "" {
+		return line + "…"
+	}
+	return line
+}
+
+func joinChecked(opts []string, checked []bool) string {
+	var on []string
+	for i, o := range opts {
+		if i < len(checked) && checked[i] {
+			on = append(on, o)
+		}
+	}
+	return strings.Join(on, ", ")
+}
+
+// stateActions are the showcase's own switches for this screen's panels.
+func (is *inputsScreen) stateActions(p *terminu.Panel) []terminu.Action {
+	a := is.s.app
+	return []terminu.Action{
+		{Label: "Empty", Desc: "clear this panel, or fill it again", Scope: terminu.PanelScope,
+			Hidden: func() bool { return p != is.files },
+			Do: func() tea.Cmd {
+				if is.fileList.Empty() {
+					is.fileList.SetRows(fileRows())
+				} else {
+					is.fileList.SetRows(nil)
+				}
+				return nil
+			}},
+		{Label: "Loading", Desc: "start loading, or stop", Scope: terminu.PanelScope,
+			Do: func() tea.Cmd { p.Loading = !p.Loading; return nil }},
+		{Label: "Disable", Desc: "some rows cannot be used now", Scope: terminu.PanelScope,
+			Hidden: func() bool { return p != is.inputs },
+			Do:     func() tea.Cmd { is.disabled = !is.disabled; return nil }},
+		{Label: "Toast info", Desc: "a short message", Scope: terminu.PanelScope,
+			Do: func() tea.Cmd { return a.Toast(terminu.Info, "Saved") }},
+	}
+}
+
+type fakeFile struct {
+	path string
+	size int
+	mod  string
+	text []string
+}
+
+var files = []fakeFile{
+	{"README.md", 2140, "2h", []string{"# showcase", "", "Every component of terminu design, on fake data."}},
+	{"README-zh_TW.md", 2302, "2h", []string{"# showcase", "", "用假資料展示 terminu design 的每一個元件。"}},
+	{"docs/readme-notes.md", 812, "3d", []string{"Notes on the README:", "- keep it short", "- link the CHANGELOG"}},
+	{"docs/coverage.md", 48211, "1d", []string{"# tdp v0.5.0 coverage"}},
+	{"main.go", 3302, "4h", []string{"package main", "", "import \"fmt\"", "", "func main() {", "\tfmt.Println(\"showcase\")", "}"}},
+	{"inputs.go", 9120, "1m", []string{"package main", "", "// inputsScreen is [I]NPUTS."}},
+	{"panels.go", 11804, "1d", []string{"package main", "", "// panelsScreen is [P]ANELS."}},
+	{"go.mod", 412, "5d", []string{"module github.com/vulcanshen/terminu-go", "", "go 1.26.0"}},
+	{"go.sum", 3921, "5d", []string{"github.com/charmbracelet/bubbletea v1.3.10 h1:…"}},
+	{"assets/images/backgrounds/very-long-directory-name/landscape-2026.png", 1843200, "9d", nil},
+	{"assets/images/icons/folder.svg", 912, "9d", []string{"<svg xmlns=\"http://www.w3.org/2000/svg\">", "</svg>"}},
+	{"assets/fonts/SymbolsNerdFont-Regular.ttf", 2516992, "30d", nil},
+	{"scripts/tmux-shot.sh", 1680, "1d", []string{"#!/bin/sh", "# Runs the showcase in a tmux pane."}},
+	{"LICENSE", 35149, "60d", []string{"GNU GENERAL PUBLIC LICENSE", "Version 3, 29 June 2007"}},
+	{"CHANGELOG.md", 1203, "1d", []string{"# Changelog"}},
+}
+
+func fileRows() []terminu.Row {
+	rows := make([]terminu.Row, len(files))
+	for i, f := range files {
+		rows[i] = terminu.Row{ID: f.path, Cells: []string{f.path, humanSize(f.size), f.mod}, Sort: []string{f.path, fmt.Sprint(f.size), f.mod}}
+	}
+	return rows
+}
+
+func humanSize(n int) string {
+	switch {
+	case n < 1<<10:
+		return fmt.Sprintf("%d B", n)
+	case n < 1<<20:
+		return fmt.Sprintf("%d KB", n>>10)
+	}
+	return fmt.Sprintf("%d MB", n>>20)
+}
+
+func fileItems() []terminu.FinderItem {
+	items := make([]terminu.FinderItem, len(files))
+	for i, f := range files {
+		items[i] = terminu.FinderItem{ID: f.path, Text: f.path}
+	}
+	return items
+}
+
+func preview(it terminu.FinderItem) (string, []string) {
+	for _, f := range files {
+		if f.path != it.ID {
+			continue
+		}
+		if f.text == nil {
+			return filepath.Base(f.path), []string{terminu.Fg(terminu.Overlay0).Render(fmt.Sprintf("(binary, %s)", humanSize(f.size)))}
+		}
+		out := make([]string, len(f.text))
+		for i, l := range f.text {
+			out[i] = terminu.Fg(terminu.Overlay0).Render(fmt.Sprintf("%2d", i+1)) + " " + strings.ReplaceAll(l, "\t", "    ")
+		}
+		return filepath.Base(f.path), out
+	}
+	return it.Text, nil
+}
+
+func (is *inputsScreen) find() tea.Cmd {
+	return is.s.app.Find(&terminu.Finder{Title: "Search", Glyph: glyphSearch, Verb: "open", Items: fileItems(), Preview: preview,
+		Done: func(it terminu.FinderItem) tea.Cmd { return is.s.app.Toast(terminu.Info, "Opened "+it.Text) }})
+}
+
+type indexTick struct{}
+
+// slowIndex is a finder whose results arrive one by one, the loading icon
+// turning until the last.
+func (is *inputsScreen) slowIndex() tea.Cmd {
+	is.index = &terminu.Finder{Title: "Search", Glyph: glyphSearch, Verb: "open", Loading: true, Preview: preview,
+		Done: func(it terminu.FinderItem) tea.Cmd { return is.s.app.Toast(terminu.Info, "Opened "+it.Text) }}
+	is.indexed = 0
+	return tea.Batch(is.s.app.Find(is.index), tea.Tick(time.Second, func(time.Time) tea.Msg { return indexTick{} }))
+}
+
+func (is *inputsScreen) indexStep() tea.Cmd {
+	if is.index == nil {
+		return nil
+	}
+	items := fileItems()
+	is.index.Items = append(is.index.Items, items[is.indexed])
+	is.indexed++
+	if is.indexed == len(items) {
+		is.index.Loading = false
+		is.index = nil
+		return nil
+	}
+	return tea.Tick(300*time.Millisecond, func(time.Time) tea.Msg { return indexTick{} })
+}
+
+// fakeSSH makes a pretend ~/.ssh for the file-picker, so the showcase never
+// shows the real one.
+func fakeSSH() string {
+	dir := filepath.Join(os.TempDir(), "terminu-showcase", ".ssh")
+	put := func(name, text string) {
+		p := filepath.Join(dir, name)
+		_ = os.MkdirAll(filepath.Dir(p), 0o700)
+		_ = os.WriteFile(p, []byte(text), 0o600)
+	}
+	put("config", "Host web-01\n  HostName 10.0.0.5\n  User deploy\n  IdentityFile ~/.ssh/id_ed25519\n")
+	put("id_ed25519", "-----BEGIN OPENSSH PRIVATE KEY-----\n(a fake key for the showcase)\n-----END OPENSSH PRIVATE KEY-----\n")
+	put("id_ed25519.pub", "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFAKEFAKEFAKE showcase@example\n")
+	put("known_hosts", "10.0.0.5 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFAKE\n")
+	put("work/id_work", "-----BEGIN OPENSSH PRIVATE KEY-----\n(another fake key)\n-----END OPENSSH PRIVATE KEY-----\n")
+	put("work/keys/a.pem", "-----BEGIN CERTIFICATE-----\n(fake)\n-----END CERTIFICATE-----\n")
+	put("old/b.pem", "-----BEGIN CERTIFICATE-----\n(fake)\n-----END CERTIFICATE-----\n")
+	return dir
+}

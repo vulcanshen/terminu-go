@@ -41,15 +41,18 @@ Usage:
   showcase help       print this (also --help, -h)
 
 Environment:
-  SHOWCASE__ICON_WIDTH   1 or 2: how many cells a Nerd Font icon takes,
-                         instead of asking the terminal
-  TERMINU__ICON_WIDTH    the same, for every terminu app
+  SHOWCASE__ICON_WIDTH        1 or 2: how many cells a Nerd Font icon takes,
+                              instead of asking the terminal
+  SHOWCASE__POWERLINE_WIDTH   1 or 2: the same for a powerline symbol
+  TERMINU__ICON_WIDTH         the same as SHOWCASE__ICON_WIDTH, for every terminu app
+  TERMINU__POWERLINE_WIDTH    the same as SHOWCASE__POWERLINE_WIDTH, for every terminu app
 `
 
 // showcase is the app and its screens' state.
 type showcase struct {
 	app      *terminu.App
 	panels   *panelsScreen
+	inputs   *inputsScreen
 	task     float64
 	taskOn   bool
 	started  time.Time
@@ -69,7 +72,8 @@ func newShowcase() *showcase {
 	s.app = a
 	s.panels = newPanelsScreen(s)
 	a.AddScreen(s.panels.screen)
-	a.AddScreen(placeholder("Inputs", "I", "every kind of input"))
+	s.inputs = newInputsScreen(s)
+	a.AddScreen(s.inputs.screen)
 	a.AddScreen(placeholder("Dialogs", "D", "every kind of dialog, and how they stack"))
 	a.AddScreen(placeholder("Terminal", "T", "a terminal in a panel and in a popup"))
 	a.Global = []terminu.Action{
@@ -85,7 +89,8 @@ func newShowcase() *showcase {
 
 // status is the statusbar: how wide an icon is, the running job.
 func (s *showcase) status(w int) string {
-	text := terminu.Fg(terminu.Overlay0).Render("icon width ") + terminu.Fg(terminu.Lavender).Render(fmt.Sprint(terminu.IconWidth()))
+	text := terminu.Fg(terminu.Overlay0).Render("icon width ") + terminu.Fg(terminu.Lavender).Render(fmt.Sprint(terminu.IconWidth())) +
+		terminu.Fg(terminu.Overlay0).Render("  powerline ") + terminu.Fg(terminu.Lavender).Render(fmt.Sprint(terminu.PowerlineWidth()))
 	if s.taskOn {
 		text += terminu.Fg(terminu.Overlay0).Render("  ·  ") + terminu.Fg(terminu.Green).Render(fmt.Sprintf("copying %d%%", int(s.task*100)))
 	}
@@ -105,6 +110,8 @@ func (s *showcase) onMsg(msg tea.Msg) tea.Cmd {
 	case logTick:
 		s.panels.appendLog()
 		return tea.Tick(time.Second, func(time.Time) tea.Msg { return logTick{} })
+	case indexTick:
+		return s.inputs.indexStep()
 	case taskTick:
 		s.task += 0.04
 		if s.task >= 1 {

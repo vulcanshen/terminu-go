@@ -1,0 +1,488 @@
+package terminu
+
+import (
+	"strconv"
+	"strings"
+	"unicode"
+
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/rivo/uniseg"
+)
+
+// Textarea is multi-line text (components/input/textarea): it opens writing,
+// with the value there and the cursor at its end; Esc moves to the moving
+// state, where Enter saves.
+type Textarea struct {
+	Title, Glyph string
+	Old          string
+	// Indent is what Tab puts in while writing: "\t" when unset (Rules K8
+	// leaves it to the app).
+	Indent string
+	// Done gets the new text. It is not called when it did not change.
+	Done func(string) tea.Cmd
+}
+
+func (t Textarea) typed() bool { return true }
+
+// Textarea opens a textarea.
+func (a *App) Textarea(t Textarea) tea.Cmd { return t.open(a, nil) }
+
+func (t Textarea) open(a *App, written func()) tea.Cmd {
+	tv := &textareaView{t: t, writing: true, written: written}
+	for _, l := range strings.Split(strings.ReplaceAll(t.Old, "\r\n", "\n"), "\n") {
+		tv.lines = append(tv.lines, graphemes(l))
+	}
+	tv.line = len(tv.lines) - 1
+	tv.col = len(tv.lines[tv.line])
+	return a.open(tv)
+}
+
+func graphemes(s string) []string {
+	var out []string
+	g := uniseg.NewGraphemes(s)
+	for g.Next() {
+		c := g.Str()
+		if len(c) == 1 && (c[0] < 0x20 && c[0] != '\t' || c[0] == 0x7f) {
+			continue // other control characters are dropped
+		}
+		out = append(out, c)
+	}
+	return out
+}
+
+type textareaView struct {
+	t         Textarea
+	lines     [][]string
+	line, col int
+	writing   bool
+	top       int // the first visual row shown
+	visible   int
+	textW     int
+	written   func()
+}
+
+// tabCells is how wide a tab is drawn. TODO(tdp G35): four cells.
+const tabCells = 4
+
+func taWidth(c string) int {
+	if c == "\t" {
+		return tabCells
+	}
+	return Width(c)
+}
+
+func (tv *textareaView) value() string {
+	parts := make([]string, len(tv.lines))
+	for i, l := range tv.lines {
+		parts[i] = strings.Join(l, "")
+	}
+	return strings.Join(parts, "\n")
+}
+
+// vrow is one row on screen: a piece of a line (a line too long folds onto
+// the rows under it; components/input/textarea).
+type vrow struct{ line, start, end int }
+
+func (tv *textareaView) rows(w int) []vrow {
+	var out []vrow
+	for li, l := range tv.lines {
+		start, used := 0, 0
+		for i, c := range l {
+			cw := taWidth(c)
+			if used+cw > w && i > start {
+				out = append(out, vrow{li, start, i})
+				start, used = i, 0
+			}
+			used += cw
+		}
+		// The cursor at the end of a full row goes on a row of its own.
+		if li == tv.line && tv.col == len(l) && used >= w && len(l) > start {
+			out = append(out, vrow{li, start, len(l)})
+			start = len(l)
+		}
+		out = append(out, vrow{li, start, len(l)})
+	}
+	return out
+}
+
+func (tv *textareaView) cursorRow(rows []vrow) int {
+	for i, r := range rows {
+		if r.line == tv.line && tv.col >= r.start && (tv.col < r.end || tv.col == r.end && (i+1 == len(rows) || rows[i+1].line != r.line)) {
+			return i
+		}
+	}
+	return 0
+}
+
+func (tv *textareaView) hint() []KeyHint {
+	if tv.writing {
+		return []KeyHint{{"Esc", "move"}}
+	}
+	return []KeyHint{{"Enter", "save"}, {"i", "write"}, {"Esc", "cancel"}}
+}
+
+func (tv *textareaView) numWidth() int { return len(strconv.Itoa(len(tv.lines))) }
+
+func (tv *textareaView) measure(sw, sh int) (int, int) {
+	w := popupWidth(sw, 0, false)
+	tv.textW = max(w-4-tv.numWidth()-1, 1)
+	// TODO(tdp G35): as tall as the text when it opens, six rows at least.
+	return w, min(max(len(tv.rows(tv.textW)), 6)+4, max(sh-2, 3))
+}
+
+func (tv *textareaView) draw(w, h int, layer Color) []string {
+	inner := w - 2
+	numW := tv.numWidth()
+	tv.textW = max(inner-2-numW-1, 1)
+	rows := tv.rows(tv.textW)
+	n := max(h-4, 1)
+	tv.visible = n
+	cur := tv.cursorRow(rows)
+	tv.top = scrollWindow(tv.top, cur, n, len(rows))
+	body := make([]string, 0, n)
+	style, cursor := Fg(Lavender), Style{Fg: Base, Bg: Lavender}
+	for i := tv.top; i < tv.top+n; i++ {
+		if i >= len(rows) {
+			body = append(body, Repeat(" ", inner))
+			continue
+		}
+		r := rows[i]
+		num := Repeat(" ", numW)
+		if i == 0 || rows[i-1].line != r.line {
+			numStyle := Fg(Overlay0)
+			if r.line == tv.line {
+				numStyle = Fg(Text)
+			}
+			num = numStyle.Render(PadLeft(strconv.Itoa(r.line+1), numW))
+		}
+		var b strings.Builder
+		l := tv.lines[r.line]
+		for k := r.start; k < r.end; k++ {
+			c := l[k]
+			text := c
+			if c == "\t" {
+				text = Repeat(" ", tabCells)
+			}
+			if i == cur && k == tv.col {
+				b.WriteString(cursor.Render(text))
+			} else {
+				b.WriteString(style.Render(text))
+			}
+		}
+		if i == cur && tv.col == r.end && tv.col == len(l) {
+			b.WriteString(cursor.Render(" "))
+		}
+		body = append(body, " "+num+" "+Fit(b.String(), tv.textW)+" ")
+	}
+	scroll := ""
+	if len(rows) > n {
+		scroll = scrollText(true, tv.line+1, 0, len(tv.lines))
+	}
+	return popupBox{color: layer, glyph: tv.t.Glyph, title: Upper(tv.t.Title), hint: tv.hint(), scroll: scroll}.draw(w, body)
+}
+
+func (tv *textareaView) insert(s string) {
+	parts := strings.Split(strings.ReplaceAll(s, "\r\n", "\n"), "\n")
+	l := tv.lines[tv.line]
+	rest := append([]string(nil), l[tv.col:]...)
+	head := append(l[:tv.col:tv.col], graphemes(parts[0])...)
+	if len(parts) == 1 {
+		tv.lines[tv.line] = append(head, rest...)
+		tv.col = len(head)
+		return
+	}
+	newLines := [][]string{head}
+	for _, p := range parts[1 : len(parts)-1] {
+		newLines = append(newLines, graphemes(p))
+	}
+	last := graphemes(parts[len(parts)-1])
+	tv.col = len(last)
+	newLines = append(newLines, append(last, rest...))
+	tv.lines = append(tv.lines[:tv.line], append(newLines, tv.lines[tv.line+1:]...)...)
+	tv.line += len(parts) - 1
+}
+
+// vertical moves the cursor a row on screen up or down, keeping its place
+// across the row as well as it can.
+func (tv *textareaView) vertical(dir int) {
+	rows := tv.rows(tv.textW)
+	cur := tv.cursorRow(rows)
+	next := cur + dir
+	if next < 0 || next >= len(rows) {
+		return
+	}
+	x := 0
+	for k := rows[cur].start; k < tv.col && k < len(tv.lines[tv.line]); k++ {
+		x += taWidth(tv.lines[tv.line][k])
+	}
+	r := rows[next]
+	tv.line, tv.col = r.line, r.start
+	used := 0
+	for tv.col < r.end && used+taWidth(tv.lines[r.line][tv.col]) <= x {
+		used += taWidth(tv.lines[r.line][tv.col])
+		tv.col++
+	}
+	if !tv.writing {
+		tv.clampMove()
+	}
+}
+
+// clampMove keeps the moving cursor on a character, as vim does.
+func (tv *textareaView) clampMove() {
+	tv.col = min(tv.col, max(len(tv.lines[tv.line])-1, 0))
+}
+
+func (tv *textareaView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
+	if tv.writing {
+		return true, tv.writeKey(key, msg)
+	}
+	return tv.moveKey(a, key)
+}
+
+func (tv *textareaView) writeKey(key string, msg tea.KeyMsg) tea.Cmd {
+	if msg.Paste {
+		tv.insert(string(msg.Runes))
+		return nil
+	}
+	l := tv.lines[tv.line]
+	switch key {
+	case "Esc":
+		tv.writing = false
+		tv.clampMove()
+	case "Enter":
+		tv.insert("\n")
+	case "Tab":
+		tv.insert(cmpOr(tv.t.Indent, "\t"))
+	case "Space":
+		tv.insert(" ")
+	case "←":
+		if tv.col > 0 {
+			tv.col--
+		} else if tv.line > 0 {
+			tv.line--
+			tv.col = len(tv.lines[tv.line])
+		}
+	case "→":
+		if tv.col < len(l) {
+			tv.col++
+		} else if tv.line+1 < len(tv.lines) {
+			tv.line++
+			tv.col = 0
+		}
+	case "↑":
+		tv.vertical(-1)
+	case "↓":
+		tv.vertical(1)
+	case "Home":
+		tv.col = 0
+	case "End":
+		tv.col = len(l)
+	case "Backspace":
+		switch {
+		case tv.col > 0:
+			tv.lines[tv.line] = append(l[:tv.col-1], l[tv.col:]...)
+			tv.col--
+		case tv.line > 0:
+			// At the start of a line it joins the line above.
+			prev := tv.lines[tv.line-1]
+			tv.col = len(prev)
+			tv.lines[tv.line-1] = append(prev, l...)
+			tv.lines = append(tv.lines[:tv.line], tv.lines[tv.line+1:]...)
+			tv.line--
+		}
+	case "Delete":
+		switch {
+		case tv.col < len(l):
+			tv.lines[tv.line] = append(l[:tv.col], l[tv.col+1:]...)
+		case tv.line+1 < len(tv.lines):
+			tv.lines[tv.line] = append(l, tv.lines[tv.line+1]...)
+			tv.lines = append(tv.lines[:tv.line+1], tv.lines[tv.line+2:]...)
+		}
+	default:
+		if msg.Type == tea.KeyRunes && !msg.Alt {
+			tv.insert(string(msg.Runes))
+		}
+	}
+	return nil
+}
+
+// charClass sorts characters for w/b/e as vim does: blanks, word characters,
+// the rest.
+func charClass(c string) int {
+	r := []rune(c)[0]
+	switch {
+	case unicode.IsSpace(r):
+		return 0
+	case unicode.IsLetter(r) || unicode.IsDigit(r) || r == '_':
+		return 1
+	}
+	return 2
+}
+
+// pos is a place in the text; a line's end counts as a blank between lines.
+type pos struct{ line, col int }
+
+func (tv *textareaView) classAt(p pos) int {
+	l := tv.lines[p.line]
+	if p.col >= len(l) {
+		return 0
+	}
+	return charClass(l[p.col])
+}
+
+func (tv *textareaView) nextPos(p pos) (pos, bool) {
+	if p.col < len(tv.lines[p.line]) {
+		return pos{p.line, p.col + 1}, true
+	}
+	if p.line+1 < len(tv.lines) {
+		return pos{p.line + 1, 0}, true
+	}
+	return p, false
+}
+
+func (tv *textareaView) prevPos(p pos) (pos, bool) {
+	if p.col > 0 {
+		return pos{p.line, p.col - 1}, true
+	}
+	if p.line > 0 {
+		return pos{p.line - 1, len(tv.lines[p.line-1])}, true
+	}
+	return p, false
+}
+
+// wordStart is w: the start of the next word.
+func (tv *textareaView) wordStart() {
+	p := pos{tv.line, tv.col}
+	c := tv.classAt(p)
+	ok := true
+	for ok && tv.classAt(p) == c && c != 0 {
+		p, ok = tv.nextPos(p)
+	}
+	for ok && tv.classAt(p) == 0 {
+		p, ok = tv.nextPos(p)
+	}
+	tv.line, tv.col = p.line, p.col
+}
+
+// wordBack is b: the start of this word, or of the one before.
+func (tv *textareaView) wordBack() {
+	p, ok := tv.prevPos(pos{tv.line, tv.col})
+	for ok && tv.classAt(p) == 0 {
+		p, ok = tv.prevPos(p)
+	}
+	c := tv.classAt(p)
+	for ok {
+		q, more := tv.prevPos(p)
+		if !more || tv.classAt(q) != c {
+			break
+		}
+		p = q
+	}
+	tv.line, tv.col = p.line, p.col
+}
+
+// wordEnd is e: the end of this word, or of the next.
+func (tv *textareaView) wordEnd() {
+	p, ok := tv.nextPos(pos{tv.line, tv.col})
+	for ok && tv.classAt(p) == 0 {
+		p, ok = tv.nextPos(p)
+	}
+	c := tv.classAt(p)
+	for ok {
+		q, more := tv.nextPos(p)
+		if !more || tv.classAt(q) != c {
+			break
+		}
+		p = q
+	}
+	tv.line, tv.col = p.line, p.col
+}
+
+func (tv *textareaView) moveKey(a *App, key string) (bool, tea.Cmd) {
+	half := max(tv.visible/2, 1)
+	switch key {
+	case "h", "←":
+		tv.col = max(tv.col-1, 0)
+	case "l", "→":
+		tv.col++
+	case "j", "↓":
+		tv.vertical(1)
+	case "k", "↑":
+		tv.vertical(-1)
+	case "w":
+		tv.wordStart()
+	case "b":
+		tv.wordBack()
+	case "e":
+		tv.wordEnd()
+	case "0", "Home":
+		tv.col = 0
+	case "$", "End":
+		tv.col = len(tv.lines[tv.line])
+	case "d", "PgDn":
+		for range half {
+			tv.vertical(1)
+		}
+	case "u", "PgUp":
+		for range half {
+			tv.vertical(-1)
+		}
+	case "gg":
+		tv.line, tv.col = 0, 0
+	case "G":
+		tv.line, tv.col = len(tv.lines)-1, 0
+	case "i":
+		tv.writing = true
+		return true, nil
+	case "a":
+		tv.writing = true
+		tv.col = min(tv.col+1, len(tv.lines[tv.line]))
+		return true, nil
+	case "o":
+		tv.writing = true
+		tv.col = len(tv.lines[tv.line])
+		tv.insert("\n")
+		return true, nil
+	case "Enter":
+		v := tv.value()
+		if v == tv.t.Old || tv.t.Done == nil {
+			return true, a.closeTop()
+		}
+		return true, tea.Batch(a.closeTop(), then(tv.written, tv.t.Done(v)))
+	case "Esc":
+		if tv.value() == tv.t.Old {
+			return true, a.closeTop()
+		}
+		return true, a.Confirm(Ask{Title: "Discard", Question: "Discard changes to " + tv.t.Title + "?", Verb: "discard"},
+			func() tea.Cmd { return a.closeTop() })
+	case "Space":
+		return true, nil
+	default:
+		return false, nil
+	}
+	tv.clampMove()
+	return true, nil
+}
+
+func (tv *textareaView) surface() string { return tv.t.Title }
+
+func (tv *textareaView) keyRef() []refSection {
+	return []refSection{
+		{rows: []KeyRow{
+			{Key: "Enter", Desc: "save"},
+			{Key: "i", Desc: "write before the cursor"},
+			{Key: "a", Desc: "write after the cursor"},
+			{Key: "o", Desc: "write on a new line below"},
+			{Key: "Esc", Desc: "cancel (asks first when something changed)"},
+		}},
+		{title: "move", rows: []KeyRow{
+			{Key: "h/j/k/l", Desc: "left, down, up, right"},
+			{Key: "w/b/e", Desc: "next word, word before, end of the word"},
+			{Key: "0/$", Desc: "start, end of the line"},
+			{Key: "u/d", Desc: "half a page up, down"},
+			{Key: "gg/G", Desc: "first, last line"},
+		}},
+	}
+}
+
+func (tv *textareaView) typing() bool { return tv.writing }

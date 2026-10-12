@@ -24,10 +24,11 @@ go get github.com/vulcanshen/terminu-go
 Requires Go 1.26 or later. Apps built with it need what terminu design needs from the user's terminal: a
 [Nerd Font](https://www.nerdfonts.com/) and 24-bit colour (truecolor).
 
-Some fonts make an icon take two cells. The library measures this when the app starts; the user can set it instead with
-`<APP>__ICON_WIDTH` (for one app, e.g. `LOCKU__ICON_WIDTH=2`) or `TERMINU__ICON_WIDTH` (shared by every terminu app: set
-once, every app in the family reads it). An app that runs a terminal inside itself sets `TERMINU__ICON_WIDTH` for the
-programs it starts.
+Some fonts make an icon take two cells, and some make the powerline symbols (the ends of the capsules on the frames, the
+arrow at the end of the cursor) take two as well. The library measures both when the app starts; the user can set them
+instead with `<APP>__ICON_WIDTH` and `<APP>__POWERLINE_WIDTH` (for one app, e.g. `LOCKU__ICON_WIDTH=2`) or
+`TERMINU__ICON_WIDTH` and `TERMINU__POWERLINE_WIDTH` (shared by every terminu app: set once, every app in the family reads
+them). An app that runs a terminal inside itself sets both `TERMINU__` variables for the programs it starts.
 
 ## Quick start
 

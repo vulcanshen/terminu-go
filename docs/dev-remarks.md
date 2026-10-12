@@ -26,6 +26,10 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   最後疊 toast。每一層都照開關動畫的那一格畫（`layer.drawFrame`）。
 - **按鍵**（`handleKey`）：開到一半的 popup 不收鍵 → 離開流程裡的第二個 `Ctrl-C` → toast 先收 `Esc` → `Ctrl-C` 進離開流程 → 最上層
   popup → focus 的 panel（輸入態、模式、一般）。`g` 開頭的兩鍵組合（`gg`、`go`）在 app 這一層接起來，body 收到的是 `gg`。
+- **input**：每一種 input 都是一個 `Input`（`TextInput`、`Select`、`DatePicker`…），單獨打開用 `App.Open`（或 `App.Text` 這類捷徑）；
+  表單的欄位用 `Edit` 在打開時做出它的 `Input`，表單打開它時傳一個 `written`，值寫回時表單記成「改過了」（離開前先問）。一般的
+  finder、select、checkbox popup、file-picker 共用 `finder.go` 的骨架（打字列、筆數、分隔線、清單、預覽），各自只換標記、`Enter`
+  與清單的來源。
 - **上色**：自己寫 SGR（`Style.Render`，一律 24-bit），淡化（`Dim`）就是改寫每一列的 SGR。
 
 `proto/c1` 是驗證盲點紀錄 C1 的拋棄式原型，不是 lib 的一部分；lib 寫好後刪掉（go.mod 裡的 lipgloss 只有它在用）。
@@ -40,7 +44,9 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
 - **連上色也不用 lip gloss**：lip gloss v1 的顏色要先設全域的 color profile（`lipgloss.SetColorProfile`），lib 去改它會改到用 lib 的 app；
   `Style.Render` 碰到多列字串還會用自己的寬度補空白。lib 要的只有「這段字用這個顏色」，自己寫 SGR 就夠了，輸出也一定是 24-bit
   （淡化的前提）。app 內容的顏色要用 lip gloss 照用，淡化照樣改得到它的 SGR。
-- **powerline 符號另外量**（盲點紀錄 G28 的暫時做法）：探測時印一個 file icon、一個 powerline 符號各問一次游標位置。
+- **icon 與 powerline 符號各量各的**（盲點紀錄 G28，已定）：兩種寬度各自照「app 的變數 → 家族的變數 → 探測」決定
+  （`<APP>__ICON_WIDTH`／`TERMINU__ICON_WIDTH`、`<APP>__POWERLINE_WIDTH`／`TERMINU__POWERLINE_WIDTH`）；探測時印一個 file icon、
+  一個 powerline 符號，各問一次游標位置。有整列 cursor 的地方，右邊的留白跟箭頭一樣寬（G24，已定）。
 
 ## 已否決，不要重提
 
@@ -51,8 +57,8 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
 
 - **自己開 bubbletea program 的 app 沒有那一層輸出**：只拿零件用、畫面自己管的 app（例：locku 的鎖定畫面），renderer 補的「清到
   行尾」不會被拿掉。要不要把 `screenOutput` 開放出去，等第一個這樣用的 app 再決定。
-- 還沒做的元件：表單、finder／select、textarea、日期時間、color picker、slider、note viewer 的熱鍵與選取模式、PTY、splash、
-  popup 上的 tab。展示場的 Inputs、Dialogs、Terminal 三個畫面還是空的。
+- 還沒做的元件：note viewer 的熱鍵與選取模式、PTY（panel 裡與 terminal popup）、splash、popup 上的 tab。展示場的 Dialogs、
+  Terminal 兩個畫面還是空的。
 
 ## 偏離 tdp
 

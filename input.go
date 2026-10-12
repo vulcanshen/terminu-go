@@ -87,35 +87,66 @@ type lineInput struct {
 	knownW       int
 }
 
+// Input is an input popup to open on its own (App.Open) or from a form's
+// field: TextInput, PasswordInput, NumberInput, Select, Checks, and the rest.
+type Input interface {
+	// open opens it; written, when set, runs when a value is written back.
+	open(a *App, written func()) tea.Cmd
+	// typed reports a popup one types in: a form answers typing on its
+	// field with a note (components/dialog/form).
+	typed() bool
+}
+
+// Open opens an input popup.
+func (a *App) Open(in Input) tea.Cmd { return in.open(a, nil) }
+
 // Text opens a text input popup.
-func (a *App) Text(in TextInput) tea.Cmd {
+func (a *App) Text(in TextInput) tea.Cmd { return in.open(a, nil) }
+
+// Password opens a password input popup.
+func (a *App) Password(in PasswordInput) tea.Cmd { return in.open(a, nil) }
+
+// Number opens a number input popup.
+func (a *App) Number(in NumberInput) tea.Cmd { return in.open(a, nil) }
+
+func (in TextInput) typed() bool     { return true }
+func (in PasswordInput) typed() bool { return true }
+func (in NumberInput) typed() bool   { return true }
+
+// then runs written before what a value's Done returns.
+func then(written func(), cmd tea.Cmd) tea.Cmd {
+	if written != nil {
+		written()
+	}
+	return cmd
+}
+
+func (in TextInput) open(a *App, written func()) tea.Cmd {
 	return a.open(&lineInput{
 		kind: kindText, title: in.Title, glyph: in.Glyph, prompt: in.Prompt, verb: cmpOr(in.Verb, "save"),
 		old: in.Old, hasOld: in.Old != "", maxLen: in.MaxLen, ed: newEditor(""), check: in.Check,
-		done: func(v string, _ bool) tea.Cmd { return run2(in.Done, v) },
+		done: func(v string, _ bool) tea.Cmd { return then(written, run2(in.Done, v)) },
 	})
 }
 
-// Password opens a password input popup.
-func (a *App) Password(in PasswordInput) tea.Cmd {
+func (in PasswordInput) open(a *App, written func()) tea.Cmd {
 	return a.open(&lineInput{
 		kind: kindPassword, title: in.Title, glyph: in.Glyph, prompt: in.Prompt, verb: cmpOr(in.Verb, "save"),
 		hasOld: in.Set, maxLen: in.MaxLen, unlock: in.Unlock, ed: newEditor(""), check: in.Check,
 		done: func(v string, clear bool) tea.Cmd {
 			if in.Done == nil {
-				return nil
+				return then(written, nil)
 			}
-			return in.Done(v, clear)
+			return then(written, in.Done(v, clear))
 		},
 	})
 }
 
-// Number opens a number input popup.
-func (a *App) Number(in NumberInput) tea.Cmd {
+func (in NumberInput) open(a *App, written func()) tea.Cmd {
 	li := &lineInput{
 		kind: kindNumber, title: in.Title, glyph: in.Glyph, prompt: in.Prompt, verb: cmpOr(in.Verb, "save"),
 		old: in.Old, hasOld: in.Old != "", ed: newEditor(""),
-		done: func(v string, _ bool) tea.Cmd { return run2(in.Done, v) },
+		done: func(v string, _ bool) tea.Cmd { return then(written, run2(in.Done, v)) },
 	}
 	li.allow = func(r rune) bool {
 		return r >= '0' && r <= '9' || r == '-' && in.Negative || r == '.' && in.Decimal
@@ -178,8 +209,8 @@ func (li *lineInput) measure(sw, sh int) (int, int) {
 		need := max(content+1, Width(li.prompt)) + 4
 		need = max(need, Width(titleCapsule(li.glyph, Upper(li.title), Base, 1<<20))+4)
 		// The whole hint, with the suggestion's keys: only a typing row here,
-		// so the hint lists every key (Rules M3; the PIN example's 27 cells do
-		// not hold it, G29).
+		// so the hint lists every key (Rules M3) and the box holds all of it
+		// (G29).
 		full := []KeyHint{{"Enter", li.verb}, {"Tab", "edit"}, {"Backspace", "clear"}, {"Esc", "cancel"}}
 		if li.kind == kindPassword || !li.hasOld {
 			full = li.hint()
