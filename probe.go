@@ -18,7 +18,7 @@ func EnvName(app, name string) string {
 	return up(app) + "__" + up(name)
 }
 
-// The variables a family app sets for what runs in its PTY (tdp E2, E5; G28).
+// The variables a family app sets for what runs in its PTY (tdp E2, E5).
 const (
 	FamilyIconWidth      = "TERMINU__ICON_WIDTH"
 	FamilyPowerlineWidth = "TERMINU__POWERLINE_WIDTH"
@@ -35,7 +35,7 @@ type ProbeResult struct {
 }
 
 // Probe finds out, before Bubble Tea takes the terminal, how many cells an icon
-// and a powerline symbol take (tdp E5, G28) and the terminal's 16 colours
+// and a powerline symbol take (tdp E5) and the terminal's 16 colours
 // (components/color, dimming). Each width comes from the app's variable
 // (<APP>__ICON_WIDTH, <APP>__POWERLINE_WIDTH), then the family's
 // (TERMINU__ICON_WIDTH, TERMINU__POWERLINE_WIDTH), then asking the terminal

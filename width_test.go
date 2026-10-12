@@ -141,7 +141,7 @@ func TestE5WidthOrder(t *testing.T) {
 		t.Errorf("app variable first: %+v", r)
 	}
 	if r.PowerlineCells != 2 || r.PowerlineFrom != FamilyPowerlineWidth || PowerlineWidth() != 2 {
-		t.Errorf("powerline has its own variables (G28): %+v", r)
+		t.Errorf("powerline has its own variables (E5): %+v", r)
 	}
 	t.Setenv("SHOWCASE__ICON_WIDTH", "")
 	t.Setenv(FamilyIconWidth, "2")

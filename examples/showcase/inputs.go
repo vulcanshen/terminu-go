@@ -231,7 +231,7 @@ var files = []fakeFile{
 	{"README.md", 2140, "2h", []string{"# showcase", "", "Every component of terminu design, on fake data."}},
 	{"README-zh_TW.md", 2302, "2h", []string{"# showcase", "", "用假資料展示 terminu design 的每一個元件。"}},
 	{"docs/readme-notes.md", 812, "3d", []string{"Notes on the README:", "- keep it short", "- link the CHANGELOG"}},
-	{"docs/coverage.md", 48211, "1d", []string{"# tdp v0.5.0 coverage"}},
+	{"docs/coverage.md", 48211, "1d", []string{"# tdp v0.5.1 coverage"}},
 	{"main.go", 3302, "4h", []string{"package main", "", "import \"fmt\"", "", "func main() {", "\tfmt.Println(\"showcase\")", "}"}},
 	{"inputs.go", 9120, "1m", []string{"package main", "", "// inputsScreen is [I]NPUTS."}},
 	{"panels.go", 11804, "1d", []string{"package main", "", "// panelsScreen is [P]ANELS."}},

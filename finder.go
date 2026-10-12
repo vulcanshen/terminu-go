@@ -406,7 +406,7 @@ func (f *finderView) drawList(w, h int, layer Color) []string {
 }
 
 // drawPreview is the box beside the list: the row under the cursor, titled
-// with its name. TODO(tdp G27): the layer's colour, not dimmed, nothing on
+// with its name: the layer's colour, never dimmed, nothing on
 // its bottom line.
 func (f *finderView) drawPreview(w, h int, layer Color) []string {
 	inner := w - 2

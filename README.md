@@ -43,7 +43,7 @@ go run github.com/vulcanshen/terminu-go/examples/showcase@latest
 
 ## Which terminu design
 
-terminu-go implements **tdp v0.5.0**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
+terminu-go implements **tdp v0.5.1**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
 
 ## Links
 

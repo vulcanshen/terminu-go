@@ -81,11 +81,11 @@ type Failure struct {
 // Panel is a region of a screen with its own cursor and content (Principle
 // "Panel"). It is numbered by its place in its screen, from [1].
 type Panel struct {
-	// Label is the panel's name in its [N] capsule.
+	// Label is the panel's name after its [N]. With tabs it is the first
+	// tab's name: a panel has no other name (layout/panel, tabs).
 	Label string
-	// Tabs are the panel's other tabs, after the label's own (for now the
-	// label is the first tab, G23). Tab is the current one, 0 being the
-	// label's; h/l switch tabs and call OnTab.
+	// Tabs are the panel's other tabs, after the label's own. Tab is the
+	// current one, 0 being the label's; h/l switch tabs and call OnTab.
 	Tabs  []string
 	Tab   int
 	OnTab func(tab int) tea.Cmd
@@ -164,9 +164,20 @@ func (p *Panel) hint() []KeyHint {
 	return out
 }
 
-// capsules are the panel's [N] label and tabs (layout/panel, capsule chain).
+// capsules are the panel's [N] and its tabs (layout/panel, capsule chain):
+// [N] is a part of its own, always filled; of the tabs only the current one
+// is. On the first tab [N] and it meet with a space, no join: "[2] PODS",
+// as a panel without tabs looks.
 func (p *Panel) capsules(n int) []Capsule {
-	caps := []Capsule{{Text: "[" + itoa(n) + "] " + Upper(p.Label), Selected: true}}
+	num := "[" + itoa(n) + "]"
+	if p.Tab == 0 {
+		caps := []Capsule{{Text: num + " " + Upper(p.Label), Selected: true}}
+		for _, t := range p.Tabs {
+			caps = append(caps, Capsule{Text: Upper(t)})
+		}
+		return caps
+	}
+	caps := []Capsule{{Text: num, Selected: true}, {Text: Upper(p.Label)}}
 	for i, t := range p.Tabs {
 		caps = append(caps, Capsule{Text: Upper(t), Selected: p.Tab == i+1})
 	}

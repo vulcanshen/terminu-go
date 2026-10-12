@@ -210,7 +210,7 @@ func (li *lineInput) measure(sw, sh int) (int, int) {
 		need = max(need, Width(titleCapsule(li.glyph, Upper(li.title), Base, 1<<20))+4)
 		// The whole hint, with the suggestion's keys: only a typing row here,
 		// so the hint lists every key (Rules M3) and the box holds all of it
-		// (G29).
+		// (layout/popup, width).
 		full := []KeyHint{{"Enter", li.verb}, {"Tab", "edit"}, {"Backspace", "clear"}, {"Esc", "cancel"}}
 		if li.kind == kindPassword || !li.hasOld {
 			full = li.hint()

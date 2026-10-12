@@ -68,9 +68,9 @@ func shrunk(text string) string {
 // most maxW cells: slanted ends, selected parts filled, joins U+E0B0 where the
 // colour changes and U+E0B1 where it does not. When it does not fit,
 // unselected parts shrink to their first character, then are folded away from
-// the end behind a "…"; the selected ones always stay. How the ends and joins
-// of unselected parts are coloured is G25 (for now: as Powerline, an
-// unselected part's ground taken as Base).
+// the end behind a "…"; the selected ones always stay. The ends and joins are
+// coloured as in Powerline: the left part's ground over the right part's, an
+// unselected part's ground taken as Base (layout/panel, capsule chain).
 func drawChain(caps []Capsule, color Color, maxW int) string {
 	if len(caps) == 0 || maxW <= 0 {
 		return ""

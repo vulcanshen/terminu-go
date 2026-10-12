@@ -424,3 +424,19 @@ func TestL4EveryRowFullWidth(t *testing.T) {
 		}
 	}
 }
+
+func TestPanelTabChain(t *testing.T) {
+	p := &Panel{Label: "Pods", Tabs: []string{"Events", "Yaml"}}
+	got := func() []Capsule { return p.capsules(2) }
+	if c := got(); len(c) != 3 || c[0] != (Capsule{Text: "[2] PODS", Selected: true}) || c[1].Selected || c[2].Selected {
+		t.Errorf("on the first tab [N] and it are one filled part: %+v", c)
+	}
+	p.Tab = 1
+	if c := got(); len(c) != 4 || c[0] != (Capsule{Text: "[2]", Selected: true}) || c[1] != (Capsule{Text: "PODS"}) ||
+		c[2] != (Capsule{Text: "EVENTS", Selected: true}) || c[3].Selected {
+		t.Errorf("on another tab [N] is a part of its own and only that tab is filled: %+v", c)
+	}
+	if c := (&Panel{Label: "Log"}).capsules(3); len(c) != 1 || c[0].Text != "[3] LOG" {
+		t.Errorf("without tabs: %+v", c)
+	}
+}

@@ -1,13 +1,13 @@
-# tdp v0.5.0 coverage
+# tdp v0.5.1 coverage
 
-tdp v0.5.0 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
+tdp v0.5.1 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
 （[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱；還沒寫出來的是預定的。寫好一條就把它變成真的；位置或名稱改了就改這裡。
 - 出處寫法：`K4` 是 `principle/rules-zh_TW.md` 的規則；`P3` 是 `principle/README-zh_TW.md`；`popup §外框` 是
   `components/layout/popup-zh_TW.md` 的那一節，其他元件照檔名（`form`、`finder`…）；`components §大寫` 是 `components/README-zh_TW.md`。
 - `G<n>` 是規範盲點紀錄裡還沒定案的編號（`~/Documents/sideproj/terminu/.local/family-fix/terminu-go/README.md`），定案前照紀錄的
-  「暫時」做。G1–G22 已經補進 tdp v0.4.0，這裡直接寫規範的條文。
+  「暫時」做。G1–G22 已經補進 tdp v0.4.0、G23–G29 補進 v0.5.1，這裡直接寫規範的條文。
 - 「lib」表示由 lib 的登記或 API 保證，不需要展示場的某一個畫面；測試照樣要有。
 
 ## 展示場
@@ -39,7 +39,7 @@ Error / 長訊息）、`Start task`（畫面 chip 列下的進度條）。global
 | P3 | 每個動作依作用對象歸 item / panel / global；整批標記算 panel；只跟另一個 panel 有關的只在那個 panel 的 menu；切換畫面是 global | lib：登記動作時一定要給範圍。P `[1] PODS` 的 `[m]ark`（item）與 `Delete marked`（panel）；畫面切換在 global | `TestP3ScopeRequired`、`TestM2SectionsOrder` |
 | P4 | 介面元素一個意義：顏色、符號、按鍵、框線、版位不兼職；內容的顏色符號歸 app | lib：介面元素的顏色只從 color 的語意表取（見 color） | `TestColorTokensOneMeaning` |
 | P5 | `Space` 固定、`Enter` 概念；panel 熱鍵與領域符號顏色由 app 決定；熱鍵要出現在 menu 用 `[]` 標、不佔 core key、不佔移動字母；元件裡的鍵（表單的 `e`、datetime 的 `t`、textarea 的 `i/a/o`）是元件的一部分 | lib：`Enter` 的動作由 app 登記；熱鍵登記檢查（K1、K12） | `TestK1HotkeyCannotTakeCoreKey`、`TestK12HotkeyCannotTakeMovement` |
-| P6 | 亮的就是 focus：最上層 popup、focus 的 panel、finder 有 focus 的那塊、同鍵兩處指示會觸發的那個、沒 focus 那塊上的 cursor 淡化 | 見 F8、T2、finder §狀態、M9、color §色碼；預覽框：G27 | 各條的測試 |
+| P6 | 亮的就是 focus：最上層 popup、focus 的 panel、finder 有 focus 的那塊、同鍵兩處指示會觸發的那個、沒 focus 那塊上的 cursor 淡化 | 見 F8、T2、finder §狀態、M9、color §色碼；預覽框不在其中、一直不淡化（finder §長相） | 各條的測試 |
 | 術語 Surface | footer、statusbar、tab 列不是 surface，focus 不停在上面 | 任一畫面 `Tab` 只在 panel 之間 | `TestK2TabCyclesPanels` |
 | 術語 輸入態 | 打字列上打的字就是內容；select／picker 的清單、表單本身不是輸入態 | 見 K8 | `TestK8InputState` |
 | 術語 模式 | 一部分鍵換意思、`Esc` 離開；zoom 這類版面切換不是模式 | P `[1] PODS` 的 `[D]rag`；D「Note viewer」的 `v`（visual） | `TestK11Mode*` |
@@ -151,7 +151,7 @@ Error / 長訊息）、`Start task`（畫面 chip 列下的進度條）。global
 | F5 | 錯誤立刻出現（toast 或 popup）、`Esc` 可關、不阻塞 app；有沒有錯誤歷史由 app 決定 | P `[1] PODS` 的 `Fail`；D「Error popup」 | `TestF5ErrorNonBlocking` |
 | F6 | 要不要 confirm 由 app 決定，決定了每次都問；經 picker 明確選的可算已確認 | lib：動作登記「先問」 | `TestF6ConfirmEveryTime` |
 | F6 | `Enter` 接受、`Esc` 取消；confirm 自己的熱鍵要列在 `?`；寫出接受會做的事；不能被誤觸完成 | D「Confirm: y/n」 | `TestConfirmKeys`、`TestConfirmHotkeysInHelp` |
-| F7 | 寬度兩種：內容確定 = 最寬列 + 4、至少放得下標題與 hint、最多 `min(寬 − 2, 120)`；不確定 = `min(寬 − 2, 120)`；水平置中；開著不變；有整列 cursor 的，右邊的留白跟箭頭一樣寬（G24 已定） | 每種 popup；寬 200 的終端機看 120 上限 | `TestF7WidthKnown`、`TestF7WidthUnknown`、`TestF7WidthCap120` |
+| F7 | 寬度兩種：內容確定 = 最寬列 + 4、至少放得下標題與 hint、最多 `min(寬 − 2, 120)`；不確定 = `min(寬 − 2, 120)`；水平置中；開著不變；有整列 cursor 的，右邊的留白跟箭頭一樣寬（powerline 符號寬）；寬度至少 hint + 6（PIN 43 格） | 每種 popup；寬 200 的終端機看 120 上限 | `TestF7WidthKnown`、`TestF7WidthUnknown`、`TestF7WidthCap120` |
 | F7 | 高度打開時定、最高畫面高 − 2，超過捲；loading 期間與使用者操作造成的改變可以變 | D「Menu: long」；I `[/] Find` 打字篩選 | `TestF7HeightFixed`、`TestF7HeightMax` |
 | F7 | loading 時標題後一定有輪轉 icon；只看整個 popup 的內容 | D「Loading popup」 | `TestF7LoadingIcon` |
 | F7 | 垂直置中；toast 的下框在畫面倒數第三列 | 每種 popup；D「Toast」 | `TestF7Position`、`TestToastPosition` |
@@ -184,7 +184,7 @@ Error / 長訊息）、`Start task`（畫面 chip 列下的進度條）。global
 | E3 | 設定與資料的位置：lib 不適用，展示場不存東西 | — | — |
 | E4 | 需要 Nerd Font 與 truecolor（lib 的 README 寫明）；PUA glyph 在程式碼裡寫成 code point | 看 README；掃原始碼找不到 PUA 字元 | `TestE4NoLiteralPUA` |
 | E5 | 量的是游標實際前進幾格；所有量寬度的地方走同一個函式（含疊 popup）；畫到終端機用 bubbletea v1 的 renderer（紀錄 C1） | `SHOWCASE__ICON_WIDTH=2`；`proto/c1/tmux-check.sh` 的作法 | `TestL4EveryRowFullWidth`（icon 兩格）、`TestE5OutputDropsEraseRight`（renderer 補的「清到行尾」拿掉，紀錄 C1） |
-| E5 | icon 與 powerline 符號（U+E0A0–U+E0D7）各量各的（G28 已定）；啟動時 CPR 探測（unix）；順序 `<APP>__ICON_WIDTH` → `TERMINU__ICON_WIDTH` → 探測，powerline 照 `<APP>__POWERLINE_WIDTH` → `TERMINU__POWERLINE_WIDTH` → 探測；Windows 預設一格 | 在 icon 佔兩格的 tmux 裡啟動看 statusbar（寫出兩種寬度） | `TestE5WidthOrder`、`TestE5ProbeCPR` |
+| E5 | icon 與 powerline 符號（U+E0A0–U+E0D7）各量各的；啟動時 CPR 探測（unix）；順序 `<APP>__ICON_WIDTH` → `TERMINU__ICON_WIDTH` → 探測，powerline 照 `<APP>__POWERLINE_WIDTH` → `TERMINU__POWERLINE_WIDTH` → 探測；Windows 預設一格 | 在 icon 佔兩格的 tmux 裡啟動看 statusbar（寫出兩種寬度） | `TestE5WidthOrder`、`TestE5ProbeCPR` |
 | E5 | 有 PTY 的 app 開子程序時設 `TERMINU__ICON_WIDTH`、`TERMINU__POWERLINE_WIDTH`（自己的格數） | T `[1] SHELL` 裡 `echo $TERMINU__ICON_WIDTH $TERMINU__POWERLINE_WIDTH` | `TestE5ChildEnv` |
 | E5 | 疊 popup 不當掉：比畫面寬、高、兩邊都大都切，不 panic | 縮小終端機再開 popup | `TestE5CompositeOversized` |
 | E6 | lib：git tag，沒有 binary；展示場不發布；L4 的畫面測試兩邊都要 | — | `TestL4EveryRowFullWidth` |
@@ -200,7 +200,7 @@ Error / 長訊息）、`Start task`（畫面 chip 列下的進度條）。global
 | color §呈現規則 4 | 警示色不跟層數換色，蓋在底下照 F8 淡化 | D「Confirm: with details」的 Peach 在第 3 層 | `TestWarningColorFixed` |
 | color §呈現規則 6 | 粗體只用在：cursor 上的字、popup 標題、膠囊的字、模式名、標題後的 loading icon | 每種畫面 | `TestBoldOnlyWhereAllowed` |
 | color §色碼 | 每個意義的色碼與用處（Base、Blue、Surface2、層色、Lavender、Green、Yellow、Peach、Red、Overlay0、Text、Subtext1、Surface1） | 每個畫面 | `TestColorTable` |
-| color §色碼 | 畫面不塗底色：沒指定背景的格子留給終端機；Base 只用在色塊上的字、膠囊接縫沒填色的那一邊（G25）、淡化的目標 | 換一個不是 Base 的終端機底色看 | `TestNoBackgroundPainted` |
+| color §色碼 | 畫面不塗底色：沒指定背景的格子留給終端機；Base 只用在色塊上的字、膠囊接縫沒填色的那一邊、淡化的目標 | 換一個不是 Base 的終端機底色看 | `TestNoBackgroundPainted` |
 | color §色碼 | cursor 色塊：popup 層色底、panel Subtext1 底，字 Base 粗體；沒 focus 那塊的 cursor 再淡化一次；放在色塊上的字一律 Base | P 的 cursor；I `[/] Find` 的兩塊 | `TestCursorBlock` |
 | color §淡化 | `dim(c) = c × 0.45 + base × 0.55`，前景背景都算；256 色的 16–255 照標準值；0–15 用終端機的調色盤（啟動時 OSC 4 問，問不到用 xterm 的值） | F8、T2 的畫面；在 tmux 裡改調色盤看 | `TestDimFormula`、`TestDimPaletteFromOSC4`、`TestDimPaletteFallbackXterm` |
 | color §淡化 | 絕不變亮（每通道取小）；一律輸出 24-bit；沒指定前景給 `dim(Text)`；bold、reverse、游標移動、文字不動 | 同上 | `TestDimNeverBrighter`、`TestDimTruecolorOut`、`TestDimDefaultFg` |
@@ -233,14 +233,14 @@ Error / 長訊息）、`Start task`（畫面 chip 列下的進度條）。global
 | 出處 | 規定 | 展示場 | 測試 |
 |---|---|---|---|
 | panel §框 | focus：Blue 粗線 `┏━┓`；失焦：Surface2 細直角線 `┌─┐`；同寬不位移；失焦內容淡化（串流除外） | `Tab` 換 panel | `TestPanelFrameFocus` |
-| panel §框 | 上框左邊 `[N] label` 膠囊緊接框角；`N` 是跳到該 panel 的數字鍵；tab 接在膠囊後（label 與 tab 的關係：G23）；loading icon 放整串膠囊後、前後各空一格 | P `[1] PODS` 的 tab；`Loading` | `TestPanelTitle`、`TestPanelLoadingIconAfterChain` |
+| panel §框 | 上框左邊 `[N] label` 膠囊緊接框角；`N` 是跳到該 panel 的數字鍵；有 tab 時 `[N]` 自己一段、第一個 tab 的名字就是 label，在第一個 tab 時 `[N]` 與它之間一個空格（`[2] PODS`）；loading icon 放整串膠囊後、前後各空一格 | P `[1] PODS` 的 tab；`Loading` | `TestPanelTitle`、`TestPanelTabChain`、`TestPanelLoadingIconAfterChain` |
 | panel §框 | 上框右邊模式名，夾在接頭之間（粗線 `┫ ┣`、細線 `┤ ├`），模式色加粗、大小寫照原樣；盡量一個詞；放不下先截標題；膠囊跟著換模式色 | P `[D]rag`；縮窄 | `TestPanelModeLabel`、`TestPanelModeLabelKeptWhenNarrow` |
 | panel §框 | 下框左邊 hint（每個 panel 都有；focus 在 panel filter 打字列上時不寫）；下框右邊捲動位置 | 每個 panel；P 按 `/` 打字 | `TestPanelHint`、`TestPanelNoHintWhileFiltering` |
 | panel §框 | 框上的字與角之間隔一段線（`┗━ Enter:logs`、`3 of 40 ━┛`、`┫Drag┣━┓`），只有 `[N] label` 膠囊緊接左上角 | 每個 panel | `TestPanelFrameTextSpacing` |
 | panel §框 | hint：這個 panel 自己的鍵（`Enter` 做什麼、常用熱鍵），不寫移動鍵與 footer 已有的 core key；focus 時鍵 Blue 說明 Overlay0、失焦跟著淡化；放不下從尾端整組捨、捲動位置留著 | 每個 panel；縮窄 | `TestPanelHintContent`、`TestPanelHintDrop` |
-| panel §膠囊串 | 兩端斜角 U+E0BA / U+E0B0；選中的填串色、字 Base 粗體；沒選中的不填、字用串色（頭尾與接縫的顏色：G25）；串色：panel 是框線色、popup 是層色、chip 是 Blue；`[N]` 膠囊與目前 tab 都算選中 | P `[1] PODS` 換 tab；D「Popup with tabs」 | `TestCapsuleChain` |
+| panel §膠囊串 | 兩端斜角 U+E0BA / U+E0B0；選中的填串色、字 Base 粗體；沒選中的不填、字用串色；斜角與接縫照 Powerline 上色（前景左段的底、背景右段的底，沒選中的底當 Base）；串色：panel 是框線色、popup 是層色、chip 是 Blue；`[N]` 膠囊與目前 tab 都算選中 | P `[1] PODS` 換 tab；D「Popup with tabs」 | `TestCapsuleChain` |
 | panel §膠囊串 | 接縫：換色 U+E0B0、同色 U+E0B1；字前後不加空白、大寫；放不下先縮沒選中的成第一個字，再從尾端收成 `…`，選中的永遠留著、不撐寬框 | 縮窄 | `TestCapsuleChainShrink` |
-| panel §一般清單 | cursor：Subtext1 底、Base 粗體、佔滿內寬、整列 Base 字；最右邊（右邊的留白，跟箭頭一樣寬，G24 已定）畫 U+E0B0、Subtext1；失焦跟著淡化 | P `[1] PODS` | `TestListCursor`、`TestCursorArrow` |
+| panel §一般清單 | cursor：Subtext1 底、Base 粗體、佔滿內寬、整列 Base 字；右邊的留白（跟箭頭一樣寬）畫 U+E0B0、Subtext1；失焦跟著淡化 | P `[1] PODS` | `TestListCursor`、`TestCursorArrow` |
 | panel §一般清單 | 表頭 Blue 不加粗、大寫、固定不捲；每欄是數字或文字：數字靠右照數值排、文字靠左照文字排；欄間兩格；排序欄位加 U+F160（升）/ U+F161（降）；多欄排序在箭頭前加順位 `(2)` | P `[1] PODS` 的 `Sort by`（Name 升冪、Age 降冪、兩欄） | `TestListHeader`、`TestListSortGlyphs`、`TestListSortNumbers` |
 | panel §一般清單 | 捲動位置：放不下時 `N of M`（框線色），全放得下不寫；沒有 cursor 的寫 `N-M of T` | P `[1] PODS`（40 列）、`[2] LOG` | `TestPanelScrollPosition` |
 | panel §一般清單 | 標記欄：每列最前一格，標記的畫 Green U+F0132，沒標記的空白，欄寬一直保留 | P `[1] PODS` 的 `[m]ark` | `TestListMarkColumn` |
@@ -261,12 +261,12 @@ Error / 長訊息）、`Start task`（畫面 chip 列下的進度條）。global
 |---|---|---|---|
 | popup §外框 | 粗線 `┏━┓`、層色；被蓋在底下照樣是粗線 | 每種 popup | `TestPopupFrame` |
 | popup §外框 | 標題：glyph + 文字做成膠囊，放在 `┏━` 後；兩端圓角 U+E0B6 / U+E0B4；填層色，字 Base 粗體、大寫（名稱與路徑照原樣）；太長從尾端截加 `…` | 每種 popup；D「Popup: long title」 | `TestPopupTitleCapsule`、`TestPopupTitleTruncate` |
-| popup §外框 | 標題後接 tab 照膠囊串畫（標題與 tab 串之間：G26） | D「Popup with tabs」 | `TestPopupTitleTabs` |
+| popup §外框 | 標題後接 tab 照膠囊串畫（跟圓角的標題之間隔一段線） | D「Popup with tabs」 | `TestPopupTitleTabs` |
 | popup §外框 | 標題 glyph：menu U+F0C9、key reference U+F059、confirm U+F0ECC、toast 依種類、terminal U+F018D、input／表單／note 由 app 選 | 每種 popup | `TestPopupTitleGlyph` |
 | popup §外框 | hint 放 `┗━ ` 後；順序 `Enter` → 自己的鍵 → `Tab:…` → `Esc`（terminal 出口鍵第一）；不寫移動鍵（換塊的照寫）；放不下從尾端整組捨；只有打字列的列全部、80 欄放得下 | 每種 popup | `TestPopupHintOrder`、`TestPopupHintDrop` |
 | popup §外框 | 框上的字與角之間隔一段線：`┏━TITLE`、`┗━ Enter:run`、`4 of 12 ━┛` | 每種 popup | `TestPopupFrameTextSpacing` |
 | popup §外框 | 內容上下各留一列、左右離框一格（terminal 上下左右都不留） | D「Menu: long」 | `TestPopupMargins` |
-| popup §外框 | 清單的 cursor 從框貼到框、字照樣離框一格；表單的 focus 色塊從值到框；最右邊一格是 U+E0B0、色塊的顏色；只有整列的 cursor 有箭頭；右邊的留白跟箭頭一樣寬（G24 已定） | Space menu；D「Form」 | `TestPopupCursorCoversPadding`、`TestCursorArrow` |
+| popup §外框 | 清單的 cursor 從框貼到框、字照樣離框一格；表單的 focus 色塊從值到框；右邊的留白是 U+E0B0、色塊的顏色，跟箭頭一樣寬；只有整列的 cursor 有箭頭 | Space menu；D「Form」 | `TestPopupCursorCoversPadding`、`TestCursorArrow` |
 | popup §外框 | 分隔線不接框：橫的左右各留一格、直的不畫進上下留白；Overlay0 | D「Menu: long」；I 的 `Meeting` | `TestPopupSeparator` |
 | popup §寬度 | 兩種寬度（見 F7）；「確定」= 打開那一刻就知道最寬（PIN 一開就 27 格） | I 的 `PIN` | `TestF7WidthKnown` |
 | popup §寬度 | 窄的內容靠左離框一格；toast 文字與 password 解鎖遮罩置中 | D「Confirm」、「Toast」；I 的 `PIN` | `TestPopupNarrowContentAlign` |
@@ -385,7 +385,7 @@ Error / 長訊息）、`Start task`（畫面 chip 列下的進度條）。global
 | textarea §按鍵 | 寫（輸入態、`Enter` 換行、`Tab` 縮排、hint `Esc:move`）／移（`Esc` 進來、`i` `a` `o` 回寫、`Enter` 確定、hint `Enter:save i:write Esc:cancel`）；移裡 `Esc` 關（改過先 confirm）；打開在「寫」、舊值帶入、游標在最後、沒有灰字提議 | 同上（有舊值） | `TestTextarea` |
 | textarea §按鍵 | 寫的編輯鍵加 `↑↓`（照畫出的列）、`←→` 跨行、行首 `Backspace` 合併；移的鍵 `hjkl` `w/b/e` `0/$` `u/d` `gg/G`；移不是模式也不是輸入態（`?` 開 key reference） | 同上 | `TestTextareaWriteKeys`、`TestTextareaMoveKeys` |
 | finder §長相 | 兩塊：打字列（右邊 `符合/總數`）、分隔線、清單；打字列的字跟清單的字對齊；清單的 cursor 從框貼到框 | I `[/] Find` | `TestFinderLayout` |
-| finder §長相 | 一般 finder 一定有預覽（select、checkbox popup 沒有）；兩框合起來一個 popup 寬；寬 ≥ 96 左右並排各一半、不夠上下疊預覽在下；預覽標題是那一筆的名字、不拿 focus、內容 app 定（框的顏色與亮暗：G27） | I `[/] Find`，寬 120 與 80 各看一次 | `TestFinderPreview` |
+| finder §長相 | 一般 finder 一定有預覽（select、checkbox popup 沒有）；兩框合起來一個 popup 寬；寬 ≥ 96 左右並排各一半、不夠上下疊預覽在下；預覽標題是那一筆的名字、不拿 focus、內容 app 定；預覽框用層色、內容不淡化、下框不寫字 | I `[/] Find`，寬 120 與 80 各看一次 | `TestFinderPreview` |
 | finder §長相 | 邊找邊列：標題後 loading icon、一筆都沒到寫 `(indexing…)`；高度打開時定、寬度用上限 | I `[/] Find` 的 `Slow index` | `TestFinderStreaming` |
 | finder §清單的標記 | select 前面 radio glyph、checkbox popup 前面 checkbox glyph；目前的值字 Green；cursor 在目前的值上照 cursor | I 的 `Profile`、`Namespaces` | `TestFinderMarkers` |
 | finder §狀態 | 只有 focus 那塊亮：focus 在打字列時清單 cursor 是層色 cursor 再淡化；focus 在清單時打字列整列灰、沒游標 | I `[/] Find` 按 `Tab` 來回 | `TestFinderFocusBrightness` |

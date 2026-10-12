@@ -268,7 +268,7 @@ func (l *List) Draw(w, h int, focused bool) []string {
 		return append(out, rest...)
 	}
 	arrow := Width(glyphHard)
-	textW := w - 1 - arrow // one cell of padding on the left, the arrow's on the right (G24)
+	textW := w - 1 - arrow // one cell of padding on the left, the arrow's on the right (layout/panel)
 	markW := 0
 	if l.Marks {
 		markW = IconWidth() + 1

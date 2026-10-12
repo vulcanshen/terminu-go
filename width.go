@@ -15,7 +15,7 @@ import (
 // x/ansi cannot know; the lib measures it at startup (Probe).
 var (
 	iconCells      = 1 // a Nerd Font icon
-	powerlineCells = 1 // a powerline symbol: capsule ends, joins, the cursor arrow (G28)
+	powerlineCells = 1 // a powerline symbol: capsule ends, joins, the cursor arrow (tdp E5)
 )
 
 // IconWidth is how many cells a Nerd Font icon takes on this terminal.
@@ -33,7 +33,7 @@ func SetIconWidth(icon, powerline int) {
 func clampCells(n int) int { return min(max(n, 1), 2) }
 
 // isPowerline reports whether r is a powerline symbol (U+E0A0–U+E0D7). Where a
-// terminal draws file icons two cells wide, these often stay one (G28), so
+// terminal draws file icons two cells wide, these often stay one (tdp E5), so
 // they are measured on their own.
 func isPowerline(r rune) bool { return r >= 0xE0A0 && r <= 0xE0D7 }
 

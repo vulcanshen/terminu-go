@@ -107,7 +107,7 @@ func (p popupBox) draw(w int, body []string) []string {
 	room := w - 4 - modeRoom(p.mode)
 	b.title = titleCapsule(p.glyph, p.title, p.color, room)
 	if len(p.tabs) > 0 {
-		// G26: the tabs follow one line segment after the title.
+		// The tabs follow one line segment after the title (layout/popup).
 		left := room - Width(b.title) - 1
 		if left > 2 {
 			b.title += Fg(p.color).Render("━") + drawChain(p.tabs, p.color, left)
