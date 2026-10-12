@@ -29,8 +29,6 @@ type FormField struct {
 	Selected int
 	Multi    bool
 	Checked  []bool
-	// Inline draws the options on one row when they are all short.
-	Inline   bool
 	Disabled func() bool
 	// Check is the whole form's rule for this field (required, depends on
 	// another field, a name taken), run when the form is submitted: what is
@@ -191,9 +189,6 @@ func (fv *formView) hint() []KeyHint {
 // fieldRows is how many rows a field takes.
 func fieldRows(f *FormField) int {
 	n := max(len(f.Options), 1)
-	if f.Inline && len(f.Options) > 0 {
-		n = 1
-	}
 	if f.Stacked {
 		n++
 	}
@@ -236,30 +231,6 @@ func (fv *formView) draw(w, h int, layer Color) []string {
 		}
 		room := cw - indent
 		switch {
-		case len(f.Options) > 0 && f.Inline:
-			// One row; the focus runs from its option to the frame.
-			// TODO(tdp G33): the block covers the options after it.
-			var head, rest []string
-			focus := -1
-			for i := range f.Options {
-				if fv.focus == (formItem{itemField, f, i}) {
-					focus = i
-				}
-				if focus >= 0 {
-					rest = append(rest, ansi.Strip(fv.option(f, i)))
-				} else {
-					head = append(head, fv.option(f, i))
-				}
-			}
-			before := strings.Join(head, "  ")
-			if focus < 0 {
-				rows = append(rows, " "+lead(true)+Fit(before, room)+" ")
-				break
-			}
-			if before != "" {
-				before += "  "
-			}
-			rows = append(rows, " "+lead(true)+before+fv.block(strings.Join(rest, "  "), room+1-Width(before), layer))
 		case len(f.Options) > 0:
 			for i := range f.Options {
 				if fv.focus == (formItem{itemField, f, i}) {

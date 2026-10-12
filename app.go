@@ -55,6 +55,11 @@ type App struct {
 	Global []Action
 	// Status draws the statusbar in w cells (layout/screen); nil for none.
 	Status func(w int) string
+	// HideSecretsInPreview is the user's setting hide_secrets_in_preview,
+	// read from the app's settings file (tdp E3): a file preview shows only
+	// the first line of a private key, and nothing of a file only its owner
+	// may read (components/input/file-picker).
+	HideSecretsInPreview bool
 	// Progress is a long job's progress, 0 to 1, for the bar under the
 	// screen chips; ok false when there is none.
 	Progress func() (frac float64, ok bool)

@@ -62,6 +62,9 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
 - **自己開 bubbletea program 的 app 沒有那一層輸出**：只拿零件用、畫面自己管的 app（例：locku 的鎖定畫面），renderer 補的「清到
   行尾」不會被拿掉。要不要把 `screenOutput` 開放出去，等第一個這樣用的 app 再決定。
 - 還沒做的元件：splash。
+- **檔案預覽**（`preview.go`，盲點紀錄 G31）：其他種類的檔照紀錄寫的 filu 做法（沒有看 filu 的程式）。語法上色用
+  `alecthomas/chroma/v2`（MIT，catppuccin-mocha，只上前景色）；PDF 用 `dslipak/pdf`（BSD-3，rsc.io/pdf 的分支，能取純文字）；壓縮檔用
+  標準庫（zip、tar、gzip、bzip2）。`hide_secrets_in_preview` 是使用者的設定，app 從自己的設定檔讀，設到 `App.HideSecretsInPreview`。
 - **PTY 只在 unix**：`terminal_other.go` 開不了 PTY，只在畫面上寫出原因。
 
 ## 偏離 tdp

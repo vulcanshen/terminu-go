@@ -1,7 +1,6 @@
 package terminu
 
 import (
-	"fmt"
 	"io/fs"
 	"os"
 	"path"
@@ -96,7 +95,10 @@ func (p FilePicker) open(a *App, written func()) tea.Cmd {
 		fv.wrote()
 		return tea.Batch(a.closeTop(), p.Done(r.path))
 	}
-	fv.preview = func(r finderRow) (string, []string) { return previewFile(r) }
+	fv.preview = func(r finderRow, w, h int) (string, []string) {
+		return filepath.Base(r.path), filePreview(r.path, w, h, a.HideSecretsInPreview, p.Icon)
+	}
+	fv.info = func(r finderRow, w int, layer Color) []string { return fileInfo(r.path, w, layer) }
 	fv.refilter()
 	for k, i := range fv.shown {
 		if fv.green(i, fp.rows[i]) {
@@ -121,7 +123,11 @@ func (fp *filePicker) list(typed string) []finderRow {
 		}
 		dir = expandHome(dir)
 	}
-	key := dir + "\x00" + glob
+	// Hidden files show when the word typed starts with a dot (".ss" finds
+	// .ssh), as a shell glob does.
+	word := typed[strings.LastIndex(typed, "/")+1:]
+	hidden := strings.HasPrefix(word, ".")
+	key := dir + "\x00" + glob + "\x00" + strconv.FormatBool(hidden)
 	if key == fp.key {
 		return fp.rows
 	}
@@ -134,7 +140,7 @@ func (fp *filePicker) list(typed string) []finderRow {
 	case glob != "":
 		fp.rows = fp.search(fp.start, glob)
 	default:
-		fp.rows = fp.readDir(fp.start)
+		fp.rows = fp.readDir(fp.start, hidden)
 	}
 	return fp.rows
 }
@@ -152,10 +158,9 @@ func (fp *filePicker) row(p string, text string, dir bool) finderRow {
 }
 
 // readDir lists a directory: .. first (none at /), then the directories, then
-// the files, each by name, hidden ones too. TODO(tdp G32): the order is the
-// picture's.
-func (fp *filePicker) readDir(dir string) []finderRow {
-	entries, err := os.ReadDir(dir)
+// the files, each by name (components/input/file-picker).
+func (fp *filePicker) readDir(dir string, hidden bool) []finderRow {
+	entries, err := dirEntries(dir, hidden)
 	if err != nil {
 		return nil
 	}
@@ -163,8 +168,30 @@ func (fp *filePicker) readDir(dir string) []finderRow {
 	if dir != "/" {
 		rows = append(rows, fp.row(filepath.Dir(dir), "..", true))
 	}
-	var files []finderRow
 	for _, e := range entries {
+		rows = append(rows, fp.row(e.path, e.name, e.dir))
+	}
+	return rows
+}
+
+type dirEntry struct {
+	name, path string
+	dir        bool
+}
+
+// dirEntries is a directory's entries as lists show them: the directories,
+// then the files, each by name ignoring case; hidden ones (a leading dot)
+// only when asked for.
+func dirEntries(dir string, hidden bool) ([]dirEntry, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+	var out []dirEntry
+	for _, e := range entries {
+		if !hidden && strings.HasPrefix(e.Name(), ".") {
+			continue
+		}
 		p := filepath.Join(dir, e.Name())
 		isDir := e.IsDir()
 		if e.Type()&fs.ModeSymlink != 0 {
@@ -172,13 +199,18 @@ func (fp *filePicker) readDir(dir string) []finderRow {
 				isDir = st.IsDir()
 			}
 		}
-		if isDir {
-			rows = append(rows, fp.row(p, e.Name(), true))
-		} else {
-			files = append(files, fp.row(p, e.Name(), false))
-		}
+		out = append(out, dirEntry{e.Name(), p, isDir})
 	}
-	return append(rows, files...)
+	slices.SortStableFunc(out, func(a, b dirEntry) int {
+		if a.dir != b.dir {
+			if a.dir {
+				return -1
+			}
+			return 1
+		}
+		return strings.Compare(strings.ToLower(a.name), strings.ToLower(b.name))
+	})
+	return out, nil
 }
 
 // searchLimit keeps a ** search from walking a whole disk.
@@ -199,6 +231,10 @@ func (fp *filePicker) search(start, glob string) []finderRow {
 		rel, _ := filepath.Rel(start, p)
 		if rel == "." {
 			return nil
+		}
+		// A hidden directory is gone into only when the glob names it.
+		if d.IsDir() && strings.HasPrefix(d.Name(), ".") && !strings.Contains(glob, "/.") && !strings.HasPrefix(glob, ".") {
+			return filepath.SkipDir
 		}
 		if !strings.Contains(glob, "**") && strings.Count(rel, "/") > strings.Count(glob, "/") {
 			return filepath.SkipDir
@@ -223,10 +259,17 @@ func globMatch(glob, name string) bool {
 					if match(g[1:], n[k:]) {
 						return true
 					}
+					if k < len(n) && strings.HasPrefix(n[k], ".") {
+						return false // ** does not go through hidden directories
+					}
 				}
 				return false
 			}
 			if len(n) == 0 {
+				return false
+			}
+			// As a shell does, * and ? do not match a leading dot.
+			if strings.HasPrefix(n[0], ".") && !strings.HasPrefix(g[0], ".") {
 				return false
 			}
 			if ok, _ := path.Match(g[0], n[0]); !ok {
@@ -237,54 +280,6 @@ func globMatch(glob, name string) bool {
 		return len(n) == 0
 	}
 	return match(g, n)
-}
-
-// previewFile is what the preview shows (components/input/file-picker): a
-// directory's entries, a text file's lines numbered in Overlay0, else its kind
-// and size. TODO(tdp G31): a private key is a text file and shows whole.
-func previewFile(r finderRow) (string, []string) {
-	title := filepath.Base(r.path)
-	if r.dir {
-		entries, err := os.ReadDir(r.path)
-		if err != nil {
-			return title, []string{Fg(Overlay0).Render("(" + err.Error() + ")")}
-		}
-		var out []string
-		for _, e := range entries {
-			name := e.Name()
-			if e.IsDir() {
-				name += "/"
-			}
-			out = append(out, Fg(Text).Render(name))
-		}
-		return title, out
-	}
-	st, err := os.Stat(r.path)
-	if err != nil {
-		return title, []string{Fg(Overlay0).Render("(" + err.Error() + ")")}
-	}
-	f, err := os.Open(r.path)
-	if err != nil {
-		return title, []string{Fg(Overlay0).Render("(" + err.Error() + ")")}
-	}
-	defer f.Close()
-	buf := make([]byte, 16<<10)
-	n, _ := f.Read(buf)
-	buf = buf[:n]
-	if n == 0 || !utf8.Valid(trimPartialRune(buf)) || slices.Contains(buf, 0) {
-		kind := "file"
-		if n > 0 {
-			kind = "binary"
-		}
-		return title, []string{Fg(Overlay0).Render(fmt.Sprintf("(%s, %s)", kind, size(st.Size())))}
-	}
-	lines := strings.Split(strings.TrimRight(string(trimPartialRune(buf)), "\n"), "\n")
-	numW := len(strconv.Itoa(len(lines)))
-	out := make([]string, len(lines))
-	for i, l := range lines {
-		out[i] = Fg(Overlay0).Render(PadLeft(strconv.Itoa(i+1), numW)) + " " + Fg(Text).Render(strings.ReplaceAll(l, "\t", "    "))
-	}
-	return title, out
 }
 
 // trimPartialRune drops a character cut in two at the end of what was read.

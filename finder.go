@@ -1,6 +1,7 @@
 package terminu
 
 import (
+	"path/filepath"
 	"slices"
 	"strconv"
 
@@ -30,7 +31,11 @@ type Finder struct {
 	// Preview is the row under the cursor: a title (its name, or where it
 	// is) and the lines to show.
 	Preview func(FinderItem) (title string, lines []string)
-	Done    func(FinderItem) tea.Cmd
+	// Files says the items are files and directories, their IDs the paths:
+	// the preview shows them as a file-picker does, with their facts under
+	// it (components/input/file-picker), instead of Preview.
+	Files bool
+	Done  func(FinderItem) tea.Cmd
 }
 
 // Select picks one value from a list (components/input/select).
@@ -92,10 +97,14 @@ type finderView struct {
 	rows  func() []finderRow
 	// green says which rows are the value now (select, file-picker) or are
 	// checked (checkbox popup): their text is Green.
-	green   func(i int, r finderRow) bool
-	verb    func(r finderRow) string // Enter's word on the list
-	enter   func(a *App, i int, r finderRow) tea.Cmd
-	preview func(r finderRow) (string, []string)
+	green func(i int, r finderRow) bool
+	verb  func(r finderRow) string // Enter's word on the list
+	enter func(a *App, i int, r finderRow) tea.Cmd
+	// preview is the row under the cursor in w × h: a title and lines.
+	preview func(r finderRow, w, h int) (string, []string)
+	// info, for a preview of files, is the four rows of facts about it
+	// (components/input/file-picker).
+	info    func(r finderRow, w int, layer Color) []string
 	loading func() bool
 	known   bool // the width is known when it opens
 
@@ -131,8 +140,14 @@ func (a *App) Find(f *Finder) tea.Cmd {
 		}
 		return tea.Batch(a.closeTop(), f.Done(r.item))
 	}
-	if f.Preview != nil {
-		fv.preview = func(r finderRow) (string, []string) { return f.Preview(r.item) }
+	switch {
+	case f.Files:
+		fv.preview = func(r finderRow, w, h int) (string, []string) {
+			return filepath.Base(r.item.ID), filePreview(r.item.ID, w, h, a.HideSecretsInPreview, nil)
+		}
+		fv.info = func(r finderRow, w int, layer Color) []string { return fileInfo(r.item.ID, w, layer) }
+	case f.Preview != nil:
+		fv.preview = func(r finderRow, _, _ int) (string, []string) { return f.Preview(r.item) }
 	}
 	return a.open(fv)
 }
@@ -286,23 +301,12 @@ func (f *finderView) hint() []KeyHint {
 	return f.typingHint()
 }
 
-// previewSplit says how the list and the preview share w × h: side by side,
-// half each, when the screen is at least 96 wide; else the preview below
-// (components/input/finder). The list box comes first.
-func previewSplit(sw, w, h int) (side bool, lw, lh int) {
-	if sw >= 96 {
-		return true, (w - 1) / 2, h
-	}
-	// TODO(tdp G30): stacked, the two boxes take half the height each.
-	return false, w, h / 2
-}
-
 func (f *finderView) measure(sw, sh int) (int, int) {
 	most := max(min(sw-2, 120), 1)
 	rows := f.rows()
 	if !f.known {
-		// TODO(tdp G30): a preview's lines differ row by row and are not known
-		// when it opens: the finder takes the most height.
+		// A finder with a preview takes the most height: the preview differs
+		// row by row and the box must not jump (components/input/finder).
 		return most, max(sh-2, 3)
 	}
 	content := 0
@@ -321,18 +325,50 @@ func (f *finderView) draw(w, h int, layer Color) []string {
 	if f.preview == nil {
 		return f.drawList(w, h, layer)
 	}
-	// w is the screen's width − 2 when it is under 120 wide.
-	side, lw, lh := previewSplit(w+2, w, h)
-	list := f.drawList(lw, lh, layer)
-	if !side {
-		return append(list, f.drawPreview(w, h-lh, layer)...)
+	// At 96 wide or more (w is the screen's width − 2 under 120) the list
+	// and the preview sit side by side, the facts under the preview. Below
+	// that the list and the facts share the top half and the preview takes
+	// the bottom, as wide as the popup (components/input/finder; G30).
+	lw := (w - 1) / 2
+	// Each box is cut or padded to its share: on a tiny screen a box would
+	// otherwise take more rows than it has.
+	box := func(lines []string, bw, bh int) []string { return Pad2(lines, bw, bh) }
+	side := func(a, b []string) []string {
+		out := make([]string, len(a))
+		for i := range out {
+			out[i] = a[i] + " " + b[i]
+		}
+		return out
 	}
-	prev := f.drawPreview(w-lw-1, h, layer)
-	out := make([]string, h)
-	for i := range out {
-		out[i] = list[i] + " " + prev[i]
+	if w+2 >= 96 {
+		return side(box(f.drawList(lw, h, layer), lw, h), box(f.drawPreview(w-lw-1, h, layer, f.info != nil), w-lw-1, h))
 	}
-	return out
+	top := h / 2
+	bottom := box(f.drawPreview(w, h-top, layer, false), w, h-top)
+	if f.info == nil {
+		// TODO(tdp G43): without facts the list takes the whole top half.
+		return append(box(f.drawList(w, top, layer), w, top), bottom...)
+	}
+	return append(side(box(f.drawList(lw, top, layer), lw, top), box(f.drawInfo(w-lw-1, top, layer), w-lw-1, top)), bottom...)
+}
+
+// drawInfo is the facts in a box of their own, titled INFO, when the preview
+// is below.
+func (f *finderView) drawInfo(w, h int, layer Color) []string {
+	inner := w - 2
+	var rows []string
+	if _, r, ok := f.at(); ok {
+		rows = f.info(r, inner-2, layer)
+	}
+	body := make([]string, 0, h-4)
+	for i := range max(h-4, 0) {
+		if i < len(rows) {
+			body = append(body, padRow(rows[i], inner))
+		} else {
+			body = append(body, Repeat(" ", inner))
+		}
+	}
+	return popupBox{color: layer, title: "INFO"}.draw(w, body)
 }
 
 // drawList is the finder's own box: the typing row and its count, a
@@ -405,24 +441,43 @@ func (f *finderView) drawList(w, h int, layer Color) []string {
 	return popupBox{color: layer, glyph: f.glyph, title: f.title(w - 6), hint: f.hint(), scroll: scroll, loading: loading}.draw(w, body)
 }
 
-// drawPreview is the box beside the list: the row under the cursor, titled
-// with its name: the layer's colour, never dimmed, nothing on
-// its bottom line.
-func (f *finderView) drawPreview(w, h int, layer Color) []string {
+// drawPreview is the box beside or under the list: the row under the cursor,
+// titled with its name; the layer's colour, never dimmed, nothing on its
+// bottom line. withInfo puts a separator and the facts under the preview.
+func (f *finderView) drawPreview(w, h int, layer Color, withInfo bool) []string {
 	inner := w - 2
-	title, lines := "", []string(nil)
-	if _, r, ok := f.at(); ok {
-		title, lines = f.preview(r)
+	rows := max(h-4, 0)
+	area := rows
+	if withInfo {
+		area = max(rows-5, 0) // a separator and four facts
 	}
-	body := make([]string, 0, h-4)
-	for i := range max(h-4, 0) {
+	title, lines := "", []string(nil)
+	var info []string
+	if _, r, ok := f.at(); ok {
+		title, lines = f.preview(r, inner-2, area)
+		if withInfo {
+			info = f.info(r, inner-2, layer)
+		}
+	}
+	body := make([]string, 0, rows)
+	for i := range area {
 		if i < len(lines) {
 			body = append(body, padRow(lines[i], inner))
 		} else {
 			body = append(body, Repeat(" ", inner))
 		}
 	}
-	return popupBox{color: layer, title: title}.draw(w, body)
+	if withInfo && rows >= 5 {
+		body = append(body, " "+Fg(Overlay0).Render(Repeat("─", inner-2))+" ")
+		for i := range 4 {
+			if i < len(info) {
+				body = append(body, padRow(info[i], inner))
+			} else {
+				body = append(body, Repeat(" ", inner))
+			}
+		}
+	}
+	return popupBox{color: layer, title: title}.draw(w, Pad2(body, inner, rows))
 }
 
 func cmpColor(c, def Color) Color {

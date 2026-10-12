@@ -85,6 +85,15 @@ func newShowcase() *showcase {
 			Do: func() tea.Cmd { a.ForceNarrow = !a.ForceNarrow; return nil }},
 		{Key: "S", Label: "Start task", Desc: "a long job: the bar under the screen chips", Scope: terminu.GlobalScope,
 			Do: s.startTask},
+		{Label: "Hide secrets in preview", Desc: "the setting hide_secrets_in_preview, on or off", Scope: terminu.GlobalScope,
+			Do: func() tea.Cmd {
+				a.HideSecretsInPreview = !a.HideSecretsInPreview
+				state := "off"
+				if a.HideSecretsInPreview {
+					state = "on"
+				}
+				return a.Toast(terminu.Info, "hide_secrets_in_preview is "+state)
+			}},
 	}
 	a.OnMsg = s.onMsg
 	a.Start = func() tea.Cmd { return tea.Tick(time.Second, func(time.Time) tea.Msg { return logTick{} }) }

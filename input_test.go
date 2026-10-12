@@ -597,7 +597,19 @@ func TestColorPickerEnterChannel(t *testing.T) {
 	if _, r, _ := sel.at(); r.text != "2A (42)" {
 		t.Errorf("the select starts on the value: %q", r.text)
 	}
-	ta.press("j", "Enter", "h", "Enter")
+	ta.press("j", "Enter")
+	if got.Set {
+		t.Fatal("choosing R chose the colour")
+	}
+	cv := ta.topView().(*colorView)
+	if cv.focus != 0 {
+		t.Errorf("the focus stays on R, not %d", cv.focus)
+	}
+	ta.press("h") // R wraps back to Choose (new takes no focus)
+	if cv.focus != colorChoose {
+		t.Fatalf("focus %d, want Choose", cv.focus)
+	}
+	ta.press("Enter")
 	if HexText(got) != "#2B2A3C" {
 		t.Errorf("chose %s", HexText(got))
 	}
@@ -614,5 +626,32 @@ func TestSlider(t *testing.T) {
 	}
 	if got := StripStyles(SliderTrack(128, 0, 255, 12, Text)); got != "━━━━━━●━━━━━ 128" {
 		t.Errorf("track %q", got)
+	}
+}
+
+func TestFilePickerHiddenAndOrder(t *testing.T) {
+	dir := t.TempDir()
+	for _, n := range []string{"beta", "Alpha", ".env", "zeta/x", ".ssh/key"} {
+		p := filepath.Join(dir, n)
+		_ = os.MkdirAll(filepath.Dir(p), 0o700)
+		_ = os.WriteFile(p, nil, 0o600)
+	}
+	fp := &filePicker{dir: dir}
+	var names []string
+	for _, r := range fp.list("") {
+		names = append(names, r.text)
+	}
+	if want := []string{"..", "zeta", "Alpha", "beta"}; !slices.Equal(names, want) {
+		t.Errorf("rows %v, want %v (directories first, by name ignoring case, no hidden ones)", names, want)
+	}
+	names = names[:0]
+	for _, r := range fp.list(dir + "/.") {
+		names = append(names, r.text)
+	}
+	if !slices.Contains(names, ".ssh") || !slices.Contains(names, ".env") {
+		t.Errorf("a word starting with a dot lists the hidden ones: %v", names)
+	}
+	if rows := fp.list(dir + "/**/key"); len(rows) != 0 {
+		t.Errorf("** went into a hidden directory: %v", rows)
 	}
 }

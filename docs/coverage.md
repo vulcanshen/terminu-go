@@ -286,7 +286,7 @@ Error / 長訊息）、`Start task`（畫面 chip 列下的進度條）。global
 | form §用途 | 表單上不打字：要打字或選項放不下的欄位 `Enter` 開 input popup；radio、checkbox 畫在表單上原地選 | D「Form: New host」 | `TestFormNoTyping` |
 | form §標題 | 寫表單要做什麼（標題膠囊），不寫型別 | 同上 | — |
 | form §欄位的排法 | 上下式、左右式，可混用；欄位之間、label 與值之間不空行；label、值、錯誤左緣對齊；左右式 label 欄寬取左右式最長的、與值之間兩格 | D「Form: New profile」（混用） | `TestFormLayouts` |
-| form §選項畫在表單上 | 五個以內畫在表單、超過用 select／checkbox popup；預設直排、都很短可橫排 | D「Form」的 `Auth`（直排）、`Order`（橫排） | `TestFormOptionsDrawn` |
+| form §選項畫在表單上 | 五個以內畫在表單、超過用 select／checkbox popup；radio 與 checkbox 組一律直排（G33 已定，規範待發版） | D「Form」的 `Auth`、`Order` | `TestFormOptionsDrawn` |
 | form §focus 與 label | focus 照 menu 的 cursor（層色底 Base 粗體），從項目開頭一直到框（蓋住右邊留白）、最右邊一格是箭頭；按鈕的色塊就是按鈕、沒有箭頭；值空著也一整塊 | 同上 | `TestFormFocusBlock` |
 | form §focus 與 label | label 不因 focus 變色：一般層色、停用 Surface2、值出錯 Red（優先）；停用的留原位；值不跟 label 同色 | D「Form」的 `Credential`（停用）；送出失敗 | `TestFormLabelColors` |
 | form §動作列 | 按鈕：文字左右各一格、一塊底色；沒 focus Surface1 底 Text 字、focus 層色底 Base 粗體；寫要做的事；不用 `[ Save ]`、不用膠囊 | D「Form」 | `TestFormButton` |
@@ -385,7 +385,7 @@ Error / 長訊息）、`Start task`（畫面 chip 列下的進度條）。global
 | textarea §按鍵 | 寫（輸入態、`Enter` 換行、`Tab` 縮排、hint `Esc:move`）／移（`Esc` 進來、`i` `a` `o` 回寫、`Enter` 確定、hint `Enter:save i:write Esc:cancel`）；移裡 `Esc` 關（改過先 confirm）；打開在「寫」、舊值帶入、游標在最後、沒有灰字提議 | 同上（有舊值） | `TestTextarea` |
 | textarea §按鍵 | 寫的編輯鍵加 `↑↓`（照畫出的列）、`←→` 跨行、行首 `Backspace` 合併；移的鍵 `hjkl` `w/b/e` `0/$` `u/d` `gg/G`；移不是模式也不是輸入態（`?` 開 key reference） | 同上 | `TestTextareaWriteKeys`、`TestTextareaMoveKeys` |
 | finder §長相 | 兩塊：打字列（右邊 `符合/總數`）、分隔線、清單；打字列的字跟清單的字對齊；清單的 cursor 從框貼到框 | I `[/] Find` | `TestFinderLayout` |
-| finder §長相 | 一般 finder 一定有預覽（select、checkbox popup 沒有）；兩框合起來一個 popup 寬；寬 ≥ 96 左右並排各一半、不夠上下疊預覽在下；預覽標題是那一筆的名字、不拿 focus、內容 app 定；預覽框用層色、內容不淡化、下框不寫字 | I `[/] Find`，寬 120 與 80 各看一次 | `TestFinderPreview` |
+| finder §長相 | 一般 finder 一定有預覽（select、checkbox popup 沒有）；兩框合起來一個 popup 寬；高度一律取最高（G30 已定）；寬 ≥ 96 左右並排各一半（右框是預覽／分隔線／四列資訊），不夠時上面是清單框與 `INFO` 框各一半、下面是整條寬的預覽框（G30 已定）；預覽標題是那一筆的名字、不拿 focus；預覽檔案或目錄的 finder 照 file-picker 的預覽（G31 已定），其他的內容 app 定；預覽框用層色、內容不淡化、下框不寫字 | I `[/] Find`，寬 120 與 80 各看一次 | `TestFinderPreview`、`TestFinderFileLayout` |
 | finder §長相 | 邊找邊列：標題後 loading icon、一筆都沒到寫 `(indexing…)`；高度打開時定、寬度用上限 | I `[/] Find` 的 `Slow index` | `TestFinderStreaming` |
 | finder §清單的標記 | select 前面 radio glyph、checkbox popup 前面 checkbox glyph；目前的值字 Green；cursor 在目前的值上照 cursor | I 的 `Profile`、`Namespaces` | `TestFinderMarkers` |
 | finder §狀態 | 只有 focus 那塊亮：focus 在打字列時清單 cursor 是層色 cursor 再淡化；focus 在清單時打字列整列灰、沒游標 | I `[/] Find` 按 `Tab` 來回 | `TestFinderFocusBrightness` |
@@ -393,7 +393,7 @@ Error / 長訊息）、`Start task`（畫面 chip 列下的進度條）。global
 | finder §比對 | 包含、不分大小寫、字要連續出現；空白分開的每個詞都要出現、順序不拘；結果保持清單本來的順序（數字照數值、文字照文字）；用在 finder、select、checkbox popup、file-picker 的一般字、panel filter | I `[/] Find` 打 `read`、`READ me`；P filter 打 `run 3d` | `TestMatchContains`、`TestMatchWords`、`TestMatchKeepsOrder` |
 | finder §hint | 打字列 `Enter/Tab:list Esc:cancel`；清單 `Enter:<動詞> Tab:filter Esc:cancel` | 同上 | `TestFinderHint` |
 | select | finder 骨架沒預覽、打字列一直顯示；radio glyph、目前的值 Green；選項可有熱鍵（app）；寬度照選項；打開 focus 在清單、cursor 在目前的值；`Enter` 選定寫回關掉（從表單開的 focus 留原欄）；hint 清單 `Enter:choose Tab:filter Esc:cancel` | I 的 `Profile`（帶數字熱鍵） | `TestSelect` |
-| radio | 五個以內畫在表單或 panel；U+F043E／U+F043D；選中 Green 其他 Text；預設直排、短的可橫排；每個選項一個項目；`Enter` 選、focus 不動、馬上生效 | I 的 `Layout`（直排）、`Order`（橫排） | `TestRadio` |
+| radio | 五個以內畫在表單或 panel；U+F043E／U+F043D；選中 Green 其他 Text；一律直排（G33 已定，規範待發版）；每個選項一個項目；`Enter` 選、focus 不動、馬上生效 | I 的 `Layout`、`Order` | `TestRadio` |
 | checkbox §長相 | U+F0132（勾）／U+F0131；勾的字 Green；popup 是 finder 骨架沒預覽、checkbox glyph、寬度照選項 | I 的 `Notify`（開關）、`Agent`（一組）、`Namespaces`（popup） | `TestCheckbox` |
 | checkbox §按鍵 | 表單或 panel 上 `Enter` 原地翻；popup：打開在清單、`Space` 只改畫面、`Enter` 整組寫回才生效（從表單：寫回並標改過；單獨：這時才套用；沒改就關）、`Esc` 取消不問；hint `Enter:apply Space:toggle Tab:filter Esc:cancel` | I 的 `Namespaces`；D「Form」的 `Namespaces` | `TestCheckboxPopup` |
 | slider | 表單與 panel 上軌道 `━` + `●` + 數字（寬度與顏色 app 定）；`Enter` 開 select（bottom 到 top、每 step 一個，cursor 在目前值，打數字篩選）；沒有自己的鍵；bottom、top、step 必有，step 預設 `(top − bottom) / 10`、可以是小數 | I 的 `Brightness`（0–100）、`Opacity`（0–1，step 0.05） | `TestSlider` |
@@ -401,10 +401,10 @@ Error / 長訊息）、`Start task`（畫面 chip 列下的進度條）。global
 | datetime §日期加時間 | 右邊直分隔線（不接框、左右各空兩格）；時 00–23、分每 5 分、兩欄之間兩格；目前的值 Green；跟日曆一樣高、超出捲；值不在格上停在之前最近的；沒 focus 那塊與時間塊裡沒 focus 那一欄的 cursor 再淡化（整個 picker 只有一個亮的 cursor）；版面固定、寬度確定 | I 的 `Meeting`（值 10:07） | `TestDatetimePickerLayout`、`TestDatetimeOneBrightCursor` |
 | datetime §按鍵 | `Tab`：月 → 年 → 日曆 → 時間 → 月，打開在日曆；月年 `h/l` 換、日曆跟翻（沒那天停最後一天）；日曆 `h/l` 一天 `j/k` 一週、跨月、跳過範圍外、不繞；時間 `j/k` 欄內（繞回，各欄自己繞）、`h/l` 換欄；`Enter` 各塊；`t` 今天（時間到現在、往前取 5 分）；`Esc` 不改；hint 五種 | 同上 | `TestDatetimePicker`、`TestDatetimeTimeWraps`、`TestDatetimeEnter`、`TestDatetimeHint` |
 | datetime §值 | 可設最早最晚；表單與 panel 上格式 app 定，空照空值 | I `[1] INPUTS` | `TestDatePickerRange` |
-| color-picker §長相 | 一列：old、new、R、G、B，五個項目之間兩格；old／new 色塊 8×2 + 名字 + hex；R、G、B 色塊 3×1（畫該色版自己的顏色）+ hex；寬度確定 | I 的 `Background` | `TestColorPickerLayout` |
-| color-picker §按鍵 | 可 focus：new、R、G、B（`h/l`、`j/k` 前後、到頭尾繞回；old 不拿 focus）；打開在 R；focus 那項下面的字照 cursor；R/G/B `Enter` 開 select 00–FF（`2A (42)`、hex 十進位都能篩），回來 new 跟著變、focus 留著；new `Enter` 確定；`Esc` 不改；hint 兩種 | 同上 | `TestColorPickerKeys`、`TestColorPickerChannelSelect` |
+| color-picker §長相 | 一列：old、new、R、G、B，五個項目之間兩格；old／new 色塊 8×2 + 名字 + hex；R、G、B 色塊 3×1（畫該色版自己的顏色）+ hex；下面分隔線與 `Choose` 按鈕（G34 已定）；寬度確定 | I 的 `Background` | `TestColorPickerLayout` |
+| color-picker §按鍵 | 可 focus：R、G、B、`Choose`（`h/l`、`j/k` 前後、到頭尾繞回；old、new 不拿 focus，G34 已定）；打開在 R；focus 的色版下面兩列（名字與 hex）照 cursor、跟色塊一樣寬（G34 已定）；R/G/B `Enter` 開 select 00–FF（`2A (42)`、hex 十進位都能篩），回來 new 跟著變、focus 留著；`Choose` 上 `Enter` 確定；`Esc` 不改；hint 兩種 | 同上 | `TestColorPickerKeys`、`TestColorPickerChannelSelect` |
 | color-picker §值 | 表單與 panel 上一小格色塊 + hex | I `[1] INPUTS` | `TestValueDisplay` |
-| file-picker §長相 | 根目錄 app 給、只是起點，最上面 `..`（`/` 沒有）；目前的目錄寫在標題（欄位名後，太長從前截）；打字列打開是空的；每列前目錄／檔案 icon（顏色 app 定）；原本的值 cursor 停在它、字 Green；預覽：目錄列內容、文字檔內容（行號 Overlay0）、其他寫類型大小 | I 的 `Identity file`（根 `~/.ssh` 的假資料） | `TestFilePickerLayout` |
+| file-picker §長相 | 根目錄 app 給、只是起點，最上面 `..`（`/` 沒有）；目前的目錄寫在標題（欄位名後，太長從前截）；打字列打開是空的；每列前目錄／檔案 icon（顏色 app 定）；原本的值 cursor 停在它、字 Green；`..` → 目錄 → 檔案、照名字不分大小寫，隱藏檔只在打 `.` 開頭時列（G32 已定）；四塊：打字列、清單、預覽、`TYPE` `SIZE` `MODIFIED` `MODE` 四列資訊；預覽：目錄與壓縮檔是三層的樹、圖片是 data URI、PDF 是前幾頁、文字檔上色加行號、其他是十六進位；設定 `hide_secrets_in_preview`（預設關）打開時私鑰只露第一行、只有擁有者能讀的檔一行都不露（G31 已定） | I 的 `Identity file`（假的 `.ssh`）；I `[2] FILES` 的 `[/] Find`（假的專案，每一種檔各一個）；global 的 `Hide secrets in preview` | `TestFilePickerLayout`、`TestFilePickerHiddenAndOrder`、`TestFilePreviewKinds`、`TestFilePreviewHidesSecrets`、`TestFileInfo` |
 | file-picker §按鍵 | 清單 `Enter`：目錄進去（清篩選、cursor 在 `..` 下第一項）、檔案選中寫回關掉；目錄永遠不會被選中 | 同上 | `TestFilePicker` |
 | file-picker §按鍵 | 打字列：一般字照「比對」篩選目前這一層；路徑（`/`、`~/` 開頭）一直留在打字列、以最後一個 `/` 切成目錄與篩選字；目錄不存在或有 `..` 這一段：清單是空的；`*` `?` wildcard（`**` 往下找）、每列寫相對於起點的路徑、標題寫起點、沒有 `..`；hint 三種 | 同上，打 `~/.ss`、`~/.ssh/id_`、`~/nope/x`、`~/../x`、`~/.ssh/**/*.pem` | `TestFilePicker`、`TestFilePickerPathRules`、`TestGlobMatch`、`TestFilePickerHint` |
 

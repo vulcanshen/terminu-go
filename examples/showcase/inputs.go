@@ -114,7 +114,7 @@ func newInputsScreen(s *showcase) *inputsScreen {
 				Done: func(c []bool) tea.Cmd { nsChecked = c; return nil }})
 		}},
 		{Label: "Layout", Options: []string{"row", "column", "grid"}},
-		{Label: "Order", Options: []string{"asc", "desc"}, Inline: true},
+		{Label: "Order", Options: []string{"asc", "desc"}},
 		{Label: "Notify", Options: []string{"notify on errors"}, Multi: true, Checked: []bool{true}},
 		{Label: "Agent", Options: []string{"forward", "X11", "compression"}, Multi: true, Checked: []bool{true, false, true}},
 		{Label: "Brightness", Value: func() string { return terminu.SliderTrack(brightness, 0, 100, 12, terminu.Text) }, Edit: func() tea.Cmd {
@@ -220,39 +220,6 @@ func (is *inputsScreen) stateActions(p *terminu.Panel) []terminu.Action {
 	}
 }
 
-type fakeFile struct {
-	path string
-	size int
-	mod  string
-	text []string
-}
-
-var files = []fakeFile{
-	{"README.md", 2140, "2h", []string{"# showcase", "", "Every component of terminu design, on fake data."}},
-	{"README-zh_TW.md", 2302, "2h", []string{"# showcase", "", "用假資料展示 terminu design 的每一個元件。"}},
-	{"docs/readme-notes.md", 812, "3d", []string{"Notes on the README:", "- keep it short", "- link the CHANGELOG"}},
-	{"docs/coverage.md", 48211, "1d", []string{"# tdp v0.5.1 coverage"}},
-	{"main.go", 3302, "4h", []string{"package main", "", "import \"fmt\"", "", "func main() {", "\tfmt.Println(\"showcase\")", "}"}},
-	{"inputs.go", 9120, "1m", []string{"package main", "", "// inputsScreen is [I]NPUTS."}},
-	{"panels.go", 11804, "1d", []string{"package main", "", "// panelsScreen is [P]ANELS."}},
-	{"go.mod", 412, "5d", []string{"module github.com/vulcanshen/terminu-go", "", "go 1.26.0"}},
-	{"go.sum", 3921, "5d", []string{"github.com/charmbracelet/bubbletea v1.3.10 h1:…"}},
-	{"assets/images/backgrounds/very-long-directory-name/landscape-2026.png", 1843200, "9d", nil},
-	{"assets/images/icons/folder.svg", 912, "9d", []string{"<svg xmlns=\"http://www.w3.org/2000/svg\">", "</svg>"}},
-	{"assets/fonts/SymbolsNerdFont-Regular.ttf", 2516992, "30d", nil},
-	{"scripts/tmux-shot.sh", 1680, "1d", []string{"#!/bin/sh", "# Runs the showcase in a tmux pane."}},
-	{"LICENSE", 35149, "60d", []string{"GNU GENERAL PUBLIC LICENSE", "Version 3, 29 June 2007"}},
-	{"CHANGELOG.md", 1203, "1d", []string{"# Changelog"}},
-}
-
-func fileRows() []terminu.Row {
-	rows := make([]terminu.Row, len(files))
-	for i, f := range files {
-		rows[i] = terminu.Row{ID: f.path, Cells: []string{f.path, humanSize(f.size), f.mod}, Sort: []string{f.path, fmt.Sprint(f.size), f.mod}}
-	}
-	return rows
-}
-
 func humanSize(n int) string {
 	switch {
 	case n < 1<<10:
@@ -263,33 +230,8 @@ func humanSize(n int) string {
 	return fmt.Sprintf("%d MB", n>>20)
 }
 
-func fileItems() []terminu.FinderItem {
-	items := make([]terminu.FinderItem, len(files))
-	for i, f := range files {
-		items[i] = terminu.FinderItem{ID: f.path, Text: f.path}
-	}
-	return items
-}
-
-func preview(it terminu.FinderItem) (string, []string) {
-	for _, f := range files {
-		if f.path != it.ID {
-			continue
-		}
-		if f.text == nil {
-			return filepath.Base(f.path), []string{terminu.Fg(terminu.Overlay0).Render(fmt.Sprintf("(binary, %s)", humanSize(f.size)))}
-		}
-		out := make([]string, len(f.text))
-		for i, l := range f.text {
-			out[i] = terminu.Fg(terminu.Overlay0).Render(fmt.Sprintf("%2d", i+1)) + " " + strings.ReplaceAll(l, "\t", "    ")
-		}
-		return filepath.Base(f.path), out
-	}
-	return it.Text, nil
-}
-
 func (is *inputsScreen) find() tea.Cmd {
-	return is.s.app.Find(&terminu.Finder{Title: "Search", Glyph: glyphSearch, Verb: "open", Items: fileItems(), Preview: preview,
+	return is.s.app.Find(&terminu.Finder{Title: "Search", Glyph: glyphSearch, Verb: "open", Items: fileItems(), Files: true,
 		Done: func(it terminu.FinderItem) tea.Cmd { return is.s.app.Toast(terminu.Info, "Opened "+it.Text) }})
 }
 
@@ -298,7 +240,7 @@ type indexTick struct{}
 // slowIndex is a finder whose results arrive one by one, the loading icon
 // turning until the last.
 func (is *inputsScreen) slowIndex() tea.Cmd {
-	is.index = &terminu.Finder{Title: "Search", Glyph: glyphSearch, Verb: "open", Loading: true, Preview: preview,
+	is.index = &terminu.Finder{Title: "Search", Glyph: glyphSearch, Verb: "open", Loading: true, Files: true,
 		Done: func(it terminu.FinderItem) tea.Cmd { return is.s.app.Toast(terminu.Info, "Opened "+it.Text) }}
 	is.indexed = 0
 	return tea.Batch(is.s.app.Find(is.index), tea.Tick(time.Second, func(time.Time) tea.Msg { return indexTick{} }))

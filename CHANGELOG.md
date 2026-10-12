@@ -20,4 +20,7 @@ Each release names the version of terminu design (tdp) it implements.
   multi-step menus; confirms with hotkeys of their own; a loading popup grows with its content
 - Terminals: a program in a PTY, in a panel or in a terminal popup, with the exit key, the app's own keys and
   history; its screen is laid out with the same widths as everything else (Unix only)
+- File previews: a directory's or an archive's tree, an image, a PDF's first pages, text in colour, anything else in
+  hex, with the file's type, size, time and mode beside it; `App.HideSecretsInPreview` for the user's
+  `hide_secrets_in_preview`
 - The showcase's Panels, Inputs, Dialogs and Terminal screens
