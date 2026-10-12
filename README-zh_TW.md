@@ -19,7 +19,7 @@ go get github.com/vulcanshen/terminu-go
 ```
 
 需要 Go 1.26 以上。用它做的 app，對使用者終端機的需求跟 terminu design 一樣：[Nerd Font](https://www.nerdfonts.com/) 與
-24-bit 色（truecolor）。
+24-bit 色（truecolor）。終端機元件（在 PTY 裡跑程式）只能在 Unix 上用。
 
 有些字型讓 icon 佔兩格，有些連 powerline 符號（框上膠囊的兩端、cursor 尾端的箭頭）也佔兩格。函式庫在 app 啟動時兩種都自己量；
 使用者也可以直接指定：`<APP>__ICON_WIDTH` 與 `<APP>__POWERLINE_WIDTH`（只給一個 app，例：`LOCKU__ICON_WIDTH=2`），或

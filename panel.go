@@ -149,6 +149,11 @@ func (p *Panel) hint() []KeyHint {
 	if p.typing() {
 		return nil
 	}
+	// TODO(tdp G42): in its PTY the panel's keys go to the program: no hint,
+	// as on a filter's typing row; the footer has the exit key.
+	if t, ok := p.Body.(*Terminal); ok && t.inside {
+		return nil
+	}
 	var out []KeyHint
 	if a := p.enterAction(); a != nil && a.Hint != "" && !a.disabled() {
 		out = append(out, KeyHint{"Enter", a.Hint})
@@ -224,7 +229,8 @@ func (p *Panel) draw(n, w, h int, focused bool) []string {
 	if p.Body != nil {
 		b.scroll = p.Body.Scroll()
 	}
-	if !focused && !p.Stream {
+	_, pty := p.Body.(*Terminal)
+	if !focused && !p.Stream && !pty { // a program's screen is live, like a stream (Rules T2)
 		b.body = DimLines(b.body)
 		b.hintKey = Fg(DimColor(Blue))
 		b.hintWords = DimColor(Overlay0)

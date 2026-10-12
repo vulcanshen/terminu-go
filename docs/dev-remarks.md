@@ -41,6 +41,10 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   user：v2 還不成熟，不為它打破既有狀態、重新造輪；等 v2 的 renderer 與排版能指定寬度函式（或正確處理 icon 佔兩格）時再升。
   輸出那一層盡量寫成換得掉的。
 - **寬度與疊 popup 自己做**：理由見上面「運作方式」。
+- **PTY 的終端模擬器自己寫**（`vt.go`）：PTY 裡的程式被告知 icon 佔幾格（`TERMINU__ICON_WIDTH`），照它排版；模擬器放字的寬度要跟 lib
+  的 `Width` 一樣，畫出來的每一列才會剛好是框裡的寬度。`charmbracelet/x/vt` 的寬度寫死成 `ansi.GraphemeWidth`（icon 一格）、換不了，
+  而且帶進 bubbletea v2 那一套（ultraviolet、x/ansi v0.11）；`hinshun/vt10x` 每個字都當一格，連中文都不對。開 PTY 用
+  `creack/pty`（MIT，有 tag）。模擬器會回答家族 app 啟動時問的事（CPR、DA1、OSC 4 調色盤），在 PTY 裡跑另一個家族 app 也不用等探測逾時。
 - **連上色也不用 lip gloss**：lip gloss v1 的顏色要先設全域的 color profile（`lipgloss.SetColorProfile`），lib 去改它會改到用 lib 的 app；
   `Style.Render` 碰到多列字串還會用自己的寬度補空白。lib 要的只有「這段字用這個顏色」，自己寫 SGR 就夠了，輸出也一定是 24-bit
   （淡化的前提）。app 內容的顏色要用 lip gloss 照用，淡化照樣改得到它的 SGR。
@@ -57,7 +61,8 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
 
 - **自己開 bubbletea program 的 app 沒有那一層輸出**：只拿零件用、畫面自己管的 app（例：locku 的鎖定畫面），renderer 補的「清到
   行尾」不會被拿掉。要不要把 `screenOutput` 開放出去，等第一個這樣用的 app 再決定。
-- 還沒做的元件：PTY（panel 裡與 terminal popup）、splash。展示場的 Terminal 畫面還是空的。
+- 還沒做的元件：splash。
+- **PTY 只在 unix**：`terminal_other.go` 開不了 PTY，只在畫面上寫出原因。
 
 ## 偏離 tdp
 

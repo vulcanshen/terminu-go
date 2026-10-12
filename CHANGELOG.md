@@ -18,4 +18,6 @@ Each release names the version of terminu design (tdp) it implements.
   `TERMINU__POWERLINE_WIDTH`
 - Viewers (notes) with tabs, keys of their own and a selection mode; menus whose rows open their full text and
   multi-step menus; confirms with hotkeys of their own; a loading popup grows with its content
-- The showcase's Panels, Inputs and Dialogs screens
+- Terminals: a program in a PTY, in a panel or in a terminal popup, with the exit key, the app's own keys and
+  history; its screen is laid out with the same widths as everything else (Unix only)
+- The showcase's Panels, Inputs, Dialogs and Terminal screens

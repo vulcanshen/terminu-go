@@ -53,6 +53,10 @@ func (l *layer) open() bool { return !l.closing && l.frame >= openFrames }
 
 // place centres the layer on a sw × sh screen.
 func (l *layer) place(sw, sh int) {
+	if v, ok := l.view.(interface{ at(sw, sh int) (int, int) }); ok {
+		l.x, l.y = v.at(sw, sh) // a terminal popup has its own place (Rules F7)
+		return
+	}
 	l.x, l.y = (sw-l.w)/2, (sh-l.h)/2
 }
 

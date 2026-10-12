@@ -156,7 +156,7 @@ Error / 長訊息）、`Start task`（畫面 chip 列下的進度條）。global
 | F7 | loading 時標題後一定有輪轉 icon；只看整個 popup 的內容 | D「Loading popup」 | `TestF7LoadingIcon`、`TestF7LoadingGrows` |
 | F7 | 垂直置中；toast 的下框在畫面倒數第三列 | 每種 popup；D「Toast」 | `TestF7Position`、`TestToastPosition` |
 | F7 | 值可能不合格的 popup 預留一列錯誤列；動作失敗開 error popup | I 的 `Port`；D「Form: save fails」 | `TestF7ErrorRowReserved` |
-| F7 | terminal：寬 `寬 − 2`；上面留 statusbar 或 chip 列（含分隔線）、下面到最後一列蓋掉 footer；上下左右都不留白 | T `[2] SESSIONS` 的 `[Alt-t]erm` | `TestTerminalPopupSize`、`TestTerminalPopupNoPadding` |
+| F7 | terminal：寬 `寬 − 2`；上面留 statusbar 或 chip 列（含分隔線）、下面到最後一列蓋掉 footer；上下左右都不留白 | T `[2] SESSIONS` 的 `[Alt-t]erm` | `TestTerminalPopupSize` |
 | F8 | 最上層以外全部淡化（底下 popup 與 base 畫面），一直只有最上層亮 | D 的三層疊法 | `TestF8DimAllButTop` |
 | F8 | 串流內容與警示色一起淡化；淡化照 color 的算法改每一個顏色、形狀不動 | P `[2] LOG` 上開 popup | `TestF8DimStreamToo`、`TestDimEveryColor` |
 | F8 | 對畫好的畫面淡化一次（失焦 panel 更暗）；toast 不觸發；底下 popup 的框是自己層色的淡化 | 同上 | `TestF8DimOnce`、`TestF8BorderKeepsLayerColor` |
@@ -183,7 +183,7 @@ Error / 長訊息）、`Start task`（畫面 chip 列下的進度條）。global
 | E2 | 變數名 `<APP>__<NAME>`；lib 讀的變數掛在 app 的名字底下；`TERMINU__ICON_WIDTH`、`TERMINU__POWERLINE_WIDTH` 給子程序 | lib 提供變數名的函式；展示場只讀 `SHOWCASE__…` | `TestE2EnvNames` |
 | E3 | 設定與資料的位置：lib 不適用，展示場不存東西 | — | — |
 | E4 | 需要 Nerd Font 與 truecolor（lib 的 README 寫明）；PUA glyph 在程式碼裡寫成 code point | 看 README；掃原始碼找不到 PUA 字元 | `TestE4NoLiteralPUA` |
-| E5 | 量的是游標實際前進幾格；所有量寬度的地方走同一個函式（含疊 popup）；畫到終端機用 bubbletea v1 的 renderer（紀錄 C1） | `SHOWCASE__ICON_WIDTH=2`；`proto/c1/tmux-check.sh` 的作法 | `TestL4EveryRowFullWidth`（icon 兩格）、`TestE5OutputDropsEraseRight`（renderer 補的「清到行尾」拿掉，紀錄 C1） |
+| E5 | 量的是游標實際前進幾格；所有量寬度的地方走同一個函式（含疊 popup）；畫到終端機用 bubbletea v1 的 renderer（紀錄 C1） | `SHOWCASE__ICON_WIDTH=2`；`proto/c1/tmux-check.sh` 的作法 | `TestL4EveryRowFullWidth`（icon 兩格）、`TestE5OutputDropsEraseRight`（renderer 補的「清到行尾」拿掉，紀錄 C1）、`TestVTWideCharacters`（PTY 裡的字也照同一個寬度放） |
 | E5 | icon 與 powerline 符號（U+E0A0–U+E0D7）各量各的；啟動時 CPR 探測（unix）；順序 `<APP>__ICON_WIDTH` → `TERMINU__ICON_WIDTH` → 探測，powerline 照 `<APP>__POWERLINE_WIDTH` → `TERMINU__POWERLINE_WIDTH` → 探測；Windows 預設一格 | 在 icon 佔兩格的 tmux 裡啟動看 statusbar（寫出兩種寬度） | `TestE5WidthOrder`、`TestE5ProbeCPR` |
 | E5 | 有 PTY 的 app 開子程序時設 `TERMINU__ICON_WIDTH`、`TERMINU__POWERLINE_WIDTH`（自己的格數） | T `[1] SHELL` 裡 `echo $TERMINU__ICON_WIDTH $TERMINU__POWERLINE_WIDTH` | `TestE5ChildEnv` |
 | E5 | 疊 popup 不當掉：比畫面寬、高、兩邊都大都切，不 panic | 縮小終端機再開 popup | `TestE5CompositeOversized` |
@@ -221,7 +221,7 @@ Error / 長訊息）、`Start task`（畫面 chip 列下的進度條）。global
 | screen §由上往下 | 最上面一列（多畫面：chip 列 + 全寬分隔線；單畫面：可有 statusbar）、panel 區、最下面一列 footer；每個畫面的 panel 從 `[1]` 編號 | 每個畫面；lib 的單畫面版本由測試畫 | `TestScreenRows` |
 | screen §footer | 一列、M5 寫法、鍵 Blue 冒號說明 Overlay0；放不下從尾端整組捨 | 縮到 40 欄 | `TestFooterDropsWholePairs` |
 | screen §footer | 一般 `Space:menu ?:help Tab/1–N:panels q:quit`；單 panel `Space:menu ?:help q:quit`；模式 `?:help` + 模式的鍵 + `Esc:<動詞>`；filter 打字中 `Enter/Tab:list Esc:clear`；PTY 在 panel 裡：出口鍵 + 保留鍵；popup 開著時照底下畫面的寫、跟著淡化 | P 一般與 Drag；P filter；T `[1] SHELL`；任一 popup；lib 的單 panel 版本 | `TestFooterVariants`、`TestFooterUnderPopupDimmed` |
-| screen §footer | terminal popup 開著時被它蓋掉 | T 的 terminal popup | `TestTerminalPopupCoversFooter` |
+| screen §footer | terminal popup 開著時被它蓋掉 | T 的 terminal popup | `TestTerminalPopupSize` |
 | screen §畫面 chip 列 | 每個畫面一個膠囊、串的顏色 Blue（選中填 Blue 字 Base 粗體、沒選中字 Blue）；放不下先縮 `[P] [I] [D] [T]` 再收掉沒選中的 | 每個畫面；縮窄 | `TestScreenChips`、`TestScreenChipsShrink` |
 | screen §畫面 chip 列 | 右邊放 statusbar；下面全寬粗線 `━` Overlay0；長工作時從左填 Green 進度條、狀態文字 Green；terminal popup 開著時 chip 列與分隔線留著 | `Start task`；開 terminal popup 時再看一次 | `TestChipRowProgress` |
 | screen §statusbar | 不是 surface；label 有熱鍵就標；一般 Overlay0、你在哪 Lavender、進行中 Green、錯誤警告數 Red / Peach；寬度固定、截斷不折行 | statusbar：`icon width`、工作數、錯誤數 | `TestStatusbar` |
@@ -341,9 +341,9 @@ Error / 長訊息）、`Start task`（畫面 chip 列下的進度條）。global
 
 | 出處 | 規定 | 展示場 | 測試 |
 |---|---|---|---|
-| terminal §用途 | PTY 在 panel 裡時不是 popup：panel 的框、鍵寫在 footer | T `[1] SHELL` | `TestPtyInPanel` |
-| terminal §長相 | 大小照 F7 的例外（chip 列與分隔線留著）；沒有 statusbar 的 app 從第一列開始；上下左右都不留白；標題 U+F018D + 跑的是什麼 | T `[2] SESSIONS` 的 `[Alt-t]erm` | `TestTerminalPopupSize`、`TestTerminalPopupNoPadding` |
-| terminal §按鍵 | 按鍵都給子程序；hint 出口鍵第一、最後才捨；`Alt-Esc:exit`（結束）／`Alt-Esc:leave`（留著），不寫 `close`；後面跟保留鍵；`Alt-Esc` 先 confirm | 同上 | `TestTerminalHint`、`TestK10AltEscConfirms` |
+| terminal §用途 | PTY 在 panel 裡時不是 popup：panel 的框、鍵寫在 footer（focus 在 PTY 裡時 panel 的 hint：G42） | T `[1] SHELL` | `TestK10KeysToChild`、`TestK10ExitKeyShown` |
+| terminal §長相 | 大小照 F7 的例外（chip 列與分隔線留著）；沒有 statusbar 的 app 從第一列開始；上下左右都不留白；標題 U+F018D + 跑的是什麼（子程序的游標：G41） | T `[2] SESSIONS` 的 `[Alt-t]erm` | `TestTerminalPopupSize` |
+| terminal §按鍵 | 按鍵都給子程序；hint 出口鍵第一、最後才捨；`Alt-Esc:exit`（結束）／`Alt-Esc:leave`（留著），不寫 `close`；後面跟保留鍵；`Alt-Esc` 先 confirm | 同上 | `TestK10ExitKeyShown`、`TestK10AltEscConfirms`、`TestEncodeKey` |
 
 ## dialog/toast
 

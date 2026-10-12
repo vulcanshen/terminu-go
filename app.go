@@ -163,6 +163,8 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case tea.KeyMsg:
 		cmd = a.handleKey(msg)
+	case termOutput, termExited:
+		cmd, _ = a.terminalMsg(msg)
 	default:
 		if a.OnMsg != nil {
 			cmd = a.OnMsg(msg)
@@ -599,6 +601,11 @@ func (a *App) handleKey(msg tea.KeyMsg) tea.Cmd {
 	if l := a.top(); l != nil && l.frame < openFrames {
 		return nil
 	}
+	// In a PTY every key goes to the program, Esc and Ctrl-C too, but the
+	// exit key and the app's own keys (Rules K10).
+	if t := a.ptyFocus(); t != nil {
+		return t.key(a, key, msg)
+	}
 	// The second Ctrl-C of a quit flow leaves at once (Rules K9).
 	if key == "Ctrl-C" && a.quitting {
 		return tea.Quit
@@ -962,6 +969,9 @@ func (a *App) footerHints() []KeyHint {
 		return []KeyHint{{"q", "quit"}}
 	}
 	p := s.Focused()
+	if t, ok := p.Body.(*Terminal); ok && t.inside {
+		return t.hint() // the exit key and the app's own (components/layout/screen)
+	}
 	switch {
 	case p.typing():
 		return []KeyHint{{"Enter/Tab", "list"}, {"Esc", "clear"}}

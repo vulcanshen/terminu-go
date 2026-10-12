@@ -22,7 +22,8 @@ go get github.com/vulcanshen/terminu-go
 ```
 
 Requires Go 1.26 or later. Apps built with it need what terminu design needs from the user's terminal: a
-[Nerd Font](https://www.nerdfonts.com/) and 24-bit colour (truecolor).
+[Nerd Font](https://www.nerdfonts.com/) and 24-bit colour (truecolor). The terminal component (a program running in a
+PTY) works on Unix only.
 
 Some fonts make an icon take two cells, and some make the powerline symbols (the ends of the capsules on the frames, the
 arrow at the end of the cursor) take two as well. The library measures both when the app starts; the user can set them

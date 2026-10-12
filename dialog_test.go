@@ -31,6 +31,14 @@ func dialogOpeners() map[string]func(*testApp) {
 			ta.Confirm(Ask{Title: "Overwrite", Question: "Overwrite it?", Verb: "overwrite", Keys: []AskKey{{Key: "y", Desc: "overwrite", Accept: true}}}, nil)
 		},
 		"error": func(ta *testApp) { ta.Error("Save failed", strings.Repeat("hosts.yaml changed on disk. ", 12)) },
+		"terminal": func(ta *testApp) {
+			term := &Terminal{Title: "Alterm", Subject: strings.Repeat("myhost", 30), in: &strings.Builder{}, started: true, History: true,
+				Keys: []TerminalKey{{Key: "Alt-t", Desc: "hide"}}}
+			term.mu.Lock()
+			term.vt().write([]byte("中文 wide \U000F024B icons and a line long enough to wrap around the screen\r\n$ "))
+			term.mu.Unlock()
+			ta.open(&termView{t: term, a: ta.App})
+		},
 	}
 }
 

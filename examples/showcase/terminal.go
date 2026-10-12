@@ -1,0 +1,143 @@
+package main
+
+import (
+	"fmt"
+	"time"
+
+	tea "github.com/charmbracelet/bubbletea"
+	terminu "github.com/vulcanshen/terminu-go"
+)
+
+// terminalScreen is [T]ERMINAL: a program in a PTY, placed both ways. [1]
+// SHELL is a PTY in a panel (Enter goes in); [2] SESSIONS opens each session
+// in a terminal popup.
+type terminalScreen struct {
+	s        *showcase
+	screen   *terminu.Screen
+	shell    *terminu.Terminal
+	shellP   *terminu.Panel
+	list     *terminu.List
+	sessions map[string]*terminu.Terminal
+}
+
+type session struct {
+	name, what string
+	command    []string
+}
+
+var sessions = []session{
+	{"shell", "your shell", nil},
+	{"keys", "cat -v: what each key sends to the program", []string{"cat", "-v"}},
+	{"top", "a full-screen program", []string{"top"}},
+	{"vi", "an editor that wants Esc", []string{"vi"}},
+}
+
+// busy is the showcase standing still for a while, so that keys pile up
+// behind it (record C2: two Escs while the app is busy).
+type busy struct{}
+
+func newTerminalScreen(s *showcase) *terminalScreen {
+	ts := &terminalScreen{s: s, sessions: map[string]*terminu.Terminal{}}
+	a := s.app
+	ts.shell = ts.newShell()
+	ts.shellP = &terminu.Panel{Label: "Shell", Body: ts.shell, Actions: []terminu.Action{
+		{Key: "Enter", Label: "Type", Desc: "go into the shell; Alt-Esc comes back out", Scope: terminu.PanelScope, Hint: "type",
+			Do: func() tea.Cmd {
+				ts.shell.Enter()
+				if !ts.shell.Running() {
+					return ts.shell.Start()
+				}
+				return nil
+			}},
+		{Label: "Slow start", Desc: "a shell that takes 3 seconds to connect", Scope: terminu.PanelScope, Do: ts.slowStart},
+	}}
+	ts.list = &terminu.List{Columns: []terminu.Column{{Title: "Session"}, {Title: "Status"}, {Title: "What", Flex: true}}}
+	ts.refresh()
+	open := func() tea.Cmd {
+		r, ok := ts.list.Current()
+		if !ok {
+			return nil
+		}
+		return a.OpenTerminal(ts.session(r.ID))
+	}
+	list := &terminu.Panel{Label: "Sessions", Body: ts.list, Actions: []terminu.Action{
+		{Key: "Enter", Label: "Open", Desc: "the session in a terminal popup", Scope: terminu.ItemScope, Hint: "open", Do: open},
+		{Key: "Alt-t", Label: "Term", Desc: "the same, from anywhere in the list", Scope: terminu.ItemScope, Hint: "term", Do: open},
+	}}
+	ts.screen = &terminu.Screen{Name: "Terminal", Key: "T", Desc: "a terminal in a panel and in a popup",
+		Panels: []*terminu.Panel{ts.shellP, list}, NarrowBelow: 60, Layout: func(w, h int) []terminu.Rect {
+			left := w * 3 / 5
+			return []terminu.Rect{{X: 0, Y: 0, W: left, H: h}, {X: left, Y: 0, W: w - left, H: h}}
+		}}
+	return ts
+}
+
+func (ts *terminalScreen) newShell() *terminu.Terminal {
+	return &terminu.Terminal{Title: "Shell", History: true}
+}
+
+// slowStart is a shell that takes a while to connect: until then only
+// Ctrl-C and the exit key go through (Rules K10).
+func (ts *terminalScreen) slowStart() tea.Cmd {
+	ts.shell.Stop()
+	ready := time.Now().Add(3 * time.Second)
+	ts.shell = &terminu.Terminal{Title: "Shell", Subject: "slow-host", History: true,
+		Command:  []string{"sh", "-c", `echo "connecting to slow-host…"; sleep 3; echo connected; exec "${SHELL:-sh}"`},
+		NotReady: func() bool { return time.Now().Before(ready) }}
+	ts.shellP.Body = ts.shell
+	ts.shell.Enter()
+	return ts.shell.Start()
+}
+
+func (ts *terminalScreen) session(name string) *terminu.Terminal {
+	if t := ts.sessions[name]; t != nil && !t.Exited() {
+		return t
+	}
+	var s session
+	for _, x := range sessions {
+		if x.name == name {
+			s = x
+		}
+	}
+	a := ts.s.app
+	t := &terminu.Terminal{Title: "Session", Subject: s.name, Command: s.command, Ends: true, History: true}
+	t.Keys = []terminu.TerminalKey{
+		{Key: "Alt-t", Desc: "hide", Do: func() tea.Cmd { return t.Hide(a) }},
+		{Key: "Alt-b", Desc: "busy", Do: func() tea.Cmd { return func() tea.Msg { return busy{} } }},
+	}
+	t.OnExit = func(err error) tea.Cmd {
+		ts.refresh()
+		text := s.name + " ended"
+		if err != nil {
+			text += ": " + err.Error()
+		}
+		return a.Toast(terminu.Info, text)
+	}
+	ts.sessions[name] = t
+	defer ts.refresh()
+	return t
+}
+
+func (ts *terminalScreen) refresh() {
+	rows := make([]terminu.Row, len(sessions))
+	for i, s := range sessions {
+		status := terminu.Fg(terminu.Overlay0).Render("not started")
+		if t := ts.sessions[s.name]; t != nil {
+			if t.Exited() {
+				status = terminu.Fg(terminu.Overlay0).Render("ended")
+			} else {
+				status = terminu.Fg(terminu.Green).Render("live")
+			}
+		}
+		rows[i] = terminu.Row{ID: s.name, Cells: []string{s.name, status, s.what}}
+	}
+	ts.list.SetRows(rows)
+}
+
+func (ts *terminalScreen) onMsg(msg tea.Msg) tea.Cmd {
+	if _, ok := msg.(busy); ok {
+		time.Sleep(2 * time.Second) // keys pressed now wait in line
+		return ts.s.app.Toast(terminu.Info, fmt.Sprintf("Was busy for %s", 2*time.Second))
+	}
+	return nil
+}

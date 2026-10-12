@@ -54,6 +54,7 @@ type showcase struct {
 	panels   *panelsScreen
 	inputs   *inputsScreen
 	dialogs  *dialogsScreen
+	terminal *terminalScreen
 	task     float64
 	taskOn   bool
 	started  time.Time
@@ -77,7 +78,8 @@ func newShowcase() *showcase {
 	a.AddScreen(s.inputs.screen)
 	s.dialogs = newDialogsScreen(s)
 	a.AddScreen(s.dialogs.screen)
-	a.AddScreen(placeholder("Terminal", "T", "a terminal in a panel and in a popup"))
+	s.terminal = newTerminalScreen(s)
+	a.AddScreen(s.terminal.screen)
 	a.Global = []terminu.Action{
 		{Label: "Narrow layout", Desc: "draw one panel at a time, as on a narrow terminal", Scope: terminu.GlobalScope,
 			Do: func() tea.Cmd { a.ForceNarrow = !a.ForceNarrow; return nil }},
@@ -116,6 +118,8 @@ func (s *showcase) onMsg(msg tea.Msg) tea.Cmd {
 		return s.inputs.indexStep()
 	case toastLater, loadTick:
 		return s.dialogs.onMsg(msg)
+	case busy:
+		return s.terminal.onMsg(msg)
 	case taskTick:
 		s.task += 0.04
 		if s.task >= 1 {
@@ -125,12 +129,6 @@ func (s *showcase) onMsg(msg tea.Msg) tea.Cmd {
 		return tea.Tick(200*time.Millisecond, func(time.Time) tea.Msg { return taskTick{} })
 	}
 	return nil
-}
-
-// placeholder is a screen not built yet.
-func placeholder(name, key, desc string) *terminu.Screen {
-	p := &terminu.Pager{EmptyFact: name + " is not built yet", EmptyHint: "Press [P] to go back to Panels"}
-	return &terminu.Screen{Name: name, Key: key, Desc: desc, Panels: []*terminu.Panel{{Label: name, Body: p}}}
 }
 
 // The showcase's own title glyphs (an input's glyph is the app's choice).
