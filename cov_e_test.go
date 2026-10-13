@@ -104,7 +104,7 @@ func TestFormNoTyping(t *testing.T) {
 			t.Errorf("the option %q is not drawn on the form:\n%s", opt, strings.Join(plain, "\n"))
 		}
 	}
-	ta.press("gg", "Tab", "Tab", "j", "Enter") // Auth: privatekey
+	ta.press("gg", "j", "j", "j", "Enter") // Auth: privatekey
 	_, plain = covEPopup(ta)
 	if len(ta.stack) != 1 || covERow(plain, glyphRadioOn+" privatekey") < 0 {
 		t.Errorf("an option is chosen on the form, no popup: %d layers", len(ta.stack))
@@ -207,7 +207,7 @@ func TestFormFocusBlock(t *testing.T) {
 	if want := On(layer).Render(Pad("required", arrow-start)) + Fg(layer).Render(glyphHard); !strings.Contains(styled[row], want) {
 		t.Errorf("not one block of the layer colour, Base bold, ending in a layer-colour arrow: %q", styled[row])
 	}
-	ta.press("Tab", "Tab") // Auth: password
+	ta.press("j", "j") // Auth: password
 	styled, plain = covEPopup(ta)
 	row = covERow(plain, "password")
 	if covECol(styled[row], covEBlock(layer)) != covECol(plain[row], glyphRadioOn) || !strings.HasSuffix(plain[row], glyphHard+"┃") {
@@ -305,7 +305,7 @@ func TestFormActionRowFixed(t *testing.T) {
 		return b
 	}
 	b := check("on Name")
-	ta.press("Tab", "Tab", "Tab", "Tab", "Tab") // Command, the last field
+	ta.press("j", "j", "j", "j", "j", "j", "j") // Command, the last field
 	_, plain := covEPopup(ta)
 	if covERow(plain, "Name ") >= 0 && covERow(plain, "Name ") < b-3 {
 		t.Fatalf("the fields did not scroll:\n%s", strings.Join(plain, "\n"))
@@ -351,12 +351,12 @@ func TestFormMoveItems(t *testing.T) {
 		}
 	}
 	for _, k := range []string{"k", "h", "↑", "←"} {
-		ta.press("gg", "Tab", "Tab", k) // from Auth's first option
+		ta.press("gg", "j", "j", k) // from Auth's first option
 		if formStop(fv) != "Port" {
 			t.Errorf("%s on Auth:0 goes to %s, want the item before", k, formStop(fv))
 		}
 	}
-	ta.press("gg", "Tab", "Tab", "j", "j", "j")
+	ta.press("gg", "j", "j", "j", "j", "j")
 	if formStop(fv) != "Agent:0" {
 		t.Errorf("after a field's last option comes the next field: %s", formStop(fv))
 	}
@@ -381,7 +381,6 @@ func TestFormWrap(t *testing.T) {
 	fv := ta.topView().(*formView)
 	for _, c := range []struct{ start, key, want string }{
 		{"G", "j", "Name"}, {"gg", "k", "button"}, {"G", "↓", "Name"}, {"gg", "↑", "button"},
-		{"G", "Tab", "Name"}, {"gg", "Shift-Tab", "button"},
 	} {
 		ta.press(c.start, c.key)
 		if formStop(fv) != c.want {
@@ -429,7 +428,7 @@ func TestFormSkipDisabled(t *testing.T) {
 	ta.settle()
 	fv := ta.topView().(*formView)
 	for _, c := range []struct{ keys, want string }{
-		{"gg j", "Port"}, {"gg Tab", "Port"}, {"G k k", "Name"}, {"G k Shift-Tab", "Name"}, // G k: Port
+		{"gg j", "Port"}, {"G k", "Port"}, {"G k k", "Name"},
 	} {
 		ta.press(strings.Fields(c.keys)...)
 		if formStop(fv) != c.want {
@@ -481,7 +480,7 @@ func TestFormEnterField(t *testing.T) {
 	ta.Form(testForm(r))
 	ta.settle()
 	fv := ta.topView().(*formView)
-	ta.press("Tab", "Enter") // Port
+	ta.press("j", "Enter") // Port
 	if _, ok := ta.topView().(*lineInput); !ok || len(ta.stack) != 2 {
 		t.Fatalf("Enter on Port opens its input popup over the form: %T", ta.topView())
 	}
@@ -529,13 +528,13 @@ func TestFormEnterOption(t *testing.T) {
 	ta.Form(f)
 	ta.settle()
 	fv := ta.topView().(*formView)
-	ta.press("Tab", "Tab", "j", "Enter") // Auth: privatekey
+	ta.press("j", "j", "j", "Enter") // Auth: privatekey
 	_, plain := covEPopup(ta)
 	if auth.Selected != 1 || len(ta.stack) != 1 || formStop(fv) != "Auth:1" ||
 		covERow(plain, glyphRadioOn+" privatekey") < 0 || covERow(plain, glyphRadioOff+" password") < 0 {
 		t.Errorf("Enter on a radio option chooses it at once, no popup, the focus stays: %d, %s", auth.Selected, formStop(fv))
 	}
-	ta.press("Tab", "Enter") // Agent: forward
+	ta.press("j", "j", "Enter") // Agent: forward
 	_, plain = covEPopup(ta)
 	if len(agent.Checked) == 0 || !agent.Checked[0] || len(ta.stack) != 1 || formStop(fv) != "Agent:0" ||
 		covERow(plain, glyphMarked+" forward") < 0 {
@@ -565,7 +564,7 @@ func TestFormSubmitOnlyButton(t *testing.T) {
 	ta.Form(testForm(r))
 	ta.settle()
 	fv := ta.topView().(*formView)
-	ta.press("Tab", "Tab", "s", "S", "w", "Space") // on Auth's first option
+	ta.press("j", "j", "s", "S", "w", "Space") // on Auth's first option
 	if r.submitted != 0 || ta.topView() != fv || formStop(fv) != "Auth:0" {
 		t.Errorf("no letter submits the form: submitted %d, focus %s", r.submitted, formStop(fv))
 	}
@@ -617,12 +616,12 @@ func TestFormHint(t *testing.T) {
 	ta.Form(testForm(nil))
 	ta.settle()
 	for _, c := range []struct{ keys, want string }{
-		{"gg", "Enter:edit Esc:cancel"},
-		{"Tab Tab", "Enter:choose Esc:cancel"}, // Auth: password
-		{"Tab", "Enter:toggle Esc:cancel"},     // Agent: forward
-		{"G", "Enter:save Esc:cancel"},
-		{"Enter", "Enter:edit e:error Esc:cancel"}, // Name is required: the focus on Name
-		{"e", "Enter:show e:edit Esc:cancel"},      // the error row
+		{"gg", "Enter:edit Tab:actions Esc:cancel"},
+		{"j j", "Enter:choose Tab:actions Esc:cancel"},         // Auth: password
+		{"j j j", "Enter|Space:toggle Tab:actions Esc:cancel"}, // Agent: forward
+		{"G", "Enter:save Tab:fields Esc:cancel"},
+		{"Enter", "Enter:edit e:error Tab:actions Esc:cancel"}, // Name is required: the focus on Name
+		{"e", "Enter:show e:edit Tab:fields Esc:cancel"},       // the error row
 	} {
 		ta.press(strings.Fields(c.keys)...)
 		if b := covEBottom(ta); !strings.HasPrefix(b, "┗━ "+c.want+" ━") {
@@ -634,7 +633,7 @@ func TestFormHint(t *testing.T) {
 	ta.Form(f)
 	ta.settle()
 	ta.press("G")
-	if b := covEBottom(ta); !strings.HasPrefix(b, "┗━ Enter:connect Esc:cancel ━") {
+	if b := covEBottom(ta); !strings.HasPrefix(b, "┗━ Enter:connect Tab:fields Esc:cancel ━") {
 		t.Errorf("on the button Enter: is its text in lower case: %q", b)
 	}
 }
@@ -671,12 +670,12 @@ func TestFormDirtyFlag(t *testing.T) {
 		t.Errorf("a value changed and changed back is still a change: %q", r.name)
 	}
 	open()
-	ta.press("Tab", "Tab", "j", "Enter") // Auth: privatekey
+	ta.press("j", "j", "j", "Enter") // Auth: privatekey
 	if !asks() {
 		t.Error("choosing a radio option is a change")
 	}
 	open()
-	ta.press("Tab", "Tab", "Tab", "Enter", "Enter") // Agent: on and off again
+	ta.press("j", "j", "j", "j", "j", "Enter", "Enter") // Agent: on and off again
 	if !asks() {
 		t.Error("a checkbox turned on and off is still a change: the flag is never cleared")
 	}
@@ -690,7 +689,7 @@ func TestFormValidation(t *testing.T) {
 	ta.Form(f)
 	ta.settle()
 	fv := ta.topView().(*formView)
-	ta.press("Tab", "Enter", "0", "Enter") // Port 0
+	ta.press("j", "Enter", "0", "Enter") // Port 0
 	if _, ok := ta.topView().(*lineInput); !ok || r.port != "" || !strings.Contains(ta.screenText(), "Port must be 1-65535") {
 		t.Fatalf("a field's own rule stops the value in its input popup: %T, %q", ta.topView(), r.port)
 	}
@@ -732,12 +731,12 @@ func TestFormNoCheckBeforeSubmit(t *testing.T) {
 	if !strings.Contains(styled[covERow(plain, "Name")], Fg(Red).Render("Name")) || covERow(plain, "Name is required") < 0 {
 		t.Error("the error stays until the next submit, the value fixed or not")
 	}
-	ta.press("Tab", "Tab", "j", "j", "Enter", "G", "Enter") // Auth: credential, submit
+	ta.press("j", "j", "j", "j", "Enter", "G", "Enter") // Auth: credential, submit
 	styled, plain = covEPopup(ta)
 	if strings.Contains(styled[covERow(plain, "Name")], Fg(Red).Render("Name")) || covERow(plain, "Command can't be used") < 0 {
 		t.Errorf("the next submit checks again:\n%s", strings.Join(plain, "\n"))
 	}
-	ta.press("gg", "Tab", "Tab", "k", "k", "Enter", "G", "Enter") // Auth: password
+	ta.press("gg", "j", "j", "Enter", "G", "Enter") // Auth: password
 	if r.submitted != 1 {
 		t.Error("with nothing wrong the form is saved")
 	}

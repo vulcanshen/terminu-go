@@ -47,7 +47,7 @@ func newInputsScreen(s *showcase) *inputsScreen {
 	a := s.app
 	var (
 		name, nickname = "assets", ""
-		path           = "/srv/projects/showcase/assets/images/backgrounds/very-long-directory-name/landscape-2026.png"
+		path           = filepath.Join(projectDir, "assets/images/backgrounds/very-long-directory-name")
 		password       = true
 		pin            = ""
 		port, ratio    = "22", "0.5"
@@ -85,9 +85,10 @@ func newInputsScreen(s *showcase) *inputsScreen {
 			return a.Text(terminu.TextInput{Title: "Nickname", Glyph: glyphPerson, Prompt: "A nickname, if you like", Verb: "save",
 				Done: func(v string) tea.Cmd { nickname = v; return nil }})
 		}},
+		// A directory: the file-picker's "choosing a directory", opened at it.
 		{Label: "Path", Path: true, Value: func() string { return path }, Edit: func() tea.Cmd {
-			return a.Text(terminu.TextInput{Title: "Path", Glyph: glyphFolder, Prompt: "Where the background image is", Verb: "save", Old: path,
-				Done: func(v string) tea.Cmd { path = v; return nil }})
+			return a.PickFile(terminu.FilePicker{Title: "Path", Glyph: glyphFolder, Root: path, Value: path, Dirs: true,
+				Done: func(p string) tea.Cmd { path = p; return nil }})
 		}},
 		{Label: "Password", Value: func() string { return dots(password) }, Empty: "not set", Disabled: disabled, Edit: func() tea.Cmd {
 			return a.Password(terminu.PasswordInput{Title: "Password", Glyph: glyphKey, Prompt: "The password for web-01", Verb: "save", Set: password,
@@ -146,9 +147,10 @@ func newInputsScreen(s *showcase) *inputsScreen {
 				Done: func(p string) tea.Cmd { identity = p; return nil }})
 		}},
 		{Label: "Remote", Value: func() string { return "" }, Empty: "ssh decides", Disabled: disabled},
+		// Under the home directory, which shows as ~.
 		{Label: "Download to", Path: true, Value: func() string { return downloads }, Edit: func() tea.Cmd {
-			return a.Text(terminu.TextInput{Title: "Download to", Glyph: glyphFolder, Prompt: "Where downloads go (the home directory shows as ~)",
-				Verb: "save", Old: downloads, Done: func(v string) tea.Cmd { downloads = v; return nil }})
+			return a.PickFile(terminu.FilePicker{Title: "Download to", Glyph: glyphFolder, Root: downloads, Value: downloads, Dirs: true,
+				Done: func(p string) tea.Cmd { downloads = p; return nil }})
 		}},
 		{Label: "Host", Value: func() string { return host }, Edit: func() tea.Cmd {
 			return a.Find(&terminu.Finder{Title: "Host", Glyph: glyphLan, Verb: "choose", Items: hostItems(), Preview: hostPreview,

@@ -100,7 +100,7 @@ func (ds *dialogsScreen) scenarios() []scenario {
 			return a.Form(f)
 		}},
 		{"Form: New profile", "form", "stacked and side-by-side fields mixed", ds.profileForm},
-		{"Form: long", "form", "more fields than fit: only the fields scroll", ds.longForm},
+		{"Form: long", "form", "more fields than fit: only the fields scroll; Tab to the button and back", ds.longForm},
 		{"Form: save fails", "form", "the action fails: an error popup over the form", func() tea.Cmd {
 			return a.Form(ds.hostForm(nil, true))
 		}},

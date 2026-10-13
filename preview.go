@@ -451,27 +451,34 @@ func archiveNames(p string) ([]string, error) {
 // fileInfo is the four rows under a preview (components/input/file-picker):
 // TYPE, SIZE, MODIFIED, MODE; labels in the layer colour. TYPE is the
 // preview's kind, the size in 1024s with one decimal (a directory's in items,
-// hidden ones left out), the time local to the minute, the mode as ls -l.
+// hidden ones left out), the time local to the minute, the mode written as
+// ls -l does. A link's size, time and mode are its target's; what cannot be
+// had is —.
 func fileInfo(p string, w int, layer Color) []string {
 	rows := [4][2]string{{"TYPE", ""}, {"SIZE", ""}, {"MODIFIED", ""}, {"MODE", ""}}
 	if lst, err := os.Lstat(p); err == nil {
 		st := lst
-		// TODO(tdp G51): a link's size, time and mode are its target's.
 		if lst.Mode()&fs.ModeSymlink != 0 {
 			target, _ := os.Readlink(p)
 			rows[0][1] = "link → " + target
-			if s, err := os.Stat(p); err == nil {
-				st = s
+			s, err := os.Stat(p)
+			if err != nil {
+				// A broken link: there is no target to tell of.
+				rows[1][1], rows[2][1], rows[3][1] = "—", "—", "—"
+				return infoRows(rows, w, layer)
 			}
+			st = s
 		}
 		switch {
 		case st.IsDir():
 			if rows[0][1] == "" {
 				rows[0][1] = "directory"
 			}
-			// TODO(tdp G51): a directory it cannot read says 0 items.
-			entries, _ := dirEntries(p, false)
-			rows[1][1] = strconv.Itoa(len(entries)) + " items"
+			if entries, err := dirEntries(p, false); err == nil {
+				rows[1][1] = strconv.Itoa(len(entries)) + " items"
+			} else {
+				rows[1][1] = "—" // it cannot be read: not 0 items, which reads as empty
+			}
 		default:
 			if rows[0][1] == "" {
 				head := make([]byte, 4096)
@@ -487,6 +494,10 @@ func fileInfo(p string, w int, layer Color) []string {
 		rows[2][1] = st.ModTime().Format("2006-01-02 15:04")
 		rows[3][1] = st.Mode().String()
 	}
+	return infoRows(rows, w, layer)
+}
+
+func infoRows(rows [4][2]string, w int, layer Color) []string {
 	out := make([]string, len(rows))
 	for i, r := range rows {
 		out[i] = Fit(Fg(layer).Render(Pad(r[0], 8))+"  "+Fg(Text).Render(r[1]), w)

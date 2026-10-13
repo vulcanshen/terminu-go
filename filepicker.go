@@ -14,12 +14,15 @@ import (
 )
 
 const (
-	glyphFolder = "\U000F024B" // nf-md-folder
-	glyphFile   = "\U000F0214" // nf-md-file
+	glyphFolder     = "\U000F024B" // nf-md-folder
+	glyphFile       = "\U000F0214" // nf-md-file
+	glyphFolderMove = "\U000F0252" // nf-md-folder_move: ". (this directory)"
 )
 
 // FilePicker picks a file (components/input/file-picker): a finder over a
-// directory, Enter going into a directory or choosing a file.
+// directory, Enter going into a directory or choosing a file. With Dirs it
+// picks a directory instead: only directories are listed, and Enter on the
+// first row, ". (this directory)", chooses the one listed.
 type FilePicker struct {
 	// Title is the field's name: the title writes the directory after it
 	// ("IDENTITY FILE · ~/.ssh").
@@ -28,10 +31,15 @@ type FilePicker struct {
 	Root string
 	// Value is the file now, if any: the cursor starts on it, in Green.
 	Value string
+	// Dirs picks a directory (components/input/file-picker, choosing a
+	// directory). Open it at the directory now (Root = Value): the cursor
+	// starts on ".", in Green.
+	Dirs bool
 	// Icon is a row's icon and its colour, the app's choice (a file type's
 	// colour); a folder or a file glyph in Text when unset.
 	Icon func(path string, dir bool) (string, Color)
-	// Done gets the chosen file. It is not called when it did not change.
+	// Done gets the chosen file (or directory). It is not called when it did
+	// not change.
 	Done func(path string) tea.Cmd
 }
 
@@ -71,25 +79,42 @@ func (p FilePicker) open(a *App, written func()) tea.Cmd {
 		room -= Width(p.Glyph) + 1 + Width(name) + 3
 		return name + " · " + TruncateLeft(where, max(room, 1))
 	}
-	fv.green = func(_ int, r finderRow) bool { return !r.dir && p.Value != "" && r.path == expandHome(p.Value) }
+	value := ""
+	if p.Value != "" {
+		value = filepath.Clean(expandHome(p.Value))
+	}
+	// The value now is Green: a file, or with Dirs a directory (not ..).
+	fv.green = func(_ int, r finderRow) bool {
+		return value != "" && r.dir == p.Dirs && r.text != ".." && filepath.Clean(r.path) == value
+	}
+	chooses := func(r finderRow) bool { return !r.dir || p.Dirs && r.text == "." }
 	fv.verb = func(r finderRow) string {
-		if r.dir {
-			return "into"
+		if chooses(r) {
+			return "choose"
 		}
-		return "choose"
+		return "into"
+	}
+	if p.Dirs {
+		fv.enterRef = "go into a directory; on . choose the one listed"
 	}
 	fv.enter = func(a *App, _ int, r finderRow) tea.Cmd {
-		if r.dir {
+		if !chooses(r) {
 			fp.dir = r.path
 			fv.ed.set("")
 			fv.onList = true
 			fv.refilter()
-			if len(fv.shown) > 1 && fp.rows[0].text == ".." {
-				fv.cursor = 1 // the first entry under ..
+			// The cursor rests on the first entry under . and .., or on the
+			// first row in a directory with none.
+			fv.cursor = 0
+			for k, i := range fv.shown {
+				if t := fp.rows[i].text; t != "." && t != ".." {
+					fv.cursor = k
+					break
+				}
 			}
 			return nil
 		}
-		if r.path == expandHome(p.Value) || p.Done == nil {
+		if filepath.Clean(r.path) == value || p.Done == nil {
 			return a.closeTop()
 		}
 		fv.wrote()
@@ -142,6 +167,11 @@ func (fp *filePicker) list(typed string) []finderRow {
 	default:
 		fp.rows = fp.readDir(fp.start, hidden)
 	}
+	if fp.p.Dirs {
+		// TODO(tdp G91): a wildcard's results are directories only, with no
+		// "." row.
+		fp.rows = slices.DeleteFunc(fp.rows, func(r finderRow) bool { return !r.dir })
+	}
 	return fp.rows
 }
 
@@ -158,13 +188,21 @@ func (fp *filePicker) row(p string, text string, dir bool) finderRow {
 }
 
 // readDir lists a directory: .. first (none at /), then the directories, then
-// the files, each by name (components/input/file-picker).
+// the files, each by name (components/input/file-picker). Choosing a
+// directory, ". (this directory)" comes before them all.
 func (fp *filePicker) readDir(dir string, hidden bool) []finderRow {
 	entries, err := dirEntries(dir, hidden)
 	if err != nil {
 		return nil
 	}
 	var rows []finderRow
+	if fp.p.Dirs {
+		// TODO(tdp G91): matched as "." alone, so a filter word hides it as
+		// it hides ..
+		here := fp.row(dir, ".", true)
+		here.icon, here.label = glyphFolderMove, ". (this directory)"
+		rows = append(rows, here)
+	}
 	if dir != "/" {
 		rows = append(rows, fp.row(filepath.Dir(dir), "..", true))
 	}

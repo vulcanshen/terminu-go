@@ -346,6 +346,74 @@ func TestFilePicker(t *testing.T) {
 	}
 }
 
+// TestFilePickerDirMode: choosing a directory lists . → .. → directories, no
+// files; Enter on . chooses the directory listed, on another goes into it
+// (components/input/file-picker, choosing a directory).
+func TestFilePickerDirMode(t *testing.T) {
+	dir := fakeTree(t)
+	ta := newTestApp(t)
+	chosen := ""
+	ta.PickFile(FilePicker{Title: "Download to", Root: dir, Value: dir, Dirs: true,
+		Done: func(p string) tea.Cmd { chosen = p; return nil }})
+	ta.settle()
+	fv := ta.topView().(*finderView)
+	names := func() []string {
+		var out []string
+		for _, i := range fv.shown {
+			out = append(out, fv.rows()[i].text)
+		}
+		return out
+	}
+	at := func() string {
+		_, r, _ := fv.at()
+		return r.text
+	}
+	if want := []string{".", "..", "old", "work"}; !slices.Equal(names(), want) {
+		t.Errorf("rows %v, want %v: ., .., the directories, no files", names(), want)
+	}
+	if i, r, _ := fv.at(); r.text != "." || !fv.green(i, r) {
+		t.Errorf("opened at the value, the cursor starts on . in Green: %q", r.text)
+	}
+	if !strings.Contains(ta.screenText(), glyphFolderMove+" . (this directory)") {
+		t.Errorf("the first row is . (this directory) with nf-md-folder_move:\n%s", ta.screenText())
+	}
+	if h := covFHint(ta); !strings.Contains(h, " Enter:choose Tab|/:filter Esc:cancel ") {
+		t.Errorf("on .: %s", h)
+	}
+	ta.press("j")
+	if h := covFHint(ta); !strings.Contains(h, " Enter:into Tab|/:filter Esc:cancel ") {
+		t.Errorf("on ..: %s", h)
+	}
+	ta.press("j", "Enter") // into old: only a file in it
+	if !slices.Equal(names(), []string{".", ".."}) || at() != "." {
+		t.Errorf("into old: rows %v, cursor on %q", names(), at())
+	}
+	ta.press("j", "Enter") // .. back up
+	if at() != "old" {
+		t.Errorf("going in, the cursor rests on the first entry under ..: %q", at())
+	}
+	ta.press("j", "Enter") // into work
+	if at() != "keys" {
+		t.Errorf("into work: cursor on %q", at())
+	}
+	ta.press("gg", "Enter")
+	if chosen != filepath.Join(dir, "work") || ta.top() != nil {
+		t.Errorf("Enter on . chooses the directory listed and closes: %q, top %T", chosen, ta.topView())
+	}
+	chosen = "unchanged"
+	ta.PickFile(FilePicker{Title: "Download to", Root: dir, Value: dir, Dirs: true,
+		Done: func(p string) tea.Cmd { chosen = p; return nil }})
+	ta.settle()
+	ta.press("?")
+	if !strings.Contains(ta.screenText(), "on . choose the one listed") {
+		t.Errorf("the key reference says what Enter does here:\n%s", ta.screenText())
+	}
+	ta.press("Esc", "Enter")
+	if chosen != "unchanged" || ta.top() != nil {
+		t.Errorf("the same directory again does not call Done: %q", chosen)
+	}
+}
+
 func TestFilePickerPathRules(t *testing.T) {
 	dir := fakeTree(t)
 	fp := &filePicker{p: FilePicker{}, dir: dir}
@@ -387,34 +455,85 @@ func TestGlobMatch(t *testing.T) {
 	}
 }
 
-func TestFormTabStops(t *testing.T) {
+// TestFormTabBlocks: Tab|Shift-Tab go between the field area and the action
+// row, back to the item left; the error row goes with the button
+// (components/dialog/form, Rules K2).
+func TestFormTabBlocks(t *testing.T) {
 	ta := newTestApp(t)
 	ta.Form(testForm(nil))
 	ta.settle()
 	fv := ta.topView().(*formView)
-	var seen []string
-	for range 7 {
-		seen = append(seen, formStop(fv))
-		ta.press("Tab")
+	for _, at := range [][]string{{"gg"}, {"gg", "j", "j", "j"}, {"gg", "j", "j", "j", "j", "j"}, {"G", "k"}} {
+		ta.press(at...)
+		left := formStop(fv)
+		for _, tab := range []string{"Tab", "Shift-Tab"} {
+			ta.press(tab)
+			if formStop(fv) != "button" {
+				t.Errorf("%s on %s goes to %s, want the button", tab, left, formStop(fv))
+			}
+			ta.press(tab)
+			if formStop(fv) != left {
+				t.Errorf("%s on the button goes to %s, want %s, the item left", tab, formStop(fv), left)
+			}
+		}
 	}
-	want := []string{"Name", "Port", "Auth:0", "Agent:0", "Profile", "Command", "button"}
-	if !slices.Equal(seen, want) {
-		t.Errorf("Tab stops %v, want %v", seen, want)
+	for _, c := range []struct{ keys, want string }{
+		{"gg j G Tab", "Port"}, // G left the field area at Port
+		{"gg k Tab", "Name"},   // k wrapped from the first field to the button
+	} {
+		ta.press(strings.Fields(c.keys)...)
+		if formStop(fv) != c.want {
+			t.Errorf("%s: %s, want %s", c.keys, formStop(fv), c.want)
+		}
 	}
-	if formStop(fv) != "Name" {
-		t.Errorf("Tab on the button wraps to the first field, not %s", formStop(fv))
-	}
-	ta.press("Shift-Tab")
+	ta.press("G", "Enter") // Name is required: the focus on Name
+	ta.press("j", "j", "Tab")
 	if formStop(fv) != "button" {
-		t.Errorf("Shift-Tab on the first field goes to the button, not %s", formStop(fv))
+		t.Errorf("Tab is never on the error row: %s", formStop(fv))
 	}
-	ta.press("gg", "j", "j", "j")
-	if formStop(fv) != "Auth:1" {
-		t.Errorf("j steps through the options: %s", formStop(fv))
+	ta.press("k", "Tab")
+	if formStop(fv) != "Auth:0" {
+		t.Errorf("Tab on the error row returns to the item left, as on the button: %s", formStop(fv))
 	}
-	ta.press("Enter", "Tab", "Shift-Tab")
-	if formStop(fv) != "Auth:1" {
-		t.Errorf("Tab lands on the chosen option, not %s", formStop(fv))
+	ta.press("gg", "e", "Tab")
+	if formStop(fv) != "Name" {
+		t.Errorf("e to the error row, Tab back to the field: %s", formStop(fv))
+	}
+}
+
+// TestFormCheckboxSpace: on a checkbox option drawn on a form Space ticks it
+// as Enter does; it does nothing elsewhere on the form (Rules K5).
+func TestFormCheckboxSpace(t *testing.T) {
+	ta := newTestApp(t)
+	f := testForm(nil)
+	auth, agent := f.Fields[2], f.Fields[3]
+	ta.Form(f)
+	ta.settle()
+	fv := ta.topView().(*formView)
+	ta.press("j", "j", "j", "j", "j", "Space") // Agent: forward
+	if len(agent.Checked) == 0 || !agent.Checked[0] || formStop(fv) != "Agent:0" || len(ta.stack) != 1 {
+		t.Fatalf("Space on a checkbox option ticks it in place: %v, %s, %d layers", agent.Checked, formStop(fv), len(ta.stack))
+	}
+	ta.press("Space")
+	if agent.Checked[0] {
+		t.Error("Space again unticks it")
+	}
+	ta.press("k", "Space") // Auth: credential, a radio
+	if auth.Selected != 0 || formStop(fv) != "Auth:2" {
+		t.Errorf("Space on a radio option does nothing: selected %d", auth.Selected)
+	}
+	for _, at := range []string{"gg", "G"} {
+		ta.press(at, "Space")
+		if ta.topView() != fv || len(ta.stack) != 1 {
+			t.Errorf("Space on %s does nothing: %T", formStop(fv), ta.topView())
+		}
+	}
+	ta.press("gg", "?")
+	ref := ta.screenText()
+	for _, want := range []string{"Space", "toggle the checkbox option", "Tab|Shift-Tab", "between the fields and the button"} {
+		if !strings.Contains(ref, want) {
+			t.Errorf("the key reference has no %q:\n%s", want, ref)
+		}
 	}
 }
 
@@ -456,7 +575,7 @@ func TestFormSubmitChecks(t *testing.T) {
 	if formStop(fv) != "Name" {
 		t.Errorf("e on the error row goes back: %s", formStop(fv))
 	}
-	ta.press("Tab", "Tab", "Tab", "Tab", "Tab", "e")
+	ta.press("j", "j", "j", "j", "j", "j", "j", "e") // Command
 	if fv.errOn.Label != "Command" {
 		t.Errorf("e shows this field's message on the error row: %s", fv.errOn.Label)
 	}
@@ -712,7 +831,7 @@ func TestFormScrollPosition(t *testing.T) {
 	ta.resize(80, 14)
 	ta.Form(testForm(nil))
 	ta.settle()
-	ta.press("Tab", "Tab")
+	ta.press("j", "j")
 	if !strings.Contains(ta.screenText(), "3 of 6") {
 		t.Errorf("Auth is the third of six fields:\n%s", ta.screenText())
 	}

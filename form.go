@@ -79,8 +79,11 @@ type formItem struct {
 }
 
 type formView struct {
-	f       *Form
-	focus   formItem
+	f     *Form
+	focus formItem
+	// back is the item of the field area the focus was last on: Tab on the
+	// button or the error row returns there (components/dialog/form).
+	back    formItem
 	dirty   bool
 	errs    map[*FormField]string
 	errOn   *FormField // whose message the error row shows
@@ -102,6 +105,7 @@ func (a *App) Form(f *Form) tea.Cmd {
 	if f.Focus != nil && !f.Focus.disabled() {
 		fv.focus = fv.landing(f.Focus)
 	}
+	fv.back = fv.focus
 	return a.open(fv)
 }
 
@@ -139,8 +143,11 @@ func (fv *formView) index(items []formItem) int {
 	return 0
 }
 
-// landing is where Tab lands in a field (components/dialog/form): a radio's
-// chosen option or its first, a checkbox group's first option.
+// landing is where the focus goes in a field it is sent to (the form opened
+// at it, a check failing on it, e back from the error row): a radio's chosen
+// option or its first, a checkbox group's first option.
+// TODO(tdp G90): the spec no longer says which option; this is v0.5.3's
+// landing for Tab.
 func (fv *formView) landing(f *FormField) formItem {
 	switch {
 	case len(f.Options) == 0:
@@ -149,21 +156,6 @@ func (fv *formView) landing(f *FormField) formItem {
 		return formItem{itemField, f, f.Selected}
 	}
 	return formItem{itemField, f, 0}
-}
-
-// stations are the stops of Tab: each field, the error row, the button.
-func (fv *formView) stations(items []formItem) []formItem {
-	var out []formItem
-	for _, it := range items {
-		if it.kind != itemField {
-			out = append(out, it)
-			continue
-		}
-		if len(out) == 0 || out[len(out)-1].field != it.field {
-			out = append(out, fv.landing(it.field))
-		}
-	}
-	return out
 }
 
 func (fv *formView) labelWidth() int {
@@ -180,15 +172,16 @@ func (fv *formView) button() string { return cmpOr(fv.f.Button, "Save") }
 
 func (fv *formView) hint() []KeyHint {
 	var h []KeyHint
+	// Tab names the area it goes to (components/dialog/form).
 	switch it := fv.focus; it.kind {
 	case itemError:
-		return []KeyHint{{"Enter", "show"}, {"e", "edit"}, {"Esc", "cancel"}}
+		return []KeyHint{{"Enter", "show"}, {"e", "edit"}, {"Tab", "fields"}, {"Esc", "cancel"}}
 	case itemButton:
-		h = append(h, KeyHint{"Enter", strings.ToLower(fv.button())})
+		h = append(h, KeyHint{"Enter", strings.ToLower(fv.button())}, KeyHint{"Tab", "fields"})
 	default:
 		switch {
 		case len(it.field.Options) > 0 && it.field.Multi:
-			h = append(h, KeyHint{"Enter", "toggle"})
+			h = append(h, KeyHint{"Enter|Space", "toggle"})
 		case len(it.field.Options) > 0:
 			h = append(h, KeyHint{"Enter", "choose"})
 		default:
@@ -197,6 +190,7 @@ func (fv *formView) hint() []KeyHint {
 		if fv.errs[it.field] != "" {
 			h = append(h, KeyHint{"e", "error"})
 		}
+		h = append(h, KeyHint{"Tab", "actions"})
 	}
 	return append(h, KeyHint{"Esc", "cancel"})
 }
@@ -384,19 +378,29 @@ func (fv *formView) step(dir int) {
 	fv.focus = items[(i+dir+len(items))%len(items)]
 }
 
-func (fv *formView) tab(dir int) {
+// tab moves between the field area and the action row, the error row going
+// with the button: to the button from a field, back to the item left from
+// the button or the error row (components/dialog/form, Rules K2).
+func (fv *formView) tab() {
 	items := fv.items()
-	st := fv.stations(items)
-	cur := 0
-	for i, s := range st {
-		if s == fv.focus || s.kind == itemField && s.field == fv.focus.field {
-			cur = i
+	if fv.focus.kind == itemField {
+		fv.focus = items[len(items)-1]
+		return
+	}
+	fv.focus = items[0]
+	for _, it := range items {
+		if it == fv.back {
+			fv.focus = it
 		}
 	}
-	fv.focus = st[(cur+dir+len(st))%len(st)]
 }
 
 func (fv *formView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
+	defer func() {
+		if fv.focus.kind == itemField {
+			fv.back = fv.focus
+		}
+	}()
 	items := fv.items()
 	half := max(fv.visible/2, 1)
 	switch key {
@@ -404,10 +408,8 @@ func (fv *formView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 		fv.step(1)
 	case "k", "h", "↑", "←":
 		fv.step(-1)
-	case "Tab":
-		fv.tab(1)
-	case "Shift-Tab":
-		fv.tab(-1)
+	case "Tab", "Shift-Tab":
+		fv.tab() // two areas: either way is the other one
 	case "d", "PgDn":
 		fv.focus = items[min(fv.index(items)+half, len(items)-1)]
 	case "u", "PgUp":
@@ -434,6 +436,11 @@ func (fv *formView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 		return true, a.Confirm(Ask{Title: "Discard", Question: "Discard changes to " + name + "?", Verb: "discard"},
 			func() tea.Cmd { return a.closeTop() })
 	case "Space":
+		// On a checkbox option Space ticks it too, as in a checkbox popup;
+		// elsewhere it does nothing (Rules K5).
+		if it := fv.focus; it.kind == itemField && it.field.Multi && it.option >= 0 {
+			return true, fv.enter(a)
+		}
 		return true, nil
 	case "?":
 		return false, nil
@@ -521,12 +528,13 @@ func (fv *formView) keyRef() []refSection {
 	return []refSection{
 		{rows: []KeyRow{
 			{Key: "Enter", Desc: "edit the field, choose or toggle the option, press the button"},
+			{Key: "Space", Desc: "toggle the checkbox option"},
 			{Key: "e", Desc: "between a field that is wrong and the error row"},
+			{Key: "Tab|Shift-Tab", Desc: "between the fields and the button, back to the item left"},
 			{Key: "Esc", Desc: "cancel (asks first when something changed)"},
 		}},
 		{title: "move", rows: []KeyRow{
 			{Key: "j|k", Desc: "next, previous"},
-			{Key: "Tab|Shift-Tab", Desc: "next, previous field"},
 			{Key: "u|d", Desc: "half a page up, down"},
 			{Key: "gg|G", Desc: "to the first, the button"},
 		}},

@@ -181,11 +181,11 @@ func TestInputCommon(t *testing.T) {
 	ta.Form(testForm(r))
 	ta.settle()
 	form := ta.topView().(*formView)
-	ta.press("Tab", "Enter", "2", "2", "Enter")
+	ta.press("j", "Enter", "2", "2", "Enter")
 	if r.port != "22" || ta.topView() != popupView(form) || formStop(form) != "Port" {
 		t.Errorf("back on the form at Port: port %q, top %T, focus %s", r.port, ta.topView(), formStop(form))
 	}
-	ta.press("Tab", "Tab", "Tab", "Enter", "j", "Enter")
+	ta.press("j", "j", "j", "j", "j", "Enter", "j", "Enter")
 	if formStop(form) != "Profile" {
 		t.Errorf("after a select the focus stays on Profile, not %s", formStop(form))
 	}
@@ -1521,7 +1521,7 @@ func TestRadio(t *testing.T) {
 	ta.Form(testForm(nil))
 	ta.settle()
 	fv := ta.topView().(*formView)
-	ta.press("Tab", "Tab", "j", "Enter")
+	ta.press("j", "j", "j", "Enter")
 	if formStop(fv) != "Auth:1" || fv.f.Fields[2].Selected != 1 {
 		t.Errorf("form: focus %s, selected %d", formStop(fv), fv.f.Fields[2].Selected)
 	}

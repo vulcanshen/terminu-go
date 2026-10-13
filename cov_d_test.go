@@ -270,7 +270,7 @@ func TestPopupHintOrder(t *testing.T) {
 		{"checkbox list", func(ta *testApp) { ta.Checks(Checks{Title: "Namespaces", Options: []string{"a", "b"}}) }, "Enter Space Tab|/ Esc"},
 		{"finder typing", func(ta *testApp) { ta.Find(testFinder()) }, "Enter|Tab Esc"},
 		{"text", func(ta *testApp) { ta.Text(TextInput{Title: "Rename", Old: "assets"}) }, "Enter Tab Backspace Esc"},
-		{"form", func(ta *testApp) { ta.Form(testForm(nil)) }, "Enter Esc"},
+		{"form", func(ta *testApp) { ta.Form(testForm(nil)) }, "Enter Tab Esc"},
 		{"terminal", func(ta *testApp) { covDTerminal(ta, "", TerminalKey{Key: "Alt-t", Desc: "hide"}) }, "Alt-Esc Alt-t"},
 	}
 	for _, c := range cases {

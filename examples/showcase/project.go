@@ -20,7 +20,7 @@ import (
 // projectDir is a pretend project under the temp directory, with one file of
 // each kind a preview shows differently: text, Go, a PDF, an image, an
 // archive, a binary, a private key, a file only its owner may read, a hidden
-// one.
+// one, a link and a broken one; a directory deep enough to be cut.
 var projectDir = fakeProject()
 
 func fakeProject() string {
@@ -45,7 +45,9 @@ func fakeProject() string {
 	put("docs/scan.pdf", minimalPDF(""), 0o644)
 	put("assets/photo-large.png", append(tinyPNG(), make([]byte, 1100<<10)...), 0o644)
 	put("secret.bin", []byte("nobody may read this\n"), 0o000)
+	put("assets/images/backgrounds/very-long-directory-name/landscape-2026.png", tinyPNG(), 0o644)
 	_ = os.Symlink("docs/guide.pdf", filepath.Join(dir, "latest.pdf"))
+	_ = os.Symlink("docs/gone.pdf", filepath.Join(dir, "broken.pdf"))
 	_ = os.MkdirAll(filepath.Join(dir, "empty"), 0o755)
 	// Kept empty, so that rm -rf still removes it.
 	_ = os.MkdirAll(filepath.Join(dir, "locked"), 0o755)

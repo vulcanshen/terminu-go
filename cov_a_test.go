@@ -495,7 +495,7 @@ func TestK3EnterKeepsFocus(t *testing.T) {
 	ta.Form(testForm(r))
 	ta.settle()
 	fv := ta.topView().(*formView)
-	ta.press("Tab", "Tab", "Tab", "Enter") // Agent: a checkbox
+	ta.press("j", "j", "j", "j", "j", "Enter") // Agent: a checkbox
 	if formStop(fv) != "Agent:0" {
 		t.Errorf("toggling a checkbox moved the focus to %s", formStop(fv))
 	}
@@ -1040,7 +1040,7 @@ func TestK9QNoopOnForm(t *testing.T) {
 	ta.Form(testForm(nil))
 	ta.settle()
 	fv := ta.topView().(*formView)
-	for _, at := range [][]string{{"Tab", "Tab"}, {"G"}} { // an option, the button
+	for _, at := range [][]string{{"j", "j"}, {"G"}} { // an option, the button
 		ta.press("gg")
 		ta.press(at...)
 		ta.press("q")

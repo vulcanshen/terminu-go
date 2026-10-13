@@ -73,7 +73,7 @@ const (
 // finderRow is one row of a finder's list.
 type finderRow struct {
 	text  string // matched and shown
-	label string // shown instead of text when set: a hotkey marker
+	label string // shown instead of text when set: a hotkey marker, ". (this directory)"
 	key   string // a select option's hotkey
 	icon  string
 	color Color // the icon's colour
@@ -107,6 +107,8 @@ type finderView struct {
 	info    func(r finderRow, w int, layer Color) []string
 	loading func() bool
 	known   bool // the width is known when it opens
+	// enterRef, when set, is what Enter does in the key reference.
+	enterRef string
 
 	ed       *lineEditor
 	onList   bool
@@ -559,7 +561,7 @@ func (f *finderView) keyRef() []refSection {
 	case findFiles:
 		enter = "go into a directory, choose a file"
 	}
-	rows := []KeyRow{{Key: "Enter", Desc: enter}}
+	rows := []KeyRow{{Key: "Enter", Desc: cmpOr(f.enterRef, enter)}}
 	if f.kind == findChecks {
 		rows = append(rows, KeyRow{Key: "Space", Desc: "check or uncheck the row"})
 	}

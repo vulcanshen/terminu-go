@@ -129,6 +129,49 @@ func TestFileInfo(t *testing.T) {
 	}
 }
 
+// TestFilePickerMetaDash: a link's SIZE, MODIFIED and MODE are its
+// target's; what cannot be had is — and the four rows stay
+// (components/input/file-picker).
+func TestFilePickerMetaDash(t *testing.T) {
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, "a.txt"), []byte("hello"), 0o600)
+	_ = os.Symlink("a.txt", filepath.Join(dir, "link"))
+	_ = os.Symlink("gone.txt", filepath.Join(dir, "broken"))
+	l := previewText(fileInfo(filepath.Join(dir, "link"), 40, Blue))
+	for _, want := range []string{"SIZE      5 B", "MODE      -rw-------"} {
+		if !strings.Contains(l, want) {
+			t.Errorf("a link writes its target's %q:\n%s", want, l)
+		}
+	}
+	b := strings.Split(previewText(fileInfo(filepath.Join(dir, "broken"), 40, Blue)), "\n")
+	want := []string{"TYPE      link → gone.txt", "SIZE      —", "MODIFIED  —", "MODE      —"}
+	for i, w := range want {
+		if i >= len(b) || !strings.HasPrefix(b[i], w) {
+			t.Errorf("a broken link, row %d: want %q in\n%s", i, w, strings.Join(b, "\n"))
+		}
+	}
+	locked := filepath.Join(dir, "locked")
+	if err := os.Mkdir(locked, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(locked, 0); err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chmod(locked, 0o755)
+	if _, err := os.ReadDir(locked); err == nil {
+		t.Skip("running as a user who reads any directory")
+	}
+	d := previewText(fileInfo(locked, 40, Blue))
+	for _, want := range []string{"TYPE      directory", "SIZE      —", "MODE      d---------"} {
+		if !strings.Contains(d, want) {
+			t.Errorf("an unreadable directory: %q not in\n%s", want, d)
+		}
+	}
+	if strings.Contains(d, "items") || strings.Contains(d, "MODIFIED  —") {
+		t.Errorf("an unreadable directory still has its time, and no count:\n%s", d)
+	}
+}
+
 func TestFinderFileLayout(t *testing.T) {
 	dir := fakeTree(t)
 	for _, sz := range [][2]int{{120, 30}, {80, 24}} {
