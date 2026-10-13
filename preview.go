@@ -156,10 +156,38 @@ func imageMIME(p string) string {
 	return "image/" + ext
 }
 
+// tabSpaces is what a tab in a file preview or a viewer is drawn as.
+const tabSpaces = "    "
+
+// visibleText is s with what a terminal would act on instead of drawing
+// shown, so the row keeps its width (Rules L4): a tab as tabSpaces, any other
+// control character as its name (\r, \x07). Line breaks and the escape
+// sequences that style s stay. TODO(tdp G85): the spec does not say how a
+// file preview or a viewer draws them; this for now.
+func visibleText(s string) string {
+	if !strings.ContainsFunc(s, func(r rune) bool { return r < 0x20 && r != '\n' || r >= 0x7f && r <= 0x9f }) {
+		return s
+	}
+	var b strings.Builder
+	walk(s, func(seq string, _ int) { b.WriteString(drawn(seq)) })
+	return b.String()
+}
+
+// drawn is a character as a preview or a viewer draws it (visibleText).
+func drawn(c string) string {
+	if c == "\t" {
+		return tabSpaces
+	}
+	if name, ok := ctrlName(c); ok && c != "\n" {
+		return name
+	}
+	return c
+}
+
 // highlight is text in the colours of catppuccin-mocha (foreground only),
 // its line numbers in Overlay0.
 func highlight(p, text string, h int) []string {
-	text = strings.ReplaceAll(text, "\t", "    ")
+	text = visibleText(text)
 	lines := strings.Split(strings.TrimRight(text, "\n"), "\n")
 	if len(lines) > h {
 		lines = lines[:h]

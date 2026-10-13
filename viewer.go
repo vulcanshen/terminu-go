@@ -156,7 +156,7 @@ func (v *Viewer) wrap(i int) []int {
 	starts := []int{0}
 	used, cell := 0, 0
 	for _, c := range v.plain[i] {
-		cw := Width(c)
+		cw := Width(drawn(c))
 		if used+cw > v.textW && used > 0 {
 			starts = append(starts, cell)
 			used = 0
@@ -328,7 +328,7 @@ func (v *Viewer) coloured() []string {
 	if lexer := lexerFor(v.Lang); lexer != nil {
 		plain := make([]string, len(v.Lines))
 		for i, l := range v.Lines {
-			plain[i] = StripStyles(l)
+			plain[i] = visibleText(StripStyles(l))
 		}
 		for i, l := range colourise(lexer, plain) {
 			if StripStyles(l) != plain[i] { // the lexer changed the text: not coloured
@@ -339,7 +339,7 @@ func (v *Viewer) coloured() []string {
 		return c.out
 	}
 	for i, l := range v.Lines {
-		c.out[i] = onText(l)
+		c.out[i] = onText(visibleText(l))
 	}
 	return c.out
 }
@@ -421,16 +421,16 @@ func (vv *viewerView) lineView(i int, layer Color) string {
 		switch {
 		case k == cx:
 			flush()
-			b.WriteString(cur.Render(c))
+			b.WriteString(cur.Render(drawn(c)))
 		case k >= from && k < to:
 			flush()
-			b.WriteString(sel.Render(c))
+			b.WriteString(sel.Render(drawn(c)))
 		default:
 			if plainFrom < 0 {
 				plainFrom = cell
 			}
 		}
-		cell += Width(c)
+		cell += Width(drawn(c))
 	}
 	flush()
 	switch {

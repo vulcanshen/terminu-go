@@ -119,6 +119,62 @@ func TestViewerCopyNoNumbers(t *testing.T) {
 	}
 }
 
+// TestViewerTabs: a tab in a viewer's text is drawn as spaces, coloured or
+// not, cursor on it or not, and every row stays its width (Rules L4); a copy
+// keeps the tab. The showcase's main.go broke the frame with one.
+func TestViewerTabs(t *testing.T) {
+	for _, lang := range []string{"", "go"} {
+		ta := newTestApp(t)
+		got := ""
+		v := &Viewer{Title: "File", Lang: lang, Lines: []string{"func main() {", "\tfmt.Println(\"x\")", "}"},
+			Select: &Selection{Key: "v", Name: "Visual", Copy: func(s string) tea.Cmd { got = s; return nil }}}
+		ta.Viewer(v)
+		ta.settle()
+		check := func(when string) {
+			t.Helper()
+			for i, l := range ta.Frame() {
+				if strings.Contains(l, "\t") || Width(l) != ta.w {
+					t.Fatalf("lang %q, %s: row %d is %d wide or has a tab: %q", lang, when, i, Width(l), StripStyles(l))
+				}
+			}
+			if !strings.Contains(ta.screenText(), "2     fmt.Println") {
+				t.Errorf("lang %q, %s: the tab is not four spaces:\n%s", lang, when, ta.screenText())
+			}
+		}
+		check("drawn")
+		ta.press("v", "j")
+		check("the cursor on the tab")
+		ta.press("v", "$", "y")
+		if got != "\tfmt.Println(\"x\")" {
+			t.Errorf("lang %q: copied %q, want the tab kept", lang, got)
+		}
+	}
+}
+
+// TestViewerControlChars: any other control character in a viewer's text
+// (a CRLF file's \r, a bell) is drawn as its name, never sent to the
+// terminal: every row stays its width (Rules L4). So is a file preview's.
+func TestViewerControlChars(t *testing.T) {
+	for _, lang := range []string{"", "go"} {
+		ta := newTestApp(t)
+		ta.Viewer(&Viewer{Title: "File", Lang: lang, Lines: []string{"a := 1\r", "b\x07c\x7fd", Fg(Red).Render("ERROR") + " x"}})
+		ta.settle()
+		for i, l := range ta.Frame() {
+			if Width(l) != ta.w || strings.ContainsAny(StripStyles(l), "\r\x07\x7f") {
+				t.Fatalf("lang %q: row %d is %d wide or has a control character: %q", lang, i, Width(l), StripStyles(l))
+			}
+		}
+		if text := ta.screenText(); !strings.Contains(text, `a := 1\r`) || !strings.Contains(text, `b\x07c\x7fd`) {
+			t.Errorf("lang %q: not drawn as their names:\n%s", lang, text)
+		}
+	}
+	for _, l := range highlight("crlf.go", "package main\r\n\tfunc main() {}\r\n", 10) {
+		if strings.ContainsAny(StripStyles(l), "\r\t") {
+			t.Errorf("a preview line has a control character: %q", StripStyles(l))
+		}
+	}
+}
+
 // TestViewerFoldedScroll: the scroll position counts lines, the numbers on
 // the left, however many rows they fold onto; G shows the last line whole.
 func TestViewerFoldedScroll(t *testing.T) {
