@@ -194,7 +194,7 @@ func (ds *dialogsScreen) worklist() tea.Cmd {
 		first, _, _ := strings.Cut(t, ";")
 		first, _, _ = strings.Cut(first, ",")
 		rows = append(rows, terminu.Action{Label: first, Detail: true, Do: func() tea.Cmd {
-			return a.Viewer(&terminu.Viewer{Title: "Task", Subject: fmt.Sprintf("#%d", i+1), Glyph: glyphList, Lines: terminu.Wrap(t, 60)})
+			return a.Viewer(&terminu.Viewer{Title: "Task", Subject: fmt.Sprintf("#%d", i+1), Glyph: glyphList, Lines: []string{t}})
 		}})
 	}
 	return a.Menu("Worklist", terminu.MenuSection{Actions: rows})

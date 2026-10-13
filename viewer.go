@@ -1,13 +1,15 @@
 package terminu
 
 import (
+	"strconv"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 // Viewer is a note to read (components/dialog/note): a YAML view, a log, a
-// file. It scrolls, may have keys of its own and a selection mode, and
+// file. Its lines are numbered on the left and a long one folds onto the rows
+// under it. It scrolls, may have keys of its own and a selection mode, and
 // closes with Esc only. Keep the pointer: lines may keep arriving while
 // Loading is true.
 type Viewer struct {
@@ -27,7 +29,9 @@ type Viewer struct {
 	// Select, when set, gives it a selection mode (Rules K11).
 	Select *Selection
 
-	top, visible int
+	// top is the first line in sight; visible the rows of text; textW the
+	// cells of text a row holds, after the line numbers.
+	top, visible, textW int
 	// The selection mode (components/dialog/note): the first press of its
 	// key brings the cursor out (inMode), the second starts the selection
 	// there. The cursor and where the selection started are in characters
@@ -101,9 +105,79 @@ func (vv *viewerView) hint() []KeyHint {
 }
 
 func (vv *viewerView) measure(sw, sh int) (int, int) {
-	h := min(len(vv.v.Lines)+4, max(sh-2, 3))
-	vv.v.visible = max(h-4, 1)
-	return popupWidth(sw, 0, false), h
+	v := vv.v
+	w := popupWidth(sw, 0, false)
+	v.readLines()
+	v.textW = v.textWidth(w - 2)
+	most := max(sh-2, 3)
+	rows := 0 // the rows its lines fold onto, counted as far as the most
+	for i := range v.Lines {
+		if rows += len(v.wrap(i)); rows+4 >= most {
+			break
+		}
+	}
+	h := min(rows+4, most)
+	v.visible = max(h-4, 1)
+	return w, h
+}
+
+// numWidth is the line numbers' column (components/dialog/note): at least
+// three digits. A viewer's lines are known when it opens, so the column keeps
+// its width while it is open; one whose lines stream in widens past 999.
+// TODO(tdp G110): tabs; each tab's own lines for now.
+func (v *Viewer) numWidth() int { return max(len(strconv.Itoa(len(v.Lines))), 3) }
+
+// textWidth is how many cells of text a row holds in inner cells: one cell
+// of padding either side, the line numbers and the space after them.
+func (v *Viewer) textWidth(inner int) int { return max(inner-3-v.numWidth(), 1) }
+
+// wrap is where line i's rows start, in cells: a line too long for a row
+// folds onto the rows under it, a character never cut in half.
+func (v *Viewer) wrap(i int) []int {
+	starts := []int{0}
+	used, cell := 0, 0
+	for _, c := range v.plain[i] {
+		cw := Width(c)
+		if used+cw > v.textW && used > 0 {
+			starts = append(starts, cell)
+			used = 0
+		}
+		used += cw
+		cell += cw
+	}
+	return starts
+}
+
+// maxTop is the last line that can be at the top: from there the lines to
+// the end fill the rows; a line taller than the rows can still be the top.
+// TODO(tdp G111): it scrolls a line at a time, so the rows of a line taller
+// than the view past its bottom are never in sight.
+func (v *Viewer) maxTop() int {
+	t, rows := len(v.Lines), 0
+	for t > 0 {
+		if rows += len(v.wrap(t - 1)); rows > v.visible {
+			break
+		}
+		t--
+	}
+	return min(t, max(len(v.Lines)-1, 0))
+}
+
+// follow scrolls as little as it takes to show line whole (the selection
+// mode's cursor; components/dialog/note).
+func (v *Viewer) follow(line int) {
+	if line < v.top {
+		v.top = line
+		return
+	}
+	t, rows := line, 0
+	for t >= 0 {
+		if rows += len(v.wrap(t)); rows > v.visible {
+			break
+		}
+		t--
+	}
+	v.top = max(v.top, min(t+1, line))
 }
 
 func (vv *viewerView) isLoading() bool { return vv.v.Loading }
@@ -113,28 +187,55 @@ func (vv *viewerView) draw(w, h int, layer Color) []string {
 	inner := w - 2
 	v.visible = max(h-4, 1)
 	v.readLines()
-	// The scroll position: the lines in sight, N-M of T; in the selection
-	// mode the cursor's line, N of M (components/dialog/note).
-	scroll := ""
+	v.textW = v.textWidth(inner)
+	numW := v.numWidth()
 	if v.inMode {
 		v.line = min(max(v.line, 0), max(len(v.Lines)-1, 0))
-		v.top = scrollWindow(v.top, v.line, v.visible, len(v.Lines)) // the view follows the cursor
-		if len(v.Lines) > v.visible {
-			scroll = scrollText(true, v.line+1, 0, len(v.Lines))
-		}
-	} else {
-		v.top = min(max(v.top, 0), max(len(v.Lines)-v.visible, 0))
-		if len(v.Lines) > v.visible {
-			scroll = scrollText(false, v.top+1, min(v.top+v.visible, len(v.Lines)), len(v.Lines))
-		}
+		v.follow(v.line) // the view follows the cursor
 	}
+	v.top = min(max(v.top, 0), v.maxTop())
+	// Each line's first row has its number, right-aligned, a space after it;
+	// the rows it folds onto leave the column blank. Numbers in Overlay0, the
+	// cursor's line in Text (components/dialog/note).
 	body := make([]string, 0, v.visible)
-	for i := v.top; i < v.top+v.visible; i++ {
-		if i >= len(v.Lines) {
-			body = append(body, Repeat(" ", inner))
-			continue
+	last, whole := v.top-1, true // the last line in sight, and whether all of it is
+	for i := v.top; i < len(v.Lines) && len(body) < v.visible; i++ {
+		styled := vv.lineView(i, layer)
+		starts := v.wrap(i)
+		for r, from := range starts {
+			if len(body) == v.visible {
+				whole = false
+				break
+			}
+			num := Repeat(" ", numW)
+			if r == 0 {
+				style := Fg(Overlay0)
+				if v.inMode && i == v.line {
+					style = Fg(Text)
+				}
+				num = style.Render(PadLeft(strconv.Itoa(i+1), numW))
+			}
+			to := from + v.textW // the last row: the cursor's cell on an empty line too
+			if r+1 < len(starts) {
+				to = starts[r+1]
+			}
+			body = append(body, " "+num+" "+Fit(Cut(styled, from, to), v.textW)+" ")
 		}
-		body = append(body, padRow(vv.lineView(i, layer), inner))
+		last = i
+	}
+	for len(body) < v.visible {
+		body = append(body, Repeat(" ", inner))
+	}
+	// The scroll position, in lines, the numbers on the left: the lines in
+	// sight, N-M of T; in the selection mode the cursor's line, N of M
+	// (components/dialog/note).
+	scroll := ""
+	if v.top > 0 || last < len(v.Lines)-1 || !whole {
+		if v.inMode {
+			scroll = scrollText(true, v.line+1, 0, len(v.Lines))
+		} else {
+			scroll = scrollText(false, v.top+1, last+1, len(v.Lines))
+		}
 	}
 	box := popupBox{color: layer, glyph: v.Glyph, title: vv.title(), hint: vv.hint(), scroll: scroll, loading: v.Loading}
 	for i, t := range v.Tabs {
@@ -378,7 +479,7 @@ func (vv *viewerView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 			}
 		default:
 			if vv.move(key) {
-				v.top = scrollWindow(v.top, v.line, max(v.visible, 1), len(v.Lines))
+				v.follow(v.line)
 			}
 		}
 		return true, nil
@@ -428,7 +529,7 @@ func (vv *viewerView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 		}
 		return false, nil
 	}
-	v.top = min(max(v.top, 0), max(len(v.Lines)-v.visible, 0))
+	v.top = min(max(v.top, 0), v.maxTop())
 	return true, nil
 }
 

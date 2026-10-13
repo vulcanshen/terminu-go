@@ -366,7 +366,7 @@ func TestPopupMargins(t *testing.T) {
 	ta.Viewer(&Viewer{Title: "YAML", Lines: []string{"kind: Pod", "metadata:"}})
 	ta.settle()
 	l = ta.top()
-	if p = covDTop(ta); p[1] != covDBlank(l.w) || p[l.h-2] != covDBlank(l.w) || !strings.HasPrefix(p[2], "┃ kind: Pod") {
+	if p = covDTop(ta); p[1] != covDBlank(l.w) || p[l.h-2] != covDBlank(l.w) || !strings.HasPrefix(p[2], "┃   1 kind: Pod") {
 		t.Errorf("a viewer has the same margins:\n%s", strings.Join(p, "\n"))
 	}
 	// A terminal has none: its screen fills the frame.
