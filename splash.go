@@ -198,6 +198,7 @@ func splashText(groups [][]splashRow, first, second bool, w, h int) []string {
 			part = append(part, "") // the blank row above it goes with it
 		}
 		for _, row := range g {
+			// TODO(tdp G78): a word wider than the terminal is cut into pieces.
 			for _, l := range Wrap(row.s, w) {
 				if i < 2 && first || i >= 2 && second {
 					l = Center(row.style.Render(l), w)
