@@ -42,3 +42,5 @@ Each release names the version of terminu design (tdp) it implements.
 - `FilePicker.Dirs`: the file-picker that chooses a directory, with a `. (this directory)` row
 - A form's `Tab|Shift-Tab` go between the field area and the action row; Space ticks a checkbox drawn on a form
 - Every one-line input starts with an angle; pasted control characters are kept and drawn in red
+- Viewers number their lines, fold long ones and scroll a row at a time; `Viewer.Lang` colours their content as the
+  file preview does

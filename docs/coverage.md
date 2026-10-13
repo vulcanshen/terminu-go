@@ -338,6 +338,9 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 |---|---|---|---|
 | note §長相 | 留白一律有；標題 glyph（app 選）+ 顯示的東西（標題膠囊，`YAML — pod/nginx`）；捲動位置 `N-M of T`（viewer 的選取模式裡 `N of M`）；寬度：確定的照內容、viewer 用上限 | D「Note viewer」 | `TestNoteLayout` |
 | note §viewer 的行號 | viewer（YAML、App Log、檔案內容）左邊有行號：每行第一列、靠右、後空一格、折下來的列空白；Overlay0，選取模式裡游標那行 Text；至少三位：行數固定的取 max(3, 位數)、打開後不變，串流的超過 999 行才跳寬；複製不含行號；`N of M` 跟行號同一套數字 | D「Note viewer」；P `[2] LOG` 按 `Enter`；I `[2] FILES` 的 `[V]iew` | `TestViewerLineNumbers`、`TestViewerLineNumbersStream`、`TestViewerCopyNoNumbers`、`TestViewerFoldedScroll` |
+| note §viewer 的行號 | 有 tab 的 viewer：行號欄照看過的頁裡最寬的，只變寬、不變窄（串流的頁也一樣） | D「Popup with tabs」、DevTools 切 tab | `TestViewerTabGutterOnlyGrows` |
+| note §viewer 的語法顏色 | 有固定格式的照 file-picker 預覽上色（chroma catppuccin-mocha、只上前景色）；語言由 app 給（`Viewer.Lang`），檔案內容照檔名；沒有固定格式或判斷不出來的是純文字 Text；行號 Overlay0；選取範圍 Yellow 底 Base 字、範圍裡不顯示語法顏色 | D「Note viewer」（YAML）；I `[2] FILES` 的 `[V]iew` | `TestViewerSyntaxColours` |
+| note §按鍵 | 折行的 viewer 以畫出來的一列為單位捲（`j\|k` 一列、`u\|d` 照列算）；`N-M of T` 的 N、M 是最上面、最下面那一列所屬的行；選取模式照舊以行為單位 | D「Note viewer」把視窗縮窄 | `TestViewerScrollsRows` |
 | note §按鍵 | 捲動 `j\|k` `u\|d` `gg\|G`；只用 `Esc` 關（`Enter`、`Space` 不關）；error popup（不管怎麼打開的）與表單的打字說明 `Enter` 也能關；hint 熱鍵在前、`Esc:close` 最後 | 同上；D「Error popup」 | `TestNoteKeys` |
 | note §選取模式 | 只有 viewer 有；平常沒有游標（`j\|k` 捲、有 tab 時 `h\|l` 切 tab）；第一次 `v` 進模式（框與模式名 Yellow），游標在畫面第一行行首、還沒選，hint `v:select Esc:cancel`；`h\|j\|k\|l` `w\|b\|e` `0\|$` `u\|d` `gg\|G` 移游標、畫面跟著捲；第二次 `v` 從游標開始選（以字為單位、含游標那個字），hint `y:copy Esc:cancel`，再按 `v` 不作用；`y` 複製、整個離開；`Esc` 在哪一步都整個離開、不複製；游標層色底 Base 字，範圍 Yellow 底 Base 字、空行畫一格；捲動位置 `N of M`（游標的行） | D「Note viewer」按 `v` | `TestNoteHotkeysAndMode`、`TestViewerSelectScrollPosition` |
 | note §key reference | 標題 U+F059 + `<surface> keys`（`[2] HOSTS KEYS`、`SPACE MENU KEYS`）；每列一個鍵：縮兩格、鍵補到最寬、空兩格、說明（截斷不折行）；從 menu 來的列 `label — 說明`、label 去掉標記、大小寫照原樣 | 每個 surface 按 `?` | `TestKeyReferenceLayout` |
