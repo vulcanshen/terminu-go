@@ -290,11 +290,12 @@ func suggestion(s string, w int, cursorStyle Style, showCursor bool) string {
 	return first + Truncate(greyText(strings.Join(g[1:], "")), w-Width(first))
 }
 
-// cursorOn draws the character under the cursor as a block.
+// cursorOn draws the character under the cursor as a block; on a control
+// character the whole name is the block, Base on Red
+// (components/input/README).
 func cursorOn(c string, cursorStyle Style) string {
-	if name, ok := ctrlName(c); ok { // TODO(tdp G81): a control character's name stays red on the cursor
-
-		return Style{Fg: Red, Bg: cursorStyle.Bg}.Render(name)
+	if name, ok := ctrlName(c); ok {
+		return Style{Fg: Base, Bg: Red}.Render(name)
 	}
 	return cursorStyle.Render(c)
 }

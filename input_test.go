@@ -882,10 +882,10 @@ func TestSuggestionUnderCursor(t *testing.T) {
 	}
 	ta.press("Esc")
 
-	// A control character first: its red name under the cursor.
+	// A control character first: its whole name is the cursor, Base on Red.
 	ta.Text(TextInput{Title: "Name", Old: "\x1bweb"})
 	ta.settle()
-	if lines, _ := covFDraw(ta); !strings.Contains(lines[4], Style{Fg: Red, Bg: Lavender}.Render(`\x1b`)+Fg(Overlay0).Render("web")) {
+	if lines, _ := covFDraw(ta); !strings.Contains(lines[4], Style{Fg: Base, Bg: Red}.Render(`\x1b`)+Fg(Overlay0).Render("web")) {
 		t.Errorf("a control character under the cursor: %q", lines[4])
 	}
 	ta.press("Esc")
@@ -1008,5 +1008,33 @@ func TestTextareaPasteControlChars(t *testing.T) {
 	ta.press("Esc", "Enter")
 	if calls != 1 || got != "1\n2\n3\n4xy\tz" || ta.top() != nil {
 		t.Errorf("a tab does not hold it back: %d %q", calls, got)
+	}
+}
+
+// TestCursorOnControlChar: a cursor on a control character makes the whole
+// name the block, Base on Red, on a typing row and in both textarea states
+// (components/input/README, textarea).
+func TestCursorOnControlChar(t *testing.T) {
+	block := Style{Fg: Base, Bg: Red}.Render(`\x1b`)
+	ta := newTestApp(t)
+	ta.Text(TextInput{Title: "Name"})
+	ta.settle()
+	covFPaste(ta, "a\x1bb")
+	covFPress(ta, "←", "←")
+	if lines, _ := covFDraw(ta); !strings.Contains(lines[4], block) {
+		t.Errorf("a typing row: %q", lines[4])
+	}
+
+	ta = newTestApp(t)
+	ta.Textarea(Textarea{Title: "Notes"})
+	ta.settle()
+	covFPaste(ta, "a\x1bb")
+	covFPress(ta, "←", "←")
+	if lines, _ := covFDraw(ta); !strings.Contains(strings.Join(lines, "\n"), block) {
+		t.Errorf("writing in a textarea:\n%s", strings.Join(lines, "\n"))
+	}
+	ta.press("Esc") // moving: the cursor stays on it
+	if lines, _ := covFDraw(ta); !strings.Contains(strings.Join(lines, "\n"), block) {
+		t.Errorf("moving in a textarea:\n%s", strings.Join(lines, "\n"))
 	}
 }

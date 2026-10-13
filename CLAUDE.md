@@ -7,7 +7,7 @@ terminu design（tdp）的 Go 實作：一個像 bubbletea 那樣讓 app 直接�
 - 建在 bubbletea **v1**（`github.com/charmbracelet/bubbletea` v1.3.10）與 lipgloss v1（v1.1.0）上，跟五個 app 相同。
   原本定 v2，2026-10-08 改回 v1（紀錄的 C1、G22）：v2 的 renderer 與 lipgloss v2 的合成都處理不了 icon 佔兩格，要用 v2 就得
   自己重寫輸出層。user：v2 還不成熟，不該為了它打破既有狀態、重新造輪；等 v2 成熟再升。
-- 規範：`~/Documents/sideproj/terminu`，目前實作的版本是 **tdp v0.5.5**（tag 只在本機，user 要等展示場做出來、反覆調整定案後才 push）
+- 規範：`~/Documents/sideproj/terminu`，目前實作的版本是 **tdp v0.5.6**（tag 只在本機，user 要等展示場做出來、反覆調整定案後才 push）
 
 上面這些與下面「lib 的範圍」都已經跟 user 定案，不要重提。
 
@@ -17,7 +17,7 @@ terminu design（tdp）的 Go 實作：一個像 bubbletea 那樣讓 app 直接�
 
 1. **驗證規範。** 完全照 tdp 的文字寫出 lib 與展示場，找出規範沒寫、寫得模糊、前後矛盾、或做出來不好用的地方（下面叫「盲點」）。
    tdp v0.3.0 從零改寫過，v0.4.0 補上了這個 repo 第一批回報的 22 條盲點（紀錄裡 G1–G22 都在「已定」），v0.5.0 換了外觀，
-   v0.5.1 補上第二批的 G23–G29，v0.5.2 補上第三批的 G30–G46（G43 擱著），v0.5.3 補上 G47，v0.5.4 補上第四批的 G48–G66，v0.5.5 補上第五批的 G67–G77；
+   v0.5.1 補上第二批的 G23–G29，v0.5.2 補上第三批的 G30–G46（G43 擱著），v0.5.3 補上 G47，v0.5.4 補上第四批的 G48–G66，v0.5.5 補上第五批的 G67–G77，v0.5.6 補上第六批的 G78–G82；
    還沒有任何 app 照它做過，
    這個 repo 是第一個。
 2. **成為家族共用的 lib。** 規範確認之後，家族的五個 app（kbu、filu、sshu、webu、locku）改用這個 lib，不再各自實作規範。
@@ -27,8 +27,8 @@ terminu design（tdp）的 Go 實作：一個像 bubbletea 那樣讓 app 直接�
 
 ### 讀什麼
 
-- 讀 terminu **最新 tag** 的內容（現在是 v0.5.5）。main 上還沒發版的改動不算；不確定時用
-  `git -C ~/Documents/sideproj/terminu diff v0.5.5 -- principle components` 看有沒有差。
+- 讀 terminu **最新 tag** 的內容（現在是 v0.5.6）。main 上還沒發版的改動不算；不確定時用
+  `git -C ~/Documents/sideproj/terminu diff v0.5.6 -- principle components` 看有沒有差。
 - **v0.5.0 換了外觀**（配色不變）：框線、膠囊、menu 區塊標題、cursor 尾端的箭頭、標題大寫、固定的開關動畫。規範的圖現在用真的
   Nerd Font 字形。畫框、膠囊、cursor 的程式集中在少數幾個地方，不要散在各元件裡寫死 —— 外觀之後可能還會調。
 - 規定只認這些檔的文字：`principle/README-zh_TW.md`、`principle/rules-zh_TW.md`、`components/` 底下全部。
@@ -75,7 +75,7 @@ terminu design（tdp）的 Go 實作：一個像 bubbletea 那樣讓 app 直接�
 ```
 ### G<n> <一句話標題>
 - 狀態：待定
-- 規範：<檔案> 的 <段落或規則編號>（tdp v0.5.5）
+- 規範：<檔案> 的 <段落或規則編號>（tdp v0.5.6）
 - 卡在：lib 需要知道什麼才能做下去
 - 可能：A …；B …（各附一句後果）
 - 暫時：跳過／暫時照 A 做（程式裡標 `TODO(tdp G<n>)`）
