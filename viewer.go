@@ -124,7 +124,7 @@ func (vv *viewerView) measure(sw, sh int) (int, int) {
 // numWidth is the line numbers' column (components/dialog/note): at least
 // three digits. A viewer's lines are known when it opens, so the column keeps
 // its width while it is open; one whose lines stream in widens past 999.
-// TODO(tdp G110): tabs; each tab's own lines for now.
+// TODO(tdp G79): tabs; each tab's own lines for now.
 func (v *Viewer) numWidth() int { return max(len(strconv.Itoa(len(v.Lines))), 3) }
 
 // textWidth is how many cells of text a row holds in inner cells: one cell
@@ -150,7 +150,7 @@ func (v *Viewer) wrap(i int) []int {
 
 // maxTop is the last line that can be at the top: from there the lines to
 // the end fill the rows; a line taller than the rows can still be the top.
-// TODO(tdp G111): it scrolls a line at a time, so the rows of a line taller
+// TODO(tdp G80): it scrolls a line at a time, so the rows of a line taller
 // than the view past its bottom are never in sight.
 func (v *Viewer) maxTop() int {
 	t, rows := len(v.Lines), 0
