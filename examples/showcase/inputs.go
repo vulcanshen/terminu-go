@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -62,6 +63,9 @@ func newInputsScreen(s *showcase) *inputsScreen {
 		meeting        = time.Date(today.Year(), today.Month(), today.Day(), 10, 7, 0, 0, time.Local)
 		background     = terminu.Hex("#2A2A3C")
 		sshDir         = fakeSSH()
+		home, _        = os.UserHomeDir()
+		downloads      = filepath.Join(home, "Downloads")
+		host           = "web-01"
 		identity       = filepath.Join(sshDir, "id_ed25519")
 	)
 	disabled := func() bool { return is.disabled }
@@ -90,7 +94,7 @@ func newInputsScreen(s *showcase) *inputsScreen {
 				Done: func(v string, clear bool) tea.Cmd { password = !clear; return nil }})
 		}},
 		{Label: "PIN", Value: func() string { return dots(pin != "") }, Empty: "not set", Edit: func() tea.Cmd {
-			return a.Password(terminu.PasswordInput{Title: "PIN", Glyph: glyphLock, Prompt: "Up to 12 digits", Verb: "set", Set: pin != "", Unlock: true, MaxLen: 12,
+			return a.Password(terminu.PasswordInput{Title: "PIN", Glyph: glyphLock, Prompt: "Up to 12 digits", Verb: "save", Set: pin != "", Unlock: true, MaxLen: 12,
 				Done: func(v string, clear bool) tea.Cmd { pin = v; return nil }})
 		}},
 		{Label: "Port", Value: func() string { return port }, Edit: func() tea.Cmd {
@@ -142,6 +146,14 @@ func newInputsScreen(s *showcase) *inputsScreen {
 				Done: func(p string) tea.Cmd { identity = p; return nil }})
 		}},
 		{Label: "Remote", Value: func() string { return "" }, Empty: "ssh decides", Disabled: disabled},
+		{Label: "Download to", Path: true, Value: func() string { return downloads }, Edit: func() tea.Cmd {
+			return a.Text(terminu.TextInput{Title: "Download to", Glyph: glyphFolder, Prompt: "Where downloads go (the home directory shows as ~)",
+				Verb: "save", Old: downloads, Done: func(v string) tea.Cmd { downloads = v; return nil }})
+		}},
+		{Label: "Host", Value: func() string { return host }, Edit: func() tea.Cmd {
+			return a.Find(&terminu.Finder{Title: "Host", Glyph: glyphLan, Verb: "choose", Items: hostItems(), Preview: hostPreview,
+				Done: func(it terminu.FinderItem) tea.Cmd { host = it.Text; return nil }})
+		}},
 	}
 	is.inputs = &terminu.Panel{Label: "Inputs", Body: is.values}
 	is.inputs.Actions = is.stateActions(is.inputs)
@@ -158,6 +170,9 @@ func newInputsScreen(s *showcase) *inputsScreen {
 		{Key: "S", Label: "Slow index", Desc: "a search whose results keep arriving", Scope: terminu.PanelScope, Do: is.slowIndex},
 		{Key: "L", Label: "Copy URL", Desc: "the file's address", Scope: terminu.ItemScope,
 			Do: func() tea.Cmd { return a.Toast(terminu.Info, "Copied the URL") }},
+		// This panel gives V to an action of its own: the splash does not open
+		// here (Rules S1).
+		{Key: "V", Label: "View", Desc: "the file's text", Scope: terminu.ItemScope, Hint: "view", Do: is.view},
 	}, is.stateActions(is.files)...)
 
 	is.screen = &terminu.Screen{Name: "Inputs", Key: "I", Desc: "every kind of input",
@@ -230,6 +245,23 @@ func humanSize(n int) string {
 	return fmt.Sprintf("%d MB", n>>20)
 }
 
+// view opens the file under the cursor in a viewer.
+func (is *inputsScreen) view() tea.Cmd {
+	row, ok := is.fileList.Current()
+	if !ok {
+		return nil
+	}
+	b, err := os.ReadFile(row.ID)
+	if err != nil {
+		return is.s.app.Error("View", err.Error())
+	}
+	lines := strings.Split(strings.TrimRight(string(b), "\n"), "\n")
+	if bytes.IndexByte(b, 0) >= 0 {
+		lines = []string{"(binary)"}
+	}
+	return is.s.app.Viewer(&terminu.Viewer{Title: "File", Subject: row.Cells[0], Glyph: glyphYaml, Lines: lines})
+}
+
 func (is *inputsScreen) find() tea.Cmd {
 	return is.s.app.Find(&terminu.Finder{Title: "Search", Glyph: glyphSearch, Verb: "open", Items: fileItems(), Files: true,
 		Done: func(it terminu.FinderItem) tea.Cmd { return is.s.app.Toast(terminu.Info, "Opened "+it.Text) }})
@@ -261,10 +293,38 @@ func (is *inputsScreen) indexStep() tea.Cmd {
 	return tea.Tick(300*time.Millisecond, func(time.Time) tea.Msg { return indexTick{} })
 }
 
+// hosts are pretend ssh hosts for a finder whose preview the app gives.
+var hosts = []struct{ name, addr, user, note string }{
+	{"web-01", "10.0.0.5", "deploy", "the public web server"},
+	{"web-02", "10.0.0.6", "deploy", "the second web server"},
+	{"db-primary", "10.0.4.21", "postgres", "the production database"},
+	{"db-replica", "10.0.4.22", "postgres", "a read-only copy of the database"},
+	{"bastion-02", "203.0.113.7", "jump", "the way in from outside"},
+	{"build", "10.0.8.3", "ci", "where the images are built"},
+}
+
+func hostItems() []terminu.FinderItem {
+	var items []terminu.FinderItem
+	for _, h := range hosts {
+		items = append(items, terminu.FinderItem{ID: h.name, Text: h.name})
+	}
+	return items
+}
+
+// hostPreview is the app's own preview: no file, so no facts under it.
+func hostPreview(it terminu.FinderItem) (string, []string) {
+	for _, h := range hosts {
+		if h.name == it.ID {
+			return h.name, []string{"HostName  " + h.addr, "User      " + h.user, "Port      22", "", h.note}
+		}
+	}
+	return it.Text, nil
+}
+
 // fakeSSH makes a pretend ~/.ssh for the file-picker, so the showcase never
 // shows the real one.
 func fakeSSH() string {
-	dir := filepath.Join(os.TempDir(), "terminu-showcase", ".ssh")
+	dir := filepath.Join(dataDir(), ".ssh")
 	put := func(name, text string) {
 		p := filepath.Join(dir, name)
 		_ = os.MkdirAll(filepath.Dir(p), 0o700)

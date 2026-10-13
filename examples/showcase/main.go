@@ -70,6 +70,7 @@ func newShowcase() *showcase {
 	a.Quit = &terminu.Ask{Title: "Quit", Question: "Quit showcase?", Verb: "quit"}
 	a.QuitDesc = "leave the showcase"
 	a.Status = s.status
+	a.Splash = splash
 	a.Progress = func() (float64, bool) { return s.task, s.taskOn }
 	s.app = a
 	s.panels = newPanelsScreen(s)
@@ -81,8 +82,13 @@ func newShowcase() *showcase {
 	s.terminal = newTerminalScreen(s)
 	a.AddScreen(s.terminal.screen)
 	a.Global = []terminu.Action{
-		{Label: "Narrow layout", Desc: "draw one panel at a time, as on a narrow terminal", Scope: terminu.GlobalScope,
+		{Key: "N", Label: "Narrow layout", Desc: "draw one panel at a time, as on a narrow terminal", Scope: terminu.GlobalScope,
 			Do: func() tea.Cmd { a.ForceNarrow = !a.ForceNarrow; return nil }},
+		// A digit: a global hotkey that only works in the global operation popup (Rules K1, M4).
+		{Key: "1", Label: "About", Desc: "what the showcase is", Scope: terminu.GlobalScope,
+			Do: func() tea.Cmd {
+				return a.Toast(terminu.Info, "showcase "+version+": every component of terminu design")
+			}},
 		{Key: "S", Label: "Start task", Desc: "a long job: the bar under the screen chips", Scope: terminu.GlobalScope,
 			Do: s.startTask},
 		{Label: "Hide secrets in preview", Desc: "the setting hide_secrets_in_preview, on or off", Scope: terminu.GlobalScope,
@@ -100,12 +106,22 @@ func newShowcase() *showcase {
 	return s
 }
 
-// status is the statusbar: how wide an icon is, the running job.
+// status is the statusbar (layout/screen): the layout with its hotkey, how
+// wide an icon is, the log's errors and warnings, the running job. Every
+// number keeps its width (Rules L2).
 func (s *showcase) status(w int) string {
-	text := terminu.Fg(terminu.Overlay0).Render("icon width ") + terminu.Fg(terminu.Lavender).Render(fmt.Sprint(terminu.IconWidth())) +
-		terminu.Fg(terminu.Overlay0).Render("  powerline ") + terminu.Fg(terminu.Lavender).Render(fmt.Sprint(terminu.PowerlineWidth()))
+	grey := terminu.Fg(terminu.Overlay0)
+	narrow := "off"
+	if s.app.ForceNarrow {
+		narrow = "on "
+	}
+	text := grey.Render("[N]arrow: ") + terminu.Fg(terminu.Lavender).Render(narrow) +
+		grey.Render("  icon ") + terminu.Fg(terminu.Lavender).Render(fmt.Sprint(terminu.IconWidth())) +
+		grey.Render("  powerline ") + terminu.Fg(terminu.Lavender).Render(fmt.Sprint(terminu.PowerlineWidth())) +
+		terminu.Fg(terminu.Red).Render(fmt.Sprintf("%3d", s.panels.errors)) + grey.Render(" err") +
+		terminu.Fg(terminu.Peach).Render(fmt.Sprintf("%3d", s.panels.warnings)) + grey.Render(" warn")
 	if s.taskOn {
-		text += terminu.Fg(terminu.Overlay0).Render("  ·  ") + terminu.Fg(terminu.Green).Render(fmt.Sprintf("copying %d%%", int(s.task*100)))
+		text += grey.Render("  ·  ") + terminu.Fg(terminu.Green).Render(fmt.Sprintf("copying %3d%%", int(s.task*100)))
 	}
 	return terminu.Truncate(text, w)
 }

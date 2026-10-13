@@ -31,6 +31,12 @@ type KeyRow struct {
 	Disabled  bool
 }
 
+// KeySection is a titled section of a key reference ("terminal").
+type KeySection struct {
+	Title string
+	Rows  []KeyRow
+}
+
 // Mode is a temporary state of a panel in which some keys mean something of
 // their own and Esc leaves (Rules K11).
 type Mode struct {
@@ -49,7 +55,7 @@ type Mode struct {
 
 // ModeKey is one of a mode's keys.
 type ModeKey struct {
-	// Key is how it is written in the footer and the key reference ("j/k");
+	// Key is how it is written in the footer and the key reference ("j|k");
 	// Keys are the keys it takes, Key itself when empty.
 	Key  string
 	Keys []string
@@ -105,6 +111,9 @@ type Panel struct {
 	// OnEsc is the app's "one level up" for Esc on this panel (Rules K4); it
 	// reports whether there was one.
 	OnEsc func() tea.Cmd
+	// OtherKeys are sections of its ? about another surface that has no key
+	// reference of its own (Rules M6: a PTY, a grid), after the panel's own.
+	OtherKeys []KeySection
 
 	mode *Mode
 	app  *App

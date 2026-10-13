@@ -94,6 +94,16 @@ terminu design（tdp）的 Go 實作：一個像 bubbletea 那樣讓 app 直接�
    - 對照 `docs/coverage.md` 每一條是否受影響，改 lib 與展示場。
    - README 與 CHANGELOG 寫的 tdp 版本跟著改。
 
+### user 走展示場時的回饋
+
+user 在這個 session 手動測展示場、說哪裡怪或想要什麼樣子時，先判斷是哪一種：
+
+1. **lib 沒照規範做**（規範寫了，畫錯或做錯）：直接在這裡改，不用經過 terminu。
+2. **規範本身的問題**（規範沒寫、寫得模糊，或照規範做出來 user 覺得不好用、想換做法）：不改成 user 當場說的樣子，
+   在紀錄的「待定」記一條 G（user 當場說的做法寫進「可能」，註明是 user 說的）；照「之後怎麼走」回 terminu 定案、發版後再改。
+
+分不出是哪一種時，當成第 2 種記下來，跟 user 說。C 的結果記在紀錄的「已驗證」；驗出不對的，照第 2 種記成 G。
+
 ## lib 的範圍
 
 - **lib 管整個畫面與 core key。** app 登記 panel 與動作（鍵、名稱、範圍 item／panel／global、執行前要不要先問、做什麼）；

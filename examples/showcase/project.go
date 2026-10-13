@@ -10,6 +10,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -23,7 +24,7 @@ import (
 var projectDir = fakeProject()
 
 func fakeProject() string {
-	dir := filepath.Join(os.TempDir(), "terminu-showcase", "project")
+	dir := filepath.Join(dataDir(), "project")
 	put := func(name string, data []byte, mode os.FileMode) {
 		p := filepath.Join(dir, name)
 		_ = os.MkdirAll(filepath.Dir(p), 0o755)
@@ -41,7 +42,24 @@ func fakeProject() string {
 	put("config/app.yaml", []byte("token: 3f9a-not-a-real-token\nendpoint: https://example.com\n"), 0o600)
 	put("keys/deploy_key", []byte("-----BEGIN OPENSSH PRIVATE KEY-----\n(a fake key for the showcase)\n-----END OPENSSH PRIVATE KEY-----\n"), 0o644)
 	put(".env", []byte("SHOWCASE_SECRET=not-a-real-secret\n"), 0o600)
+	put("docs/scan.pdf", minimalPDF(""), 0o644)
+	put("assets/photo-large.png", append(tinyPNG(), make([]byte, 1100<<10)...), 0o644)
+	put("secret.bin", []byte("nobody may read this\n"), 0o000)
+	_ = os.Symlink("docs/guide.pdf", filepath.Join(dir, "latest.pdf"))
+	_ = os.MkdirAll(filepath.Join(dir, "empty"), 0o755)
+	// Kept empty, so that rm -rf still removes it.
+	_ = os.MkdirAll(filepath.Join(dir, "locked"), 0o755)
+	_ = os.Chmod(filepath.Join(dir, "locked"), 0o000)
 	return dir
+}
+
+// dataDir holds the showcase's pretend files, at a path easy to type in the
+// file-picker.
+func dataDir() string {
+	if runtime.GOOS == "windows" {
+		return filepath.Join(os.TempDir(), "terminu-showcase")
+	}
+	return "/tmp/terminu-showcase"
 }
 
 // minimalPDF is a one-page PDF that says text.

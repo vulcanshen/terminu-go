@@ -29,4 +29,5 @@ Each release names the version of terminu design (tdp) it implements.
 - A viewer has no cursor until its selection key: the first press brings the cursor out, the second starts the
   selection
 - `Action.Detail` for a menu row that opens its full text: the menu stays and says `Enter:detail`
+- `App.Splash`: the mechanism of tdp chapter S; `Run` refuses an app without one
 - The showcase's Panels, Inputs, Dialogs and Terminal screens

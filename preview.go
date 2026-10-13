@@ -456,6 +456,7 @@ func fileInfo(p string, w int, layer Color) []string {
 	rows := [4][2]string{{"TYPE", ""}, {"SIZE", ""}, {"MODIFIED", ""}, {"MODE", ""}}
 	if lst, err := os.Lstat(p); err == nil {
 		st := lst
+		// TODO(tdp G51): a link's size, time and mode are its target's.
 		if lst.Mode()&fs.ModeSymlink != 0 {
 			target, _ := os.Readlink(p)
 			rows[0][1] = "link → " + target
@@ -468,6 +469,7 @@ func fileInfo(p string, w int, layer Color) []string {
 			if rows[0][1] == "" {
 				rows[0][1] = "directory"
 			}
+			// TODO(tdp G51): a directory it cannot read says 0 items.
 			entries, _ := dirEntries(p, false)
 			rows[1][1] = strconv.Itoa(len(entries)) + " items"
 		default:

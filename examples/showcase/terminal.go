@@ -51,6 +51,12 @@ func newTerminalScreen(s *showcase) *terminalScreen {
 			}},
 		{Label: "Slow start", Desc: "a shell that takes 3 seconds to connect", Scope: terminu.PanelScope, Do: ts.slowStart},
 	}}
+	// Inside the shell ? is the shell's own: its keys are told here (Rules M6).
+	ts.shellP.OtherKeys = []terminu.KeySection{{Title: "terminal", Rows: []terminu.KeyRow{
+		{Key: "Alt-Esc", Desc: "leave the shell, asked first"},
+		{Key: "PgUp", Desc: "the history above the screen"},
+		{Key: "Ctrl-C", Desc: "to the shell, as every other key"},
+	}}}
 	ts.list = &terminu.List{Columns: []terminu.Column{{Title: "Session"}, {Title: "Status"}, {Title: "What", Flex: true}}}
 	ts.refresh()
 	open := func() tea.Cmd {
@@ -62,9 +68,11 @@ func newTerminalScreen(s *showcase) *terminalScreen {
 	}
 	list := &terminu.Panel{Label: "Sessions", Body: ts.list, Actions: []terminu.Action{
 		{Key: "Enter", Label: "Open", Desc: "the session in a terminal popup", Scope: terminu.ItemScope, Hint: "open", Do: open},
-		{Key: "Alt-t", Label: "Term", Desc: "the same, from anywhere in the list", Scope: terminu.ItemScope, Hint: "term", Do: open},
+		{Key: "Alt-t", Label: "term", Desc: "the same, from anywhere in the list", Scope: terminu.ItemScope, Hint: "term", Do: open},
 	}}
-	ts.screen = &terminu.Screen{Name: "Terminal", Key: "T", Desc: "a terminal in a panel and in a popup",
+	// A lowercase screen key in a lowercase name: the chip keeps the marked
+	// letter as it is, [t]ERMINAL (Rules M5, panel: capitals).
+	ts.screen = &terminu.Screen{Name: "terminal", Key: "t", Desc: "a terminal in a panel and in a popup",
 		Panels: []*terminu.Panel{ts.shellP, list}, NarrowBelow: 60, Layout: func(w, h int) []terminu.Rect {
 			left := w * 3 / 5
 			return []terminu.Rect{{X: 0, Y: 0, W: left, H: h}, {X: left, Y: 0, W: w - left, H: h}}

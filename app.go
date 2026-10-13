@@ -75,6 +75,9 @@ type App struct {
 	ForceNarrow bool
 	// Start runs when the program starts.
 	Start func() tea.Cmd
+	// Splash is the family's easter egg, opened with V on a panel (Rules S).
+	// Every app has one: Run refuses an app without it.
+	Splash Splash
 
 	screens  []*Screen
 	cur      int
@@ -86,6 +89,10 @@ type App struct {
 	quitting bool
 	anim     bool
 	spin     bool
+
+	splashOn    bool
+	splashFrame int
+	splashID    int
 }
 
 // New makes an app called name.
@@ -145,6 +152,9 @@ func (a *App) Size() (w, h int) { return a.w, a.h }
 // Run asks the terminal how wide an icon is and what its colours are, then
 // runs the app in the alternate screen.
 func (a *App) Run() error {
+	if err := a.checkSplash(); err != nil {
+		return err
+	}
 	Probe(a.Name)
 	_, err := tea.NewProgram(a, tea.WithAltScreen(), tea.WithOutput(screenOutput{os.Stdout})).Run()
 	return err
@@ -164,6 +174,8 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmd = a.stepAnimation()
 	case spinMsg:
 		a.spin = false
+	case splashMsg:
+		cmd = a.stepSplash(msg)
 	case toastDone:
 		if a.toast != nil && a.toast.view.(*toastView).id == msg.id && !a.toast.closing {
 			a.toast.closing = true
@@ -582,19 +594,26 @@ func (a *App) panelKeyRef(p *Panel) *noteView {
 	core = append(core, KeyRow{Key: "q|Ctrl-C", Desc: "quit"})
 	var app []KeyRow
 	for _, act := range a.globalActions() {
-		if act.Key == "" || act.Key == "q" || own[act.Key] {
+		// On a panel a digit jumps to a panel: a global one works only in the
+		// global operation popup (Rules K1), so it is not a key here.
+		if act.Key == "" || act.Key == "q" || isDigit(act.Key) || own[act.Key] {
 			continue
 		}
 		app = append(app, row(act))
 	}
 	title := "[" + itoa(s.focus+1) + "] " + p.Label
-	return keyReference(title, []refSection{
+	sections := []refSection{
 		{title: "item operation", rows: item},
 		{title: "panel operation", rows: panel},
 		{title: "move", rows: move},
 		{title: "core keys", rows: core},
 		{title: "app-wide", rows: app},
-	})
+	}
+	// TODO(tdp G50): where a section about another surface goes; last for now.
+	for _, o := range p.OtherKeys {
+		sections = append(sections, refSection{title: o.Title, rows: o.Rows})
+	}
+	return keyReference(title, sections)
 }
 
 // modeKeyRef is a mode's key reference (Rules K11).
@@ -612,6 +631,11 @@ func (a *App) modeKeyRef(p *Panel) *noteView {
 
 func (a *App) handleKey(msg tea.KeyMsg) tea.Cmd {
 	key := KeyName(msg)
+	// Any key only closes the splash, Ctrl-C too (Rules S3).
+	if a.splashOn {
+		a.splashOn = false
+		return nil
+	}
 	// A popup that is still opening takes no keys (Rules F2).
 	if l := a.top(); l != nil && l.frame < openFrames {
 		return nil
@@ -766,6 +790,9 @@ func (a *App) panelKey(key string, msg tea.KeyMsg) tea.Cmd {
 			}
 		}
 	}
+	if key == "V" && a.Splash != nil && !p.takesV() {
+		return a.openSplash()
+	}
 	if p.Body != nil {
 		if done, cmd := p.Body.Key(key, msg); done {
 			return cmd
@@ -810,6 +837,9 @@ func (a *App) modeKey(p *Panel, key string, msg tea.KeyMsg) tea.Cmd {
 		}
 		return nil
 	}
+	if key == "V" && a.Splash != nil && !p.takesV() {
+		return a.openSplash()
+	}
 	for _, k := range p.mode.Keys {
 		if k.takes(key) && k.Do != nil {
 			return k.Do(key)
@@ -846,6 +876,11 @@ func (a *App) Frame() []string {
 	w, h := a.w, a.h
 	if w <= 0 || h <= 0 {
 		return nil
+	}
+	// TODO(tdp G49): the splash takes the whole screen, nothing under it.
+	if a.splashOn {
+		lines, _ := a.Splash(a.splashFrame, w, h)
+		return Pad2(lines, w, h)
 	}
 	lines := a.base()
 	if a.top() != nil {

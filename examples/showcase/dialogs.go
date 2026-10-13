@@ -87,11 +87,11 @@ func (ds *dialogsScreen) scenarios() []scenario {
 		}},
 		{"Confirm: long", "confirm", "the details scroll with [j]|[k], the question stays", func() tea.Cmd {
 			var details []string
-			for i := range 30 {
+			for i := range 60 {
 				details = append(details, fmt.Sprintf("assets/images/backgrounds/landscape-%02d.png", i+1))
 			}
-			return a.Confirm(terminu.Ask{Title: "Delete", Question: "Delete these 30 files?", Verb: "delete", Details: details},
-				toast("Deleted 30 files"))
+			return a.Confirm(terminu.Ask{Title: "Delete", Question: "Delete these 60 files?", Verb: "delete", Details: details},
+				toast("Deleted 60 files"))
 		}},
 		{"Confirm: y/n", "confirm", "its own hotkeys, listed in its ?", func() tea.Cmd {
 			return a.Confirm(terminu.Ask{Title: "Overwrite", Question: "Overwrite notes.md? (y/n)", Verb: "overwrite",
@@ -119,6 +119,13 @@ func (ds *dialogsScreen) scenarios() []scenario {
 		}},
 		{"Error popup", "note", "an action failed; Enter or Esc closes it", func() tea.Cmd {
 			return a.Error("Rename failed", "assets.png could not be renamed: a file called backgrounds.png is already there.")
+		}},
+		{"Error popup: long", "note", "a message longer than the popup: [j]|[k] scroll it", func() tea.Cmd {
+			msg := "The deploy of api to prod failed: 3 of 5 pods did not become ready. The last error from each:"
+			for i := range 40 {
+				msg += fmt.Sprintf("\napi-7d4f-%02d: readiness probe failed: GET /healthz: dial tcp 10.244.1.%d:8080: connect: connection refused", i+1, 17+i)
+			}
+			return a.Error("Deploy failed", msg)
 		}},
 		{"Toast", "toast", "a short message on the third row from the bottom", toast("Copied 3 paths")},
 		{"Toast over a popup", "toast", "a popup, then a toast: Esc takes the toast first", func() tea.Cmd {
@@ -323,7 +330,10 @@ func (ds *dialogsScreen) longForm() tea.Cmd {
 	values := map[string]string{}
 	var fields []*terminu.FormField
 	for _, label := range []string{"Name", "Host", "Port", "User", "Proxy", "Identity", "Shell", "Term", "Locale",
-		"Timezone", "Editor", "Pager", "Prompt", "History", "Theme", "Font", "Font size", "Scrollback", "Bell", "Notes"} {
+		"Timezone", "Editor", "Pager", "Prompt", "History", "Theme", "Font", "Font size", "Scrollback", "Bell",
+		"Cursor", "Blink", "Tab width", "Line height", "Opacity", "Padding", "Title", "Icon", "Startup", "Shutdown",
+		"Proxy jump", "Forward agent", "Compression", "Keep alive", "Retries", "Log file", "Log level", "Backup",
+		"Sync", "Notes"} {
 		label := label
 		fields = append(fields, &terminu.FormField{Label: label, Value: func() string { return values[label] }, Empty: "not set",
 			Edit: func() terminu.Input {
@@ -360,7 +370,40 @@ spec:
   restartPolicy: Always
 status:
   phase: Running
-  podIP: 10.244.1.17`, "\n")
+  podIP: 10.244.1.17
+  hostIP: 192.168.49.2
+  startTime: "2026-10-12T08:14:03Z"
+  qosClass: Burstable
+  conditions:
+    - type: Initialized
+      status: "True"
+      lastTransitionTime: "2026-10-12T08:14:03Z"
+    - type: Ready
+      status: "True"
+      lastTransitionTime: "2026-10-12T08:14:09Z"
+    - type: ContainersReady
+      status: "True"
+      lastTransitionTime: "2026-10-12T08:14:09Z"
+    - type: PodScheduled
+      status: "True"
+      lastTransitionTime: "2026-10-12T08:14:03Z"
+  containerStatuses:
+    - name: nginx
+      image: nginx:1.27
+      imageID: docker.io/library/nginx@sha256:5f0574409b3add89581b96c68afe9e9c7b284651c3a974b6e8bac46bf95e6b7f
+      containerID: containerd://8d1c0e4b9f3a2e7d6c5b4a39281706f5e4d3c2b1a0f9e8d7c6b5a49382716051
+      ready: true
+      started: true
+      restartCount: 0
+      state:
+        running:
+          startedAt: "2026-10-12T08:14:07Z"
+  podIPs:
+    - ip: 10.244.1.17
+  ephemeralContainerStatuses: []
+  initContainerStatuses: []
+  hostIPs:
+    - ip: 192.168.49.2`, "\n")
 
 func (ds *dialogsScreen) yaml() tea.Cmd {
 	a := ds.s.app
@@ -394,6 +437,10 @@ func (ds *dialogsScreen) devtools() tea.Cmd {
 		v.Lines = []([]string){console, network}[tab]
 		return nil
 	}
+	// h|l switch the tabs, and move the cursor in the selection mode (Rules K12).
+	v.Select = &terminu.Selection{Key: "v", Name: "Visual", Copy: func(text string) tea.Cmd {
+		return ds.s.app.Toast(terminu.Info, fmt.Sprintf("Copied %d characters", len([]rune(text))))
+	}}
 	return ds.s.app.Viewer(v)
 }
 

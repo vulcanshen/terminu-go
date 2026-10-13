@@ -465,3 +465,30 @@ func TestPanelTabChain(t *testing.T) {
 		t.Errorf("without tabs: %+v", c)
 	}
 }
+
+func TestM6OtherSurfaceSection(t *testing.T) {
+	ta := newTestApp(t)
+	ta.pods.OtherKeys = []KeySection{{Title: "terminal", Rows: []KeyRow{{Key: "Alt-Esc", Desc: "leave the shell"}}}}
+	ta.press("?")
+	text := ta.screenText()
+	app, other := strings.Index(text, "APP-WIDE"), strings.Index(text, "TERMINAL")
+	if other < 0 || !strings.Contains(text, "Alt-Esc") || !strings.Contains(text, "leave the shell") {
+		t.Fatalf("the section about another surface is missing:\n%s", text)
+	}
+	if app > other {
+		t.Error("the section about another surface comes after the panel's own")
+	}
+}
+
+func TestK1DigitGlobalNotInPanelKeyRef(t *testing.T) {
+	ta := newTestApp(t)
+	ta.Global = append(ta.Global, Action{Key: "1", Label: "About", Desc: "the app", Scope: GlobalScope, Do: ta.record("about")})
+	ta.press("?")
+	if strings.Contains(ta.screenText(), "About") {
+		t.Error("a digit global hotkey is listed on a panel, where 1 jumps to a panel")
+	}
+	ta.press("Esc", "Space", "G", "Enter", "1")
+	if len(ta.ran) == 0 || ta.ran[len(ta.ran)-1] != "about" {
+		t.Errorf("1 in the global operation popup: ran %v", ta.ran)
+	}
+}

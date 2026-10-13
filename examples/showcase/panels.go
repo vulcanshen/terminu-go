@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -23,6 +24,8 @@ type panelsScreen struct {
 	values   *terminu.Values
 	disabled bool
 	logN     int
+	errors   int // ERROR lines in the log, for the statusbar
+	warnings int // WARN lines
 	dragFrom string
 }
 
@@ -57,7 +60,10 @@ func newPanelsScreen(s *showcase) *panelsScreen {
 	ps.logText = &terminu.Pager{Follow: true, EmptyFact: "No log lines yet"}
 	ps.log = &terminu.Panel{Label: "Log", Body: ps.logText, Stream: true, Actions: []terminu.Action{
 		{Key: "Enter", Label: "View", Desc: "the whole log in a viewer", Scope: terminu.PanelScope, Hint: "view",
-			Do: func() tea.Cmd { return s.app.Toast(terminu.Info, "The viewer comes with the Dialogs screen") }},
+			Do: func() tea.Cmd {
+				return s.app.Viewer(&terminu.Viewer{Title: "Log", Subject: "api", Glyph: glyphYaml, Lines: slices.Clone(ps.logText.Lines())})
+			}},
+		{Key: "F", Label: "Freeze", Desc: "stop following new lines until Esc", Scope: terminu.PanelScope, Do: ps.freeze},
 	}}
 	for range 12 {
 		ps.appendLog()
@@ -89,7 +95,8 @@ func newPanelsScreen(s *showcase) *panelsScreen {
 		{Label: "Layout", Options: []string{"row", "column"}},
 		{Label: "Notify", Options: []string{"on errors", "on success"}, Multi: true, Checked: []bool{true, false}},
 		{Label: "Remote", Value: func() string { return "ssh decides" }, Disabled: func() bool { return ps.disabled }},
-		{Label: "Timeout", Value: func() string { return timeout }, Edit: func() tea.Cmd {
+		// Fail on this panel makes Timeout wrong: its label turns Red.
+		{Label: "Timeout", Value: func() string { return timeout }, Err: func() bool { return ps.settings.Fail != nil }, Edit: func() tea.Cmd {
 			return a.Number(terminu.NumberInput{Title: "Timeout", Glyph: glyphTimer, Name: "Timeout", Prompt: "Seconds, 1-3600", Verb: "save",
 				Old: timeout, Min: 1, Max: 3600, Done: func(v string) tea.Cmd { timeout = v; return nil }})
 		}},
@@ -276,7 +283,18 @@ func (ps *panelsScreen) notYet(what string) func() tea.Cmd {
 	return func() tea.Cmd { return ps.s.app.Toast(terminu.Info, "The "+what+" comes with the Inputs screen") }
 }
 
-// startDrag enters the Drag mode (Rules K11): j/k move the pod, Enter drops
+// freeze is a mode that does not pause Tab: the panel can lose the focus in
+// it, its mode name then between light joints.
+func (ps *panelsScreen) freeze() tea.Cmd {
+	ps.logText.Follow = false
+	ps.log.EnterMode(&terminu.Mode{Name: "Frozen", Exit: "resume", OnExit: func() tea.Cmd {
+		ps.logText.Follow = true
+		return nil
+	}})
+	return nil
+}
+
+// startDrag enters the Drag mode (Rules K11): j|k move the pod, Enter drops
 // it, Esc puts it back.
 func (ps *panelsScreen) startDrag() tea.Cmd {
 	ps.dragFrom = ps.current()
@@ -336,8 +354,9 @@ func (ps *panelsScreen) sortMenu() tea.Cmd {
 				return a.Menu("Sort by "+c.Title, terminu.MenuSection{Actions: []terminu.Action{
 					{Label: "Ascending", Desc: "smallest first", Do: func() tea.Cmd { ps.podList.SortBy(terminu.SortKey{Col: i}); return nil }},
 					{Label: "Descending", Desc: "largest first", Do: func() tea.Cmd { ps.podList.SortBy(terminu.SortKey{Col: i, Desc: true}); return nil }},
-					{Label: "Then by age", Desc: "this column first, then the age, newest first", Do: func() tea.Cmd {
-						ps.podList.SortBy(terminu.SortKey{Col: i}, terminu.SortKey{Col: 4})
+					// Two keys in two directions: both sort glyphs in the header at once (record C3).
+					{Label: "Then by age", Desc: "this column first, then the age, oldest first", Do: func() tea.Cmd {
+						ps.podList.SortBy(terminu.SortKey{Col: i}, terminu.SortKey{Col: 4, Desc: true})
 						return nil
 					}},
 				}})
@@ -355,8 +374,10 @@ func (ps *panelsScreen) appendLog() {
 	switch lvl {
 	case "WARN":
 		color = terminu.Peach
+		ps.warnings++
 	case "ERROR":
 		color = terminu.Red
+		ps.errors++
 	case "DEBUG":
 		color = terminu.Overlay0
 	}
