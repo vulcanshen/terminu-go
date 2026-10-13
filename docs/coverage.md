@@ -373,7 +373,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | input §單行骨架 | 說明列一句話 Overlay0、空一列；打字列最前面 `nf-fa-angle_right`（層色，離框一格）、空一格接值；值 Lavender、游標 Lavender 底 Base 字；錯誤列；hint `Enter:<動詞> Esc:cancel`（列出全部操作）；寬度：自由打字用上限、有長度上限照內容 | I 的 `Name`、`Timeout`、`Password` | `TestSingleLineSkeleton`、`TestInputAngle` |
 | input §值比框長時 | 顯示游標附近那段、截掉的那邊補 `…`；游標一定看得到、只捲剛好的量；照顯示寬度、一個字不切半（紅色 `\n` 也是） | I 的 `Name`（打一串長的），`Home`／`End` | `TestInputLongValue` |
 | input §編輯鍵 | 字元、`Space` 插入；`←\|→`；`Home\|End`；`Backspace`、`Delete`；一個字是看起來的一個字；不收 `Ctrl-U`、`Ctrl-W`；其他 `Ctrl-`、`Alt-` 不作用不打字 | I 的 `Name`（打中文、emoji、組合字元） | `TestInputEditKeys`、`TestInputGraphemes`、`TestInputCtrlAltIgnored` |
-| input §灰字提議 | 只用在單行（text、number）；打開是空的、舊值灰字在游標後；`Tab` 收進來；直接打字換新值（刪光再出現）；空的時候 `Backspace` 丟掉舊值、`Enter` 存空；什麼都沒碰 `Enter` 不改；hint 加 `Tab:edit Backspace:clear`；只有舊值這一種來源 | I 的 `Name` | `TestInputSuggestion` |
+| input §灰字提議 | 只用在單行（text、number）；打開是空的、舊值灰字從游標那一格開始（游標壓在第一個字上，Lavender 底、Base 字）；`Tab` 收進來；直接打字換新值（刪光再出現）；空的時候 `Backspace` 丟掉舊值、`Enter` 存空；什麼都沒碰 `Enter` 不改；hint 加 `Tab:edit Backspace:clear`；只有舊值這一種來源 | I 的 `Name` | `TestInputSuggestion`、`TestSuggestionUnderCursor` |
 | input §不放 placeholder | input popup 裡不放 placeholder | I 每一列 | `TestInputNoPlaceholder` |
 | input §貼上的控制字元 | 一行的值：貼上的控制字元一個都不丟、畫成紅字不切開：`\r` `\n` `\t` 寫名字（2 格）、其他 C0、DEL、C1 寫 `\xNN`（4 格）；`\r\n` 是兩個；灰列裡跟著灰；`Backspace` 整個刪；遮罩照遮 | I 的 `Name` 貼上多行、貼上帶顏色的字 | `TestPasteMarkers`、`TestPasteControlChars` |
 | input §貼上的控制字元 | 不是打字來的值走同一個過濾；會被拿去用的在 `Enter` 時擋、錯誤列點名欄位（`Name can't have control characters`）；在去空白字元之前檢查；搜尋與篩選的打字列只畫不擋 | I 的 `Name`；I `[/] Find` 貼上 | `TestPasteBlockedOnEnter`、`TestPasteSearchNotBlocked` |
@@ -387,13 +387,14 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | text | 單行骨架、編輯鍵、提議、貼上照 README；確定去空白字元 | I 的 `Name`、`Path` | `TestTextInput` |
 | password §長相 | 兩個方案：一般（每字一個 `•` 靠左）、解鎖（每字一顆 `●` 間隔一格、置中往兩側長）；遮罩 Lavender；舊密碼 8 個灰點用同方案的字；放不下照「值比框長時」；有長度上限照內容寬 | I 的 `Password`（一般）、`PIN`（解鎖，12 碼，框 43 格） | `TestPasswordMasks`、`TestPasswordUnlockWidth` |
 | password §解鎖的游標 | 游標在下一顆 `●` 會出現的位置；打滿最後一碼時停在最後一顆上（Lavender 底、Base 的 `●`）；置中連游標一起算（n 碼 2n + 1 格、打滿 2N − 1 格）；解鎖沒有 `nf-fa-angle_right` | I 的 `PIN` 打幾碼、打滿 12 碼 | `TestUnlockCursor` |
-| password §狀態 | 打開是空的、有舊密碼畫 8 個灰點；什麼都沒打 `Enter`／`Esc` 保留；打字換新的；沒有 `Tab` | I 的 `Password`（已設） | `TestPasswordExisting` |
+| password §狀態 | 打開是空的、有舊密碼畫 8 個灰點，游標壓在第一顆上（解鎖樣式 8 顆間隔一格、置中、15 格）；什麼都沒打 `Enter`／`Esc` 保留；打字換新的；沒有 `Tab` | I 的 `Password`（已設）、`PIN`（已設） | `TestPasswordExisting`、`TestOldPasswordDotsCursor` |
 | password §按鍵 | 貼上照 README（照遮）；`Backspace` 一次清全部（打的 → 回到灰點；空的 → 清掉舊密碼、`Enter` 存成沒有）；hint 加 `Backspace:clear`；只接在尾端，`←→` `Home` `End` `Delete` 沒作用 | 同上 | `TestPasswordBackspaceClears`、`TestPasswordAppendOnly` |
 | password §值 | 不去空白字元；表單與 panel 上設了是 8 個 `•`（Text）、沒設照空值 | I `[1] INPUTS` 的兩列 | `TestPasswordDisplay` |
 | number | 說明列寫範圍；範圍已知寬度確定；打字只收可能的字（負數 `-`、小數 `.`）、貼上只留會收的；不做 `↑↓` 加減；範圍在 `Enter` 檢查 | I 的 `Port`（1-65535）、`Ratio`（小數、可負） | `TestNumberFilter`、`TestNumberRange` |
 | textarea §長相 | 太長自動折行、不左右捲；行號每行第一列、靠右、寬度 max(2, 最大行號位數)、後空一格、折下來的空白；行號 Overlay0、游標那行 Text；寬度與高度都用上限、內容在框裡捲，放不下時捲動位置寫游標的行 `N of M`；值裡的 `\t` 畫成 `input_tab_width` 格 | I 的 `Comment` | `TestTextareaWrapAndNumbers`、`TestTextareaGutterTwoDigits` |
 | textarea §按鍵 | 寫（輸入態、`Enter` 換行、`Tab` 插 `input_tab_width` 個空白（設定、預設 4）、hint `Esc:move`、游標 Lavender 一格）／移（游標層色一格；`Esc` 進來、`i` `a` `o` 回寫、`Enter` 確定、hint `Enter:save i:write Esc:cancel`）；移裡 `Esc` 關（改過先 confirm）；打開在「寫」、舊值帶入、游標在最後、沒有灰字提議 | 同上（有舊值） | `TestTextarea` |
-| textarea §按鍵 | 寫的編輯鍵加 `↑↓`（照畫出的列）、`←→` 跨行、行首 `Backspace` 合併；移的鍵 `hjkl` `w\|b\|e` `0\|$` `u\|d` `gg\|G`；移不是模式也不是輸入態（`?` 開 key reference） | 同上 | `TestTextareaWriteKeys`、`TestTextareaMoveKeys` |
+| textarea §按鍵 | 寫的編輯鍵加 `↑↓`（照畫出的列）、`←→` 跨行、行首 `Backspace` 合併、`Home\|End` 到整篇的頭尾；移的鍵 `hjkl` `w\|b\|e` `0\|$` `u\|d` `gg\|G`；移不是模式也不是輸入態（`?` 開 key reference） | 同上 | `TestTextareaWriteKeys`、`TestTextareaMoveKeys`、`TestTextareaHomeEnd` |
+| textarea §按鍵 | 貼上的換行（`\n`、`\r\n`、單獨的 `\r`）是真的換行；其他控制字元留在值裡畫紅字、`Backspace` 整個刪；有控制字元時「移」裡的 `Enter` 擋下，錯誤列點名欄位（`Notes can't have control characters`），換行與 `\t` 不算 | I 的 `Comment` 貼上帶顏色的字 | `TestTextareaPasteControlChars` |
 | finder §長相 | 兩塊：打字列（最前面 U+F105、離框一格、空一格接打的字；focus 在打字列時層色、在清單時 Overlay0；右邊 `符合/總數`，Overlay0）、分隔線、清單；打字列的字跟清單的字對齊；清單的 cursor 從框貼到框 | I `[/] Find` | `TestFinderLayout` |
 | finder §長相 | 一般 finder 一定有預覽（select、checkbox popup 沒有）；兩框合起來一個 popup 寬；高度一律取最高；寬 ≥ 96 左右並排各一半（有 metadata 時右框是預覽／分隔線／四列 metadata）；不到 96、有 metadata：上面是清單框與 `INFO` 框各一半、下面是整條寬的預覽框，上下各一半；不到 96、沒有 metadata：清單在上、預覽在下，各一半；預覽標題是那一筆的名字、不拿 focus；預覽檔案或目錄的 finder 照 file-picker 的預覽，其他的內容 app 給、沒有 metadata；預覽框用層色、內容不淡化、下框不寫字 | 有 metadata：I `[2] FILES` 的 `[/] Find`；沒有 metadata、預覽是 app 給的：I 的 `Host`；寬 120 與 80 各看一次 | `TestFinderPreview`、`TestFinderFileLayout` |
 | finder §長相 | 邊找邊列：標題後 loading icon、一筆都沒到寫 `(indexing…)`；高度打開時定、寬度用上限 | I `[2] FILES` 的 `[S]low index` | `TestFinderStreaming` |
