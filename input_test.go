@@ -854,3 +854,159 @@ func TestFormScrollPosition(t *testing.T) {
 		t.Error("on the button the position is not written")
 	}
 }
+
+// The grey suggestion starts at the cursor's cell: the cursor sits on its
+// first character like any cursor, the rest is Overlay0, cut with "…" when it
+// is wider than the row (components/input/README).
+func TestSuggestionUnderCursor(t *testing.T) {
+	cursor := Style{Fg: Base, Bg: Lavender}
+	ta := newTestApp(t)
+	ta.Text(TextInput{Title: "Name", Old: "日本語.txt"})
+	ta.settle()
+	lines, _ := covFDraw(ta)
+	if !strings.Contains(lines[4], cursor.Render("日")+Fg(Overlay0).Render("本語.txt")) {
+		t.Errorf("a wide first character under the cursor: %q", lines[4])
+	}
+	if v := covFValue(ta); !strings.HasPrefix(v, "日本語.txt ") {
+		t.Errorf("the suggestion starts right after the angle and its space: %q", v)
+	}
+	// Typing hides it; deleting what was typed brings it back, the cursor on
+	// its first character again.
+	ta.press("x")
+	if v := covFValue(ta); strings.Contains(v, "本") {
+		t.Errorf("typing did not hide the suggestion: %q", v)
+	}
+	ta.press("Backspace")
+	if lines, _ := covFDraw(ta); !strings.Contains(lines[4], cursor.Render("日")) {
+		t.Errorf("the suggestion came back without the cursor on it: %q", lines[4])
+	}
+	ta.press("Esc")
+
+	// A control character first: its red name under the cursor.
+	ta.Text(TextInput{Title: "Name", Old: "\x1bweb"})
+	ta.settle()
+	if lines, _ := covFDraw(ta); !strings.Contains(lines[4], Style{Fg: Red, Bg: Lavender}.Render(`\x1b`)+Fg(Overlay0).Render("web")) {
+		t.Errorf("a control character under the cursor: %q", lines[4])
+	}
+	ta.press("Esc")
+
+	// Wider than the row: cut at the end with "…".
+	ta.resize(40, 20)
+	ta.Text(TextInput{Title: "Name", Old: strings.Repeat("long-", 20)})
+	ta.settle()
+	if v := strings.TrimRight(covFValue(ta), " "); !strings.HasPrefix(v, "long-") || !strings.HasSuffix(v, "…") {
+		t.Errorf("a long suggestion: %q", v)
+	}
+	l := ta.top()
+	for i, row := range l.view.draw(l.w, l.h, LayerColor(1)) {
+		if Width(row) != l.w {
+			t.Errorf("row %d is %d wide, not %d", i, Width(row), l.w)
+		}
+	}
+}
+
+// A password that is set shows eight dots from the cursor's cell on, the
+// cursor on the first; the unlock look's are a cell apart and centred, 15
+// cells (components/input/password).
+func TestOldPasswordDotsCursor(t *testing.T) {
+	cursor := Style{Fg: Base, Bg: Lavender}
+	ta := newTestApp(t)
+	ta.Password(PasswordInput{Title: "Password", Set: true})
+	ta.settle()
+	lines, _ := covFDraw(ta)
+	if !strings.Contains(lines[4], cursor.Render("•")+Fg(Overlay0).Render("•••••••")) || !strings.HasPrefix(covFValue(ta), "•••••••• ") {
+		t.Errorf("ordinary: %q", StripStyles(lines[4]))
+	}
+	ta.press("Esc")
+
+	// A PIN of four: the eight dots are wider than four digits, and the box
+	// holds them.
+	ta.Password(PasswordInput{Title: "PIN", Unlock: true, MaxLen: 4, Set: true})
+	ta.settle()
+	lines, _ = covFDraw(ta)
+	row := StripStyles(lines[4])
+	inner := strings.TrimSuffix(strings.TrimPrefix(row, "┃"), "┃")
+	dots := strings.TrimSpace(inner)
+	left := len(inner) - len(strings.TrimLeft(inner, " "))
+	right := len(inner) - len(strings.TrimRight(inner, " "))
+	if dots != "● ● ● ● ● ● ● ●" || Width(dots) != 15 || left-right > 1 || right-left > 1 {
+		t.Errorf("unlock: %q (left %d, right %d)", row, left, right)
+	}
+	if !strings.Contains(lines[4], cursor.Render("●")+Fg(Overlay0).Render(" ● ● ● ● ● ● ●")) {
+		t.Errorf("unlock: the cursor is not on the first dot: %q", lines[4])
+	}
+}
+
+// In the textarea's writing state Home and End go to the start and the end of
+// the whole text; the line's ends are 0|$ in the moving state
+// (components/input/textarea).
+func TestTextareaHomeEnd(t *testing.T) {
+	ta := newTestApp(t)
+	ta.Textarea(Textarea{Title: "Comment", Old: "ab\ncde\nf"})
+	ta.settle()
+	tv := ta.topView().(*textareaView)
+	at := func(line, col int, what string) {
+		t.Helper()
+		if tv.line != line || tv.col != col {
+			t.Errorf("%s: at %d:%d, want %d:%d", what, tv.line, tv.col, line, col)
+		}
+	}
+	covFPress(ta, "↑", "Home")
+	at(0, 0, "Home from the middle line")
+	covFPress(ta, "↓", "End")
+	at(2, 1, "End from the middle line")
+	covFPress(ta, "Esc", "k", "0")
+	at(1, 0, "0 in the moving state")
+	covFPress(ta, "$")
+	at(1, 2, "$ in the moving state")
+}
+
+// In a textarea a pasted line break (\n, \r\n, a lone \r) is a line break;
+// any other control character stays, drawn as its red name and deleted whole,
+// and the text is not saved while it holds one: the error row names the field
+// (components/input/textarea).
+func TestTextareaPasteControlChars(t *testing.T) {
+	ta := newTestApp(t)
+	got, calls := "", 0
+	ta.Textarea(Textarea{Title: "Notes", Done: func(v string) tea.Cmd { got = v; calls++; return nil }})
+	ta.settle()
+	tv := ta.topView().(*textareaView)
+	covFPaste(ta, "1\r2\r\n3\n4")
+	if tv.value() != "1\n2\n3\n4" {
+		t.Errorf("line breaks: %q", tv.value())
+	}
+	covFPaste(ta, "x\x1by\tz")
+	if tv.value() != "1\n2\n3\n4x\x1by\tz" {
+		t.Errorf("a control character stays, a tab stays: %q", tv.value())
+	}
+	lines, _ := covFDraw(ta)
+	if !strings.Contains(strings.Join(lines, "\n"), Fg(Red).Render(`\x1b`)) {
+		t.Errorf("not drawn as its red name:\n%s", strings.Join(lines, "\n"))
+	}
+	if text := ta.screenText(); !strings.Contains(text, `4x\x1by`) {
+		t.Errorf("the name takes its four cells:\n%s", text)
+	}
+
+	// Enter in the moving state: held back, the error row in Red.
+	ta.press("Esc", "Enter")
+	if calls != 0 || ta.top() == nil {
+		t.Fatalf("saved with a control character: %q", got)
+	}
+	msg := "Notes can't have control characters"
+	lines, _ = covFDraw(ta)
+	l := ta.top()
+	if !strings.Contains(lines[l.h-3], Fg(Red).Render(msg)) || !covFBlank(StripStyles(lines[l.h-4])) {
+		t.Errorf("the error row, a blank row above it:\n%s", strings.Join(lines[l.h-5:], "\n"))
+	}
+
+	// Backspace deletes it whole; then it saves.
+	ta.press("i")
+	covFPress(ta, "End", "←", "←", "←", "Backspace")
+	if tv.value() != "1\n2\n3\n4xy\tz" {
+		t.Fatalf("Backspace on the control character: %q", tv.value())
+	}
+	ta.press("Esc", "Enter")
+	if calls != 1 || got != "1\n2\n3\n4xy\tz" || ta.top() != nil {
+		t.Errorf("a tab does not hold it back: %d %q", calls, got)
+	}
+}

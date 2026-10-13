@@ -193,7 +193,8 @@ func TestInputCommon(t *testing.T) {
 
 // Every one-line input's typing row starts with the angle in the layer
 // colour, one cell from the frame, then a space; the suggestion and the grey
-// dots come after it (components/input/README).
+// dots start right after it, the cursor on their first character
+// (components/input/README).
 func TestInputAngle(t *testing.T) {
 	ta := newTestApp(t)
 	angle := typingAngle(layerColors[0])
@@ -214,7 +215,7 @@ func TestInputAngle(t *testing.T) {
 		lines, _ := covFDraw(ta)
 		plain := StripStyles(lines[4])
 		if !strings.Contains(lines[4], angle) || !strings.HasPrefix(plain, "┃ "+glyphTyping+" ") ||
-			!strings.HasPrefix(covFValue(ta), " "+o.text) {
+			!strings.HasPrefix(covFValue(ta), cmpOr(o.text, " ")) {
 			t.Errorf("%s: %q", o.name, plain)
 		}
 		ta.press("Esc")
@@ -448,8 +449,8 @@ func TestInputSuggestion(t *testing.T) {
 	ta.settle()
 	li := covFLine(ta)
 	lines, _ := covFDraw(ta)
-	if !li.ed.empty() || !strings.Contains(lines[4], Fg(Overlay0).Render("report-2025.pdf")) {
-		t.Fatalf("it opens empty, the old value grey after the cursor: %q", lines[4])
+	if !li.ed.empty() || !strings.Contains(lines[4], Style{Fg: Base, Bg: Lavender}.Render("r")+Fg(Overlay0).Render("eport-2025.pdf")) {
+		t.Fatalf("it opens empty, the old value grey from the cursor on, the cursor on its r: %q", lines[4])
 	}
 	if h := StripStyles(lines[8]); !strings.Contains(h, " Enter:rename Tab:edit Backspace:clear Esc:cancel ") {
 		t.Errorf("hint: %s", h)
@@ -844,8 +845,8 @@ func TestPasswordMasks(t *testing.T) {
 	ta.press("Esc")
 	ta.Password(PasswordInput{Title: "Password", Set: true})
 	ta.settle()
-	if lines, _ := covFDraw(ta); !strings.Contains(lines[4], Fg(Overlay0).Render("••••••••")) {
-		t.Errorf("ordinary, set: eight grey •: %q", StripStyles(lines[4]))
+	if lines, _ := covFDraw(ta); !strings.Contains(lines[4], Style{Fg: Base, Bg: Lavender}.Render("•")+Fg(Overlay0).Render("•••••••")) {
+		t.Errorf("ordinary, set: eight •, the cursor on the first: %q", StripStyles(lines[4]))
 	}
 	ta.press("Esc")
 
@@ -870,8 +871,8 @@ func TestPasswordMasks(t *testing.T) {
 	ta.press("Esc")
 	ta.Password(PasswordInput{Title: "PIN", Unlock: true, MaxLen: 12, Set: true})
 	ta.settle()
-	if lines, _ := covFDraw(ta); !strings.Contains(lines[4], Fg(Overlay0).Render("● ● ● ● ● ● ● ●")) {
-		t.Errorf("unlock, set: eight grey ●: %q", StripStyles(lines[4]))
+	if lines, _ := covFDraw(ta); !strings.Contains(lines[4], Style{Fg: Base, Bg: Lavender}.Render("●")+Fg(Overlay0).Render(" ● ● ● ● ● ● ●")) {
+		t.Errorf("unlock, set: eight ● a cell apart, the cursor on the first: %q", StripStyles(lines[4]))
 	}
 	ta.press("Esc")
 
@@ -970,8 +971,8 @@ func TestPasswordExisting(t *testing.T) {
 	ta.settle()
 	li := covFLine(ta)
 	lines, _ := covFDraw(ta)
-	if !li.ed.empty() || !strings.Contains(lines[4], Fg(Overlay0).Render("••••••••")) {
-		t.Fatalf("it opens empty with eight grey dots: %q", StripStyles(lines[4]))
+	if !li.ed.empty() || !strings.Contains(lines[4], Style{Fg: Base, Bg: Lavender}.Render("•")+Fg(Overlay0).Render("•••••••")) {
+		t.Fatalf("it opens empty with eight dots, the cursor on the first: %q", StripStyles(lines[4]))
 	}
 	if h := StripStyles(lines[8]); strings.Contains(h, "Tab") {
 		t.Errorf("no Tab in the hint: %s", h)

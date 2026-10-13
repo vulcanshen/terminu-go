@@ -19,7 +19,7 @@ type TextInput struct {
 	Prompt string
 	// Verb is what Enter does, for the hint ("rename").
 	Verb string
-	// Old is the value now: offered in grey after the cursor, Tab takes it
+	// Old is the value now: offered in grey from the cursor on, Tab takes it
 	// (components/input/README, the grey suggestion).
 	Old string
 	// MaxLen, when set, is the most characters the value can have; the
@@ -213,6 +213,9 @@ func (li *lineInput) measure(sw, sh int) (int, int) {
 		if li.unlock {
 			extra = 0
 		}
+		if li.kind == kindPassword && li.hasOld {
+			content = max(content, oldDotsWidth(li.unlock)) // the eight grey dots
+		}
 		need := max(content+extra, Width(li.prompt)) + 4
 		need = max(need, Width(titleCapsule(li.glyph, Upper(li.title), Base, 1<<20))+4)
 		// The whole hint, with the suggestion's keys: only a typing row here,
@@ -245,11 +248,11 @@ func (li *lineInput) draw(w, h int, layer Color) []string {
 	case li.kind == kindPassword:
 		value = typingAngle(layer) + li.maskView(cw-angleWidth(), valueStyle, cursor)
 	default:
-		after := ""
+		suggest := ""
 		if li.showingOld() {
-			after = greyText(li.old)
+			suggest = li.old
 		}
-		value = typingAngle(layer) + li.ed.view(cw-angleWidth(), valueStyle, cursor, true, nil, after)
+		value = typingAngle(layer) + li.ed.view(cw-angleWidth(), valueStyle, cursor, true, nil, suggest)
 	}
 	errRow := Fg(Red).Render(Truncate(li.err, cw))
 	if li.unlock {
@@ -273,19 +276,28 @@ func (li *lineInput) maskView(w int, style, cursor Style) string {
 		dot = "●"
 	}
 	if li.showingOld() {
-		grey := strings.Repeat(dot, 8)
+		// Eight dots from the cursor's cell on, the cursor on the first, as the
+		// grey suggestion; the unlock look's a cell apart and centred.
+		rest := strings.Repeat(dot, 7)
 		if li.unlock {
-			// TODO(tdp G71): the cursor where the first ● goes, then the
-			// grey ones a cell apart.
-			grey = strings.TrimSpace(strings.Repeat(dot+" ", 8))
-			return Center(cursor.Render(" ")+" "+Fg(Overlay0).Render(grey), w)
+			rest = strings.Repeat(" "+dot, 7)
+			return Center(cursor.Render(dot)+Fg(Overlay0).Render(rest), w)
 		}
-		return Pad(cursor.Render(" ")+Fg(Overlay0).Render(grey), w)
+		return Pad(cursor.Render(dot)+Fg(Overlay0).Render(rest), w)
 	}
 	if li.unlock {
 		return Center(li.unlockDots(w, style, cursor), w)
 	}
 	return li.ed.view(w, style, cursor, true, func(string) string { return dot }, "")
+}
+
+// oldDotsWidth is how wide the eight grey dots of a password that is set are
+// drawn: 8, or 15 a cell apart in the unlock look (components/input/password).
+func oldDotsWidth(unlock bool) int {
+	if unlock {
+		return 15
+	}
+	return 8
 }
 
 // unlockDots is the unlock look's value, at most w cells: a ● a cell apart

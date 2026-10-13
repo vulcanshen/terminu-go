@@ -167,11 +167,16 @@ func cellWidth(c string) int {
 // view draws the row in w cells: the value in style, the cursor (when shown) a
 // block of cursorStyle, and the part near the cursor when the value is wider
 // than the row, a "…" on the side that is cut (components/input/README).
-// mask, when set, draws each character as something else (password). after,
-// when the value is empty, is drawn after the cursor (the grey suggestion).
-func (e *lineEditor) view(w int, style, cursorStyle Style, showCursor bool, mask func(string) string, after string) string {
+// mask, when set, draws each character as something else (password).
+// suggest, when the value is empty, is offered in grey from the cursor's cell
+// on: the cursor sits on its first character (the grey suggestion).
+func (e *lineEditor) view(w int, style, cursorStyle Style, showCursor bool, mask func(string) string, suggest string) string {
 	if w <= 0 {
 		return ""
+	}
+	if len(e.g) == 0 && suggest != "" {
+		e.scroll = 0
+		return Pad(suggestion(suggest, w, cursorStyle, showCursor), w)
 	}
 	cells := make([]string, len(e.g))
 	widths := make([]int, len(e.g))
@@ -212,10 +217,6 @@ func (e *lineEditor) view(w int, style, cursorStyle Style, showCursor bool, mask
 		}
 		if cursorW == 1 {
 			b.WriteString(cursorStyle.Render(" "))
-		}
-		if len(e.g) == 0 && after != "" {
-			used := cursorW
-			b.WriteString(Truncate(after, w-used))
 		}
 		return Pad(b.String(), w)
 	}
@@ -277,9 +278,22 @@ func (e *lineEditor) view(w int, style, cursorStyle Style, showCursor bool, mask
 	return Pad(b.String(), w)
 }
 
+// suggestion is s offered in grey (components/input/README, the grey
+// suggestion): from the cursor's cell on, the cursor on its first character
+// like any cursor, the rest Overlay0, cut with "…" when wider than w.
+func suggestion(s string, w int, cursorStyle Style, showCursor bool) string {
+	g := newEditor(s).g
+	if !showCursor || len(g) == 0 {
+		return Truncate(greyText(s), w)
+	}
+	first := cursorOn(g[0], cursorStyle)
+	return first + Truncate(greyText(strings.Join(g[1:], "")), w-Width(first))
+}
+
 // cursorOn draws the character under the cursor as a block.
 func cursorOn(c string, cursorStyle Style) string {
-	if name, ok := ctrlName(c); ok {
+	if name, ok := ctrlName(c); ok { // TODO(tdp G120): a control character's name stays red on the cursor
+
 		return Style{Fg: Red, Bg: cursorStyle.Bg}.Render(name)
 	}
 	return cursorStyle.Render(c)

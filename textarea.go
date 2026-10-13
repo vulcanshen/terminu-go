@@ -26,7 +26,7 @@ func (a *App) Textarea(t Textarea) tea.Cmd { return t.open(a, nil) }
 
 func (t Textarea) open(a *App, written func()) tea.Cmd {
 	tv := &textareaView{t: t, writing: true, written: written, tabW: a.inputTabWidth()}
-	for _, l := range strings.Split(strings.ReplaceAll(t.Old, "\r\n", "\n"), "\n") {
+	for _, l := range splitLines(t.Old) {
 		tv.lines = append(tv.lines, graphemes(l))
 	}
 	tv.line = len(tv.lines) - 1
@@ -34,15 +34,22 @@ func (t Textarea) open(a *App, written func()) tea.Cmd {
 	return a.open(tv)
 }
 
+// splitLines cuts text into its lines: "\n", "\r\n" and a lone "\r" are
+// each a line break (components/input/textarea: many terminals paste a line
+// break as "\r").
+func splitLines(s string) []string {
+	s = strings.ReplaceAll(s, "\r\n", "\n")
+	return strings.Split(strings.ReplaceAll(s, "\r", "\n"), "\n")
+}
+
+// graphemes is a line's characters. A pasted control character stays, one
+// character on its own, drawn as its red name (components/input/textarea, as
+// the one-line inputs).
 func graphemes(s string) []string {
 	var out []string
 	g := uniseg.NewGraphemes(s)
 	for g.Next() {
-		c := g.Str()
-		if len(c) == 1 && (c[0] < 0x20 && c[0] != '\t' || c[0] == 0x7f) {
-			continue // TODO(tdp G73): other control characters are dropped
-		}
-		out = append(out, c)
+		out = append(out, g.Str())
 	}
 	return out
 }
@@ -56,16 +63,31 @@ type textareaView struct {
 	visible   int
 	textW     int
 	written   func()
-	tabW      int // input_tab_width: the spaces Tab puts in, the cells a pasted tab takes
+	tabW      int    // input_tab_width: the spaces Tab puts in, the cells a pasted tab takes
+	err       string // the error row: the value holds a control character
 }
 
 // cellW is how wide a character is drawn: a pasted tab takes input_tab_width
-// cells, not lined up to a tab stop (components/input/textarea).
+// cells, not lined up to a tab stop; another control character its name
+// (components/input/textarea).
 func (tv *textareaView) cellW(c string) int {
 	if c == "\t" {
 		return tv.tabW
 	}
-	return Width(c)
+	return cellWidth(c)
+}
+
+// hasControl reports whether the text holds a control character other than
+// a line break or a tab: it is not saved (components/input/textarea).
+func (tv *textareaView) hasControl() bool {
+	for _, l := range tv.lines {
+		for _, c := range l {
+			if _, ok := ctrlName(c); ok && c != "\t" {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (tv *textareaView) value() string {
@@ -134,7 +156,8 @@ func (tv *textareaView) draw(w, h int, layer Color) []string {
 	numW := tv.numWidth()
 	tv.textW = max(inner-2-numW-1, 1)
 	rows := tv.rows(tv.textW)
-	n := max(h-4, 1)
+	// The text, a blank row and the error row, which stays put (layout/popup).
+	n := max(h-6, 1)
 	tv.visible = n
 	cur := tv.cursorRow(rows)
 	tv.top = scrollWindow(tv.top, cur, n, len(rows))
@@ -163,14 +186,18 @@ func (tv *textareaView) draw(w, h int, layer Color) []string {
 		l := tv.lines[r.line]
 		for k := r.start; k < r.end; k++ {
 			c := l[k]
-			text := c
-			if c == "\t" {
-				text = Repeat(" ", tv.tabW)
-			}
-			if i == cur && k == tv.col {
-				b.WriteString(cursor.Render(text))
-			} else {
-				b.WriteString(style.Render(text))
+			switch {
+			case c == "\t":
+				text := Repeat(" ", tv.tabW)
+				if i == cur && k == tv.col {
+					b.WriteString(cursor.Render(text))
+				} else {
+					b.WriteString(style.Render(text))
+				}
+			case i == cur && k == tv.col:
+				b.WriteString(cursorOn(c, cursor))
+			default:
+				b.WriteString(cellText(c, style))
 			}
 		}
 		if i == cur && tv.col == r.end && tv.col == len(l) {
@@ -178,6 +205,7 @@ func (tv *textareaView) draw(w, h int, layer Color) []string {
 		}
 		body = append(body, " "+num+" "+Fit(b.String(), tv.textW)+" ")
 	}
+	body = append(body, Repeat(" ", inner), padRow(Fg(Red).Render(Truncate(tv.err, inner-2)), inner))
 	scroll := ""
 	if len(rows) > n {
 		scroll = scrollText(true, tv.line+1, 0, len(tv.lines))
@@ -186,7 +214,7 @@ func (tv *textareaView) draw(w, h int, layer Color) []string {
 }
 
 func (tv *textareaView) insert(s string) {
-	parts := strings.Split(strings.ReplaceAll(s, "\r\n", "\n"), "\n")
+	parts := splitLines(s)
 	l := tv.lines[tv.line]
 	rest := append([]string(nil), l[tv.col:]...)
 	head := append(l[:tv.col:tv.col], graphemes(parts[0])...)
@@ -277,10 +305,11 @@ func (tv *textareaView) writeKey(key string, msg tea.KeyMsg) tea.Cmd {
 		tv.vertical(-1)
 	case "↓":
 		tv.vertical(1)
-	case "Home": // TODO(tdp G72): to the start and the end of the line
-		tv.col = 0
+	case "Home": // the start and the end of the whole text; 0|$ in the moving state
+		tv.line, tv.col = 0, 0
 	case "End":
-		tv.col = len(l)
+		tv.line = len(tv.lines) - 1
+		tv.col = len(tv.lines[tv.line])
 	case "Backspace":
 		switch {
 		case tv.col > 0:
@@ -448,6 +477,13 @@ func (tv *textareaView) moveKey(a *App, key string) (bool, tea.Cmd) {
 		tv.insert("\n")
 		return true, nil
 	case "Enter":
+		// A control character is not saved: the error row names the field,
+		// as on a one-line input (components/input/textarea).
+		if tv.hasControl() {
+			tv.err = cmpOr(tv.t.Title, "The text") + " can't have control characters"
+			return true, nil
+		}
+		tv.err = ""
 		v := tv.value()
 		if v == tv.t.Old || tv.t.Done == nil {
 			return true, a.closeTop()
