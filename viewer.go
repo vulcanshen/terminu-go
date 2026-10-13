@@ -316,9 +316,8 @@ type viewerColours struct {
 
 // coloured is the lines as drawn (components/dialog/note): in the colours
 // Lang reads them in, the file preview's; with no Lang, or one not known,
-// plain text in Text.
-// TODO(tdp G83): a line the app styled itself (a log's levels) keeps its
-// styles then, the rest of it in Text.
+// plain text in Text, where a line the app styled itself (a log's levels)
+// keeps its styles.
 func (v *Viewer) coloured() []string {
 	c := &v.colours
 	if c.lang == v.Lang && slices.Equal(c.lines, v.Lines) && len(c.out) == len(v.Lines) {

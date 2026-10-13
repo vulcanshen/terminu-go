@@ -47,7 +47,7 @@ go run github.com/vulcanshen/terminu-go/examples/showcase@latest
 
 ## 實作哪一版 terminu design
 
-terminu-go 實作 **tdp v0.5.6**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
+terminu-go 實作 **tdp v0.5.7**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
 
 ## 相關連結
 
