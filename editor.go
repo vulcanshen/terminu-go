@@ -292,7 +292,7 @@ func suggestion(s string, w int, cursorStyle Style, showCursor bool) string {
 
 // cursorOn draws the character under the cursor as a block.
 func cursorOn(c string, cursorStyle Style) string {
-	if name, ok := ctrlName(c); ok { // TODO(tdp G120): a control character's name stays red on the cursor
+	if name, ok := ctrlName(c); ok { // TODO(tdp G81): a control character's name stays red on the cursor
 
 		return Style{Fg: Red, Bg: cursorStyle.Bg}.Render(name)
 	}
