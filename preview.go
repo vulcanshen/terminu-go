@@ -168,11 +168,23 @@ func highlight(p, text string, h int) []string {
 	if lexer == nil {
 		lexer = lexers.Fallback
 	}
+	coloured := colourise(lexer, lines)
+	numW := len(strconv.Itoa(len(lines)))
+	out := make([]string, len(lines))
+	for i := range lines {
+		out[i] = Fg(Overlay0).Render(PadLeft(strconv.Itoa(i+1), numW)) + " " + coloured[i]
+	}
+	return out
+}
+
+// colourise is lines in the colours of catppuccin-mocha as lexer reads them,
+// foreground only; what it leaves uncoloured is Text. A viewer colours its
+// content with it too (components/dialog/note).
+func colourise(lexer chroma.Lexer, lines []string) []string {
 	style := styles.Get("catppuccin-mocha")
-	shown := strings.Join(lines, "\n")
 	coloured := make([]strings.Builder, len(lines))
 	row := 0
-	if it, err := chroma.Coalesce(lexer).Tokenise(nil, shown); err == nil {
+	if it, err := chroma.Coalesce(lexer).Tokenise(nil, strings.Join(lines, "\n")); err == nil {
 		for tok := it(); tok != chroma.EOF; tok = it() {
 			c := style.Get(tok.Type).Colour
 			parts := strings.Split(tok.Value, "\n")
@@ -191,14 +203,12 @@ func highlight(p, text string, h int) []string {
 			}
 		}
 	}
-	numW := len(strconv.Itoa(len(lines)))
 	out := make([]string, len(lines))
 	for i := range lines {
-		body := coloured[i].String()
-		if body == "" && lines[i] != "" {
-			body = Fg(Text).Render(lines[i])
+		out[i] = coloured[i].String()
+		if out[i] == "" && lines[i] != "" {
+			out[i] = Fg(Text).Render(lines[i])
 		}
-		out[i] = Fg(Overlay0).Render(PadLeft(strconv.Itoa(i+1), numW)) + " " + body
 	}
 	return out
 }

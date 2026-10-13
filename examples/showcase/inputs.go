@@ -261,10 +261,11 @@ func (is *inputsScreen) view() tea.Cmd {
 		return is.s.app.Error("View", err.Error())
 	}
 	lines := strings.Split(strings.TrimRight(string(b), "\n"), "\n")
+	lang := row.ID // coloured as the file's name says, as in the preview
 	if bytes.IndexByte(b, 0) >= 0 {
-		lines = []string{"(binary)"}
+		lines, lang = []string{"(binary)"}, ""
 	}
-	return is.s.app.Viewer(&terminu.Viewer{Title: "File", Subject: row.Cells[0], Glyph: glyphYaml, Lines: lines})
+	return is.s.app.Viewer(&terminu.Viewer{Title: "File", Subject: row.Cells[0], Glyph: glyphYaml, Lines: lines, Lang: lang})
 }
 
 func (is *inputsScreen) find() tea.Cmd {

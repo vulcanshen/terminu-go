@@ -403,7 +403,7 @@ status:
 
 func (ds *dialogsScreen) yaml() tea.Cmd {
 	a := ds.s.app
-	v := &terminu.Viewer{Title: "YAML", Subject: "pod/nginx-7d4f", Glyph: glyphYaml, Lines: yamlLines}
+	v := &terminu.Viewer{Title: "YAML", Subject: "pod/nginx-7d4f", Glyph: glyphYaml, Lines: yamlLines, Lang: "yaml"}
 	v.Keys = []terminu.ViewerKey{
 		{Key: "y", Desc: "copy", Do: func() tea.Cmd { return a.Toast(terminu.Info, "Copied the YAML") }},
 		{Key: "/", Desc: "search", Do: func() tea.Cmd {

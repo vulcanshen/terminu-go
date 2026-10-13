@@ -1,9 +1,12 @@
 package terminu
 
 import (
+	"slices"
 	"strconv"
 	"strings"
 
+	"github.com/alecthomas/chroma/v2"
+	"github.com/alecthomas/chroma/v2/lexers"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -19,6 +22,12 @@ type Viewer struct {
 	Glyph          string
 	Lines          []string
 	Loading        bool
+	// Lang is the language its lines are coloured in, as the file preview
+	// colours a text file (components/dialog/note): a chroma lexer's name or
+	// alias ("yaml", "json"), a file name to judge by ("deploy.yaml"), or a
+	// content type ("application/json"). Unset or not known: plain text, in
+	// Text (an App Log).
+	Lang string
 	// Tabs, when set, follow the title (components/layout/popup); h/l switch
 	// them and OnTab fills Lines for the new one.
 	Tabs  []string
@@ -29,9 +38,13 @@ type Viewer struct {
 	// Select, when set, gives it a selection mode (Rules K11).
 	Select *Selection
 
-	// top is the first line in sight; visible the rows of text; textW the
-	// cells of text a row holds, after the line numbers.
-	top, visible, textW int
+	// top is the line the first row in sight belongs to and sub that row
+	// among the rows the line folds onto; visible the rows of text; textW
+	// the cells of text a row holds, after the line numbers; numW the line
+	// numbers' column, as wide as it has been since it opened.
+	top, sub, visible, textW, numW int
+	// colours caches the lines as drawn for the lines and Lang they are of.
+	colours viewerColours
 	// The selection mode (components/dialog/note): the first press of its
 	// key brings the cursor out (inMode), the second starts the selection
 	// there. The cursor and where the selection started are in characters
@@ -62,12 +75,15 @@ type Selection struct {
 func (s *Selection) copyKey() string { return cmpOr(s.CopyKey, "y") }
 
 // Viewer opens a viewer.
-func (a *App) Viewer(v *Viewer) tea.Cmd { return a.open(&viewerView{v: v}) }
+func (a *App) Viewer(v *Viewer) tea.Cmd {
+	v.numW = 0
+	return a.open(&viewerView{v: v})
+}
 
 // ScrollTo puts line i at the top as far as the lines go; in the selection
 // mode the cursor goes to its start.
 func (v *Viewer) ScrollTo(i int) {
-	v.top = i
+	v.top, v.sub = i, 0
 	if v.inMode {
 		v.line, v.col = max(i, 0), 0
 	}
@@ -122,10 +138,13 @@ func (vv *viewerView) measure(sw, sh int) (int, int) {
 }
 
 // numWidth is the line numbers' column (components/dialog/note): at least
-// three digits. A viewer's lines are known when it opens, so the column keeps
-// its width while it is open; one whose lines stream in widens past 999.
-// TODO(tdp G79): tabs; each tab's own lines for now.
-func (v *Viewer) numWidth() int { return max(len(strconv.Itoa(len(v.Lines))), 3) }
+// three digits, and it only grows. A viewer's lines are known when it opens,
+// so the column keeps its width; lines that stream in widen it past 999; a
+// tab with more lines widens it, and going back to one with fewer keeps it.
+func (v *Viewer) numWidth() int {
+	v.numW = max(v.numW, len(strconv.Itoa(len(v.Lines))), 3)
+	return v.numW
+}
 
 // textWidth is how many cells of text a row holds in inner cells: one cell
 // of padding either side, the line numbers and the space after them.
@@ -148,26 +167,60 @@ func (v *Viewer) wrap(i int) []int {
 	return starts
 }
 
-// maxTop is the last line that can be at the top: from there the lines to
-// the end fill the rows; a line taller than the rows can still be the top.
-// TODO(tdp G80): it scrolls a line at a time, so the rows of a line taller
-// than the view past its bottom are never in sight.
-func (v *Viewer) maxTop() int {
-	t, rows := len(v.Lines), 0
-	for t > 0 {
-		if rows += len(v.wrap(t - 1)); rows > v.visible {
-			break
+// maxTop is the last row that can be at the top, as a line and a row of it:
+// from there the rows to the end fill the view. It scrolls a row at a time
+// (components/dialog/note), so a line taller than the view is read whole.
+func (v *Viewer) maxTop() (line, sub int) {
+	rows := 0
+	for t := len(v.Lines) - 1; t >= 0; t-- {
+		n := len(v.wrap(t))
+		if rows+n >= v.visible {
+			return t, rows + n - v.visible
 		}
-		t--
+		rows += n
 	}
-	return min(t, max(len(v.Lines)-1, 0))
+	return 0, 0
+}
+
+// clampTop keeps the first row in sight between the first row and maxTop.
+func (v *Viewer) clampTop() {
+	if v.top < 0 || len(v.Lines) == 0 {
+		v.top, v.sub = 0, 0
+		return
+	}
+	if t, s := v.maxTop(); v.top > t || v.top == t && v.sub > s {
+		v.top, v.sub = t, s
+	}
+	v.sub = min(max(v.sub, 0), len(v.wrap(v.top))-1)
+}
+
+// scrollRows scrolls n rows, down when n is positive: a folded line is
+// passed a row at a time, as less does (components/dialog/note).
+func (v *Viewer) scrollRows(n int) {
+	v.clampTop()
+	for ; n > 0; n-- {
+		if v.sub+1 < len(v.wrap(v.top)) {
+			v.sub++
+		} else if v.top+1 < len(v.Lines) {
+			v.top, v.sub = v.top+1, 0
+		}
+	}
+	for ; n < 0; n++ {
+		if v.sub > 0 {
+			v.sub--
+		} else if v.top > 0 {
+			v.top--
+			v.sub = len(v.wrap(v.top)) - 1
+		}
+	}
+	v.clampTop()
 }
 
 // follow scrolls as little as it takes to show line whole (the selection
 // mode's cursor; components/dialog/note).
 func (v *Viewer) follow(line int) {
-	if line < v.top {
-		v.top = line
+	if line < v.top || line == v.top && v.sub > 0 {
+		v.top, v.sub = line, 0
 		return
 	}
 	t, rows := line, 0
@@ -177,7 +230,9 @@ func (v *Viewer) follow(line int) {
 		}
 		t--
 	}
-	v.top = max(v.top, min(t+1, line))
+	if top := max(v.top, min(t+1, line)); top != v.top {
+		v.top, v.sub = top, 0
+	}
 }
 
 func (vv *viewerView) isLoading() bool { return vv.v.Loading }
@@ -193,16 +248,21 @@ func (vv *viewerView) draw(w, h int, layer Color) []string {
 		v.line = min(max(v.line, 0), max(len(v.Lines)-1, 0))
 		v.follow(v.line) // the view follows the cursor
 	}
-	v.top = min(max(v.top, 0), v.maxTop())
+	v.clampTop()
 	// Each line's first row has its number, right-aligned, a space after it;
 	// the rows it folds onto leave the column blank. Numbers in Overlay0, the
 	// cursor's line in Text (components/dialog/note).
 	body := make([]string, 0, v.visible)
-	last, whole := v.top-1, true // the last line in sight, and whether all of it is
+	last, whole := v.top-1, true // the line of the last row in sight, and whether all of it is
 	for i := v.top; i < len(v.Lines) && len(body) < v.visible; i++ {
 		styled := vv.lineView(i, layer)
 		starts := v.wrap(i)
-		for r, from := range starts {
+		first := 0
+		if i == v.top {
+			first = v.sub // the rows of the top line scrolled past
+		}
+		for r := first; r < len(starts); r++ {
+			from := starts[r]
 			if len(body) == v.visible {
 				whole = false
 				break
@@ -226,11 +286,11 @@ func (vv *viewerView) draw(w, h int, layer Color) []string {
 	for len(body) < v.visible {
 		body = append(body, Repeat(" ", inner))
 	}
-	// The scroll position, in lines, the numbers on the left: the lines in
-	// sight, N-M of T; in the selection mode the cursor's line, N of M
-	// (components/dialog/note).
+	// The scroll position, in lines, the numbers on the left: the lines the
+	// first and the last row in sight belong to, N-M of T; in the selection
+	// mode the cursor's line, N of M (components/dialog/note).
 	scroll := ""
-	if v.top > 0 || last < len(v.Lines)-1 || !whole {
+	if v.top > 0 || v.sub > 0 || last < len(v.Lines)-1 || !whole {
 		if v.inMode {
 			scroll = scrollText(true, v.line+1, 0, len(v.Lines))
 		} else {
@@ -246,6 +306,64 @@ func (vv *viewerView) draw(w, h int, layer Color) []string {
 		box.color, box.mode = Yellow, cmpOr(v.Select.Name, "Select")
 	}
 	return box.draw(w, body)
+}
+
+// viewerColours is the lines as drawn, for the lines and Lang they are of.
+type viewerColours struct {
+	lang       string
+	lines, out []string
+}
+
+// coloured is the lines as drawn (components/dialog/note): in the colours
+// Lang reads them in, the file preview's; with no Lang, or one not known,
+// plain text in Text.
+// TODO(tdp G130): a line the app styled itself (a log's levels) keeps its
+// styles then, the rest of it in Text.
+func (v *Viewer) coloured() []string {
+	c := &v.colours
+	if c.lang == v.Lang && slices.Equal(c.lines, v.Lines) && len(c.out) == len(v.Lines) {
+		return c.out
+	}
+	c.lang, c.lines = v.Lang, slices.Clone(v.Lines)
+	c.out = make([]string, len(v.Lines))
+	if lexer := lexerFor(v.Lang); lexer != nil {
+		plain := make([]string, len(v.Lines))
+		for i, l := range v.Lines {
+			plain[i] = StripStyles(l)
+		}
+		for i, l := range colourise(lexer, plain) {
+			if StripStyles(l) != plain[i] { // the lexer changed the text: not coloured
+				l = Fg(Text).Render(plain[i])
+			}
+			c.out[i] = l
+		}
+		return c.out
+	}
+	for i, l := range v.Lines {
+		c.out[i] = onText(l)
+	}
+	return c.out
+}
+
+// onText is l with what it leaves unstyled in Text: its start, and after
+// every reset in it.
+func onText(l string) string {
+	fg := "\x1b[" + sgrRGB(true, Text.RGB) + "m"
+	l = strings.ReplaceAll(l, "\x1b[0m", "\x1b[0m"+fg)
+	l = strings.ReplaceAll(l, "\x1b[m", "\x1b[m"+fg)
+	return fg + l + "\x1b[0m"
+}
+
+// lexerFor is the lexer a viewer's Lang names: a lexer's name or alias, a
+// file name, or a content type; nil when there is none.
+func lexerFor(lang string) chroma.Lexer {
+	if lang == "" {
+		return nil
+	}
+	if l := lexers.Get(lang); l != nil {
+		return l
+	}
+	return lexers.MatchMimeType(strings.TrimSpace(strings.SplitN(lang, ";", 2)[0]))
 }
 
 // readLines makes the plain characters of each line, which the cursor
@@ -266,12 +384,13 @@ func (v *Viewer) selection() (pos, pos) {
 	return start, end
 }
 
-// lineView is line i, in the selection mode with the cursor, a block of the
-// layer colour, and the part selected in the mode's colour, Yellow
-// (components/dialog/note, components/color).
+// lineView is line i as drawn, in the selection mode with the cursor, a
+// block of the layer colour, and the part selected in the mode's colour,
+// Yellow, its syntax colours not shown (components/dialog/note,
+// components/color).
 func (vv *viewerView) lineView(i int, layer Color) string {
 	v := vv.v
-	line := v.Lines[i]
+	line := v.coloured()[i]
 	chars := v.plain[i]
 	from, to := -1, -1 // the characters selected on this line
 	if v.selecting {
@@ -488,17 +607,17 @@ func (vv *viewerView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 	half := max(v.visible/2, 1)
 	switch key {
 	case "j", "↓":
-		v.top++
+		v.scrollRows(1)
 	case "k", "↑":
-		v.top--
+		v.scrollRows(-1)
 	case "d", "PgDn":
-		v.top += half
+		v.scrollRows(half)
 	case "u", "PgUp":
-		v.top -= half
+		v.scrollRows(-half)
 	case "gg":
-		v.top = 0
+		v.top, v.sub = 0, 0
 	case "G":
-		v.top = len(v.Lines)
+		v.top, v.sub = len(v.Lines), 0
 	case "h", "←", "l", "→":
 		if n := len(v.Tabs); n > 0 {
 			dir := 1
@@ -506,7 +625,7 @@ func (vv *viewerView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 				dir = -1
 			}
 			v.Tab = (v.Tab + dir + n) % n
-			v.top = 0
+			v.top, v.sub = 0, 0
 			return true, run2tab(v.OnTab, v.Tab)
 		}
 	case "Enter", "Space":
@@ -529,7 +648,7 @@ func (vv *viewerView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 		}
 		return false, nil
 	}
-	v.top = min(max(v.top, 0), v.maxTop())
+	v.clampTop()
 	return true, nil
 }
 
