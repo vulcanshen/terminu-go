@@ -350,3 +350,19 @@ func TestFormSkipDisabledOption(t *testing.T) {
 		t.Errorf("a disabled option is drawn in Surface2: %q", row)
 	}
 }
+
+func TestPopupTitleCutKeepsCapsule(t *testing.T) {
+	cap := titleCapsule("", "FILE — /srv/projects/showcase/assets", Blue, 20)
+	if !strings.Contains(StripStyles(cap), "…") {
+		t.Fatalf("the title is not cut: %q", StripStyles(cap))
+	}
+	// Nothing may end the capsule's background before its "…".
+	body := cap[strings.Index(cap, "FILE"):]
+	if reset := strings.Index(body, "\x1b[m"); reset >= 0 && reset < strings.Index(body, "…") ||
+		strings.Contains(body[:strings.Index(body, "…")], "\x1b[0m") {
+		t.Errorf("the capsule's background ends before its …: %q", cap)
+	}
+	if got := Truncate("plain text here", 8); strings.Contains(got, "\x1b") {
+		t.Errorf("Truncate added a style to plain text: %q", got)
+	}
+}

@@ -160,7 +160,13 @@ func Truncate(s string, w int) string {
 	if w == 1 {
 		return "…"
 	}
-	return trimRight(Cut(s, 0, w-1)) + "…"
+	cut := trimRight(Cut(s, 0, w-1))
+	// Plain text stays plain: a reset in it would end the style of whatever
+	// it is drawn in (the title capsule's background before its "…").
+	if !strings.Contains(s, "\x1b") {
+		cut = strings.TrimSuffix(cut, ansi.ResetStyle)
+	}
+	return cut + "…"
 }
 
 // TruncateLeft fits one line in w cells, cutting from the front and putting
