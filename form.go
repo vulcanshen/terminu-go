@@ -283,17 +283,14 @@ func (fv *formView) draw(w, h int, layer Color) []string {
 	}
 	body = append(body, PadLeft(button, inner-1)+" ")
 	scroll := ""
-	if len(rows) > area {
-		// TODO(tdp G37): counted in Tab's stops: fields, the error row, the button.
-		items := fv.items()
-		st := fv.stations(items)
-		pos := 1
-		for i, s := range st {
-			if s == fv.focus || s.field != nil && s.field == fv.focus.field {
-				pos = i + 1
+	// The position counts fields only; on the error row or the button there
+	// is no field to count, so it is not written (components/dialog/form).
+	if len(rows) > area && fv.focus.kind == itemField {
+		for i, f := range fv.f.Fields {
+			if f == fv.focus.field {
+				scroll = scrollText(true, i+1, 0, len(fv.f.Fields))
 			}
 		}
-		scroll = scrollText(true, pos, 0, len(st))
 	}
 	return popupBox{color: layer, glyph: fv.f.Glyph, title: Upper(fv.f.Title), hint: fv.hint(), scroll: scroll}.draw(w, body)
 }
@@ -421,7 +418,7 @@ func (fv *formView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 			return true, a.open(&noteView{
 				glyph: fv.f.Glyph, title: Upper(label), name: label, known: true, enterCloses: true,
 				lines: []string{Fg(Text).Render("Press [Enter] to edit " + label + ".")},
-				hint:  []KeyHint{{"Enter/Esc", "close"}},
+				hint:  []KeyHint{{"Enter|Esc", "close"}},
 			})
 		}
 		return true, nil // q too: a form does not start the quit flow (Rules K9)
@@ -499,10 +496,10 @@ func (fv *formView) keyRef() []refSection {
 			{Key: "Esc", Desc: "cancel (asks first when something changed)"},
 		}},
 		{title: "move", rows: []KeyRow{
-			{Key: "j/k", Desc: "next, previous"},
-			{Key: "Tab/Shift-Tab", Desc: "next, previous field"},
-			{Key: "u/d", Desc: "half a page up, down"},
-			{Key: "gg/G", Desc: "to the first, the button"},
+			{Key: "j|k", Desc: "next, previous"},
+			{Key: "Tab|Shift-Tab", Desc: "next, previous field"},
+			{Key: "u|d", Desc: "half a page up, down"},
+			{Key: "gg|G", Desc: "to the first, the button"},
 		}},
 	}
 }

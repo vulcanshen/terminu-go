@@ -211,8 +211,8 @@ func (t *Terminal) resize(w, h int) {
 	}
 }
 
-// lines draws the screen in w × h; cursor draws the program's cursor.
-// TODO(tdp G41): the cursor is a block in Text with Base on it.
+// lines draws the screen in w × h; cursor draws the program's cursor, a block
+// in Text with Base on it whatever shape it asks for (components/dialog/terminal).
 func (t *Terminal) lines(w, h int, cursor bool) []string {
 	t.resize(w, h)
 	t.mu.Lock()

@@ -28,12 +28,14 @@ type Viewer struct {
 	Select *Selection
 
 	top, visible int
-	// The selection mode: the cursor and where the selection started, in
-	// characters of the plain lines.
-	selecting    bool
-	line, col    int
-	fromL, fromC int
-	plain        [][]string
+	// The selection mode (components/dialog/note): the first press of its
+	// key brings the cursor out (inMode), the second starts the selection
+	// there. The cursor and where the selection started are in characters
+	// of the plain lines.
+	inMode, selecting bool
+	line, col         int
+	fromL, fromC      int
+	plain             [][]string
 }
 
 // ViewerKey is one of a viewer's own hotkeys.
@@ -42,9 +44,10 @@ type ViewerKey struct {
 	Do        func() tea.Cmd
 }
 
-// Selection is a viewer's selection mode: Key starts it, the cursor moves
-// through the text (h/j/k/l, w/b/e, 0/$), CopyKey hands the selected text to
-// Copy and leaves; Esc leaves.
+// Selection is a viewer's selection mode: Key brings the cursor out at the
+// start of the first line in sight, Key again starts the selection where it
+// is, the cursor moves through the text (h|j|k|l, w|b|e, 0|$), CopyKey hands
+// the selected text to Copy and leaves; Esc leaves.
 type Selection struct {
 	Key     string // "v"
 	Name    string // the mode's name on the frame: "Visual"
@@ -57,8 +60,14 @@ func (s *Selection) copyKey() string { return cmpOr(s.CopyKey, "y") }
 // Viewer opens a viewer.
 func (a *App) Viewer(v *Viewer) tea.Cmd { return a.open(&viewerView{v: v}) }
 
-// ScrollTo puts line i at the top, as far as the lines go.
-func (v *Viewer) ScrollTo(i int) { v.top = i }
+// ScrollTo puts line i at the top as far as the lines go; in the selection
+// mode the cursor goes to its start.
+func (v *Viewer) ScrollTo(i int) {
+	v.top = i
+	if v.inMode {
+		v.line, v.col = max(i, 0), 0
+	}
+}
 
 // Top is the first line in sight.
 func (v *Viewer) Top() int { return v.top }
@@ -75,8 +84,11 @@ func (vv *viewerView) title() string {
 
 func (vv *viewerView) hint() []KeyHint {
 	v := vv.v
-	if v.selecting {
+	switch {
+	case v.selecting:
 		return []KeyHint{{v.Select.copyKey(), "copy"}, {"Esc", "cancel"}}
+	case v.inMode:
+		return []KeyHint{{v.Select.Key, "select"}, {"Esc", "cancel"}}
 	}
 	var h []KeyHint
 	for _, k := range v.Keys {
@@ -89,7 +101,9 @@ func (vv *viewerView) hint() []KeyHint {
 }
 
 func (vv *viewerView) measure(sw, sh int) (int, int) {
-	return popupWidth(sw, 0, false), min(len(vv.v.Lines)+4, max(sh-2, 3))
+	h := min(len(vv.v.Lines)+4, max(sh-2, 3))
+	vv.v.visible = max(h-4, 1)
+	return popupWidth(sw, 0, false), h
 }
 
 func (vv *viewerView) isLoading() bool { return vv.v.Loading }
@@ -98,83 +112,121 @@ func (vv *viewerView) draw(w, h int, layer Color) []string {
 	v := vv.v
 	inner := w - 2
 	v.visible = max(h-4, 1)
-	v.plain = v.plain[:0]
-	for _, l := range v.Lines {
-		v.plain = append(v.plain, graphemes(StripStyles(l)))
+	v.readLines()
+	// The scroll position: the lines in sight, N-M of T; in the selection
+	// mode the cursor's line, N of M (components/dialog/note).
+	scroll := ""
+	if v.inMode {
+		v.line = min(max(v.line, 0), max(len(v.Lines)-1, 0))
+		v.top = scrollWindow(v.top, v.line, v.visible, len(v.Lines)) // the view follows the cursor
+		if len(v.Lines) > v.visible {
+			scroll = scrollText(true, v.line+1, 0, len(v.Lines))
+		}
+	} else {
+		v.top = min(max(v.top, 0), max(len(v.Lines)-v.visible, 0))
+		if len(v.Lines) > v.visible {
+			scroll = scrollText(false, v.top+1, min(v.top+v.visible, len(v.Lines)), len(v.Lines))
+		}
 	}
-	if v.selecting {
-		v.top = scrollWindow(v.top, v.line, v.visible, len(v.Lines))
-	}
-	v.top = min(max(v.top, 0), max(len(v.Lines)-v.visible, 0))
 	body := make([]string, 0, v.visible)
 	for i := v.top; i < v.top+v.visible; i++ {
 		if i >= len(v.Lines) {
 			body = append(body, Repeat(" ", inner))
 			continue
 		}
-		body = append(body, padRow(vv.lineWithSelection(i), inner))
-	}
-	scroll := ""
-	if len(v.Lines) > v.visible {
-		scroll = scrollText(false, v.top+1, min(v.top+v.visible, len(v.Lines)), len(v.Lines))
+		body = append(body, padRow(vv.lineView(i, layer), inner))
 	}
 	box := popupBox{color: layer, glyph: v.Glyph, title: vv.title(), hint: vv.hint(), scroll: scroll, loading: v.Loading}
 	for i, t := range v.Tabs {
 		box.tabs = append(box.tabs, Capsule{Text: Upper(t), Selected: i == v.Tab})
 	}
-	if v.selecting {
+	if v.inMode {
 		// A mode marks its frame: the mode colour and its name (Rules K11).
 		box.color, box.mode = Yellow, cmpOr(v.Select.Name, "Select")
 	}
 	return box.draw(w, body)
 }
 
-// lineWithSelection is line i with the part selected drawn in the mode's
-// colour (components/color: what a mode selects is Yellow). TODO(tdp G39):
-// as vim's v: from the start to the cursor, the character under it in.
-func (vv *viewerView) lineWithSelection(i int) string {
-	v := vv.v
-	line := v.Lines[i]
-	if !v.selecting {
-		return line
+// readLines makes the plain characters of each line, which the cursor
+// moves through.
+func (v *Viewer) readLines() {
+	v.plain = v.plain[:0]
+	for _, l := range v.Lines {
+		v.plain = append(v.plain, graphemes(StripStyles(l)))
 	}
+}
+
+// selection is where the selection starts and ends, the start first.
+func (v *Viewer) selection() (pos, pos) {
 	start, end := pos{v.fromL, v.fromC}, pos{v.line, v.col}
 	if end.line < start.line || end.line == start.line && end.col < start.col {
 		start, end = end, start
 	}
-	if i < start.line || i > end.line {
-		return line
-	}
+	return start, end
+}
+
+// lineView is line i, in the selection mode with the cursor, a block of the
+// layer colour, and the part selected in the mode's colour, Yellow
+// (components/dialog/note, components/color).
+func (vv *viewerView) lineView(i int, layer Color) string {
+	v := vv.v
+	line := v.Lines[i]
 	chars := v.plain[i]
-	from, to := 0, len(chars)
-	if i == start.line {
-		from = start.col
-	}
-	if i == end.line {
-		to = min(end.col+1, len(chars)) // the character under the cursor is in
-	}
-	cells := func(n int) int {
-		w := 0
-		for _, c := range chars[:min(n, len(chars))] {
-			w += Width(c)
+	from, to := -1, -1 // the characters selected on this line
+	if v.selecting {
+		start, end := v.selection()
+		if i >= start.line && i <= end.line {
+			from, to = 0, len(chars)
+			if i == start.line {
+				from = start.col
+			}
+			if i == end.line {
+				to = min(end.col+1, len(chars)) // the character under the cursor is in
+			}
 		}
-		return w
 	}
-	picked := strings.Join(chars[min(from, len(chars)):max(to, min(from, len(chars)))], "")
-	if picked == "" {
-		picked = " " // an empty line in the selection still shows
+	cx := -1
+	if v.inMode && i == v.line {
+		cx = v.col
 	}
-	total := Width(line)
-	return Cut(line, 0, cells(from)) + Style{Fg: Base, Bg: Yellow}.Render(picked) + Cut(line, cells(to), total)
+	sel, cur := Style{Fg: Base, Bg: Yellow}, On(layer)
+	var b strings.Builder
+	cell, plainFrom := 0, -1 // plainFrom: where the run of untouched characters began, in cells
+	flush := func() {
+		if plainFrom >= 0 {
+			b.WriteString(Cut(line, plainFrom, cell))
+			plainFrom = -1
+		}
+	}
+	for k, c := range chars {
+		switch {
+		case k == cx:
+			flush()
+			b.WriteString(cur.Render(c))
+		case k >= from && k < to:
+			flush()
+			b.WriteString(sel.Render(c))
+		default:
+			if plainFrom < 0 {
+				plainFrom = cell
+			}
+		}
+		cell += Width(c)
+	}
+	flush()
+	switch {
+	case cx >= len(chars):
+		b.WriteString(cur.Render(" ")) // on an empty line the cursor still shows
+	case len(chars) == 0 && from >= 0:
+		b.WriteString(sel.Render(" "))
+	}
+	return b.String()
 }
 
 // selected is the text from where the selection started to the cursor, the
 // character under the cursor in.
 func (v *Viewer) selected() string {
-	start, end := pos{v.fromL, v.fromC}, pos{v.line, v.col}
-	if end.line < start.line || end.line == start.line && end.col < start.col {
-		start, end = end, start
-	}
+	start, end := v.selection()
 	var out []string
 	for i := start.line; i <= end.line && i < len(v.plain); i++ {
 		chars := v.plain[i]
@@ -217,28 +269,21 @@ func (v *Viewer) prev(p pos) (pos, bool) {
 	return p, false
 }
 
-// selectKey is a key in the selection mode: the cursor moves through the
-// text as in vim, without wrapping at the ends (Rules K12); other keys do
-// nothing (Rules K11).
-func (vv *viewerView) selectKey(key string) tea.Cmd {
+// move moves the cursor through the text as vim does, without wrapping at
+// the ends (Rules K12): h|j|k|l, w|b|e, 0|$, u|d, gg|G. It reports whether
+// key moved.
+func (vv *viewerView) move(key string) bool {
 	v := vv.v
+	if len(v.plain) != len(v.Lines) {
+		v.readLines()
+	}
 	if len(v.plain) == 0 {
-		v.selecting = false
-		return nil
+		return isMoveKey(key)
 	}
 	half := max(v.visible/2, 1)
 	lineLen := func() int { return len(v.plain[v.line]) }
 	p := pos{v.line, v.col}
 	switch key {
-	case "Esc":
-		v.selecting = false
-		return nil
-	case v.Select.copyKey():
-		v.selecting = false
-		if v.Select.Copy == nil {
-			return nil
-		}
-		return v.Select.Copy(v.selected())
 	case "h", "←":
 		v.col = max(v.col-1, 0)
 	case "l", "→":
@@ -294,20 +339,51 @@ func (vv *viewerView) selectKey(key string) tea.Cmd {
 			p = q
 		}
 		v.line, v.col = p.line, p.col
+	default:
+		return false
 	}
 	v.col = min(v.col, max(lineLen()-1, 0))
-	return nil
+	return true
+}
+
+func isMoveKey(key string) bool {
+	switch key {
+	case "h", "j", "k", "l", "←", "→", "↑", "↓", "w", "b", "e", "0", "$", "u", "d", "PgUp", "PgDn", "gg", "G", "Home", "End":
+		return true
+	}
+	return false
 }
 
 func (vv *viewerView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 	v := vv.v
-	if v.selecting {
+	if v.inMode {
+		// Other keys do nothing in the mode (Rules K11); h|l move the cursor,
+		// not the tabs (Rules K12).
 		switch key {
 		case "?", "q", "Ctrl-C":
 			return false, nil // the mode's key reference, the quit flow (Rules K11)
+		case "Esc":
+			v.inMode, v.selecting = false, false // at any step: the whole mode, no copy
+		case v.Select.Key:
+			if !v.selecting { // pressed again once selecting, it does nothing
+				v.selecting = true
+				v.fromL, v.fromC = v.line, v.col
+			}
+		case v.Select.copyKey():
+			if v.selecting {
+				v.inMode, v.selecting = false, false
+				if v.Select.Copy != nil {
+					return true, v.Select.Copy(v.selected())
+				}
+			}
+		default:
+			if vv.move(key) {
+				v.top = scrollWindow(v.top, v.line, max(v.visible, 1), len(v.Lines))
+			}
 		}
-		return true, vv.selectKey(key)
+		return true, nil
 	}
+	// No cursor: the keys scroll, h|l switch the tabs (components/dialog/note).
 	half := max(v.visible/2, 1)
 	switch key {
 	case "j", "↓":
@@ -336,9 +412,10 @@ func (vv *viewerView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 		// A note closes with Esc only (components/dialog/note).
 	default:
 		if v.Select != nil && key == v.Select.Key {
-			v.selecting = true
-			v.line, v.col = min(v.top, max(len(v.Lines)-1, 0)), 0
-			v.fromL, v.fromC = v.line, v.col
+			// The cursor comes out at the start of the first line in sight;
+			// nothing is selected yet.
+			v.inMode = true
+			v.line, v.col = min(max(v.top, 0), max(len(v.Lines)-1, 0)), 0
 			return true, nil
 		}
 		for _, k := range v.Keys {
@@ -366,16 +443,21 @@ func (vv *viewerView) surface() string { return vv.title() }
 
 func (vv *viewerView) keyRef() []refSection {
 	v := vv.v
-	if v.selecting {
+	move := []KeyRow{
+		{Key: "h|j|k|l", Desc: "left, down, up, right"},
+		{Key: "w|b|e", Desc: "next word, word before, end of the word"},
+		{Key: "0|$", Desc: "start, end of the line"},
+		{Key: "u|d", Desc: "half a page up, down"},
+		{Key: "gg|G", Desc: "first, last line"},
+	}
+	if v.inMode {
+		first := KeyRow{Key: v.Select.Key, Desc: "start selecting at the cursor"}
+		if v.selecting {
+			first = KeyRow{Key: v.Select.copyKey(), Desc: "copy the selection and leave"}
+		}
 		return []refSection{
-			{rows: []KeyRow{{Key: v.Select.copyKey(), Desc: "copy the selection and leave"}, {Key: "Esc", Desc: "leave " + cmpOr(v.Select.Name, "Select")}}},
-			{title: "move", rows: []KeyRow{
-				{Key: "h/j/k/l", Desc: "left, down, up, right"},
-				{Key: "w/b/e", Desc: "next word, word before, end of the word"},
-				{Key: "0/$", Desc: "start, end of the line"},
-				{Key: "u/d", Desc: "half a page up, down"},
-				{Key: "gg/G", Desc: "first, last line"},
-			}},
+			{rows: []KeyRow{first, {Key: "Esc", Desc: "leave " + cmpOr(v.Select.Name, "Select")}}},
+			{title: "move", rows: move},
 		}
 	}
 	var rows []KeyRow
@@ -386,13 +468,13 @@ func (vv *viewerView) keyRef() []refSection {
 		rows = append(rows, KeyRow{Key: v.Select.Key, Desc: "select text (" + cmpOr(v.Select.Name, "Select") + ")"})
 	}
 	rows = append(rows, KeyRow{Key: "Esc", Desc: "close"})
-	move := []KeyRow{
-		{Key: "j/k", Desc: "scroll down, up"},
-		{Key: "u/d", Desc: "half a page up, down"},
-		{Key: "gg/G", Desc: "to the top, the bottom"},
+	move = []KeyRow{
+		{Key: "j|k", Desc: "scroll down, up"},
+		{Key: "u|d", Desc: "half a page up, down"},
+		{Key: "gg|G", Desc: "to the top, the bottom"},
 	}
 	if len(v.Tabs) > 0 {
-		move = append([]KeyRow{{Key: "h/l", Desc: "the tab before, after"}}, move...)
+		move = append([]KeyRow{{Key: "h|l", Desc: "the tab before, after"}}, move...)
 	}
 	return []refSection{{rows: rows}, {title: "move", rows: move}}
 }

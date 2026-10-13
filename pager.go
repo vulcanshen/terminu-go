@@ -77,9 +77,9 @@ func (t *Pager) Scroll() string { return t.scroll }
 // MoveKeys are the scrolling keys.
 func (t *Pager) MoveKeys() []KeyRow {
 	return []KeyRow{
-		{Key: "j/k", Desc: "scroll down, up"},
-		{Key: "u/d", Desc: "half a page up, down"},
-		{Key: "gg/G", Desc: "to the top, the bottom"},
+		{Key: "j|k", Desc: "scroll down, up"},
+		{Key: "u|d", Desc: "half a page up, down"},
+		{Key: "gg|G", Desc: "to the top, the bottom"},
 	}
 }
 

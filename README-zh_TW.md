@@ -36,9 +36,18 @@ API 還沒定案：函式庫還在用實作檢驗規範。定案後這裡會放�
 go run github.com/vulcanshen/terminu-go/examples/showcase@latest
 ```
 
+## 設定
+
+使用者的設定裡，有兩個是 terminu 家族每個 app 共用的（tdp Rules E3）。函式庫不讀設定檔：由 app 從自己的設定檔讀出來交給它。
+
+| key | 作用 | 預設 | 交給 |
+|---|---|---|---|
+| `hide_secrets_in_preview` | 檔案預覽裡藏起私鑰與只有擁有者能讀的檔 | `false` | `App.HideSecretsInPreview` |
+| `input_tab_width` | 多行文字裡按 `Tab` 插入幾個空白 | `4` | `App.InputTabWidth` |
+
 ## 實作哪一版 terminu design
 
-terminu-go 實作 **tdp v0.5.1**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
+terminu-go 實作 **tdp v0.5.3**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
 
 ## 相關連結
 

@@ -298,6 +298,28 @@ func TestK11HotkeysSilentInMode(t *testing.T) {
 	}
 }
 
+func TestM5KeysJoinedWithBar(t *testing.T) {
+	// Keys doing one thing are joined with |, drawn in the words colour,
+	// Overlay0, not in the key colour (Rules M5).
+	bar := Fg(Overlay0).Render("|")
+	if h := renderHints([]KeyHint{{"Enter|Tab", "list"}}, 40, Fg(Blue), Overlay0); h != Fg(Blue).Render("Enter")+bar+Fg(Blue).Render("Tab")+Fg(Overlay0).Render(":list") {
+		t.Errorf("hint: %q", h)
+	}
+	ta := newTestApp(t)
+	ta.press("?")
+	ta.settle()
+	n := ta.topView().(*noteView)
+	found := false
+	for _, l := range n.lines {
+		if strings.HasPrefix(StripStyles(l), " j|k") {
+			found = strings.Contains(l, Fg(Blue).Render("j")+bar+Fg(Blue).Render("k"))
+		}
+	}
+	if !found {
+		t.Error("the key reference does not draw j|k with the bar in Overlay0")
+	}
+}
+
 func TestM4PanelKeyWins(t *testing.T) {
 	ta := newTestApp(t)
 	ta.press("D")
@@ -327,7 +349,7 @@ func TestPanelFilter(t *testing.T) {
 	if got := len(ta.list.view); got != 1 {
 		t.Errorf("15 matched %d rows", got)
 	}
-	if f := ta.footerHints(); f[0].Key != "Enter/Tab" {
+	if f := ta.footerHints(); f[0].Key != "Enter|Tab" {
 		t.Errorf("footer while typing: %v", f)
 	}
 	ta.press("Enter")

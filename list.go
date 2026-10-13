@@ -438,18 +438,27 @@ func (l *List) rowText(r int, ws []int) string {
 
 // filterRow is the typing row: the typed words one cell from the frame, the
 // count of matches over the total on the right; grey when the focus is on
-// the list.
+// the list. Typing means the panel has the focus: the angle takes its frame's
+// colour, Blue (components/layout/panel, panel filter).
 func (l *List) filterRow(w int, focused bool) string {
-	// TODO(tdp G36): the count in Overlay0.
 	count := strconv.Itoa(len(l.view)) + "/" + strconv.Itoa(len(l.rows))
-	room := w - 2 - Width(count) - 2
-	var text string
-	if l.typing && focused {
-		text = l.filter.view(room, Fg(Lavender), Style{Fg: Base, Bg: Lavender}, true, nil, "")
-		return " " + text + "  " + Fg(Overlay0).Render(count) + " "
+	return typingRow(l.filter, w, count, l.typing && focused, Blue)
+}
+
+// typingRow is a typing row that filters (a finder's, a panel filter's), w
+// wide: nf-fa-angle_right one cell from the frame, a space, the typed words,
+// the count of matches on the right in Overlay0 (components/input/finder).
+// Lit while it has the focus: the angle in lit (a popup's layer colour, a
+// panel's frame colour), the words Lavender with a cursor; the whole row is
+// Overlay0 otherwise.
+func typingRow(ed *lineEditor, w int, count string, focus bool, lit Color) string {
+	room := max(w-2-Width(glyphTyping)-1-Width(count)-2, 1)
+	if focus {
+		return " " + Fg(lit).Render(glyphTyping) + " " + ed.view(room, Fg(Lavender), Style{Fg: Base, Bg: Lavender}, true, nil, "") +
+			"  " + Fg(Overlay0).Render(count) + " "
 	}
-	text = l.filter.view(room, Fg(Overlay0), Fg(Overlay0), false, nil, "")
-	return " " + text + "  " + Fg(Overlay0).Render(count) + " "
+	return " " + Fg(Overlay0).Render(glyphTyping) + " " + ed.view(room, Fg(Overlay0), Fg(Overlay0), false, nil, "") +
+		"  " + Fg(Overlay0).Render(count) + " "
 }
 
 // Scroll is "N of M" when the rows do not all fit.
@@ -458,9 +467,9 @@ func (l *List) Scroll() string { return l.scroll }
 // MoveKeys are the list's movement keys.
 func (l *List) MoveKeys() []KeyRow {
 	return []KeyRow{
-		{Key: "j/k", Desc: "down, up"},
-		{Key: "u/d", Desc: "half a page up, down"},
-		{Key: "gg/G", Desc: "to the top, the bottom"},
+		{Key: "j|k", Desc: "down, up"},
+		{Key: "u|d", Desc: "half a page up, down"},
+		{Key: "gg|G", Desc: "to the top, the bottom"},
 	}
 }
 

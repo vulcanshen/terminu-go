@@ -143,7 +143,7 @@ func (c *confirmView) keyRef() []refSection {
 	rows = append(rows, KeyRow{Key: "Esc", Desc: "cancel"})
 	secs := []refSection{{rows: rows}}
 	if len(c.ask.Details) > 0 {
-		secs = append(secs, refSection{title: "move", rows: []KeyRow{{Key: "j/k", Desc: "scroll down, up"}}})
+		secs = append(secs, refSection{title: "move", rows: []KeyRow{{Key: "j|k", Desc: "scroll down, up"}}})
 	}
 	return secs
 }

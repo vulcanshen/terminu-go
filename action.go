@@ -36,9 +36,12 @@ type Action struct {
 	// Disabled reports that it cannot run now: the row is shown in the
 	// disabled colour, the cursor skips it and its hotkey does nothing.
 	Disabled func() bool
-	// Stay keeps the menu it runs from open: a worklist's row opening its
-	// full text over the menu (Rules F1).
+	// Stay keeps the menu it runs from open (a step of its own over it).
 	Stay bool
+	// Detail marks a row whose Enter opens its full text over the menu (a
+	// worklist, Rules F1): the menu stays and its hint is Enter:detail
+	// (components/dialog/menu).
+	Detail bool
 	// Do runs it.
 	Do func() tea.Cmd
 }

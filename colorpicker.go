@@ -142,7 +142,7 @@ func (cv *colorView) keyRef() []refSection {
 	return []refSection{{rows: []KeyRow{
 		{Key: "Enter", Desc: "on R, G or B choose its value; on Choose, choose the colour"},
 		{Key: "Esc", Desc: "cancel"},
-	}}, {title: "move", rows: []KeyRow{{Key: "h/l", Desc: "R, G, B, Choose"}}}}
+	}}, {title: "move", rows: []KeyRow{{Key: "h|l", Desc: "R, G, B, Choose"}}}}
 }
 
 func (cv *colorView) typing() bool { return false }

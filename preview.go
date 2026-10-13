@@ -27,7 +27,8 @@ import (
 // previewBytes is the most of a file a preview reads.
 const previewBytes = 64 << 10
 
-// fileKind is what a file is, for its preview and its TYPE.
+// fileKind is what a file is, for its preview and its TYPE
+// (components/input/file-picker).
 func fileKind(p string, head []byte) string {
 	name := strings.ToLower(filepath.Base(p))
 	switch {
@@ -38,9 +39,25 @@ func fileKind(p string, head []byte) string {
 	case path.Ext(name) == ".pdf":
 		return "PDF"
 	case isText(head):
+		if isPrivateKey(head) {
+			return "private key"
+		}
 		return "text"
 	}
 	return "binary"
+}
+
+// isPrivateKey reports a first line that is a private key's header: it
+// starts with -----BEGIN and has PRIVATE KEY (OpenSSH, RSA, EC, PKCS#8, PGP),
+// or it starts with PuTTY-User-Key-File-.
+func isPrivateKey(head []byte) bool {
+	first := firstLine(head)
+	return strings.HasPrefix(first, "-----BEGIN") && strings.Contains(first, "PRIVATE KEY") || strings.HasPrefix(first, "PuTTY-User-Key-File-")
+}
+
+func firstLine(b []byte) string {
+	first, _, _ := strings.Cut(string(b), "\n")
+	return strings.TrimRight(first, "\r")
 }
 
 func isArchive(name string) bool {
@@ -60,7 +77,7 @@ func isText(b []byte) bool {
 // (components/input/file-picker): a directory's or an archive's tree, an
 // image as a data URI, a PDF's first pages, a text file in colour with line
 // numbers, anything else in hex. With hideSecrets, a private key shows its
-// first line only and a file only its owner may read shows nothing.
+// first line only and any other file only its owner may read shows nothing.
 func filePreview(p string, w, h int, hideSecrets bool, icon func(string, bool) (string, Color)) []string {
 	grey := func(s string) []string { return []string{Fg(Overlay0).Render(s)} }
 	st, err := os.Stat(p)
@@ -70,9 +87,6 @@ func filePreview(p string, w, h int, hideSecrets bool, icon func(string, bool) (
 	if st.IsDir() {
 		return dirTree(p, h, icon)
 	}
-	if hideSecrets && st.Mode().Perm()&0o044 == 0 {
-		return grey("(sensitive content not shown)")
-	}
 	f, err := os.Open(p)
 	if err != nil {
 		return grey("(unreadable)")
@@ -81,32 +95,52 @@ func filePreview(p string, w, h int, hideSecrets bool, icon func(string, bool) (
 	head := make([]byte, previewBytes)
 	n, _ := io.ReadFull(f, head)
 	head = head[:n]
-	switch fileKind(p, head) {
+	kind := fileKind(p, head)
+	if hideSecrets {
+		if kind == "private key" {
+			return []string{Fg(Text).Render(firstLine(head)), Fg(Overlay0).Render("(sensitive content not shown)")}
+		}
+		if st.Mode().Perm()&0o044 == 0 {
+			return grey("(sensitive content not shown)")
+		}
+	}
+	switch kind {
 	case "archive":
 		return archiveTree(p, h, icon)
 	case "image":
-		if st.Size() > previewBytes {
-			return grey("(an image of " + size(st.Size()) + ": too large to show)")
-		}
-		uri := "data:" + imageMIME(p) + ";base64," + base64.StdEncoding.EncodeToString(head)
-		var out []string
-		for i := 0; i < len(uri) && len(out) < h; i += max(w, 1) {
-			out = append(out, Fg(Text).Render(uri[i:min(i+max(w, 1), len(uri))]))
-		}
-		return out
+		return imagePreview(p, st.Size(), w, h)
 	case "PDF":
 		return pdfText(p, st.Size(), h)
-	case "text":
-		text := string(trimPartialRune(head))
-		if hideSecrets {
-			first, _, _ := strings.Cut(text, "\n")
-			if strings.HasPrefix(first, "-----BEGIN") && strings.Contains(first, "PRIVATE KEY") || strings.HasPrefix(first, "PuTTY-User-Key-File-") {
-				return []string{Fg(Text).Render(first), Fg(Overlay0).Render("(sensitive content not shown)")}
-			}
-		}
-		return highlight(p, text, h)
+	case "text", "private key":
+		return highlight(p, string(trimPartialRune(head)), h)
 	}
 	return hexDump(head, h)
+}
+
+// imagePreview is the type and the size in grey, a blank line, then the
+// image as a data URI folded at the preview's width; over 1 MB, a line
+// saying so. Only what is in sight is read.
+func imagePreview(p string, sz int64, w, h int) []string {
+	if sz > 1<<20 {
+		return []string{Fg(Overlay0).Render("(" + size(sz) + " — too large to inline as a data URI)")}
+	}
+	w = max(w, 1)
+	mime := imageMIME(p)
+	out := []string{Fg(Overlay0).Render("data:" + mime + " · " + size(sz)), ""}
+	prefix := "data:" + mime + ";base64,"
+	need := max((h-len(out))*w-len(prefix), 0)
+	f, err := os.Open(p)
+	if err != nil {
+		return []string{Fg(Overlay0).Render("(unreadable)")}
+	}
+	defer f.Close()
+	b := make([]byte, min(sz, int64(need/4+1)*3))
+	n, _ := io.ReadFull(f, b)
+	uri := prefix + base64.StdEncoding.EncodeToString(b[:n])
+	for i := 0; i < len(uri) && len(out) < h; i += w {
+		out = append(out, Fg(Text).Render(uri[i:min(i+w, len(uri))]))
+	}
+	return out
 }
 
 func imageMIME(p string) string {
@@ -169,13 +203,14 @@ func highlight(p, text string, h int) []string {
 	return out
 }
 
-// hexDump is sixteen bytes a row: the offset, the bytes, the ASCII.
+// hexDump is eight bytes a row in hex, then their ASCII: 33 cells, whatever
+// the preview's width.
 func hexDump(b []byte, h int) []string {
 	var out []string
-	for off := 0; off < len(b) && len(out) < h; off += 16 {
-		row := b[off:min(off+16, len(b))]
+	for off := 0; off < len(b) && len(out) < h; off += 8 {
+		row := b[off:min(off+8, len(b))]
 		var hexes, ascii strings.Builder
-		for i := range 16 {
+		for i := range 8 {
 			if i < len(row) {
 				fmt.Fprintf(&hexes, "%02x ", row[i])
 				c := row[i]
@@ -187,12 +222,13 @@ func hexDump(b []byte, h int) []string {
 				hexes.WriteString("   ")
 			}
 		}
-		out = append(out, Fg(Overlay0).Render(fmt.Sprintf("%08x", off))+"  "+Fg(Text).Render(hexes.String())+" "+Fg(Overlay0).Render(ascii.String()))
+		out = append(out, Fg(Text).Render(hexes.String())+" "+Fg(Overlay0).Render(ascii.String()))
 	}
 	return out
 }
 
-// pdfText is the page count, then the text of the first pages.
+// pdfText is the page count in grey, a blank line, then the text of the
+// first 20 pages, 128 KB of it at most.
 func pdfText(p string, sz int64, h int) (out []string) {
 	defer func() {
 		if recover() != nil {
@@ -213,17 +249,24 @@ func pdfText(p string, sz int64, h int) (out []string) {
 	if pages == 1 {
 		unit = "page"
 	}
-	out = []string{Fg(Overlay0).Render(fmt.Sprintf("(%d %s)", pages, unit))}
-	for i := 1; i <= min(pages, 3) && len(out) < h; i++ {
+	out = []string{Fg(Overlay0).Render(fmt.Sprintf("%d %s", pages, unit)), ""}
+	read, found := 0, false
+	for i := 1; i <= min(pages, 20) && len(out) < h && read < 128<<10; i++ {
 		text, err := r.Page(i).GetPlainText(nil)
 		if err != nil {
 			continue
 		}
+		text = text[:min(len(text), 128<<10-read)]
+		read += len(text)
 		for _, l := range strings.Split(text, "\n") {
 			if strings.TrimSpace(l) != "" && len(out) < h {
 				out = append(out, Fg(Text).Render(l))
+				found = true
 			}
 		}
+	}
+	if !found {
+		out = append(out, Fg(Overlay0).Render("(no extractable text)"))
 	}
 	return out
 }
@@ -406,8 +449,9 @@ func archiveNames(p string) ([]string, error) {
 }
 
 // fileInfo is the four rows under a preview (components/input/file-picker):
-// TYPE, SIZE, MODIFIED, MODE; labels in the layer colour. TODO(tdp G44):
-// TYPE is the preview's kind, the time 2006-01-02 15:04, the mode as ls -l.
+// TYPE, SIZE, MODIFIED, MODE; labels in the layer colour. TYPE is the
+// preview's kind, the size in 1024s with one decimal (a directory's in items,
+// hidden ones left out), the time local to the minute, the mode as ls -l.
 func fileInfo(p string, w int, layer Color) []string {
 	rows := [4][2]string{{"TYPE", ""}, {"SIZE", ""}, {"MODIFIED", ""}, {"MODE", ""}}
 	if lst, err := os.Lstat(p); err == nil {

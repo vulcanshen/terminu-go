@@ -238,6 +238,25 @@ func TestFinderTabBlocks(t *testing.T) {
 	}
 }
 
+func TestFinderTypingAngle(t *testing.T) {
+	// The typing row starts with nf-fa-angle_right one cell from the frame:
+	// the layer colour while typing, Overlay0 with the rest of the row while
+	// the focus is on the list (components/input/finder).
+	row := func(lit bool) string {
+		ed := &lineEditor{}
+		return typingRow(ed, 30, "3/41", lit, LayerColor(1))
+	}
+	if r := row(true); !strings.HasPrefix(r, " "+Fg(LayerColor(1)).Render(glyphTyping)+" ") {
+		t.Errorf("typing: %q", r)
+	}
+	if r := row(false); !strings.HasPrefix(r, " "+Fg(Overlay0).Render(glyphTyping)+" ") || !strings.Contains(r, Fg(Overlay0).Render("3/41")) {
+		t.Errorf("on the list: %q", r)
+	}
+	if w := Width(row(true)); w != 30 {
+		t.Errorf("the typing row is %d wide", w)
+	}
+}
+
 func TestFinderPreview(t *testing.T) {
 	for _, sz := range [][2]int{{120, 30}, {80, 30}} {
 		ta := newTestApp(t)
@@ -505,15 +524,26 @@ func TestTextarea(t *testing.T) {
 		t.Fatalf("a textarea opens writing with the cursor at the end: %v %d", tv.typing(), tv.col)
 	}
 	ta.press("Enter", "Tab", "t", "w", "o", "Space", "q", "?")
-	if tv.value() != "one\n\ttwo q?" {
+	if tv.value() != "one\n    two q?" {
 		t.Fatalf("Enter breaks the line, Tab indents, q and ? are characters: %q", tv.value())
+	}
+	if l := ta.top(); l.h != ta.h-2 {
+		t.Errorf("a textarea is as tall as it can be: %d, want %d", l.h, ta.h-2)
+	}
+	lavender := "48;2;180;190;254"
+	if !strings.Contains(strings.Join(ta.Frame(), ""), lavender) {
+		t.Error("the writing cursor is not Lavender")
 	}
 	ta.press("Esc")
 	if tv.typing() {
 		t.Fatal("Esc moves to the moving state")
 	}
+	frame := strings.Join(ta.Frame(), "")
+	if strings.Contains(frame, lavender) || !strings.Contains(frame, "48;2;164;192;250") {
+		t.Error("the moving cursor is a block of the layer colour")
+	}
 	ta.press("0", "k", "a", "!", "Esc", "Enter")
-	if got != "o!ne\n\ttwo q?" {
+	if got != "o!ne\n    two q?" {
 		t.Errorf("saved %q", got)
 	}
 }
@@ -653,5 +683,20 @@ func TestFilePickerHiddenAndOrder(t *testing.T) {
 	}
 	if rows := fp.list(dir + "/**/key"); len(rows) != 0 {
 		t.Errorf("** went into a hidden directory: %v", rows)
+	}
+}
+
+func TestFormScrollPosition(t *testing.T) {
+	ta := newTestApp(t)
+	ta.resize(80, 14)
+	ta.Form(testForm(nil))
+	ta.settle()
+	ta.press("Tab", "Tab")
+	if !strings.Contains(ta.screenText(), "3 of 6") {
+		t.Errorf("Auth is the third of six fields:\n%s", ta.screenText())
+	}
+	ta.press("G")
+	if strings.Contains(ta.screenText(), " of 6") {
+		t.Error("on the button the position is not written")
 	}
 }

@@ -83,9 +83,9 @@ func (dv *dateView) clamp(t time.Time) time.Time {
 func (dv *dateView) hint() []KeyHint {
 	switch dv.focus {
 	case onMonth:
-		return []KeyHint{{"Enter", "days"}, {"h/l", "month"}, {"t", "today"}, {"Tab", "year"}, {"Esc", "cancel"}}
+		return []KeyHint{{"Enter", "days"}, {"h|l", "month"}, {"t", "today"}, {"Tab", "year"}, {"Esc", "cancel"}}
 	case onYear:
-		return []KeyHint{{"Enter", "days"}, {"h/l", "year"}, {"t", "today"}, {"Tab", "days"}, {"Esc", "cancel"}}
+		return []KeyHint{{"Enter", "days"}, {"h|l", "year"}, {"t", "today"}, {"Tab", "days"}, {"Esc", "cancel"}}
 	case onTime:
 		return []KeyHint{{"Enter", "choose"}, {"t", "today"}, {"Tab", "month"}, {"Esc", "cancel"}}
 	}
@@ -344,8 +344,8 @@ func (dv *dateView) keyRef() []refSection {
 		{Key: "Esc", Desc: "cancel"},
 	}
 	return []refSection{{rows: rows}, {title: "move", rows: []KeyRow{
-		{Key: "h/l", Desc: "a day; a month or a year; hour and minute"},
-		{Key: "j/k", Desc: "a week; the hour or the minute"},
+		{Key: "h|l", Desc: "a day; a month or a year; hour and minute"},
+		{Key: "j|k", Desc: "a week; the hour or the minute"},
 	}}}
 }
 

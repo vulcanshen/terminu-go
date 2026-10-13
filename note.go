@@ -96,14 +96,14 @@ func (n *noteView) keyRef() []refSection {
 	rows := append([]KeyRow(nil), n.extraKeys...)
 	switch {
 	case n.enterCloses:
-		rows = append(rows, KeyRow{Key: "Enter/Esc", Desc: "close"})
+		rows = append(rows, KeyRow{Key: "Enter|Esc", Desc: "close"})
 	default:
 		rows = append(rows, KeyRow{Key: "Esc", Desc: "close"})
 	}
 	return []refSection{{rows: rows}, {title: "move", rows: []KeyRow{
-		{Key: "j/k", Desc: "scroll down, up"},
-		{Key: "u/d", Desc: "half a page up, down"},
-		{Key: "gg/G", Desc: "to the top, the bottom"},
+		{Key: "j|k", Desc: "scroll down, up"},
+		{Key: "u|d", Desc: "half a page up, down"},
+		{Key: "gg|G", Desc: "to the top, the bottom"},
 	}}}
 }
 
@@ -129,7 +129,7 @@ func keyReference(surface string, sections []refSection) *noteView {
 			lines = append(lines, Fg(Overlay0).Render(glyphHexagon+" "+Upper(s.title)))
 		}
 		for _, r := range s.rows {
-			key, desc := Fg(Blue).Render(Pad(r.Key, keyW)), Fg(Text).Render(r.Desc)
+			key, desc := Pad(renderKey(r.Key, Fg(Blue), Overlay0), keyW), Fg(Text).Render(r.Desc)
 			if r.Disabled {
 				key, desc = Fg(Surface2).Render(Pad(r.Key, keyW)), Fg(Surface2).Render(r.Desc)
 			}
@@ -138,7 +138,7 @@ func keyReference(surface string, sections []refSection) *noteView {
 	}
 	return &noteView{
 		glyph: glyphKeys, title: Upper(surface + " keys"), lines: lines, known: true, helpCloses: true,
-		hint: []KeyHint{{"?/Esc", "close"}}, name: surface + " keys",
+		hint: []KeyHint{{"?|Esc", "close"}}, name: surface + " keys",
 	}
 }
 
@@ -153,6 +153,6 @@ func errorPopup(title, message string, sw int) *noteView {
 	}
 	return &noteView{
 		glyph: glyphError, title: Upper(title), lines: lines, known: true, color: &red, enterCloses: true,
-		hint: []KeyHint{{"Enter/Esc", "close"}}, name: title,
+		hint: []KeyHint{{"Enter|Esc", "close"}}, name: title,
 	}
 }

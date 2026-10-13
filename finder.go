@@ -201,7 +201,7 @@ func (c Checks) open(a *App, written func()) tea.Cmd {
 		written: written,
 	}
 	copy(fv.checked, c.Checked)
-	// TODO(tdp G38): a row checked on screen is Green before Enter applies it.
+	// A row checked on screen is Green before Enter applies it (components/input/checkbox).
 	fv.green = func(i int, _ finderRow) bool { return fv.checked[i] }
 	fv.enter = func(a *App, _ int, _ finderRow) tea.Cmd {
 		was := make([]bool, len(c.Options))
@@ -287,11 +287,11 @@ func (f *finderView) listHint() []KeyHint {
 	if f.kind == findChecks {
 		h = append(h, KeyHint{"Space", "toggle"})
 	}
-	return append(h, KeyHint{"Tab", "filter"}, KeyHint{"Esc", "cancel"})
+	return append(h, KeyHint{"Tab|/", "filter"}, KeyHint{"Esc", "cancel"})
 }
 
 func (f *finderView) typingHint() []KeyHint {
-	return []KeyHint{{"Enter/Tab", "list"}, {"Esc", "cancel"}}
+	return []KeyHint{{"Enter|Tab", "list"}, {"Esc", "cancel"}}
 }
 
 func (f *finderView) hint() []KeyHint {
@@ -314,7 +314,7 @@ func (f *finderView) measure(sw, sh int) (int, int) {
 		content = max(content, Width(f.mark(0, r))+1+Width(f.rowLabel(r)))
 	}
 	count := len(strconv.Itoa(len(rows)))*2 + 1
-	content = max(content+Width(glyphHard), 8+2+count)
+	content = max(content+Width(glyphHard), Width(glyphTyping)+1+8+2+count) // the typing row: the angle, eight cells, the count
 	w := max(content+3, Width(titleCapsule(f.glyph, f.title(1<<20), Base, 1<<20))+4,
 		hintWidth(f.listHint())+6, hintWidth(f.typingHint())+6)
 	return min(w, most), min(len(rows)+6, max(sh-2, 3))
@@ -346,7 +346,7 @@ func (f *finderView) draw(w, h int, layer Color) []string {
 	top := h / 2
 	bottom := box(f.drawPreview(w, h-top, layer, false), w, h-top)
 	if f.info == nil {
-		// TODO(tdp G43): without facts the list takes the whole top half.
+		// Without facts the list and the preview are stacked, half each.
 		return append(box(f.drawList(w, top, layer), w, top), bottom...)
 	}
 	return append(side(box(f.drawList(lw, top, layer), lw, top), box(f.drawInfo(w-lw-1, top, layer), w-lw-1, top)), bottom...)
@@ -377,16 +377,8 @@ func (f *finderView) drawList(w, h int, layer Color) []string {
 	inner := w - 2
 	rows := f.rows()
 	count := strconv.Itoa(len(f.shown)) + "/" + strconv.Itoa(len(rows))
-	room := max(inner-2-Width(count)-2, 1)
-	var typed string
-	if f.onList {
-		typed = f.ed.view(room, Fg(Overlay0), Fg(Overlay0), false, nil, "")
-	} else {
-		typed = f.ed.view(room, Fg(Lavender), Style{Fg: Base, Bg: Lavender}, true, nil, "")
-	}
 	body := []string{
-		// TODO(tdp G36): the count in Overlay0.
-		" " + typed + "  " + Fg(Overlay0).Render(count) + " ",
+		typingRow(f.ed, inner, count, !f.onList, layer),
 		" " + Fg(Overlay0).Render(Repeat("─", inner-2)) + " ",
 	}
 	n := max(h-6, 1)
@@ -578,12 +570,12 @@ func (f *finderView) keyRef() []refSection {
 			}
 		}
 	}
-	rows = append(rows, KeyRow{Key: "Tab", Desc: "to the typing row"}, KeyRow{Key: "/", Desc: "type on after the words there"},
+	rows = append(rows, KeyRow{Key: "Tab|/", Desc: "to the typing row, typing on after the words there"},
 		KeyRow{Key: "Esc", Desc: "cancel"})
 	return []refSection{{rows: rows}, {title: "move", rows: []KeyRow{
-		{Key: "j/k", Desc: "down, up"},
-		{Key: "u/d", Desc: "half a page up, down"},
-		{Key: "gg/G", Desc: "to the top, the bottom"},
+		{Key: "j|k", Desc: "down, up"},
+		{Key: "u|d", Desc: "half a page up, down"},
+		{Key: "gg|G", Desc: "to the top, the bottom"},
 	}}}
 }
 

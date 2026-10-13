@@ -125,6 +125,16 @@ type KeyHint struct {
 	Key, Desc string
 }
 
+// renderKey draws a key in keyStyle; keys doing one thing are joined with
+// "|" in the words' colour, not the key's (Rules M5: "j|k").
+func renderKey(key string, keyStyle Style, words Color) string {
+	parts := strings.Split(key, "|")
+	for i, p := range parts {
+		parts[i] = keyStyle.Render(p)
+	}
+	return strings.Join(parts, Fg(words).Render("|"))
+}
+
 // renderHints writes pairs as "Key:desc Key:desc", keys in keyStyle and the
 // colon and words in Overlay0, dropping whole pairs from the end until they fit
 // in w cells (components/layout/popup, hint).
@@ -133,7 +143,7 @@ func renderHints(pairs []KeyHint, w int, keyStyle Style, words Color) string {
 		parts := make([]string, n)
 		width := n - 1
 		for i, p := range pairs[:n] {
-			parts[i] = keyStyle.Render(p.Key) + Fg(words).Render(":"+p.Desc)
+			parts[i] = renderKey(p.Key, keyStyle, words) + Fg(words).Render(":"+p.Desc)
 			width += Width(p.Key) + 1 + Width(p.Desc)
 		}
 		if width <= w {

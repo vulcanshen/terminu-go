@@ -42,9 +42,19 @@ To see what it does, run the showcase, an example app that shows every component
 go run github.com/vulcanshen/terminu-go/examples/showcase@latest
 ```
 
+## Settings
+
+Two of the user's settings are shared by every terminu app (tdp Rules E3). The library does not read config files: the
+app reads them from its own and hands them over.
+
+| Key | What it does | Default | Set |
+|---|---|---|---|
+| `hide_secrets_in_preview` | Previews of files hide private keys and files only their owner may read | `false` | `App.HideSecretsInPreview` |
+| `input_tab_width` | How many spaces `Tab` puts in a multi-line text | `4` | `App.InputTabWidth` |
+
 ## Which terminu design
 
-terminu-go implements **tdp v0.5.1**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
+terminu-go implements **tdp v0.5.3**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
 
 ## Links
 

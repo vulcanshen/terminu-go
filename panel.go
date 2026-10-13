@@ -149,8 +149,8 @@ func (p *Panel) hint() []KeyHint {
 	if p.typing() {
 		return nil
 	}
-	// TODO(tdp G42): in its PTY the panel's keys go to the program: no hint,
-	// as on a filter's typing row; the footer has the exit key.
+	// In its PTY the panel's keys go to the program: no hint, as on a filter's
+	// typing row; the footer has the exit key (components/layout/panel).
 	if t, ok := p.Body.(*Terminal); ok && t.inside {
 		return nil
 	}

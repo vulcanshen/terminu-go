@@ -286,7 +286,7 @@ func (ps *panelsScreen) startDrag() tea.Cmd {
 	ps.pods.EnterMode(&terminu.Mode{
 		Name: "Drag", Exit: "cancel", Pause: true,
 		Keys: []terminu.ModeKey{
-			{Key: "j/k", Keys: []string{"j", "k", "↓", "↑"}, Desc: "move it down, up", NoFooter: true,
+			{Key: "j|k", Keys: []string{"j", "k", "↓", "↑"}, Desc: "move it down, up", NoFooter: true,
 				Do: func(key string) tea.Cmd { ps.moveRow(key == "j" || key == "↓"); return nil }},
 			{Key: "Enter", Desc: "drop", Do: func(string) tea.Cmd {
 				ps.pods.LeaveMode()

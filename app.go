@@ -60,6 +60,9 @@ type App struct {
 	// the first line of a private key, and nothing of a file only its owner
 	// may read (components/input/file-picker).
 	HideSecretsInPreview bool
+	// InputTabWidth is the user's setting input_tab_width: how many spaces
+	// Tab puts in a textarea; 4 when unset (components/input/textarea).
+	InputTabWidth int
 	// Progress is a long job's progress, 0 to 1, for the bar under the
 	// screen chips; ok false when there is none.
 	Progress func() (frac float64, ok bool)
@@ -181,6 +184,13 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	a.growLoading()
 	return a, cmd
+}
+
+func (a *App) inputTabWidth() int {
+	if a.InputTabWidth > 0 {
+		return a.InputTabWidth
+	}
+	return 4
 }
 
 // growLoading measures again a popup that is loading, and once more when it
@@ -405,7 +415,7 @@ func (a *App) runAction(act Action, fromMenu bool) tea.Cmd {
 		c.accept = func() tea.Cmd { return tea.Batch(a.closeAll(), do()) }
 		return a.open(c)
 	}
-	if fromMenu && !act.Stay {
+	if fromMenu && !act.Stay && !act.Detail {
 		return tea.Batch(a.closeAll(), do())
 	}
 	return do()
@@ -558,7 +568,7 @@ func (a *App) panelKeyRef(p *Panel) *noteView {
 		move = append(move, p.Body.MoveKeys()...)
 	}
 	if len(p.Tabs) > 0 {
-		move = append(move, KeyRow{Key: "h/l", Desc: "previous tab, next tab"})
+		move = append(move, KeyRow{Key: "h|l", Desc: "previous tab, next tab"})
 	}
 	core := []KeyRow{{Key: "Space", Desc: "what you can do here"}, {Key: "?", Desc: "this list"}}
 	if len(s.Panels) > 1 {
@@ -569,7 +579,7 @@ func (a *App) panelKeyRef(p *Panel) *noteView {
 	} else if p.OnEsc != nil {
 		core = append(core, KeyRow{Key: "Esc", Desc: "one level up"})
 	}
-	core = append(core, KeyRow{Key: "q/Ctrl-C", Desc: "quit"})
+	core = append(core, KeyRow{Key: "q|Ctrl-C", Desc: "quit"})
 	var app []KeyRow
 	for _, act := range a.globalActions() {
 		if act.Key == "" || act.Key == "q" || own[act.Key] {
@@ -594,7 +604,7 @@ func (a *App) modeKeyRef(p *Panel) *noteView {
 		rows = append(rows, KeyRow{Key: k.Key, Desc: k.Desc})
 	}
 	rows = append(rows, KeyRow{Key: "Esc", Desc: cmpOr(p.mode.Exit, "leave") + ", back to before " + p.mode.Name})
-	core := []KeyRow{{Key: "?", Desc: "this list"}, {Key: "q/Ctrl-C", Desc: "quit"}}
+	core := []KeyRow{{Key: "?", Desc: "this list"}, {Key: "q|Ctrl-C", Desc: "quit"}}
 	return keyReference(p.mode.Name, []refSection{{title: p.mode.Name, rows: rows}, {title: "core keys", rows: core}})
 }
 
@@ -979,7 +989,7 @@ func (a *App) footerHints() []KeyHint {
 	}
 	switch {
 	case p.typing():
-		return []KeyHint{{"Enter/Tab", "list"}, {"Esc", "clear"}}
+		return []KeyHint{{"Enter|Tab", "list"}, {"Esc", "clear"}}
 	case p.mode != nil:
 		out := []KeyHint{{"?", "help"}}
 		for _, k := range p.mode.Keys {
@@ -991,5 +1001,5 @@ func (a *App) footerHints() []KeyHint {
 	case len(s.Panels) == 1:
 		return []KeyHint{{"Space", "menu"}, {"?", "help"}, {"q", "quit"}}
 	}
-	return []KeyHint{{"Space", "menu"}, {"?", "help"}, {"Tab/1–" + itoa(len(s.Panels)), "panels"}, {"q", "quit"}}
+	return []KeyHint{{"Space", "menu"}, {"?", "help"}, {"Tab|1–" + itoa(len(s.Panels)), "panels"}, {"q", "quit"}}
 }

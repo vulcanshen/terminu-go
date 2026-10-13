@@ -294,13 +294,15 @@ func trimPartialRune(b []byte) []byte {
 }
 
 func size(n int64) string {
-	switch {
-	case n < 1<<10:
+	if n < 1<<10 {
 		return strconv.FormatInt(n, 10) + " B"
-	case n < 1<<20:
-		return strconv.FormatInt(n>>10, 10) + " KB"
 	}
-	return strconv.FormatInt(n>>20, 10) + " MB"
+	f, units, i := float64(n)/1024, []string{"KB", "MB", "GB", "TB"}, 0
+	for f >= 1024 && i < len(units)-1 {
+		f /= 1024
+		i++
+	}
+	return strconv.FormatFloat(f, 'f', 1, 64) + " " + units[i]
 }
 
 // expandHome turns a leading ~ into the home directory.

@@ -27,7 +27,7 @@ func writeFile(t *testing.T, p string, data []byte, mode os.FileMode) {
 func TestFilePreviewKinds(t *testing.T) {
 	dir := t.TempDir()
 	writeFile(t, filepath.Join(dir, "main.go"), []byte("package main\n\nfunc main() {}\n"), 0o644)
-	writeFile(t, filepath.Join(dir, "tool"), []byte{0x7f, 'E', 'L', 'F', 0, 1, 2, 3}, 0o755)
+	writeFile(t, filepath.Join(dir, "tool"), []byte{0x7f, 'E', 'L', 'F', 0, 1, 2, 3, 'a', 'b'}, 0o755)
 	writeFile(t, filepath.Join(dir, "logo.png"), []byte("\x89PNG\r\n\x1a\nfake"), 0o644)
 	var zb bytes.Buffer
 	z := zip.NewWriter(&zb)
@@ -48,11 +48,17 @@ func TestFilePreviewKinds(t *testing.T) {
 	if lines := filePreview(filepath.Join(dir, "main.go"), 40, 10, false, nil); !strings.Contains(lines[0], "38;2;") {
 		t.Error("the text is not coloured")
 	}
-	if hex := previewText(filePreview(filepath.Join(dir, "tool"), 80, 10, false, nil)); !strings.HasPrefix(hex, "00000000  7f 45 4c 46") || !strings.Contains(hex, ".ELF") {
-		t.Errorf("hex: %s", hex)
+	want := "7f 45 4c 46 00 01 02 03  .ELF....\n61 62                    ab"
+	if hex := previewText(filePreview(filepath.Join(dir, "tool"), 120, 10, false, nil)); hex != want {
+		t.Errorf("hex, always eight bytes a row:\n%q\nwant\n%q", hex, want)
 	}
-	if img := previewText(filePreview(filepath.Join(dir, "logo.png"), 20, 10, false, nil)); !strings.HasPrefix(img, "data:image/png;base6") {
+	if img := previewText(filePreview(filepath.Join(dir, "logo.png"), 20, 10, false, nil)); !strings.HasPrefix(img, "data:image/png · 12 B\n\ndata:image/png;base6") {
 		t.Errorf("image: %s", img)
+	}
+	big := filepath.Join(dir, "big.png")
+	writeFile(t, big, bytes.Repeat([]byte{1}, 1<<20+1), 0o644)
+	if img := previewText(filePreview(big, 40, 10, false, nil)); img != "(1.0 MB — too large to inline as a data URI)" {
+		t.Errorf("an image over 1 MB: %s", img)
 	}
 	zipTree := previewText(filePreview(filepath.Join(dir, "fonts.zip"), 40, 10, false, nil))
 	if !strings.Contains(zipTree, "fonts\n├─") || !strings.Contains(zipTree, "└─ "+glyphFile+" b.ttf") || !strings.HasSuffix(zipTree, "LICENSE") {
@@ -85,11 +91,24 @@ func TestFilePreviewHidesSecrets(t *testing.T) {
 	if got := previewText(filePreview(own, 40, 5, true, nil)); got != "(sensitive content not shown)" {
 		t.Errorf("a file only its owner may read shows nothing: %q", got)
 	}
+	if err := os.Chmod(key, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if got := previewText(filePreview(key, 40, 5, true, nil)); !strings.HasPrefix(got, "-----BEGIN OPENSSH PRIVATE KEY-----\n") {
+		t.Errorf("a private key only its owner may read still shows its header: %q", got)
+	}
+	if got := previewText(fileInfo(key, 40, Blue)); !strings.Contains(got, "TYPE      private key") {
+		t.Errorf("TYPE of a private key:\n%s", got)
+	}
+	if got := previewText(filePreview(dir, 40, 5, true, nil)); strings.Contains(got, "sensitive") {
+		t.Errorf("a directory is never hidden: %q", got)
+	}
 }
 
 func TestFileInfo(t *testing.T) {
 	dir := t.TempDir()
 	writeFile(t, filepath.Join(dir, "a.txt"), []byte("hello"), 0o640)
+	writeFile(t, filepath.Join(dir, "b.bin"), bytes.Repeat([]byte{0}, 4300), 0o644)
 	writeFile(t, filepath.Join(dir, "sub/x"), nil, 0o644)
 	writeFile(t, filepath.Join(dir, "sub/y"), nil, 0o644)
 	_ = os.Symlink("a.txt", filepath.Join(dir, "link"))
@@ -98,6 +117,9 @@ func TestFileInfo(t *testing.T) {
 		if !strings.Contains(info, want) {
 			t.Errorf("%q not in\n%s", want, info)
 		}
+	}
+	if b := previewText(fileInfo(filepath.Join(dir, "b.bin"), 40, Blue)); !strings.Contains(b, "SIZE      4.2 KB") || !strings.Contains(b, "TYPE      binary") {
+		t.Errorf("4300 bytes:\n%s", b)
 	}
 	if d := previewText(fileInfo(filepath.Join(dir, "sub"), 40, Blue)); !strings.Contains(d, "TYPE      directory") || !strings.Contains(d, "SIZE      2 items") {
 		t.Errorf("directory:\n%s", d)

@@ -15,9 +15,6 @@ import (
 type Textarea struct {
 	Title, Glyph string
 	Old          string
-	// Indent is what Tab puts in while writing: "\t" when unset (Rules K8
-	// leaves it to the app).
-	Indent string
 	// Done gets the new text. It is not called when it did not change.
 	Done func(string) tea.Cmd
 }
@@ -28,7 +25,7 @@ func (t Textarea) typed() bool { return true }
 func (a *App) Textarea(t Textarea) tea.Cmd { return t.open(a, nil) }
 
 func (t Textarea) open(a *App, written func()) tea.Cmd {
-	tv := &textareaView{t: t, writing: true, written: written}
+	tv := &textareaView{t: t, writing: true, written: written, tabW: a.inputTabWidth()}
 	for _, l := range strings.Split(strings.ReplaceAll(t.Old, "\r\n", "\n"), "\n") {
 		tv.lines = append(tv.lines, graphemes(l))
 	}
@@ -59,14 +56,14 @@ type textareaView struct {
 	visible   int
 	textW     int
 	written   func()
+	tabW      int // input_tab_width: the spaces Tab puts in, the cells a pasted tab takes
 }
 
-// tabCells is how wide a tab is drawn. TODO(tdp G35): four cells.
-const tabCells = 4
-
-func taWidth(c string) int {
+// cellW is how wide a character is drawn: a pasted tab takes input_tab_width
+// cells, not lined up to a tab stop (components/input/textarea).
+func (tv *textareaView) cellW(c string) int {
 	if c == "\t" {
-		return tabCells
+		return tv.tabW
 	}
 	return Width(c)
 }
@@ -88,7 +85,7 @@ func (tv *textareaView) rows(w int) []vrow {
 	for li, l := range tv.lines {
 		start, used := 0, 0
 		for i, c := range l {
-			cw := taWidth(c)
+			cw := tv.cellW(c)
 			if used+cw > w && i > start {
 				out = append(out, vrow{li, start, i})
 				start, used = i, 0
@@ -126,8 +123,8 @@ func (tv *textareaView) numWidth() int { return len(strconv.Itoa(len(tv.lines)))
 func (tv *textareaView) measure(sw, sh int) (int, int) {
 	w := popupWidth(sw, 0, false)
 	tv.textW = max(w-4-tv.numWidth()-1, 1)
-	// TODO(tdp G35): as tall as the text when it opens, six rows at least.
-	return w, min(max(len(tv.rows(tv.textW)), 6)+4, max(sh-2, 3))
+	// As tall as it can be; the text scrolls in it (components/input/textarea).
+	return w, max(sh-2, 3)
 }
 
 func (tv *textareaView) draw(w, h int, layer Color) []string {
@@ -140,7 +137,12 @@ func (tv *textareaView) draw(w, h int, layer Color) []string {
 	cur := tv.cursorRow(rows)
 	tv.top = scrollWindow(tv.top, cur, n, len(rows))
 	body := make([]string, 0, n)
+	// The value is Lavender; the cursor is a Lavender block while writing and
+	// a block of the layer colour while moving (components/input/textarea).
 	style, cursor := Fg(Lavender), Style{Fg: Base, Bg: Lavender}
+	if !tv.writing {
+		cursor = On(layer)
+	}
 	for i := tv.top; i < tv.top+n; i++ {
 		if i >= len(rows) {
 			body = append(body, Repeat(" ", inner))
@@ -161,7 +163,7 @@ func (tv *textareaView) draw(w, h int, layer Color) []string {
 			c := l[k]
 			text := c
 			if c == "\t" {
-				text = Repeat(" ", tabCells)
+				text = Repeat(" ", tv.tabW)
 			}
 			if i == cur && k == tv.col {
 				b.WriteString(cursor.Render(text))
@@ -213,13 +215,13 @@ func (tv *textareaView) vertical(dir int) {
 	}
 	x := 0
 	for k := rows[cur].start; k < tv.col && k < len(tv.lines[tv.line]); k++ {
-		x += taWidth(tv.lines[tv.line][k])
+		x += tv.cellW(tv.lines[tv.line][k])
 	}
 	r := rows[next]
 	tv.line, tv.col = r.line, r.start
 	used := 0
-	for tv.col < r.end && used+taWidth(tv.lines[r.line][tv.col]) <= x {
-		used += taWidth(tv.lines[r.line][tv.col])
+	for tv.col < r.end && used+tv.cellW(tv.lines[r.line][tv.col]) <= x {
+		used += tv.cellW(tv.lines[r.line][tv.col])
 		tv.col++
 	}
 	if !tv.writing {
@@ -252,7 +254,7 @@ func (tv *textareaView) writeKey(key string, msg tea.KeyMsg) tea.Cmd {
 	case "Enter":
 		tv.insert("\n")
 	case "Tab":
-		tv.insert(cmpOr(tv.t.Indent, "\t"))
+		tv.insert(Repeat(" ", tv.tabW)) // spaces, input_tab_width of them (Rules K8)
 	case "Space":
 		tv.insert(" ")
 	case "←":
@@ -476,11 +478,11 @@ func (tv *textareaView) keyRef() []refSection {
 			{Key: "Esc", Desc: "cancel (asks first when something changed)"},
 		}},
 		{title: "move", rows: []KeyRow{
-			{Key: "h/j/k/l", Desc: "left, down, up, right"},
-			{Key: "w/b/e", Desc: "next word, word before, end of the word"},
-			{Key: "0/$", Desc: "start, end of the line"},
-			{Key: "u/d", Desc: "half a page up, down"},
-			{Key: "gg/G", Desc: "first, last line"},
+			{Key: "h|j|k|l", Desc: "left, down, up, right"},
+			{Key: "w|b|e", Desc: "next word, word before, end of the word"},
+			{Key: "0|$", Desc: "start, end of the line"},
+			{Key: "u|d", Desc: "half a page up, down"},
+			{Key: "gg|G", Desc: "first, last line"},
 		}},
 	}
 }

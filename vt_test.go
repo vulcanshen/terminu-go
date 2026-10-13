@@ -122,3 +122,15 @@ func TestVTResize(t *testing.T) {
 		t.Errorf("shrinking keeps the cursor's lines: %q at %d", got, v.y)
 	}
 }
+
+func TestTerminalCursorBlock(t *testing.T) {
+	// The program asks for a bar (DECSCUSR 6): not drawn; the cursor stays a
+	// block in Text with Base on it (components/dialog/terminal).
+	v := vtAfter(4, 1, "ab\x1b[6 q")
+	if got := v.text()[0]; got != "ab" {
+		t.Errorf("DECSCUSR left %q", got)
+	}
+	if line := v.render(0, true, Style{Fg: Base, Bg: Text})[0]; !strings.Contains(line, "48;2;205;214;244") || Width(line) != 4 {
+		t.Errorf("no block cursor in Text: %q", line)
+	}
+}

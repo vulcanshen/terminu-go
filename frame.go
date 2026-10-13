@@ -15,6 +15,7 @@ const (
 	glyphRoundLeft  = "\U0000E0B6" // nf-ple-left_half_circle_thick: a popup title's left end
 	glyphRoundRight = "\U0000E0B4" // nf-ple-right_half_circle_thick: a popup title's right end
 	glyphHexagon    = "\U000F02D8" // nf-md-hexagon: before a section title
+	glyphTyping     = "\U0000F105" // nf-fa-angle_right: before a typing row that filters
 	glyphSortAsc    = "\U0000F160" // nf-fa-sort_amount_asc
 	glyphSortDesc   = "\U0000F161" // nf-fa-sort_amount_desc
 	glyphMarked     = "\U000F0132" // nf-md-checkbox_marked

@@ -85,7 +85,7 @@ func (ds *dialogsScreen) scenarios() []scenario {
 				Details: []string{"Host  10.0.4.21:5432", "User  deploy", "Via   bastion-02", "", "This is the production database."},
 				Warn:    []int{4}}, toast("Connected to prod-db-01"))
 		}},
-		{"Confirm: long", "confirm", "the details scroll with j/k, the question stays", func() tea.Cmd {
+		{"Confirm: long", "confirm", "the details scroll with [j]|[k], the question stays", func() tea.Cmd {
 			var details []string
 			for i := range 30 {
 				details = append(details, fmt.Sprintf("assets/images/backgrounds/landscape-%02d.png", i+1))
@@ -109,8 +109,8 @@ func (ds *dialogsScreen) scenarios() []scenario {
 		{"Form: save fails", "form", "the action fails: an error popup over the form", func() tea.Cmd {
 			return a.Form(ds.hostForm(nil, true))
 		}},
-		{"Note viewer", "note", "its own keys / y v; v is a mode", ds.yaml},
-		{"Popup with tabs", "note", "tabs after the title; h/l switch", ds.devtools},
+		{"Note viewer", "note", "its own keys [/] [y]; [v] then [v] again selects text", ds.yaml},
+		{"Popup with tabs", "note", "tabs after the title; [h]|[l] switch", ds.devtools},
 		{"Loading popup", "note", "lines arriving: the loading icon turns", ds.loadingPopup},
 		{"Popup: long title", "note", "a title too long is cut with …", func() tea.Cmd {
 			return a.Viewer(&terminu.Viewer{Title: "File", Glyph: glyphYaml,
@@ -191,7 +191,7 @@ func (ds *dialogsScreen) worklist() tea.Cmd {
 		t := t
 		first, _, _ := strings.Cut(t, ";")
 		first, _, _ = strings.Cut(first, ",")
-		rows = append(rows, terminu.Action{Label: first, Stay: true, Do: func() tea.Cmd {
+		rows = append(rows, terminu.Action{Label: first, Detail: true, Do: func() tea.Cmd {
 			return a.Viewer(&terminu.Viewer{Title: "Task", Subject: fmt.Sprintf("#%d", i+1), Glyph: glyphList, Lines: terminu.Wrap(t, 60)})
 		}})
 	}

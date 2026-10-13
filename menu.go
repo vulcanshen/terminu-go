@@ -108,9 +108,14 @@ func (m *menuView) rowWidth(r menuRow) int {
 	return Width(r.label) + 2 + Width(r.desc)
 }
 
-// hint is Enter:run Esc:close, a worklist too (TODO(tdp G40)).
+// hint is Enter:run Esc:close, Enter:detail on a row opening its full text
+// (components/dialog/menu: what Enter does there).
 func (m *menuView) hint() []KeyHint {
-	return []KeyHint{{"Enter", "run"}, {"Esc", "close"}}
+	verb := "run"
+	if m.cursor < len(m.rows) && m.rows[m.cursor].kind == menuItem && m.rows[m.cursor].action.Detail {
+		verb = "detail"
+	}
+	return []KeyHint{{"Enter", verb}, {"Esc", "close"}}
 }
 
 func (m *menuView) measure(sw, sh int) (int, int) {
@@ -120,7 +125,14 @@ func (m *menuView) measure(sw, sh int) (int, int) {
 	}
 	need := content + 3 + m.arrowRoom() // frame, the left cell, the arrow's cells
 	need = max(need, Width(titleCapsule(m.glyph, m.title, Base, 1<<20))+4)
-	need = max(need, hintWidth(m.hint())+6)
+	for i, r := range m.rows {
+		if r.kind == menuItem {
+			saved := m.cursor
+			m.cursor = i
+			need = max(need, hintWidth(m.hint())+6) // the widest hint: the width does not change
+			m.cursor = saved
+		}
+	}
 	w := min(need, max(min(sw-2, 120), 1))
 	h := min(len(m.rows)+4, max(sh-2, 3))
 	return w, h
@@ -256,7 +268,7 @@ func (m *menuView) surface() string { return m.name }
 
 func (m *menuView) keyRef() []refSection {
 	var rows []KeyRow
-	rows = append(rows, KeyRow{Key: "Enter", Desc: "run the row under the cursor"})
+	rows = append(rows, KeyRow{Key: "Enter", Desc: "the row under the cursor"})
 	for _, r := range m.rows {
 		if r.kind == menuItem && r.action.Key != "" && r.action.Key != "Enter" {
 			rows = append(rows, KeyRow{Key: r.action.Key, Desc: plainLabel(r.action) + descTail(r.action.Desc), Disabled: r.action.disabled()})
@@ -264,14 +276,14 @@ func (m *menuView) keyRef() []refSection {
 	}
 	esc := "close this menu"
 	if m.space {
-		rows = append(rows, KeyRow{Key: "Space/Esc", Desc: esc})
+		rows = append(rows, KeyRow{Key: "Space|Esc", Desc: esc})
 	} else {
 		rows = append(rows, KeyRow{Key: "Esc", Desc: esc})
 	}
 	return []refSection{{rows: rows}, {title: "move", rows: []KeyRow{
-		{Key: "j/k", Desc: "down, up"},
-		{Key: "u/d", Desc: "half a page up, down"},
-		{Key: "gg/G", Desc: "to the top, the bottom"},
+		{Key: "j|k", Desc: "down, up"},
+		{Key: "u|d", Desc: "half a page up, down"},
+		{Key: "gg|G", Desc: "to the top, the bottom"},
 	}}}
 }
 

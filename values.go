@@ -222,9 +222,9 @@ func (v *Values) Scroll() string { return v.scroll }
 // MoveKeys are a one-dimensional list's (Rules K12).
 func (v *Values) MoveKeys() []KeyRow {
 	return []KeyRow{
-		{Key: "j/k", Desc: "next, previous"},
-		{Key: "u/d", Desc: "half a page up, down"},
-		{Key: "gg/G", Desc: "to the first, the last"},
+		{Key: "j|k", Desc: "next, previous"},
+		{Key: "u|d", Desc: "half a page up, down"},
+		{Key: "gg|G", Desc: "to the first, the last"},
 	}
 }
 

@@ -50,6 +50,16 @@ func testViewer() *Viewer {
 	return &Viewer{Title: "YAML", Subject: "pod/nginx", Lines: lines}
 }
 
+// rowWith is the styled screen row whose text holds s.
+func (ta *testApp) rowWith(s string) string {
+	for _, l := range ta.Frame() {
+		if strings.Contains(StripStyles(l), s) {
+			return l
+		}
+	}
+	return ""
+}
+
 func TestNoteKeys(t *testing.T) {
 	ta := newTestApp(t)
 	ta.resize(80, 20)
@@ -68,15 +78,18 @@ func TestNoteKeys(t *testing.T) {
 		t.Fatal("Enter or Space closed the note")
 	}
 	ta.press("j", "j", "d")
-	if v.Top() < 3 {
+	if v.Top() != 2+v.visible/2 {
 		t.Errorf("j and d scroll: top %d", v.Top())
+	}
+	if strings.Contains(ta.rowWith(fmt.Sprintf("key%d:", v.Top())), "48;2;164;192;250") {
+		t.Error("a viewer has no cursor outside the selection mode")
+	}
+	if want := fmt.Sprintf("%d-%d of 40", v.Top()+1, v.Top()+v.visible); !strings.Contains(ta.screenText(), want) {
+		t.Errorf("no %s, the lines in sight", want)
 	}
 	ta.press("G")
 	if v.Top() != len(v.Lines)-v.visible {
 		t.Errorf("G goes to the bottom: top %d", v.Top())
-	}
-	if !strings.Contains(ta.screenText(), "of 40") {
-		t.Error("no N-M of T")
 	}
 	ta.press("y")
 	if copied != 1 {
@@ -97,8 +110,14 @@ func TestNoteHotkeysAndMode(t *testing.T) {
 	ta.Viewer(v)
 	ta.settle()
 	ta.press("v")
-	if !v.selecting {
-		t.Fatal("v did not start the selection mode")
+	if !v.inMode || v.selecting || v.line != 0 || v.col != 0 {
+		t.Fatalf("the first v brings the cursor out at the start of the first line in sight, selecting nothing: %v %v %d,%d", v.inMode, v.selecting, v.line, v.col)
+	}
+	if h := ta.topView().(*viewerView).hint(); fmt.Sprint(h) != "[{v select} {Esc cancel}]" {
+		t.Errorf("hint before selecting: %v", h)
+	}
+	if !strings.Contains(ta.rowWith("ind: Pod"), "48;2;164;192;250") {
+		t.Error("the cursor is a block of the layer colour")
 	}
 	text := ta.screenText()
 	if !strings.Contains(text, "┫Visual┣") {
@@ -107,24 +126,61 @@ func TestNoteHotkeysAndMode(t *testing.T) {
 	if !strings.Contains(strings.Join(ta.Frame(), "\n"), "38;2;249;226;175") {
 		t.Error("the frame does not turn the mode colour")
 	}
-	ta.press("c", "Space")
-	if ran != 0 || !v.selecting {
-		t.Error("a hotkey ran in the mode (Rules K11)")
+	ta.press("c", "Space", "y")
+	if ran != 0 || !v.inMode || got != "" {
+		t.Error("a hotkey ran in the mode (Rules K11), or y copied before the selection started")
+	}
+	ta.press("v")
+	if !v.selecting {
+		t.Fatal("the second v did not start the selection")
+	}
+	if h := ta.topView().(*viewerView).hint(); fmt.Sprint(h) != "[{y copy} {Esc cancel}]" {
+		t.Errorf("hint while selecting: %v", h)
 	}
 	ta.press("?")
 	if n, ok := ta.topView().(*noteView); !ok || !strings.Contains(n.title, "KEYS") || !strings.Contains(StripStyles(strings.Join(n.lines, "\n")), "copy the selection") {
 		t.Fatalf("? in the mode lists the mode's keys: %T", ta.topView())
 	}
-	ta.press("Esc", "w", "j", "$", "y")
+	ta.press("Esc", "w", "j", "v", "$", "y")
 	if got != "kind: Pod\nmetadata:" {
-		t.Errorf("copied %q", got)
+		t.Errorf("v again once selecting does nothing; copied %q", got)
 	}
-	if v.selecting {
-		t.Error("y did not leave the mode")
+	if v.inMode || v.selecting {
+		t.Error("y leaves the whole mode")
 	}
-	ta.press("v", "Esc")
-	if v.selecting || ta.top() == nil {
-		t.Error("Esc leaves the mode and only the mode")
+	if strings.Contains(ta.rowWith("metadata:"), "48;2;164;192;250") {
+		t.Error("the cursor goes with the mode")
+	}
+	ta.press("v", "w", "w", "v", "e", "y") // w stops at the colon first, as vim's
+	if got != "Pod" {
+		t.Errorf("the selection starts at the cursor: %q", got)
+	}
+	ta.press("v", "v", "Esc")
+	if v.inMode || v.selecting || ta.top() == nil {
+		t.Error("Esc leaves the whole mode and only the mode")
+	}
+}
+
+func TestViewerSelectScrollPosition(t *testing.T) {
+	ta := newTestApp(t)
+	ta.resize(80, 20)
+	v := testViewer()
+	v.Select = &Selection{Key: "v", Name: "Visual"}
+	ta.Viewer(v)
+	ta.settle()
+	ta.press("d")
+	top := v.Top()
+	ta.press("v")
+	if v.line != top {
+		t.Errorf("the cursor comes out on the first line in sight: %d, top %d", v.line, top)
+	}
+	ta.press("j", "j")
+	if want := fmt.Sprintf("%d of 40", top+3); !strings.Contains(ta.screenText(), want) {
+		t.Errorf("in the mode the scroll position is the cursor's line, %s:\n%s", want, ta.screenText())
+	}
+	ta.press("G")
+	if v.line != 39 || v.Top() != len(v.Lines)-v.visible {
+		t.Errorf("the view follows the cursor: line %d, top %d", v.line, v.Top())
 	}
 }
 
@@ -146,10 +202,13 @@ func TestPopupTitleTabs(t *testing.T) {
 
 func TestMenuEnterOpensFullText(t *testing.T) {
 	ta := newTestApp(t)
-	ta.Menu("Worklist", MenuSection{Actions: []Action{{Label: "Rotate the certificate", Stay: true, Do: func() tea.Cmd {
+	ta.Menu("Worklist", MenuSection{Actions: []Action{{Label: "Rotate the certificate", Detail: true, Do: func() tea.Cmd {
 		return ta.Viewer(&Viewer{Title: "Task", Lines: []string{"Rotate the certificate before Friday."}})
 	}}}})
 	ta.settle()
+	if h := ta.topView().(*menuView).hint(); h[0] != (KeyHint{"Enter", "detail"}) {
+		t.Errorf("a worklist's hint is Enter:detail: %v", h)
+	}
 	ta.press("Enter")
 	if _, ok := ta.topView().(*viewerView); !ok {
 		t.Fatalf("Enter did not open the full text: %T", ta.topView())
