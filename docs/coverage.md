@@ -178,8 +178,9 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | S2 | 不出現在 Space menu、global operation popup、key reference、footer、hint、README | lib：splash 沒有登記項 | `TestS2SplashNotDisclosed` |
 | S3 | 任意鍵只關掉 splash（含 `q`、`Ctrl-C`、`Esc`、`Space`、`?`） | splash 上按 `Ctrl-C` | `TestS3AnyKeyClosesOnly` |
 | S4 | 啟動不播；popup 開著、輸入態、PTY 裡按 `V` 不叫出 | 開著 popup、在 filter 打字、在 Shell 裡按 `V` | `TestS4SplashOnlyOnPanel` |
-| S5 | 畫 icon 一格對一格：25 × 19 格加上下各一列底共 21 列，一格一個 `nf-fa-square` 佔兩欄（icon 佔一格時補空白），底 Surface0、U 框 `#205090`、字 `#f2b753`；下面空一列接六列字（名稱 Blue 粗體、版本 Blue、介紹 Text、`developed by` Overlay0、信箱金色、`Press any key to close` Overlay0），在 mark 的寬度裡置中；E8：展示場畫 tdp 的 `principle/icon.svg`（複本在 `examples/showcase/icon.svg`） | P `[1] PODS` 按 `V` | `TestS5SplashMatchesIcon`、`TestS5SplashRefusesBadIcon` |
-| S5 | 揭露動畫：tick 10ms、段間停 250ms；底一個 tick 一列由上往下 → 金色的字一個字一段、一個 tick 2 格打散 → U 框由下往上一個 tick 3 格 → mark 畫完 400ms 後名稱、版本、介紹，再 500ms 後作者兩列與提示 | 同上 | `TestS5SplashReveal` |
+| S5 | 畫 icon 一格對一格：25 × 19 格加上下各一列底共 21 列，一格一個 `nf-fa-square` 佔兩欄（icon 佔一格時補空白），底 Surface0、U 框 `#205090`、字 `#f2b753`；下面空一列接六列字（名稱 Blue 粗體、版本 Blue、介紹 Text、`developed by` Overlay0、信箱金色、`Press any key to close` Overlay0），在 mark 的寬度裡置中、每列不超過 50 欄（超過時建立 splash 回錯誤）；整塊上下左右置中；E8：展示場畫 tdp 的 `principle/icon.svg`（複本在 `examples/showcase/icon.svg`） | P `[1] PODS` 按 `V` | `TestS5SplashMatchesIcon`、`TestS5SplashRefusesBadIcon`、`TestS5SplashRefusesWideText` |
+| S5 | 放不下整塊（不到 50 欄或 30 列）時不畫 mark、只畫字，置中、照樣分兩批；太窄照字詞折行；還是太矮從下面往上截（提示 → 作者兩列 → 介紹，連同上面的空白列），名稱與版本一定出現 | 把視窗縮到 49 欄或 29 列以下按 `V` | `TestS5SplashTooSmall` |
+| S5 | 揭露動畫：tick 10ms、段間停 250ms；底一個 tick 一列由上往下 → 金色的字一個字一段、一個 tick 2 格打散 → U 框由下往上一列一列、同一列從中間往兩端，一個 tick 一對（中線那格自己一個 tick） → mark 畫完 400ms 後名稱、版本、介紹，再 500ms 後作者兩列與提示 | 同上 | `TestS5SplashReveal` |
 
 ## Rules — E App 與環境（分工照 E8）
 
