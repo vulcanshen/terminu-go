@@ -255,52 +255,56 @@ func TestS5SplashReveal(t *testing.T) {
 	s, icon := showcaseSplash(t)
 	want := svgColours(t, icon)
 	gold, frame := Hex("#f2b753"), Hex("#205090")
-	var goldN, frameN int
+	goldN := 0
+	// The frame's ticks: a mirrored pair, or the middle cell, of a row.
+	type step struct{ row, off int }
+	steps := map[step]bool{}
 	for r := 2; r <= 22; r++ {
 		for c := range 25 {
 			switch want[r][c] {
 			case gold:
 				goldN++
 			case frame:
-				frameN++
+				steps[step{r - 2, abs(c - 12)}] = true
 			}
 		}
 	}
-	// One letter (the T) a stage, 2 cells a tick; the frame 3 a tick; 25
+	// One letter (the T) a stage, 2 cells a tick; the frame a pair a tick; 25
 	// ticks between stages; the text 40 and 50 ticks after the mark.
 	letter := 20 + 25
 	letterEnd := letter + (goldN+1)/2 - 1
 	rise := letterEnd + 25
-	riseEnd := rise + (frameN+2)/3 - 1
+	riseEnd := rise + len(steps) - 1
 	text, text2 := riseEnd+40, riseEnd+90
 
 	var shownGold [][2]int
-	prevGold, prevFrame := 0, 0
+	shownFrame := map[[2]int]bool{}
+	prevGold := 0
+	last := step{99, -1} // the frame's last step: rows rise, offsets grow
 	for f := 0; f <= text2; f++ {
 		lines, done := s(f, 120, 40)
 		if done != (f == text2) {
 			t.Fatalf("frame %d: done %v, want it at %d", f, done, text2)
 		}
-		rows, nGold, nFrame := 0, 0, 0
-		lowest := 99 // the highest row the frame has reached
-		var unshown []int
+		rows, nGold := 0, 0
+		var added [][2]int
 		for r := range 21 {
 			sq := squares(lines[5+r])
 			if len(sq) > 0 {
 				rows++
 			}
 			for c, col := range sq {
-				switch {
-				case col == gold:
+				switch col {
+				case gold:
 					nGold++
 					if f > 0 && !containsCell(shownGold, c, r) {
 						shownGold = append(shownGold, [2]int{c, r})
 					}
-				case col == frame:
-					nFrame++
-					lowest = min(lowest, r)
-				case want[r+2][c] == frame:
-					unshown = append(unshown, r)
+				case frame:
+					if !shownFrame[[2]int{c, r}] {
+						shownFrame[[2]int{c, r}] = true
+						added = append(added, [2]int{c, r})
+					}
 				}
 			}
 		}
@@ -308,19 +312,28 @@ func TestS5SplashReveal(t *testing.T) {
 			t.Errorf("frame %d: %d rows of background, want %d (a row a tick)", f, rows, want)
 		}
 		switch {
-		case f < letter && nGold > 0, f < rise && nFrame > 0:
-			t.Errorf("frame %d: a stage before its time: %d gold, %d frame", f, nGold, nFrame)
+		case f < letter && nGold > 0, f < rise && len(shownFrame) > 0:
+			t.Errorf("frame %d: a stage before its time: %d gold, %d frame", f, nGold, len(shownFrame))
 		case f >= letter && f <= letterEnd && nGold-prevGold != min(2, goldN-prevGold):
 			t.Errorf("frame %d: %d letter cells more, want 2 a tick", f, nGold-prevGold)
-		case f >= rise && f <= riseEnd && nFrame-prevFrame != min(3, frameN-prevFrame):
-			t.Errorf("frame %d: %d frame cells more, want 3 a tick", f, nFrame-prevFrame)
-		}
-		for _, r := range unshown {
-			if r > lowest {
-				t.Errorf("frame %d: the frame reached row %d before row %d (it rises from the bottom)", f, lowest, r)
+		case f >= rise && f <= riseEnd:
+			// One step a tick: the two cells mirrored about the middle, or
+			// the middle cell alone; the row below first, the middle out.
+			ok := len(added) == 1 && added[0][0] == 12 ||
+				len(added) == 2 && added[0][1] == added[1][1] && added[0][0]+added[1][0] == 24
+			if !ok {
+				t.Errorf("frame %d: the frame grew by %v, not a mirrored pair or the middle cell", f, added)
+				break
 			}
+			now := step{added[0][1], abs(added[0][0] - 12)}
+			if now.row > last.row || now.row == last.row && now.off <= last.off {
+				t.Errorf("frame %d: the frame grew at %v after %v (bottom up, middle out)", f, now, last)
+			}
+			last = now
+		case len(added) > 0:
+			t.Errorf("frame %d: the frame grew outside its stage: %v", f, added)
 		}
-		prevGold, prevFrame = nGold, nFrame
+		prevGold = nGold
 		name := strings.Contains(lines[5+22], "showcase")
 		author := strings.Contains(lines[5+26], "developed by")
 		if name != (f >= text) || author != (f >= text2) {
@@ -387,6 +400,127 @@ func TestS5SplashRefusesBadIcon(t *testing.T) {
 	} {
 		if _, err := NewSplash([]byte(icon), "x", "v1", "y"); err == nil {
 			t.Errorf("no error for %s", icon)
+		}
+	}
+}
+
+// TestS5SplashTooSmall: a terminal under 50 columns or 30 rows gets the text
+// alone, centred both ways, in its two batches; too narrow, it wraps between
+// words; too short, the hint goes, then the author, then the intro, each with
+// the blank row above it, and the name and version stay (Rules S5).
+func TestS5SplashTooSmall(t *testing.T) {
+	icon, err := os.ReadFile("examples/showcase/icon.svg")
+	if err != nil {
+		t.Fatal(err)
+	}
+	intro := "Every component of terminu design, in one app"
+	s, err := NewSplash(icon, "showcase", "0.0.0-dev", intro)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// rows is what is written on the screen, row by row, the blank ones as "".
+	rows := func(f, w, h int) []string {
+		t.Helper()
+		lines, _ := s(f, w, h)
+		var out []string
+		for i, l := range Pad2(lines, w, h) {
+			if Width(l) != w {
+				t.Errorf("%d × %d: row %d is %d wide", w, h, i, Width(l))
+			}
+			if strings.Contains(l, "\U0000F0C8") {
+				t.Errorf("%d × %d: the mark is drawn", w, h)
+			}
+			out = append(out, strings.TrimSpace(StripStyles(l)))
+		}
+		return out
+	}
+	// text is the block of text: from its first written row to its last.
+	text := func(rs []string) []string {
+		first, last := -1, -1
+		for i, r := range rs {
+			if r != "" {
+				if first < 0 {
+					first = i
+				}
+				last = i
+			}
+		}
+		if first < 0 {
+			return nil
+		}
+		return rs[first : last+1]
+	}
+	join := func(rs []string) string { return strings.Join(rs, "|") }
+	all := []string{"showcase", "0.0.0-dev", intro, "", "developed by", "vulcan.shen.2304@gmail.com", "", "Press any key to close"}
+
+	for _, size := range [][2]int{{49, 40}, {120, 29}} {
+		w, h := size[0], size[1]
+		if got := text(rows(500, w, h)); join(got) != join(all) {
+			t.Errorf("%d × %d: %q, want %q", w, h, got, all)
+		}
+		if rs := rows(500, w, h); rs[(h-len(all))/2] != "showcase" {
+			t.Errorf("%d × %d: the text is not in the middle: %q", w, h, rs)
+		}
+		lines, _ := s(500, w, h)
+		for _, l := range Pad2(lines, w, h) {
+			if p := StripStyles(l); strings.TrimSpace(p) != "" && p != Center(strings.TrimSpace(p), w) {
+				t.Errorf("%d × %d: a row not centred: %q", w, h, p)
+			}
+		}
+	}
+
+	// The two batches count from the opening: 400ms, then 500ms more.
+	for f, want := range map[int]string{
+		39: "",
+		40: "showcase|0.0.0-dev|" + intro,
+		89: "showcase|0.0.0-dev|" + intro,
+		90: join(all),
+	} {
+		if got := join(text(rows(f, 120, 20))); got != want {
+			t.Errorf("tick %d: %q, want %q", f, got, want)
+		}
+	}
+
+	// Too narrow: wrapped between words, each piece centred.
+	got := text(rows(500, 30, 40))
+	wantNarrow := []string{"showcase", "0.0.0-dev", "Every component of terminu", "design, in one app", "",
+		"developed by", "vulcan.shen.2304@gmail.com", "", "Press any key to close"}
+	if join(got) != join(wantNarrow) {
+		t.Errorf("30 wide: %q, want %q", got, wantNarrow)
+	}
+
+	// Too short: cut from the bottom, a group and the blank row above it.
+	for h, want := range map[int][]string{
+		8: all,
+		7: all[:6],
+		5: all[:3],
+		2: all[:2],
+	} {
+		if got := text(rows(500, 120, h)); join(got) != join(want) {
+			t.Errorf("%d rows: %q, want %q", h, got, want)
+		}
+	}
+}
+
+// TestS5SplashRefusesWideText: no row of the text is wider than the mark (50
+// columns); the lib refuses one when it builds the splash (Rules S5, E8).
+func TestS5SplashRefusesWideText(t *testing.T) {
+	icon, err := os.ReadFile("examples/showcase/icon.svg")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fits := strings.Repeat("x", 50)
+	if _, err := NewSplash(icon, "showcase", "v1", fits); err != nil {
+		t.Errorf("50 columns: %v", err)
+	}
+	for _, args := range [][3]string{
+		{"showcase", "v1", fits + "x"},
+		{fits + "x", "v1", "intro"},
+		{"showcase", fits + "x", "intro"},
+		{"showcase", "v1", strings.Repeat("中", 26)},
+	} {
+		if _, err := NewSplash(icon, args[0], args[1], args[2]); err == nil {
+			t.Errorf("no error for a row wider than the mark: %q", args)
 		}
 	}
 }

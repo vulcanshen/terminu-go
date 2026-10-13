@@ -42,7 +42,12 @@ const (
 	// 19 rows with one more of background above and below (svg rows 2–22).
 	markCols, markRows = 25, 21
 	markTop            = 2 // the svg row drawn first
+	markMiddle         = markCols / 2
 	markSquare         = "\U0000F0C8"
+	// markWidth is the mark's width in columns, a square taking two.
+	markWidth = 2 * markCols
+	// The whole block: the mark, a blank row and the eight rows of text.
+	splashRows = markRows + 1 + 8
 
 	// The reveal's holds, in ticks: between stages, then before each batch
 	// of the text.
@@ -51,14 +56,22 @@ const (
 	textHold2 = 50 // 500ms more
 
 	splashAuthor = "vulcan.shen.2304@gmail.com"
+	splashHint   = "Press any key to close"
 )
 
 type markCell struct{ col, row int }
 
+// splashRow is one row of the text under the mark.
+type splashRow struct {
+	s     string
+	style Style
+}
+
 // NewSplash is the family's splash (Rules S5): the mark in icon, the app's
 // docs/icon.svg, cell for cell, and under it the app's name (its command's),
 // its version as `<app> version` prints it and a one-line intro, then the
-// family's author and the hint.
+// family's author and the hint. The text is designed with the mark: a name,
+// version or intro wider than the mark (50 columns) is an error.
 //
 // icon is read as S5 describes it: a 250 × 250 viewBox of 10 × 10 rects, the
 // U frame in #205090 and the letters in #f2b753 within rows 3–21. The letters
@@ -66,6 +79,11 @@ type markCell struct{ col, row int }
 // svg lists them in the order of the app's name with a comment before each
 // (`<!-- K -->`). Without comments all the gold is one letter.
 func NewSplash(icon []byte, name, version, intro string) (Splash, error) {
+	for _, s := range []string{name, version, intro} {
+		if Width(s) > markWidth {
+			return nil, fmt.Errorf("terminu: the splash's %q is wider than the mark's %d columns (Rules S5)", s, markWidth)
+		}
+	}
 	frame, letters, err := parseMark(icon)
 	if err != nil {
 		return nil, err
@@ -89,63 +107,58 @@ func NewSplash(icon []byte, name, version, intro string) (Splash, error) {
 		}
 		t = start + (len(cells)-1)/2
 	}
-	// The U frame rises from the bottom, 3 cells a tick.
-	// TODO(tdp G69): the order within a row; left to right for now.
+	// The U frame rises from the bottom a row at a time, and within a row
+	// from the middle out: a tick for each mirrored pair, the middle cell
+	// on its own.
+	off := func(c markCell) int { return abs(c.col - markMiddle) }
 	slices.SortFunc(frame, func(a, b markCell) int {
-		if a.row != b.row {
+		switch {
+		case a.row != b.row:
 			return b.row - a.row
+		case off(a) != off(b):
+			return off(a) - off(b)
 		}
 		return a.col - b.col
 	})
-	start := t + stageHold
+	t += stageHold - 1
 	for i, c := range frame {
-		colour[c.row][c.col], at[c.row][c.col] = markFrame, start+i/3
+		if i == 0 || c.row != frame[i-1].row || off(c) != off(frame[i-1]) {
+			t++
+		}
+		colour[c.row][c.col], at[c.row][c.col] = markFrame, t
 	}
-	t = start + (len(frame)-1)/3
 	text, text2 := t+textHold, t+textHold+textHold2
 
-	under := []struct {
-		s     string
-		style Style
-		at    int
-	}{
-		{"", Style{}, 0}, // a blank row under the mark
-		{name, Fg(Blue).Bolded(), text},
-		{version, Fg(Blue), text},
-		{intro, Fg(Text), text},
-		{"", Style{}, 0},
-		{"developed by", Fg(Overlay0), text2},
-		{splashAuthor, Fg(markGold), text2},
-		{"", Style{}, 0},
-		{"Press any key to close", Fg(Overlay0), text2},
-	}
-	markW := 2 * markCols
-	// TODO(tdp G70): a line wider than the mark; centred on the same middle,
-	// sticking out on both sides, for now.
-	blockW := markW
-	for _, u := range under {
-		blockW = max(blockW, Width(u.s))
+	// The text in its groups, cut from the bottom when it does not fit: the
+	// name and version, the intro, the author's two rows, the hint.
+	groups := [][]splashRow{
+		{{name, Fg(Blue).Bolded()}, {version, Fg(Blue)}},
+		{{intro, Fg(Text)}},
+		{{"developed by", Fg(Overlay0)}, {splashAuthor, Fg(markGold)}},
+		{{splashHint, Fg(Overlay0)}},
 	}
 
 	return func(f, w, h int) ([]string, bool) {
+		if w < markWidth || h < splashRows {
+			// Too small for the whole block: the text alone, from the
+			// opening (Rules S5).
+			return splashText(groups, f >= textHold, f >= textHold+textHold2, w, h), f >= text2
+		}
 		square := markSquare
 		if IconWidth() == 1 {
 			square += " " // a square takes two columns (E5)
 		}
-		// TODO(tdp G67): where the splash sits; in the middle for now.
-		// TODO(tdp G68): a terminal smaller than the splash; cut at the right
-		// and the bottom for now.
-		x := max((w-blockW)/2, 0)
-		y := max((h-markRows-len(under))/2, 0)
-		lines := make([]string, y, y+markRows+len(under))
-		markPad := strings.Repeat(" ", x+(blockW-markW)/2)
+		// The whole block in the middle of the screen.
+		x, y := (w-markWidth)/2, (h-splashRows)/2
+		lines := make([]string, y, h)
+		pad := strings.Repeat(" ", x)
 		for r := range markRows {
 			if f < r {
 				lines = append(lines, "")
 				continue
 			}
 			var b strings.Builder
-			b.WriteString(markPad)
+			b.WriteString(pad)
 			run, n := markBack, 0
 			for c := range markCols + 1 {
 				cur := markBack
@@ -164,16 +177,58 @@ func NewSplash(icon []byte, name, version, intro string) (Splash, error) {
 			}
 			lines = append(lines, b.String())
 		}
-		pad := strings.Repeat(" ", x)
-		for _, u := range under {
-			if u.s == "" || f < u.at {
-				lines = append(lines, "")
-				continue
-			}
-			lines = append(lines, pad+Center(u.style.Render(u.s), blockW))
+		lines = append(lines, "") // a blank row under the mark
+		for _, row := range splashText(groups, f >= text, f >= text2, markWidth, splashRows-markRows-1) {
+			lines = append(lines, pad+row)
 		}
 		return lines, f >= text2
 	}, nil
+}
+
+// splashText is the text under the mark in w × h cells, each row centred:
+// the groups wrapped between words, a blank row before the author and before
+// the hint, and groups dropped from the bottom while they do not fit; the
+// first (name and version) always stays. The first two groups show once
+// first is set, the others once second is.
+func splashText(groups [][]splashRow, first, second bool, w, h int) []string {
+	var parts [][]string
+	for i, g := range groups {
+		var part []string
+		if i >= 2 {
+			part = append(part, "") // the blank row above it goes with it
+		}
+		for _, row := range g {
+			for _, l := range Wrap(row.s, w) {
+				if i < 2 && first || i >= 2 && second {
+					l = Center(row.style.Render(l), w)
+				} else {
+					l = ""
+				}
+				part = append(part, l)
+			}
+		}
+		parts = append(parts, part)
+	}
+	n := 0
+	for _, p := range parts {
+		n += len(p)
+	}
+	for len(parts) > 1 && n > h {
+		n -= len(parts[len(parts)-1])
+		parts = parts[:len(parts)-1]
+	}
+	lines := make([]string, max((h-n)/2, 0), h)
+	for _, p := range parts {
+		lines = append(lines, p...)
+	}
+	return lines
+}
+
+func abs(n int) int {
+	if n < 0 {
+		return -n
+	}
+	return n
 }
 
 // parseMark reads the cells of a family mark (Rules S5): the U frame's, and
