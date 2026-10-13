@@ -41,37 +41,37 @@ func TestFilePreviewKinds(t *testing.T) {
 	writeFile(t, filepath.Join(dir, "tree/z.txt"), nil, 0o644)
 	_ = os.Mkdir(filepath.Join(dir, "empty"), 0o755)
 
-	text := previewText(filePreview(filepath.Join(dir, "main.go"), 40, 10, false, nil))
+	text := previewText(filePreview(filepath.Join(dir, "main.go"), 40, 10, false, nil, 4))
 	if !strings.HasPrefix(text, "1 package main\n2 \n3 func main() {}") {
 		t.Errorf("text with line numbers:\n%s", text)
 	}
-	if lines := filePreview(filepath.Join(dir, "main.go"), 40, 10, false, nil); !strings.Contains(lines[0], "38;2;") {
+	if lines := filePreview(filepath.Join(dir, "main.go"), 40, 10, false, nil, 4); !strings.Contains(lines[0], "38;2;") {
 		t.Error("the text is not coloured")
 	}
 	want := "7f 45 4c 46 00 01 02 03  .ELF....\n61 62                    ab"
-	if hex := previewText(filePreview(filepath.Join(dir, "tool"), 120, 10, false, nil)); hex != want {
+	if hex := previewText(filePreview(filepath.Join(dir, "tool"), 120, 10, false, nil, 4)); hex != want {
 		t.Errorf("hex, always eight bytes a row:\n%q\nwant\n%q", hex, want)
 	}
-	if img := previewText(filePreview(filepath.Join(dir, "logo.png"), 20, 10, false, nil)); !strings.HasPrefix(img, "data:image/png · 12 B\n\ndata:image/png;base6") {
+	if img := previewText(filePreview(filepath.Join(dir, "logo.png"), 20, 10, false, nil, 4)); !strings.HasPrefix(img, "data:image/png · 12 B\n\ndata:image/png;base6") {
 		t.Errorf("image: %s", img)
 	}
 	big := filepath.Join(dir, "big.png")
 	writeFile(t, big, bytes.Repeat([]byte{1}, 1<<20+1), 0o644)
-	if img := previewText(filePreview(big, 40, 10, false, nil)); img != "(1.0 MB — too large to inline as a data URI)" {
+	if img := previewText(filePreview(big, 40, 10, false, nil, 4)); img != "(1.0 MB — too large to inline as a data URI)" {
 		t.Errorf("an image over 1 MB: %s", img)
 	}
-	zipTree := previewText(filePreview(filepath.Join(dir, "fonts.zip"), 40, 10, false, nil))
+	zipTree := previewText(filePreview(filepath.Join(dir, "fonts.zip"), 40, 10, false, nil, 4))
 	if !strings.Contains(zipTree, "fonts\n├─") || !strings.Contains(zipTree, "└─ "+glyphFile+" b.ttf") || !strings.HasSuffix(zipTree, "LICENSE") {
 		t.Errorf("archive tree:\n%s", zipTree)
 	}
-	tree := previewText(filePreview(filepath.Join(dir, "tree"), 40, 10, false, nil))
+	tree := previewText(filePreview(filepath.Join(dir, "tree"), 40, 10, false, nil, 4))
 	if !strings.Contains(tree, "└─ "+glyphFolder+" b") || strings.Contains(tree, "deep.txt") {
 		t.Errorf("a tree is three levels deep:\n%s", tree)
 	}
-	if short := previewText(filePreview(filepath.Join(dir, "tree"), 40, 2, false, nil)); !strings.HasSuffix(short, "…") {
+	if short := previewText(filePreview(filepath.Join(dir, "tree"), 40, 2, false, nil, 4)); !strings.HasSuffix(short, "…") {
 		t.Errorf("a tree cut short ends in …:\n%s", short)
 	}
-	if empty := previewText(filePreview(filepath.Join(dir, "empty"), 40, 5, false, nil)); empty != "(empty)" {
+	if empty := previewText(filePreview(filepath.Join(dir, "empty"), 40, 5, false, nil, 4)); empty != "(empty)" {
 		t.Errorf("empty directory: %q", empty)
 	}
 }
@@ -82,25 +82,25 @@ func TestFilePreviewHidesSecrets(t *testing.T) {
 	writeFile(t, key, []byte("-----BEGIN OPENSSH PRIVATE KEY-----\nsecret\n-----END OPENSSH PRIVATE KEY-----\n"), 0o644)
 	own := filepath.Join(dir, "app.yaml")
 	writeFile(t, own, []byte("token: x\n"), 0o600)
-	if got := previewText(filePreview(own, 40, 5, false, nil)); !strings.Contains(got, "token: x") {
+	if got := previewText(filePreview(own, 40, 5, false, nil, 4)); !strings.Contains(got, "token: x") {
 		t.Errorf("off by default: everything shows: %q", got)
 	}
-	if got := previewText(filePreview(key, 40, 5, true, nil)); got != "-----BEGIN OPENSSH PRIVATE KEY-----\n(sensitive content not shown)" {
+	if got := previewText(filePreview(key, 40, 5, true, nil, 4)); got != "-----BEGIN OPENSSH PRIVATE KEY-----\n(sensitive content not shown)" {
 		t.Errorf("a private key shows its first line only: %q", got)
 	}
-	if got := previewText(filePreview(own, 40, 5, true, nil)); got != "(sensitive content not shown)" {
+	if got := previewText(filePreview(own, 40, 5, true, nil, 4)); got != "(sensitive content not shown)" {
 		t.Errorf("a file only its owner may read shows nothing: %q", got)
 	}
 	if err := os.Chmod(key, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if got := previewText(filePreview(key, 40, 5, true, nil)); !strings.HasPrefix(got, "-----BEGIN OPENSSH PRIVATE KEY-----\n") {
+	if got := previewText(filePreview(key, 40, 5, true, nil, 4)); !strings.HasPrefix(got, "-----BEGIN OPENSSH PRIVATE KEY-----\n") {
 		t.Errorf("a private key only its owner may read still shows its header: %q", got)
 	}
 	if got := previewText(fileInfo(key, 40, Blue)); !strings.Contains(got, "TYPE      private key") {
 		t.Errorf("TYPE of a private key:\n%s", got)
 	}
-	if got := previewText(filePreview(dir, 40, 5, true, nil)); strings.Contains(got, "sensitive") {
+	if got := previewText(filePreview(dir, 40, 5, true, nil, 4)); strings.Contains(got, "sensitive") {
 		t.Errorf("a directory is never hidden: %q", got)
 	}
 }

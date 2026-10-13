@@ -53,6 +53,11 @@ type Viewer struct {
 	line, col         int
 	fromL, fromC      int
 	plain             [][]string
+	// crlf marks the lines that end in the \r of a CRLF line break: it is
+	// not drawn and the cursor does not reach it, but a copy keeps it.
+	crlf []bool
+	// tabW is the user's input_tab_width: the spaces a tab is drawn as.
+	tabW int
 }
 
 // ViewerKey is one of a viewer's own hotkeys.
@@ -76,7 +81,7 @@ func (s *Selection) copyKey() string { return cmpOr(s.CopyKey, "y") }
 
 // Viewer opens a viewer.
 func (a *App) Viewer(v *Viewer) tea.Cmd {
-	v.numW = 0
+	v.numW, v.tabW = 0, a.inputTabWidth()
 	return a.open(&viewerView{v: v})
 }
 
@@ -156,7 +161,7 @@ func (v *Viewer) wrap(i int) []int {
 	starts := []int{0}
 	used, cell := 0, 0
 	for _, c := range v.plain[i] {
-		cw := Width(drawn(c))
+		cw := Width(drawn(c, v.tabW))
 		if used+cw > v.textW && used > 0 {
 			starts = append(starts, cell)
 			used = 0
@@ -328,20 +333,31 @@ func (v *Viewer) coloured() []string {
 	if lexer := lexerFor(v.Lang); lexer != nil {
 		plain := make([]string, len(v.Lines))
 		for i, l := range v.Lines {
-			plain[i] = visibleText(StripStyles(l))
+			l, _ = crlf(StripStyles(l))
+			plain[i] = visibleText(l, v.tabW)
 		}
 		for i, l := range colourise(lexer, plain) {
 			if StripStyles(l) != plain[i] { // the lexer changed the text: not coloured
 				l = Fg(Text).Render(plain[i])
 			}
-			c.out[i] = l
+			c.out[i] = redNames(l, v.chars(v.Lines[i]), v.tabW)
 		}
 		return c.out
 	}
 	for i, l := range v.Lines {
-		c.out[i] = onText(visibleText(l))
+		if k := strings.LastIndex(l, "\r"); k >= 0 && strings.HasSuffix(StripStyles(l), "\r") {
+			l = l[:k] + l[k+1:]
+		}
+		c.out[i] = redNames(onText(visibleText(l, v.tabW)), v.chars(v.Lines[i]), v.tabW)
 	}
 	return c.out
+}
+
+// chars is the plain characters of line l as the cursor moves through them,
+// without the \r of a CRLF line break.
+func (v *Viewer) chars(l string) []string {
+	l, _ = crlf(StripStyles(l))
+	return graphemes(l)
 }
 
 // onText is l with what it leaves unstyled in Text: its start, and after
@@ -368,9 +384,10 @@ func lexerFor(lang string) chroma.Lexer {
 // readLines makes the plain characters of each line, which the cursor
 // moves through.
 func (v *Viewer) readLines() {
-	v.plain = v.plain[:0]
+	v.plain, v.crlf = v.plain[:0], v.crlf[:0]
 	for _, l := range v.Lines {
-		v.plain = append(v.plain, graphemes(StripStyles(l)))
+		_, cr := crlf(StripStyles(l))
+		v.plain, v.crlf = append(v.plain, v.chars(l)), append(v.crlf, cr)
 	}
 }
 
@@ -421,16 +438,16 @@ func (vv *viewerView) lineView(i int, layer Color) string {
 		switch {
 		case k == cx:
 			flush()
-			b.WriteString(cur.Render(drawn(c)))
+			b.WriteString(cur.Render(drawn(c, v.tabW)))
 		case k >= from && k < to:
 			flush()
-			b.WriteString(sel.Render(drawn(c)))
+			b.WriteString(sel.Render(drawn(c, v.tabW)))
 		default:
 			if plainFrom < 0 {
 				plainFrom = cell
 			}
 		}
-		cell += Width(drawn(c))
+		cell += Width(drawn(c, v.tabW))
 	}
 	flush()
 	switch {
@@ -456,7 +473,11 @@ func (v *Viewer) selected() string {
 		if i == end.line {
 			to = min(end.col+1, len(chars))
 		}
-		out = append(out, strings.Join(chars[from:max(to, from)], ""))
+		text := strings.Join(chars[from:max(to, from)], "")
+		if i < end.line && i < len(v.crlf) && v.crlf[i] { // the line break is in, as the text has it
+			text += "\r"
+		}
+		out = append(out, text)
 	}
 	return strings.Join(out, "\n")
 }

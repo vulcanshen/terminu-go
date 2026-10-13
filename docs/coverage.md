@@ -1,13 +1,13 @@
-# tdp v0.5.8 coverage
+# tdp v0.5.9 coverage
 
-tdp v0.5.8 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
+tdp v0.5.9 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
 （[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
 - 出處寫法：`K4` 是 `principle/rules-zh_TW.md` 的規則；`P3` 是 `principle/README-zh_TW.md`；`popup §外框` 是
   `components/layout/popup-zh_TW.md` 的那一節，其他元件照檔名（`form`、`finder`…）；`components §大寫` 是 `components/README-zh_TW.md`。
 - `G<n>` 是規範盲點紀錄裡還沒定案的編號（`~/Documents/sideproj/terminu/.local/family-fix/terminu-go/README.md`），定案前照紀錄的
-  「暫時」做。G1–G22 已經補進 tdp v0.4.0、G23–G29 補進 v0.5.1、G30–G46 補進 v0.5.2（G43 不改規範）、G47 補進 v0.5.3、G48–G66 補進 v0.5.4、G67–G77 補進 v0.5.5、G78–G82 補進 v0.5.6、G83 補進 v0.5.7、G84 補進 v0.5.8，這裡直接寫規範的條文。
+  「暫時」做。G1–G22 已經補進 tdp v0.4.0、G23–G29 補進 v0.5.1、G30–G46 補進 v0.5.2（G43 不改規範）、G47 補進 v0.5.3、G48–G66 補進 v0.5.4、G67–G77 補進 v0.5.5、G78–G82 補進 v0.5.6、G83 補進 v0.5.7、G84 補進 v0.5.8、G85 補進 v0.5.9，這裡直接寫規範的條文。
 - 「lib」表示由 lib 的登記或 API 保證，不需要展示場的某一個畫面；測試照樣要有。
 
 ## 展示場
@@ -339,6 +339,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | note §長相 | 留白一律有；標題 glyph（app 選）+ 顯示的東西（標題膠囊，`YAML — pod/nginx`）；捲動位置 `N-M of T`（viewer 的選取模式裡 `N of M`）；寬度：確定的照內容、viewer 用上限 | D「Note viewer」 | `TestNoteLayout` |
 | note §viewer 的行號 | viewer（YAML、App Log、檔案內容）左邊有行號：每行第一列、靠右、後空一格、折下來的列空白；Overlay0，選取模式裡游標那行 Text；至少三位：行數固定的取 max(3, 位數)、打開後不變，串流的超過 999 行才跳寬；複製不含行號；`N of M` 跟行號同一套數字 | D「Note viewer」；P `[2] LOG` 按 `Enter`；I `[2] FILES` 的 `[V]iew` | `TestViewerLineNumbers`、`TestViewerLineNumbersStream`、`TestViewerCopyNoNumbers`、`TestViewerFoldedScroll` |
 | note §viewer 的行號 | 有 tab 的 viewer：行號欄照看過的頁裡最寬的，只變寬、不變窄（串流的頁也一樣） | D「Popup with tabs」、DevTools 切 tab | `TestViewerTabGutterOnlyGrows` |
+| note §viewer 裡的 Tab 與控制字元 | Tab 畫成 `input_tab_width` 格空白、不對齊 tab 停點；換行前的 `\r`（CRLF）不畫；其他控制字元畫成名字、Red；複製照原樣；file-picker 預覽的文字檔一樣 | I `[2] FILES` 的 `main.go` 按 `[V]iew`（有 Tab）；`[/] Find` 預覽同一個檔 | `TestViewerTabs`、`TestViewerControlChars` |
 | note §viewer 的語法顏色 | 有固定格式的照 file-picker 預覽上色（chroma catppuccin-mocha、只上前景色）；語言由 app 給（`Viewer.Lang`），檔案內容照檔名；沒有固定格式或判斷不出來的是純文字 Text（建議；app 自己給的顏色保留，例：log 的 ERROR、WARN 行）；行號 Overlay0；選取範圍 Yellow 底 Base 字、範圍裡不顯示語法顏色 | D「Note viewer」（YAML）；I `[2] FILES` 的 `[V]iew`；P `[2] LOG` 按 `Enter`（ERROR 紅、WARN 橘保留） | `TestViewerSyntaxColours` |
 | note §按鍵 | 折行的 viewer 以畫出來的一列為單位捲（`j\|k` 一列、`u\|d` 照列算）；`N-M of T` 的 N、M 是最上面、最下面那一列所屬的行；選取模式照舊以行為單位 | D「Note viewer」把視窗縮窄 | `TestViewerScrollsRows` |
 | note §按鍵 | 捲動 `j\|k` `u\|d` `gg\|G`；只用 `Esc` 關（`Enter`、`Space` 不關）；error popup（不管怎麼打開的）與表單的打字說明 `Enter` 也能關；hint 熱鍵在前、`Esc:close` 最後 | 同上；D「Error popup」 | `TestNoteKeys` |

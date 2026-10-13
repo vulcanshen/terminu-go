@@ -151,26 +151,49 @@ func TestViewerTabs(t *testing.T) {
 	}
 }
 
-// TestViewerControlChars: any other control character in a viewer's text
-// (a CRLF file's \r, a bell) is drawn as its name, never sent to the
-// terminal: every row stays its width (Rules L4). So is a file preview's.
+// TestViewerControlChars: in a viewer and a file preview a tab is
+// input_tab_width spaces, the \r of a CRLF line break is not drawn, and any
+// other control character is its name in Red, never sent to the terminal:
+// every row stays its width (Rules L4). A copy keeps the text as it is
+// (components/dialog/note).
 func TestViewerControlChars(t *testing.T) {
 	for _, lang := range []string{"", "go"} {
 		ta := newTestApp(t)
-		ta.Viewer(&Viewer{Title: "File", Lang: lang, Lines: []string{"a := 1\r", "b\x07c\x7fd", Fg(Red).Render("ERROR") + " x"}})
+		ta.InputTabWidth = 2
+		got := ""
+		ta.Viewer(&Viewer{Title: "File", Lang: lang,
+			Lines:  []string{"a := 1\r", "b\x07c\x7fd\re", "\tx", Fg(Red).Render("ERROR") + " y"},
+			Select: &Selection{Key: "v", Name: "Visual", Copy: func(s string) tea.Cmd { got = s; return nil }}})
 		ta.settle()
 		for i, l := range ta.Frame() {
-			if Width(l) != ta.w || strings.ContainsAny(StripStyles(l), "\r\x07\x7f") {
+			if Width(l) != ta.w || strings.ContainsAny(StripStyles(l), "\r\x07\x7f\t") {
 				t.Fatalf("lang %q: row %d is %d wide or has a control character: %q", lang, i, Width(l), StripStyles(l))
 			}
 		}
-		if text := ta.screenText(); !strings.Contains(text, `a := 1\r`) || !strings.Contains(text, `b\x07c\x7fd`) {
-			t.Errorf("lang %q: not drawn as their names:\n%s", lang, text)
+		text := ta.screenText()
+		if !strings.Contains(text, " 1 a := 1 ") || strings.Contains(text, `1\r`) {
+			t.Errorf("lang %q: the \\r of a CRLF line break is drawn:\n%s", lang, text)
+		}
+		if !strings.Contains(text, `b\x07c\x7fd\re`) || !strings.Contains(text, " 3   x") {
+			t.Errorf("lang %q: names, a tab of input_tab_width spaces:\n%s", lang, text)
+		}
+		frame := strings.Join(ta.Frame(), "\n")
+		for _, name := range []string{`\x07`, `\x7f`, `\r`} {
+			if !strings.Contains(frame, Fg(Red).Render(name)) {
+				t.Errorf("lang %q: %s is not Red", lang, name)
+			}
+		}
+		ta.press("v", "v", "j", "y")
+		if got != "a := 1\r\nb" {
+			t.Errorf("lang %q: copied %q, want the CRLF kept", lang, got)
 		}
 	}
-	for _, l := range highlight("crlf.go", "package main\r\n\tfunc main() {}\r\n", 10) {
-		if strings.ContainsAny(StripStyles(l), "\r\t") {
-			t.Errorf("a preview line has a control character: %q", StripStyles(l))
+	for _, l := range highlight("crlf.go", "package main\r\n\tfunc main() {}\r\nx\x07\n", 10, 2) {
+		if plain := StripStyles(l); strings.ContainsAny(plain, "\r\t\x07") || strings.Contains(plain, `\r`) {
+			t.Errorf("a preview line: %q", plain)
+		}
+		if strings.Contains(StripStyles(l), `\x07`) && !strings.Contains(l, Fg(Red).Render(`\x07`)) {
+			t.Errorf("a preview name is not Red: %q", l)
 		}
 	}
 }
@@ -309,7 +332,7 @@ func TestViewerSyntaxColours(t *testing.T) {
 		}
 		return out
 	}
-	preview := highlight("pod.yaml", strings.Join(text, "\n"), 10)
+	preview := highlight("pod.yaml", strings.Join(text, "\n"), 10, 4)
 	for _, lang := range []string{"yaml", "pod.yaml", "text/x-yaml; charset=utf-8"} {
 		ta := newTestApp(t)
 		ta.Viewer(&Viewer{Title: "YAML", Lines: text, Lang: lang})

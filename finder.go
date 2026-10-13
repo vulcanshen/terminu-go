@@ -145,7 +145,7 @@ func (a *App) Find(f *Finder) tea.Cmd {
 	switch {
 	case f.Files:
 		fv.preview = func(r finderRow, w, h int) (string, []string) {
-			return filepath.Base(r.item.ID), filePreview(r.item.ID, w, h, a.HideSecretsInPreview, nil)
+			return filepath.Base(r.item.ID), filePreview(r.item.ID, w, h, a.HideSecretsInPreview, nil, a.inputTabWidth())
 		}
 		fv.info = func(r finderRow, w int, layer Color) []string { return fileInfo(r.item.ID, w, layer) }
 	case f.Preview != nil:

@@ -78,7 +78,7 @@ func isText(b []byte) bool {
 // image as a data URI, a PDF's first pages, a text file in colour with line
 // numbers, anything else in hex. With hideSecrets, a private key shows its
 // first line only and any other file only its owner may read shows nothing.
-func filePreview(p string, w, h int, hideSecrets bool, icon func(string, bool) (string, Color)) []string {
+func filePreview(p string, w, h int, hideSecrets bool, icon func(string, bool) (string, Color), tabW int) []string {
 	grey := func(s string) []string { return []string{Fg(Overlay0).Render(s)} }
 	st, err := os.Stat(p)
 	if err != nil {
@@ -112,7 +112,7 @@ func filePreview(p string, w, h int, hideSecrets bool, icon func(string, bool) (
 	case "PDF":
 		return pdfText(p, st.Size(), h)
 	case "text", "private key":
-		return highlight(p, string(trimPartialRune(head)), h)
+		return highlight(p, string(trimPartialRune(head)), h, tabW)
 	}
 	return hexDump(head, h)
 }
@@ -156,27 +156,13 @@ func imageMIME(p string) string {
 	return "image/" + ext
 }
 
-// tabSpaces is what a tab in a file preview or a viewer is drawn as.
-const tabSpaces = "    "
-
-// visibleText is s with what a terminal would act on instead of drawing
-// shown, so the row keeps its width (Rules L4): a tab as tabSpaces, any other
-// control character as its name (\r, \x07). Line breaks and the escape
-// sequences that style s stay. TODO(tdp G85): the spec does not say how a
-// file preview or a viewer draws them; this for now.
-func visibleText(s string) string {
-	if !strings.ContainsFunc(s, func(r rune) bool { return r < 0x20 && r != '\n' || r >= 0x7f && r <= 0x9f }) {
-		return s
-	}
-	var b strings.Builder
-	walk(s, func(seq string, _ int) { b.WriteString(drawn(seq)) })
-	return b.String()
-}
-
-// drawn is a character as a preview or a viewer draws it (visibleText).
-func drawn(c string) string {
+// drawn is a character of a file preview or a viewer as it is drawn
+// (components/dialog/note): a tab as tabW spaces (input_tab_width), any
+// other control character as its name (\r, \x07), never sent to the
+// terminal, so a row keeps its width (Rules L4).
+func drawn(c string, tabW int) string {
 	if c == "\t" {
-		return tabSpaces
+		return strings.Repeat(" ", tabW)
 	}
 	if name, ok := ctrlName(c); ok && c != "\n" {
 		return name
@@ -184,13 +170,55 @@ func drawn(c string) string {
 	return c
 }
 
+// visibleText is a line as drawn gives it, the escape sequences that style
+// it kept.
+func visibleText(s string, tabW int) string {
+	if !strings.ContainsFunc(s, func(r rune) bool { return r < 0x20 || r >= 0x7f && r <= 0x9f }) {
+		return s
+	}
+	var b strings.Builder
+	walk(s, func(seq string, _ int) { b.WriteString(drawn(seq, tabW)) })
+	return b.String()
+}
+
+// redNames is line, chars drawn as visibleText draws them and coloured, with
+// the names of the control characters in Red (components/dialog/note).
+func redNames(line string, chars []string, tabW int) string {
+	var b strings.Builder
+	cell, from := 0, 0
+	for _, c := range chars {
+		d := drawn(c, tabW)
+		w := Width(d)
+		if c != "\t" && d != c {
+			b.WriteString(Cut(line, from, cell))
+			b.WriteString(Fg(Red).Render(d))
+			from = cell + w
+		}
+		cell += w
+	}
+	if from == 0 {
+		return line
+	}
+	b.WriteString(Cut(line, from, cell))
+	return b.String()
+}
+
+// crlf is line without the \r of a CRLF line break: it is part of the
+// break, not drawn (components/dialog/note).
+func crlf(line string) (string, bool) { return strings.CutSuffix(line, "\r") }
+
 // highlight is text in the colours of catppuccin-mocha (foreground only),
-// its line numbers in Overlay0.
-func highlight(p, text string, h int) []string {
-	text = visibleText(text)
-	lines := strings.Split(strings.TrimRight(text, "\n"), "\n")
-	if len(lines) > h {
-		lines = lines[:h]
+// its line numbers in Overlay0; tabs and control characters as a viewer
+// draws them.
+func highlight(p, text string, h, tabW int) []string {
+	raw := strings.Split(strings.TrimRight(text, "\n"), "\n")
+	if len(raw) > h {
+		raw = raw[:h]
+	}
+	lines := make([]string, len(raw))
+	for i := range raw {
+		raw[i], _ = crlf(raw[i])
+		lines[i] = visibleText(raw[i], tabW)
 	}
 	lexer := lexers.Match(filepath.Base(p))
 	if lexer == nil {
@@ -200,7 +228,7 @@ func highlight(p, text string, h int) []string {
 	numW := len(strconv.Itoa(len(lines)))
 	out := make([]string, len(lines))
 	for i := range lines {
-		out[i] = Fg(Overlay0).Render(PadLeft(strconv.Itoa(i+1), numW)) + " " + coloured[i]
+		out[i] = Fg(Overlay0).Render(PadLeft(strconv.Itoa(i+1), numW)) + " " + redNames(coloured[i], graphemes(raw[i]), tabW)
 	}
 	return out
 }

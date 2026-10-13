@@ -121,7 +121,7 @@ func (p FilePicker) open(a *App, written func()) tea.Cmd {
 		return tea.Batch(a.closeTop(), p.Done(r.path))
 	}
 	fv.preview = func(r finderRow, w, h int) (string, []string) {
-		return filepath.Base(r.path), filePreview(r.path, w, h, a.HideSecretsInPreview, p.Icon)
+		return filepath.Base(r.path), filePreview(r.path, w, h, a.HideSecretsInPreview, p.Icon, a.inputTabWidth())
 	}
 	fv.info = func(r finderRow, w int, layer Color) []string { return fileInfo(r.path, w, layer) }
 	fv.refilter()
