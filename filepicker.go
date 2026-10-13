@@ -168,7 +168,7 @@ func (fp *filePicker) list(typed string) []finderRow {
 		fp.rows = fp.readDir(fp.start, hidden)
 	}
 	if fp.p.Dirs {
-		// TODO(tdp G91): a wildcard's results are directories only, with no
+		// TODO(tdp G75): a wildcard's results are directories only, with no
 		// "." row.
 		fp.rows = slices.DeleteFunc(fp.rows, func(r finderRow) bool { return !r.dir })
 	}
@@ -197,7 +197,7 @@ func (fp *filePicker) readDir(dir string, hidden bool) []finderRow {
 	}
 	var rows []finderRow
 	if fp.p.Dirs {
-		// TODO(tdp G91): matched as "." alone, so a filter word hides it as
+		// TODO(tdp G75): matched as "." alone, so a filter word hides it as
 		// it hides ..
 		here := fp.row(dir, ".", true)
 		here.icon, here.label = glyphFolderMove, ". (this directory)"

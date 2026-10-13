@@ -275,7 +275,7 @@ func (li *lineInput) maskView(w int, style, cursor Style) string {
 	if li.showingOld() {
 		grey := strings.Repeat(dot, 8)
 		if li.unlock {
-			// TODO(tdp G80): the cursor where the first ● goes, then the
+			// TODO(tdp G71): the cursor where the first ● goes, then the
 			// grey ones a cell apart.
 			grey = strings.TrimSpace(strings.Repeat(dot+" ", 8))
 			return Center(cursor.Render(" ")+" "+Fg(Overlay0).Render(grey), w)

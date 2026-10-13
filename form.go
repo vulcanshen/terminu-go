@@ -146,7 +146,7 @@ func (fv *formView) index(items []formItem) int {
 // landing is where the focus goes in a field it is sent to (the form opened
 // at it, a check failing on it, e back from the error row): a radio's chosen
 // option or its first, a checkbox group's first option.
-// TODO(tdp G90): the spec no longer says which option; this is v0.5.3's
+// TODO(tdp G74): the spec no longer says which option; this is v0.5.3's
 // landing for Tab.
 func (fv *formView) landing(f *FormField) formItem {
 	switch {

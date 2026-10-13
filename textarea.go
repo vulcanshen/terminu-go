@@ -40,7 +40,7 @@ func graphemes(s string) []string {
 	for g.Next() {
 		c := g.Str()
 		if len(c) == 1 && (c[0] < 0x20 && c[0] != '\t' || c[0] == 0x7f) {
-			continue // TODO(tdp G82): other control characters are dropped
+			continue // TODO(tdp G73): other control characters are dropped
 		}
 		out = append(out, c)
 	}
@@ -277,7 +277,7 @@ func (tv *textareaView) writeKey(key string, msg tea.KeyMsg) tea.Cmd {
 		tv.vertical(-1)
 	case "↓":
 		tv.vertical(1)
-	case "Home": // TODO(tdp G81): to the start and the end of the line
+	case "Home": // TODO(tdp G72): to the start and the end of the line
 		tv.col = 0
 	case "End":
 		tv.col = len(l)
