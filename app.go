@@ -919,7 +919,7 @@ func (a *App) Frame() []string {
 	if w <= 0 || h <= 0 {
 		return nil
 	}
-	// TODO(tdp G49): the splash takes the whole screen, nothing under it.
+	// The splash takes the whole screen: nothing of the screen is drawn (Rules S).
 	if a.splashOn {
 		lines, _ := a.Splash(a.splashFrame, w, h)
 		return Pad2(lines, w, h)

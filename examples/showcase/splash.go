@@ -1,49 +1,22 @@
 package main
 
 import (
-	"strings"
+	_ "embed"
 
 	terminu "github.com/vulcanshen/terminu-go"
 )
 
-// mark is the family mark the splash draws, one character a cell: L Lavender,
-// G Green, a space nothing. TODO(tdp G48): a stand-in; the showcase has no
-// docs/icon.svg of the family mark to draw it from.
-var mark = []string{
-	" LLLLLLLLLLLLLLLLLL ",
-	"L                  L",
-	"L  G               L",
-	"L   G              L",
-	"L    G             L",
-	"L   G              L",
-	"L  G    GGGGGG     L",
-	"L                  L",
-	" LLLLLLLLLLLLLLLLLL ",
-}
+// icon is terminu's own mark, a copy of tdp's principle/icon.svg (v0.5.4):
+// the showcase draws it in its splash (Rules S5, E8).
+//
+//go:embed icon.svg
+var icon []byte
 
-// splash draws the mark in the middle of the screen, two columns more each
-// frame from the left (Rules S5: the reveal is the app's).
-func splash(frame, w, h int) ([]string, bool) {
-	markW := len(mark[0])
-	shown := min(2*(frame+1), markW)
-	x, y := max((w-markW)/2, 0), max((h-len(mark))/2, 0)
-	out := make([]string, h)
-	for i, row := range mark {
-		if y+i >= h {
-			break
-		}
-		var b strings.Builder
-		for _, c := range row[:shown] {
-			switch c {
-			case 'L':
-				b.WriteString(terminu.Fg(terminu.Lavender).Render("█"))
-			case 'G':
-				b.WriteString(terminu.Fg(terminu.Green).Render("█"))
-			default:
-				b.WriteByte(' ')
-			}
-		}
-		out[y+i] = strings.Repeat(" ", x) + b.String()
+// splash is the showcase's easter egg, V on a panel (Rules S).
+func splash() terminu.Splash {
+	s, err := terminu.NewSplash(icon, "showcase", version, "Every component of terminu design, in one app")
+	if err != nil {
+		panic(err) // the embedded icon is broken: a mistake in the program
 	}
-	return out, shown == markW
+	return s
 }

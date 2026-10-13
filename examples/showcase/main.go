@@ -70,7 +70,7 @@ func newShowcase() *showcase {
 	a.Quit = &terminu.Ask{Title: "Quit", Question: "Quit showcase?", Verb: "quit"}
 	a.QuitDesc = "leave the showcase"
 	a.Status = s.status
-	a.Splash = splash
+	a.Splash = splash()
 	// A core key of the showcase's own (Rules K1): the same on every panel and
 	// popup.
 	a.CoreKeys = []terminu.CoreKey{{Key: "!", Desc: "the app log", Do: func() tea.Cmd {
