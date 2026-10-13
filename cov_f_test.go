@@ -98,11 +98,12 @@ func covFRow(lines []string, s string) string {
 }
 
 // covFValue is the value cell of a one-line input popup: its fifth row
-// without the frame and the cell of padding on each side.
+// without the frame, the cell of padding on each side and the angle before
+// the value (the unlock look has none).
 func covFValue(ta *testApp) string {
 	lines, _ := covFDraw(ta)
 	row := StripStyles(lines[4])
-	return strings.TrimSuffix(strings.TrimPrefix(row, "┃ "), " ┃")
+	return strings.TrimPrefix(strings.TrimSuffix(strings.TrimPrefix(row, "┃ "), " ┃"), glyphTyping+" ")
 }
 
 func covFLine(ta *testApp) *lineInput { return ta.topView().(*lineInput) }
@@ -190,6 +191,54 @@ func TestInputCommon(t *testing.T) {
 	}
 }
 
+// Every one-line input's typing row starts with the angle in the layer
+// colour, one cell from the frame, then a space; the suggestion and the grey
+// dots come after it (components/input/README).
+func TestInputAngle(t *testing.T) {
+	ta := newTestApp(t)
+	angle := typingAngle(layerColors[0])
+	opens := []struct {
+		name string
+		open func()
+		text string // what follows the angle
+	}{
+		{"text", func() { ta.Text(TextInput{Title: "Name"}) }, ""},
+		{"text, the old value", func() { ta.Text(TextInput{Title: "Name", Old: "web-01"}) }, "web-01"},
+		{"number", func() { ta.Number(NumberInput{Title: "Port", Min: 1, Max: 65535}) }, ""},
+		{"password", func() { ta.Password(PasswordInput{Title: "Password"}) }, ""},
+		{"password, set", func() { ta.Password(PasswordInput{Title: "Password", Set: true}) }, "••••••••"},
+	}
+	for _, o := range opens {
+		o.open()
+		ta.settle()
+		lines, _ := covFDraw(ta)
+		plain := StripStyles(lines[4])
+		if !strings.Contains(lines[4], angle) || !strings.HasPrefix(plain, "┃ "+glyphTyping+" ") ||
+			!strings.HasPrefix(covFValue(ta), " "+o.text) {
+			t.Errorf("%s: %q", o.name, plain)
+		}
+		ta.press("Esc")
+	}
+
+	// A text field a form opens is the same popup.
+	ta.Form(testForm(nil))
+	ta.settle()
+	ta.press("Enter")
+	if lines, _ := covFDraw(ta); !strings.HasPrefix(StripStyles(lines[4]), "┃ "+glyphTyping+" ") {
+		t.Errorf("from a form: %q", StripStyles(lines[4]))
+	}
+	for len(ta.stack) > 0 {
+		ta.press("Esc")
+	}
+
+	// The width a length limit gives counts the angle.
+	ta.Text(TextInput{Title: "Code", MaxLen: 80})
+	ta.settle()
+	if w := ta.top().w; w != 80+angleWidth()+1+4 {
+		t.Errorf("80 characters at most: %d wide, want %d", w, 80+angleWidth()+1+4)
+	}
+}
+
 func TestSingleLineSkeleton(t *testing.T) {
 	ta := newTestApp(t)
 	ta.Text(TextInput{Title: "Rename", Prompt: "New name for assets", Verb: "rename"})
@@ -202,7 +251,7 @@ func TestSingleLineSkeleton(t *testing.T) {
 	}
 	// A blank row, the prompt, a blank row, the value, a blank row, the error row.
 	if !covFBlank(text[1]) || !strings.HasPrefix(text[2], "┃ New name for assets ") || !covFBlank(text[3]) ||
-		!strings.HasPrefix(text[4], "┃ assets ") || !covFBlank(text[5]) || !covFBlank(text[6]) {
+		!strings.HasPrefix(text[4], "┃ "+glyphTyping+" assets ") || !covFBlank(text[5]) || !covFBlank(text[6]) {
 		t.Errorf("skeleton:\n%s", strings.Join(text, "\n"))
 	}
 	if !strings.Contains(lines[2], Fg(Overlay0).Render("New name for assets")) {
@@ -246,7 +295,7 @@ func TestInputLongValue(t *testing.T) {
 	path := "/Users/vulcan/Documents/sideproj/terminu/components/layout"
 	covFType(ta, path)
 	v := covFValue(ta)
-	if Width(v) != 24 || !strings.HasPrefix(v, "…") || !strings.HasSuffix(v, "layout ") {
+	if Width(v) != 24-angleWidth() || !strings.HasPrefix(v, "…") || !strings.HasSuffix(v, "layout ") {
 		t.Errorf("typing at the end: the front is cut, the cursor shows: %q", v)
 	}
 	covFPress(ta, "Home")
@@ -279,7 +328,7 @@ func TestInputLongValue(t *testing.T) {
 		covFPress(ta, k)
 		v = covFValue(ta)
 		inner := strings.Trim(v, "… ")
-		if Width(v) != 24 || strings.Trim(inner, "中文") != "" || Width(inner)%2 != 0 {
+		if Width(v) != 24-angleWidth() || strings.Trim(inner, "中文") != "" || Width(inner)%2 != 0 {
 			t.Errorf("%s: %q", k, v)
 		}
 	}
@@ -292,7 +341,7 @@ func TestInputLongValue(t *testing.T) {
 	covFPress(ta, "Home")
 	for range 46 {
 		v = covFValue(ta)
-		if Width(v) != 24 || strings.Count(v, `\`) != strings.Count(v, `\n`) {
+		if Width(v) != 24-angleWidth() || strings.Count(v, `\`) != strings.Count(v, `\n`) {
 			t.Fatalf("a \\n cut in half: %q", v)
 		}
 		covFPress(ta, "→")
@@ -492,16 +541,16 @@ func TestPasteMarkers(t *testing.T) {
 	ta.settle()
 	covFPaste(ta, "a\r\nb\tc")
 	li := covFLine(ta)
-	if !slices.Equal(li.ed.g, []string{"a", "\n", "b", "\t", "c"}) {
-		t.Fatalf("pasted: %q (\\r\\n is one line break)", li.ed.g)
+	if !slices.Equal(li.ed.g, []string{"a", "\r", "\n", "b", "\t", "c"}) {
+		t.Fatalf("pasted: %q (\\r\\n is two)", li.ed.g)
 	}
 	lines, _ := covFDraw(ta)
-	if !strings.Contains(StripStyles(lines[4]), `a\nb\tc`) || !strings.Contains(lines[4], Fg(Red).Render(`\n`)) ||
-		!strings.Contains(lines[4], Fg(Red).Render(`\t`)) {
-		t.Errorf("drawn as red \\n and \\t: %q", lines[4])
+	if !strings.Contains(StripStyles(lines[4]), `a\r\nb\tc`) || !strings.Contains(lines[4], Fg(Red).Render(`\r`)) ||
+		!strings.Contains(lines[4], Fg(Red).Render(`\n`)) || !strings.Contains(lines[4], Fg(Red).Render(`\t`)) {
+		t.Errorf("drawn as red \\r, \\n and \\t: %q", lines[4])
 	}
 	ta.press("Backspace", "Backspace")
-	if li.ed.value() != "a\nb" {
+	if li.ed.value() != "a\r\nb" {
 		t.Errorf("Backspace takes the whole \\t: %q", li.ed.value())
 	}
 	ta.press("Esc")
@@ -536,13 +585,46 @@ func TestPasteMarkers(t *testing.T) {
 	})
 }
 
-func TestPasteControlDropped(t *testing.T) {
+// Every pasted control character stays, drawn in red: \r, \n and \t by
+// name, the rest as \xNN, never cut apart; Backspace takes one whole
+// (components/input/README).
+func TestPasteControlChars(t *testing.T) {
 	ta := newTestApp(t)
 	ta.Text(TextInput{Title: "Name"})
 	ta.settle()
-	covFPaste(ta, "a\x01b\x7fc\U00000085d\U0000009be\x1bf")
-	if v := covFLine(ta).ed.value(); v != "abcdef" {
-		t.Errorf("C0, DEL and C1 are dropped: %q", v)
+	pasted := "a\x01b\x7fc\U00000085d\U0000009be\x1bf\rg"
+	covFPaste(ta, pasted)
+	li := covFLine(ta)
+	if v := li.ed.value(); v != pasted {
+		t.Errorf("C0, DEL and C1 are kept: %q", v)
+	}
+	lines, _ := covFDraw(ta)
+	if v := covFValue(ta); !strings.HasPrefix(v, `a\x01b\x7fc\x85d\x9be\x1bf\rg`) {
+		t.Errorf("drawn as: %q", v)
+	}
+	for _, name := range []string{`\x01`, `\x7f`, `\x85`, `\x9b`, `\x1b`, `\r`} {
+		if !strings.Contains(lines[4], Fg(Red).Render(name)) {
+			t.Errorf("%s is not red: %q", name, lines[4])
+		}
+	}
+	ta.press("Backspace", "Backspace", "Backspace", "Backspace")
+	if v := li.ed.value(); v != "a\x01b\x7fc\U00000085d\U0000009be" {
+		t.Errorf("Backspace takes \\r and \\x1b whole: %q", v)
+	}
+
+	// Never cut in half, wherever the cursor is.
+	ta.press("Esc")
+	ta.resize(30, 20)
+	ta.Text(TextInput{Title: "Name"})
+	ta.settle()
+	covFPaste(ta, strings.Repeat("ab\x1b", 12))
+	covFPress(ta, "Home")
+	for range 37 {
+		v := covFValue(ta)
+		if Width(v) != 24-angleWidth() || strings.Count(v, `\`) != strings.Count(v, `\x1b`) {
+			t.Fatalf("a \\x1b cut in half: %q", v)
+		}
+		covFPress(ta, "→")
 	}
 }
 
@@ -555,8 +637,29 @@ func TestPasteBlockedOnEnter(t *testing.T) {
 	covFPaste(ta, "web\n01")
 	ta.press("Enter")
 	lines, _ := covFDraw(ta)
-	if ta.top() == nil || got != "unset" || !strings.Contains(lines[6], Fg(Red).Render("Name can't have line breaks or tabs")) {
+	if ta.top() == nil || got != "unset" || !strings.Contains(lines[6], Fg(Red).Render("Name can't have control characters")) {
 		t.Fatalf("a used value with a line break is stopped on Enter: got %q, error row %q", got, StripStyles(lines[6]))
+	}
+	ta.press("Esc")
+	// Any control character: a lone \r too, before the trim would take it.
+	ta.Text(TextInput{Title: "Name", Done: done})
+	ta.settle()
+	ta.press("I", "c", "o", "n")
+	covFPaste(ta, "\r")
+	ta.press("Enter")
+	if ta.top() == nil || got != "unset" {
+		t.Errorf("Icon\\r was written: %q", got)
+	}
+	ta.press("Esc")
+	// A password too, masked.
+	pw := "unset"
+	ta.Password(PasswordInput{Title: "Password", Done: func(v string, _ bool) tea.Cmd { pw = v; return nil }})
+	ta.settle()
+	covFPaste(ta, "secret\n")
+	ta.press("Enter")
+	lines, _ = covFDraw(ta)
+	if ta.top() == nil || pw != "unset" || !strings.Contains(lines[6], Fg(Red).Render("Password can't have control characters")) {
+		t.Errorf("a password with a line break: got %q, error row %q", pw, StripStyles(lines[6]))
 	}
 	ta.press("Esc")
 	// Checked before the white space is trimmed: a trailing tab is caught.
@@ -574,7 +677,7 @@ func TestPasteBlockedOnEnter(t *testing.T) {
 	ta.Text(TextInput{Title: "Name", Old: "a\x01b", Done: done})
 	ta.settle()
 	ta.press("Tab")
-	if v := covFLine(ta).ed.value(); v != "ab" {
+	if v := covFValue(ta); !strings.HasPrefix(v, `a\x01b`) {
 		t.Errorf("the old value was not filtered: %q", v)
 	}
 	ta.press("Esc")
@@ -756,7 +859,8 @@ func TestPasswordMasks(t *testing.T) {
 	ta.press("1", "2", "3")
 	l3, r3 := pads()
 	lines, _ = covFDraw(ta)
-	if v := covFValue(ta); strings.TrimSpace(v) != "● ● ●" || l3-r3 > 1 || r3-l3 > 1 || !strings.Contains(lines[4], Fg(Lavender).Render("● ● ●")) {
+	// The cursor after them counts: a space and a block, blank without styles.
+	if v := covFValue(ta); strings.TrimSpace(v) != "● ● ●" || l3-(r3-2) > 1 || (r3-2)-l3 > 1 || !strings.Contains(lines[4], Fg(Lavender).Render("● ● ● ")) {
 		t.Errorf("unlock: %q", v)
 	}
 	ta.press("4")
@@ -790,6 +894,53 @@ func TestPasswordMasks(t *testing.T) {
 			t.Errorf("unlock, too long: %q", v)
 		}
 	})
+}
+
+// The unlock look has a cursor where the next ● goes; once all the digits
+// are typed it is on the last ●, no cell more; centring counts it
+// (components/input/password).
+func TestUnlockCursor(t *testing.T) {
+	ta := newTestApp(t)
+	ta.Password(PasswordInput{Title: "PIN", Prompt: "Up to 4 digits", Unlock: true, MaxLen: 4})
+	ta.settle()
+	block := Style{Fg: Base, Bg: Lavender}
+	row := func() (string, string) {
+		lines, _ := covFDraw(ta)
+		return lines[4], covFValue(ta)
+	}
+	if styled, v := row(); !strings.Contains(styled, block.Render(" ")) || strings.TrimSpace(v) != "" {
+		t.Errorf("nothing typed: the cursor alone: %q", styled)
+	}
+	ta.press("1", "2", "3")
+	styled, v := row()
+	l, r := len(v)-len(strings.TrimLeft(v, " ")), len(v)-len(strings.TrimRight(v, " "))
+	// 2n + 1 cells: the dots, a space, the cursor.
+	if !strings.Contains(styled, Fg(Lavender).Render("● ● ● ")+block.Render(" ")) || l-(r-2) > 1 || (r-2)-l > 1 {
+		t.Errorf("three typed: %q", styled)
+	}
+	if strings.Contains(styled, glyphTyping) {
+		t.Errorf("the unlock look has no angle: %q", StripStyles(styled))
+	}
+	ta.press("4")
+	styled, v = row()
+	l, r = len(v)-len(strings.TrimLeft(v, " ")), len(v)-len(strings.TrimRight(v, " "))
+	// 2N - 1 cells: the cursor is on the last ●.
+	if !strings.Contains(styled, Fg(Lavender).Render("● ● ● ")+block.Render("●")) || strings.TrimSpace(v) != "● ● ● ●" || l-r > 1 || r-l > 1 {
+		t.Errorf("all four typed: %q", styled)
+	}
+	ta.press("5")
+	if _, v2 := row(); v2 != v {
+		t.Errorf("a fifth digit: %q", v2)
+	}
+	ta.press("Esc")
+
+	// A PIN of 12: 23 cells full, the box 43 wide for its hint (layout/popup).
+	ta.Password(PasswordInput{Title: "PIN", Prompt: "Up to 12 digits", Unlock: true, MaxLen: 12})
+	ta.settle()
+	covFType(ta, strings.Repeat("7", 12))
+	if _, v := row(); strings.TrimSpace(v) != strings.TrimSpace(strings.Repeat("● ", 12)) || ta.top().w != 43 {
+		t.Errorf("a PIN of 12, full: %q in %d", v, ta.top().w)
+	}
 }
 
 func TestPasswordUnlockWidth(t *testing.T) {

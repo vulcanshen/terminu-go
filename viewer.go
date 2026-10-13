@@ -296,9 +296,9 @@ func (vv *viewerView) move(key string) bool {
 		v.line = min(v.line+half, len(v.plain)-1)
 	case "u", "PgUp":
 		v.line = max(v.line-half, 0)
-	case "gg", "Home":
+	case "gg":
 		v.line, v.col = 0, 0
-	case "G", "End":
+	case "G":
 		v.line = len(v.plain) - 1
 	case "0":
 		v.col = 0
@@ -348,7 +348,7 @@ func (vv *viewerView) move(key string) bool {
 
 func isMoveKey(key string) bool {
 	switch key {
-	case "h", "j", "k", "l", "←", "→", "↑", "↓", "w", "b", "e", "0", "$", "u", "d", "PgUp", "PgDn", "gg", "G", "Home", "End":
+	case "h", "j", "k", "l", "←", "→", "↑", "↓", "w", "b", "e", "0", "$", "u", "d", "PgUp", "PgDn", "gg", "G":
 		return true
 	}
 	return false
@@ -394,9 +394,9 @@ func (vv *viewerView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 		v.top += half
 	case "u", "PgUp":
 		v.top -= half
-	case "gg", "Home":
+	case "gg":
 		v.top = 0
-	case "G", "End":
+	case "G":
 		v.top = len(v.Lines)
 	case "h", "←", "l", "→":
 		if n := len(v.Tabs); n > 0 {

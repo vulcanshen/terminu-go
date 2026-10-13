@@ -237,9 +237,9 @@ func (m *menuView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 		m.cursor = m.towards(min(m.cursor+half, len(m.rows)-1), -1)
 	case "u", "PgUp":
 		m.cursor = m.towards(max(m.cursor-half, 0), 1)
-	case "gg", "Home":
+	case "gg":
 		m.cursor = m.towards(0, 1)
-	case "G", "End":
+	case "G":
 		m.cursor = m.towards(len(m.rows)-1, -1)
 	case "Enter":
 		if m.cursor < len(m.rows) && m.rows[m.cursor].selectable() {

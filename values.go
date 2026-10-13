@@ -249,10 +249,10 @@ func (v *Values) Key(key string, _ tea.KeyMsg) (bool, tea.Cmd) {
 	case "u", "PgUp":
 		v.cursor = max(v.cursor-half, 0)
 		v.fixCursor(items, 1)
-	case "gg", "Home":
+	case "gg":
 		v.cursor = 0
 		v.fixCursor(items, 1)
-	case "G", "End":
+	case "G":
 		v.cursor = n - 1
 		v.fixCursor(items, -1)
 	case "Enter":

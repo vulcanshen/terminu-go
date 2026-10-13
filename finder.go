@@ -518,9 +518,9 @@ func (f *finderView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 		f.cursor = min(f.cursor+half, max(len(f.shown)-1, 0))
 	case "u", "PgUp":
 		f.cursor = max(f.cursor-half, 0)
-	case "gg", "Home":
+	case "gg":
 		f.cursor = 0
-	case "G", "End":
+	case "G":
 		f.cursor = max(len(f.shown)-1, 0)
 	case "Tab", "/":
 		f.onList = false

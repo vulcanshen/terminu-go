@@ -40,7 +40,7 @@ func graphemes(s string) []string {
 	for g.Next() {
 		c := g.Str()
 		if len(c) == 1 && (c[0] < 0x20 && c[0] != '\t' || c[0] == 0x7f) {
-			continue // other control characters are dropped
+			continue // TODO(tdp G82): other control characters are dropped
 		}
 		out = append(out, c)
 	}
@@ -118,7 +118,9 @@ func (tv *textareaView) hint() []KeyHint {
 	return []KeyHint{{"Enter", "save"}, {"i", "write"}, {"Esc", "cancel"}}
 }
 
-func (tv *textareaView) numWidth() int { return len(strconv.Itoa(len(tv.lines))) }
+// numWidth is the line numbers' column: at least two digits, so it widens
+// only at line 100, 1000… (components/input/textarea).
+func (tv *textareaView) numWidth() int { return max(len(strconv.Itoa(len(tv.lines))), 2) }
 
 func (tv *textareaView) measure(sw, sh int) (int, int) {
 	w := popupWidth(sw, 0, false)
@@ -275,7 +277,7 @@ func (tv *textareaView) writeKey(key string, msg tea.KeyMsg) tea.Cmd {
 		tv.vertical(-1)
 	case "↓":
 		tv.vertical(1)
-	case "Home":
+	case "Home": // TODO(tdp G81): to the start and the end of the line
 		tv.col = 0
 	case "End":
 		tv.col = len(l)
@@ -417,9 +419,9 @@ func (tv *textareaView) moveKey(a *App, key string) (bool, tea.Cmd) {
 		tv.wordBack()
 	case "e":
 		tv.wordEnd()
-	case "0", "Home":
+	case "0":
 		tv.col = 0
-	case "$", "End":
+	case "$":
 		tv.col = len(tv.lines[tv.line])
 	case "d", "PgDn":
 		for range half {

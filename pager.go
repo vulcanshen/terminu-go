@@ -95,9 +95,9 @@ func (t *Pager) Key(key string, _ tea.KeyMsg) (bool, tea.Cmd) {
 		t.top += half
 	case "u", "PgUp":
 		t.top -= half
-	case "gg", "Home":
+	case "gg":
 		t.top = 0
-	case "G", "End":
+	case "G":
 		t.top = len(t.lines)
 	default:
 		return false, nil

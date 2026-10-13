@@ -1,6 +1,7 @@
 package terminu
 
 import (
+	"fmt"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -9,9 +10,9 @@ import (
 
 // lineEditor is one typing row (components/input/README, editing keys): a
 // character is what looks like one (a CJK character, an emoji, a letter with
-// its combining marks); a pasted line break or tab is one character too.
+// its combining marks); a pasted control character is one character too.
 type lineEditor struct {
-	g      []string // grapheme clusters; a pasted line break is "\n", a tab "\t"
+	g      []string // grapheme clusters; a pasted control character is one on its own
 	pos    int      // the cursor: before g[pos]
 	scroll int      // the first cluster shown when the value is wider than the row
 }
@@ -32,23 +33,24 @@ func (e *lineEditor) set(s string) {
 func (e *lineEditor) value() string { return strings.Join(e.g, "") }
 func (e *lineEditor) empty() bool   { return len(e.g) == 0 }
 
-// insert puts s at the cursor. Pasted text keeps its line breaks and tabs
-// ("\r\n" counts as one) and loses every other control character (C0, DEL,
-// C1); typed text has none of those to begin with.
+// insert puts s at the cursor. Pasted text keeps every control character
+// (C0, DEL, C1), each one character, "\r\n" two; typed text has none of those
+// to begin with.
 func (e *lineEditor) insert(s string, pasted bool) {
-	s = strings.ReplaceAll(s, "\r\n", "\n")
 	var add []string
 	gr := uniseg.NewGraphemes(s)
 	for gr.Next() {
 		c := gr.Str()
-		// TODO(tdp G56): a lone \r is a control character, dropped.
-		if len(c) == 1 && (c[0] < 0x20 || c[0] == 0x7f) {
-			if pasted && (c == "\n" || c == "\t") {
-				add = append(add, c)
+		if c == "\r\n" {
+			if pasted {
+				add = append(add, "\r", "\n")
 			}
 			continue
 		}
-		if r := []rune(c); len(r) == 1 && r[0] >= 0x80 && r[0] <= 0x9f {
+		if _, ok := ctrlName(c); ok {
+			if pasted {
+				add = append(add, c)
+			}
 			continue
 		}
 		add = append(add, c)
@@ -101,18 +103,34 @@ func (e *lineEditor) key(name string, msg tea.KeyMsg) bool {
 	return true
 }
 
-// cellText is how a cluster is drawn: a pasted line break or tab as a red \n
-// or \t, two cells that are never cut apart; grey on a grey row.
-func cellText(c string, plain Style) string {
-	marker := Red
-	if plain.Fg == Overlay0 {
-		marker = Overlay0
-	}
+// ctrlName is how a control character (C0, DEL, C1) is written: \r, \n and
+// \t by name, the rest as \xNN (components/input/README, pasted control
+// characters). ok is false for anything else.
+func ctrlName(c string) (name string, ok bool) {
 	switch c {
+	case "\r":
+		return `\r`, true
 	case "\n":
-		return Fg(marker).Render(`\n`)
+		return `\n`, true
 	case "\t":
-		return Fg(marker).Render(`\t`)
+		return `\t`, true
+	}
+	r := []rune(c)
+	if len(r) != 1 || !(r[0] < 0x20 || r[0] >= 0x7f && r[0] <= 0x9f) {
+		return "", false
+	}
+	return fmt.Sprintf(`\x%02x`, r[0]), true
+}
+
+// cellText is how a cluster is drawn: a pasted control character as its red
+// name, never cut apart; grey on a grey row.
+func cellText(c string, plain Style) string {
+	if name, ok := ctrlName(c); ok {
+		marker := Red
+		if plain.Fg == Overlay0 {
+			marker = Overlay0
+		}
+		return Fg(marker).Render(name)
 	}
 	return plain.Render(c)
 }
@@ -128,7 +146,7 @@ func greyText(s string) string {
 		}
 	}
 	for _, c := range newEditor(s).g {
-		if c == "\n" || c == "\t" {
+		if _, ok := ctrlName(c); ok {
 			flush()
 			b.WriteString(cellText(c, Fg(Overlay0)))
 			continue
@@ -140,8 +158,8 @@ func greyText(s string) string {
 }
 
 func cellWidth(c string) int {
-	if c == "\n" || c == "\t" {
-		return 2
+	if name, ok := ctrlName(c); ok {
+		return len(name)
 	}
 	return Width(c)
 }
@@ -261,9 +279,8 @@ func (e *lineEditor) view(w int, style, cursorStyle Style, showCursor bool, mask
 
 // cursorOn draws the character under the cursor as a block.
 func cursorOn(c string, cursorStyle Style) string {
-	switch c {
-	case "\n", "\t":
-		return Style{Fg: Red, Bg: cursorStyle.Bg}.Render(map[string]string{"\n": `\n`, "\t": `\t`}[c])
+	if name, ok := ctrlName(c); ok {
+		return Style{Fg: Red, Bg: cursorStyle.Bg}.Render(name)
 	}
 	return cursorStyle.Render(c)
 }
@@ -275,11 +292,11 @@ func boolInt(b bool) int {
 	return 0
 }
 
-// hasBreaks reports whether the value has a pasted line break or tab, which a
-// one-line value that is used must not have (components/input/README).
-func (e *lineEditor) hasBreaks() bool {
+// hasControl reports whether the value has a pasted control character, which
+// a one-line value that is used must not have (components/input/README).
+func (e *lineEditor) hasControl() bool {
 	for _, c := range e.g {
-		if c == "\n" || c == "\t" {
+		if _, ok := ctrlName(c); ok {
 			return true
 		}
 	}

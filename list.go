@@ -452,14 +452,21 @@ func (l *List) filterRow(w int, focused bool) string {
 // panel's frame colour), the words Lavender with a cursor; the whole row is
 // Overlay0 otherwise.
 func typingRow(ed *lineEditor, w int, count string, focus bool, lit Color) string {
-	room := max(w-2-Width(glyphTyping)-1-Width(count)-2, 1)
+	room := max(w-2-angleWidth()-Width(count)-2, 1)
 	if focus {
-		return " " + Fg(lit).Render(glyphTyping) + " " + ed.view(room, Fg(Lavender), Style{Fg: Base, Bg: Lavender}, true, nil, "") +
+		return " " + typingAngle(lit) + ed.view(room, Fg(Lavender), Style{Fg: Base, Bg: Lavender}, true, nil, "") +
 			"  " + Fg(Overlay0).Render(count) + " "
 	}
-	return " " + Fg(Overlay0).Render(glyphTyping) + " " + ed.view(room, Fg(Overlay0), Fg(Overlay0), false, nil, "") +
+	return " " + typingAngle(Overlay0) + ed.view(room, Fg(Overlay0), Fg(Overlay0), false, nil, "") +
 		"  " + Fg(Overlay0).Render(count) + " "
 }
+
+// typingAngle is what every typing row starts with: nf-fa-angle_right in c,
+// then a space (components/input/README, components/input/finder).
+func typingAngle(c Color) string { return Fg(c).Render(glyphTyping) + " " }
+
+// angleWidth is how wide typingAngle is.
+func angleWidth() int { return Width(glyphTyping) + 1 }
 
 // Scroll is "N of M" when the rows do not all fit.
 func (l *List) Scroll() string { return l.scroll }
@@ -505,10 +512,6 @@ func (l *List) Key(key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 	case "gg":
 		l.cursor = 0
 	case "G":
-		l.cursor = max(n-1, 0)
-	case "Home": // TODO(tdp G55): Home and End as gg and G
-		l.cursor = 0
-	case "End":
 		l.cursor = max(n-1, 0)
 	case "/":
 		if l.Filterable {

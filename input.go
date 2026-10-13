@@ -206,11 +206,14 @@ func (li *lineInput) measure(sw, sh int) (int, int) {
 		}
 	}
 	if content > 0 {
-		cursor := 1 // the cursor after the last character
+		// The angle before the value, and the cursor after its last character.
+		// The unlock look has no angle, and its cursor sits on the last ● once
+		// all of it is typed (components/input/password).
+		extra := angleWidth() + 1
 		if li.unlock {
-			cursor = 0
+			extra = 0
 		}
-		need := max(content+cursor, Width(li.prompt)) + 4
+		need := max(content+extra, Width(li.prompt)) + 4
 		need = max(need, Width(titleCapsule(li.glyph, Upper(li.title), Base, 1<<20))+4)
 		// The whole hint, with the suggestion's keys: only a typing row here,
 		// so the hint lists every key (Rules M3) and the box holds all of it
@@ -231,17 +234,22 @@ func (li *lineInput) measure(sw, sh int) (int, int) {
 func (li *lineInput) draw(w, h int, layer Color) []string {
 	inner := w - 2
 	cw := inner - 2
+	// The typing row starts with the angle, in the layer colour: a one-line
+	// input is always typing (components/input/README). The unlock look has
+	// none (components/input/password).
 	var value string
 	valueStyle, cursor := Fg(Lavender), Style{Fg: Base, Bg: Lavender}
-	switch li.kind {
-	case kindPassword:
+	switch {
+	case li.unlock:
 		value = li.maskView(cw, valueStyle, cursor)
+	case li.kind == kindPassword:
+		value = typingAngle(layer) + li.maskView(cw-angleWidth(), valueStyle, cursor)
 	default:
 		after := ""
 		if li.showingOld() {
 			after = greyText(li.old)
 		}
-		value = li.ed.view(cw, valueStyle, cursor, true, nil, after)
+		value = typingAngle(layer) + li.ed.view(cw-angleWidth(), valueStyle, cursor, true, nil, after)
 	}
 	errRow := Fg(Red).Render(Truncate(li.err, cw))
 	if li.unlock {
@@ -267,15 +275,36 @@ func (li *lineInput) maskView(w int, style, cursor Style) string {
 	if li.showingOld() {
 		grey := strings.Repeat(dot, 8)
 		if li.unlock {
-			return Center(Fg(Overlay0).Render(strings.TrimSpace(strings.Repeat(dot+" ", 8))), w)
+			// TODO(tdp G80): the cursor where the first ● goes, then the
+			// grey ones a cell apart.
+			grey = strings.TrimSpace(strings.Repeat(dot+" ", 8))
+			return Center(cursor.Render(" ")+" "+Fg(Overlay0).Render(grey), w)
 		}
 		return Pad(cursor.Render(" ")+Fg(Overlay0).Render(grey), w)
 	}
-	if li.unlock { // TODO(tdp G57): no cursor
-		dots := strings.TrimSpace(strings.Repeat(dot+" ", len(li.ed.g)))
-		return Center(style.Render(TruncateLeft(dots, w)), w)
+	if li.unlock {
+		return Center(li.unlockDots(w, style, cursor), w)
 	}
 	return li.ed.view(w, style, cursor, true, func(string) string { return dot }, "")
+}
+
+// unlockDots is the unlock look's value, at most w cells: a ● a cell apart
+// for each character, the cursor where the next one goes; once all of them
+// are typed, the cursor is on the last ● (components/input/password). Too
+// wide, it keeps the cursor's end.
+func (li *lineInput) unlockDots(w int, style, cursor Style) string {
+	n := len(li.ed.g)
+	full := li.maxLen > 0 && n >= li.maxLen
+	plain := strings.Repeat("● ", n) + " " // what is drawn, one cell a character
+	if full {
+		plain = strings.TrimSuffix(plain, "  ")
+	}
+	cells := []rune(plain)
+	if len(cells) > w {
+		cells = append([]rune{'…'}, cells[len(cells)-max(w-1, 1):]...)
+	}
+	last := len(cells) - 1
+	return style.Render(string(cells[:last])) + cursor.Render(string(cells[last]))
 }
 
 func (li *lineInput) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
@@ -347,6 +376,10 @@ func (li *lineInput) confirm(a *App) tea.Cmd {
 		case li.ed.empty():
 			return tea.Batch(a.closeTop(), li.done("", true))
 		}
+		if li.ed.hasControl() {
+			li.err = cmpOr(li.title, "The value") + " can't have control characters"
+			return nil
+		}
 		v := li.ed.value()
 		if li.check != nil {
 			if err := li.check(v); err != nil {
@@ -359,8 +392,8 @@ func (li *lineInput) confirm(a *App) tea.Cmd {
 	if li.showingOld() {
 		return a.closeTop() // nothing touched: no change
 	}
-	if li.ed.hasBreaks() {
-		li.err = cmpOr(li.title, "The value") + " can't have line breaks or tabs"
+	if li.ed.hasControl() {
+		li.err = cmpOr(li.title, "The value") + " can't have control characters"
 		return nil
 	}
 	v := strings.TrimFunc(li.ed.value(), unicode.IsSpace)

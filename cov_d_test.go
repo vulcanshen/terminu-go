@@ -467,7 +467,9 @@ func TestPopupNarrowContentAlign(t *testing.T) {
 	ta.settle()
 	ta.press("1", "2", "3")
 	row = covDTop(ta)[4]
-	if left, right := covDGaps(row); !strings.Contains(row, "●") || left <= 1 || left-right > 1 || right-left > 1 {
+	// The cursor after the dots counts, a space and a block, blank without
+	// styles (components/input/password).
+	if left, right := covDGaps(row); !strings.Contains(row, "●") || left <= 1 || left-(right-2) > 1 || (right-2)-left > 1 {
 		t.Errorf("the unlock mask is centred: %q", row)
 	}
 }

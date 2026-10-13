@@ -70,9 +70,9 @@ func (n *noteView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {
 		n.top += half
 	case "u", "PgUp":
 		n.top -= half
-	case "gg", "Home":
+	case "gg":
 		n.top = 0
-	case "G", "End":
+	case "G":
 		n.top = len(n.lines)
 	case "Enter":
 		if n.enterCloses {

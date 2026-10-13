@@ -841,16 +841,25 @@ func TestK6PopupKeysOnly(t *testing.T) {
 
 // --- K7 ----------------------------------------------------------------------
 
-func TestK7AliasEverywhere(t *testing.T) {
-	type alias struct{ main, alt []string }
+type covAAlias struct{ main, alt []string }
+
+// covAMoveSurface is a surface one moves on with the keys of Rules K12.
+type covAMoveSurface struct {
+	covASurface
+	aliases []covAAlias
+	skip    map[string]string // by the main key: a known deviation
+}
+
+// covAMoveSurfaces are the lists, menus, viewers and pickers, and the
+// textarea's moving state: everything that moves but is not a typing row.
+func covAMoveSurfaces() []covAMoveSurface {
 	k := func(keys ...string) []string { return keys }
-	moves := []alias{
+	moves := []covAAlias{
 		{k("j"), k("↓")}, {k("k"), k("↑")}, {k("l"), k("→")}, {k("h"), k("←")},
-		{k("d"), k("PgDn")}, {k("G", "u"), k("G", "PgUp")}, {k("G"), k("End")}, {k("G", "gg"), k("G", "Home")},
+		{k("d"), k("PgDn")}, {k("G", "u"), k("G", "PgUp")},
 	}
-	text := []alias{
+	text := []covAAlias{
 		{k("j"), k("↓")}, {k("k"), k("↑")}, {k("l"), k("→")}, {k("h"), k("←")},
-		{k("0"), k("Home")}, {k("$"), k("End")},
 	}
 	rows := make([]Row, 40)
 	for i := range rows {
@@ -860,11 +869,7 @@ func TestK7AliasEverywhere(t *testing.T) {
 	for i := range lines {
 		lines[i] = fmt.Sprintf("line %d of the log", i)
 	}
-	surfaces := []struct {
-		covASurface
-		aliases []alias
-		skip    map[string]string // by the main key: a known deviation
-	}{
+	return []covAMoveSurface{
 		{covASurface{"list without tabs", func(ta *testApp) {
 			l := &List{Columns: []Column{{Title: "Name"}}}
 			l.SetRows(rows)
@@ -895,7 +900,10 @@ func TestK7AliasEverywhere(t *testing.T) {
 			ta.press("Esc", "k", "b")
 		}}, text, nil},
 	}
-	for _, s := range surfaces {
+}
+
+func TestK7AliasEverywhere(t *testing.T) {
+	for _, s := range covAMoveSurfaces() {
 		for _, a := range s.aliases {
 			t.Run(s.name+"/"+strings.Join(a.main, "")+"="+strings.Join(a.alt, ""), func(t *testing.T) {
 				if why := s.skip[strings.Join(a.main, "")]; why != "" {
@@ -914,6 +922,45 @@ func TestK7AliasEverywhere(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+// Home and End move only on a typing row; everywhere else gg|G and 0|$ do
+// it, and Home and End do nothing (Rules K12).
+func TestK12HomeEndOnlyTyping(t *testing.T) {
+	for _, s := range covAMoveSurfaces() {
+		if s.name == "form" {
+			continue // TODO: form.go still takes Home and End as gg and G
+		}
+		for _, keys := range [][]string{{"End"}, {"G", "Home"}, {"j", "Home"}} {
+			t.Run(s.name+"/"+strings.Join(keys, ""), func(t *testing.T) {
+				ta := newTestApp(t)
+				ta.resize(80, 16)
+				s.open(ta)
+				ta.settle()
+				ta.press(keys[:len(keys)-1]...)
+				before := ta.screenText()
+				ta.press(keys[len(keys)-1])
+				if after := ta.screenText(); after != before {
+					t.Errorf("%s did something:\n%s\n---\n%s", keys[len(keys)-1], before, after)
+				}
+			})
+		}
+	}
+
+	// On a typing row they go to an end.
+	ta := newTestApp(t)
+	ta.Text(TextInput{Title: "Name"})
+	ta.settle()
+	ta.press("a", "b", "c", "Home", "x", "End", "y")
+	if v := ta.topView().(*lineInput).ed.value(); v != "xabcy" {
+		t.Errorf("Home and End on a typing row: %q", v)
+	}
+	ta.Textarea(Textarea{Title: "Comment", Old: "one two"})
+	ta.settle()
+	ta.press("Home", "x", "End", "y")
+	if v := ta.topView().(*textareaView).value(); v != "xone twoy" {
+		t.Errorf("Home and End while writing in a textarea: %q", v)
 	}
 }
 

@@ -554,8 +554,29 @@ func TestTextareaWrapAndNumbers(t *testing.T) {
 	ta.Textarea(Textarea{Title: "Comment", Old: strings.Repeat("word ", 12) + "\nshort"})
 	ta.settle()
 	text := ta.screenText()
-	if !strings.Contains(text, "┃ 1 word") || !strings.Contains(text, "┃ 2 short") || !strings.Contains(text, "┃   rd word") {
+	if !strings.Contains(text, "┃  1 word") || !strings.Contains(text, "┃  2 short") || !strings.Contains(text, "┃    ord word") {
 		t.Errorf("wrapped rows have no number, each line's first does:\n%s", text)
+	}
+}
+
+// The line numbers' column is at least two digits: it widens at line 100,
+// not at line 10 (components/input/textarea).
+func TestTextareaGutterTwoDigits(t *testing.T) {
+	start := func(lines int) string {
+		ta := newTestApp(t)
+		ta.resize(40, 20)
+		ta.Textarea(Textarea{Title: "Comment", Old: strings.TrimSuffix(strings.Repeat("x\n", lines), "\n")})
+		ta.settle()
+		ta.press("Esc", "gg")
+		return ta.screenText()
+	}
+	for _, c := range []struct {
+		lines int
+		first string
+	}{{1, "┃  1 x"}, {9, "┃  1 x"}, {10, "┃  1 x"}, {99, "┃  1 x"}, {100, "┃   1 x"}} {
+		if text := start(c.lines); !strings.Contains(text, c.first) {
+			t.Errorf("%d lines: want %q\n%s", c.lines, c.first, text)
+		}
 	}
 }
 
