@@ -152,7 +152,7 @@ func (fp *filePicker) list(typed string) []finderRow {
 	// .ssh), as a shell glob does.
 	word := typed[strings.LastIndex(typed, "/")+1:]
 	hidden := strings.HasPrefix(word, ".")
-	key := dir + "\x00" + glob + "\x00" + strconv.FormatBool(hidden)
+	key := dir + "\x00" + glob + "\x00" + strconv.FormatBool(hidden) + strconv.FormatBool(word != "")
 	if key == fp.key {
 		return fp.rows
 	}
@@ -168,9 +168,9 @@ func (fp *filePicker) list(typed string) []finderRow {
 		fp.rows = fp.readDir(fp.start, hidden)
 	}
 	if fp.p.Dirs {
-		// TODO(tdp G75): a wildcard's results are directories only, with no
-		// "." row.
-		fp.rows = slices.DeleteFunc(fp.rows, func(r finderRow) bool { return !r.dir })
+		// Directories only; with a word or a wildcard typed there is no "."
+		// row (components/input/file-picker).
+		fp.rows = slices.DeleteFunc(fp.rows, func(r finderRow) bool { return !r.dir || word != "" && r.text == "." })
 	}
 	return fp.rows
 }
@@ -197,8 +197,6 @@ func (fp *filePicker) readDir(dir string, hidden bool) []finderRow {
 	}
 	var rows []finderRow
 	if fp.p.Dirs {
-		// TODO(tdp G75): matched as "." alone, so a filter word hides it as
-		// it hides ..
 		here := fp.row(dir, ".", true)
 		here.icon, here.label = glyphFolderMove, ". (this directory)"
 		rows = append(rows, here)

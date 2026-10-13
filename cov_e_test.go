@@ -472,6 +472,22 @@ func TestFormOpenFocus(t *testing.T) {
 	if fv := ta.topView().(*formView); formStop(fv) != "Auth:1" {
 		t.Errorf("opened from a radio, the focus is on its chosen option: %s", formStop(fv))
 	}
+	// A checkbox group: its first ticked option, or its first with none.
+	for _, c := range []struct {
+		checked []bool
+		want    string
+	}{{[]bool{false, true, true}, "Agent:1"}, {[]bool{false, false, false}, "Agent:0"}} {
+		ta.press("Esc")
+		f = testForm(nil)
+		f.Fields[3].Options = []string{"forward", "keepalive", "compress"}
+		f.Fields[3].Checked = c.checked
+		f.Focus = f.Fields[3]
+		ta.Form(f)
+		ta.settle()
+		if fv := ta.topView().(*formView); formStop(fv) != c.want {
+			t.Errorf("opened from a checkbox group ticked %v: %s, want %s", c.checked, formStop(fv), c.want)
+		}
+	}
 }
 
 func TestFormEnterField(t *testing.T) {

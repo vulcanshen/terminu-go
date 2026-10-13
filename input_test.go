@@ -412,6 +412,20 @@ func TestFilePickerDirMode(t *testing.T) {
 	if chosen != "unchanged" || ta.top() != nil {
 		t.Errorf("the same directory again does not call Done: %q", chosen)
 	}
+
+	// A word or a wildcard typed: no . row; a wildcard finds directories
+	// only. A path typed to its / lists the . row again.
+	fp := &filePicker{p: FilePicker{Dirs: true}, dir: dir}
+	for _, typed := range []string{dir + "/", dir + "/o", dir + "/.", dir + "/**/*"} {
+		var here, file bool
+		for _, r := range fp.list(typed) {
+			here = here || r.text == "."
+			file = file || !r.dir
+		}
+		if wantHere := strings.HasSuffix(typed, "/"); here != wantHere || file {
+			t.Errorf("typed %q: a . row %v (want %v), a file %v", typed, here, wantHere, file)
+		}
+	}
 }
 
 func TestFilePickerPathRules(t *testing.T) {

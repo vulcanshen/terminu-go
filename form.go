@@ -144,18 +144,26 @@ func (fv *formView) index(items []formItem) int {
 }
 
 // landing is where the focus goes in a field it is sent to (the form opened
-// at it, a check failing on it, e back from the error row): a radio's chosen
-// option or its first, a checkbox group's first option.
-// TODO(tdp G74): the spec no longer says which option; this is v0.5.3's
-// landing for Tab.
+// at it, a check failing on it, e back from the error row): the first option
+// with a value — a radio's chosen one, a checkbox group's first ticked one —
+// or else the first (components/dialog/form). Disabled options are skipped.
 func (fv *formView) landing(f *FormField) formItem {
-	switch {
-	case len(f.Options) == 0:
+	if len(f.Options) == 0 {
 		return formItem{itemField, f, -1}
-	case !f.Multi && f.Selected >= 0 && f.Selected < len(f.Options):
-		return formItem{itemField, f, f.Selected}
 	}
-	return formItem{itemField, f, 0}
+	first := -1
+	for i := range f.Options {
+		if f.optionDisabled(i) {
+			continue
+		}
+		if first < 0 {
+			first = i
+		}
+		if f.Multi && i < len(f.Checked) && f.Checked[i] || !f.Multi && i == f.Selected {
+			return formItem{itemField, f, i}
+		}
+	}
+	return formItem{itemField, f, max(first, 0)}
 }
 
 func (fv *formView) labelWidth() int {

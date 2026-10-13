@@ -1,13 +1,13 @@
-# tdp v0.5.4 coverage
+# tdp v0.5.5 coverage
 
-tdp v0.5.4 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
+tdp v0.5.5 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
 （[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
 - 出處寫法：`K4` 是 `principle/rules-zh_TW.md` 的規則；`P3` 是 `principle/README-zh_TW.md`；`popup §外框` 是
   `components/layout/popup-zh_TW.md` 的那一節，其他元件照檔名（`form`、`finder`…）；`components §大寫` 是 `components/README-zh_TW.md`。
 - `G<n>` 是規範盲點紀錄裡還沒定案的編號（`~/Documents/sideproj/terminu/.local/family-fix/terminu-go/README.md`），定案前照紀錄的
-  「暫時」做。G1–G22 已經補進 tdp v0.4.0、G23–G29 補進 v0.5.1、G30–G46 補進 v0.5.2（G43 不改規範）、G47 補進 v0.5.3、G48–G66 補進 v0.5.4，這裡直接寫規範的條文。
+  「暫時」做。G1–G22 已經補進 tdp v0.4.0、G23–G29 補進 v0.5.1、G30–G46 補進 v0.5.2（G43 不改規範）、G47 補進 v0.5.3、G48–G66 補進 v0.5.4、G67–G77 補進 v0.5.5，這裡直接寫規範的條文。
 - 「lib」表示由 lib 的登記或 API 保證，不需要展示場的某一個畫面；測試照樣要有。
 
 ## 展示場
@@ -300,7 +300,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | form §移動 | 項目：欄位、每個選項、按鈕、有錯誤的錯誤列（在按鈕前） | D「Form: New host」 | `TestFormItems` |
 | form §移動 | `j\|l\|↓\|→` 下一個、`h\|k\|↑\|←` 上一個；跨欄；`gg` 第一個、`G` 按鈕；`u\|d` 以項目為單位半頁、到頭尾停住；`j\|k` 頭尾繞回 | 同上 | `TestFormMoveItems`、`TestFormWrap`、`TestFormHalfPage` |
 | form §移動 | `Tab\|Shift-Tab` 在欄位區與動作列之間來回：欄位區任一項 → 按鈕，按鈕 → 離開前那一項；錯誤列跟按鈕同一塊（`Tab` 不停、在上面按 `Tab` 回欄位區）、`j\|k` 與 `e` 到得了 | D「Form: long」改一欄後 `Tab`、`Enter` | `TestFormTabBlocks` |
-| form §移動 | 停用的跳過；打開時 focus 在第一個能停的（從某一欄打開就停那欄）；不自動打開第一欄 | D「Form: open at Port」；停用的選項：D「Form: New host」的 `Order` 的 `random` | `TestFormSkipDisabled`、`TestFormSkipDisabledOption`、`TestFormOpenFocus` |
+| form §移動 | 停用的跳過；打開時 focus 在第一個能停的（從某一欄打開就停那欄）；不自動打開第一欄；跳進 radio、checkbox 那一欄（從那欄打開、送出被擋、`e` 回去）停在第一個有值的選項（radio 已選的、checkbox 第一個勾的，都沒有停第一個） | D「Form: open at Port」；停用的選項：D「Form: New host」的 `Order` 的 `random` | `TestFormSkipDisabled`、`TestFormSkipDisabledOption`、`TestFormOpenFocus` |
 | form §`Enter` | 欄位：開 input popup 疊在表單上，確定寫回 focus 留原欄，`Esc` 值不變；checkbox popup：`Space` 勾、`Enter` 寫回、`Esc` 取消 | 同上的 `Name`、`Namespaces` | `TestFormEnterField` |
 | form §`Enter` | radio 選項：選它；checkbox 選項：原地翻（`Space` 也能翻）；都不開 popup、focus 不動、馬上生效；按鈕：送出 | 同上 | `TestFormEnterOption`、`TestFormEnterButton`、`TestFormCheckboxSpace` |
 | form §送出 | 只有按鈕的 `Enter`；不用字母熱鍵；`Esc` 不把 focus 移到動作列 | 同上 | `TestFormSubmitOnlyButton` |
@@ -414,7 +414,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | color-picker §值 | 表單與 panel 上一小格色塊 + hex | I `[1] INPUTS` | `TestValueDisplay` |
 | file-picker §長相 | 根目錄 app 給、只是起點，最上面 `..`（`/` 沒有）；目前的目錄寫在標題（欄位名後，太長從前截）；打字列打開是空的；每列前目錄／檔案 icon（顏色 app 定）；原本的值 cursor 停在它、字 Green；`..` → 目錄 → 檔案、照名字不分大小寫，隱藏檔只在篩選字 `.` 開頭時列（`*` 不比對隱藏檔、`**` 不走進隱藏目錄）；打字列前面 U+F105；四塊：打字列、清單、預覽、metadata；預覽最多讀 64 KB：目錄與壓縮檔是三層的樹（`├─` `└─` `│` Overlay0、隱藏檔不列、滿了最後一列 `…`、`(empty)`、`(permission denied)`）、圖片第一列灰字 `data:image/png · 12.4 KB` 空一列接 data URI（超過 1 MB 只寫一句）、PDF 第一列灰字頁數空一列接前 20 頁的文字（最多 128 KB，沒有文字寫 `(no extractable text)`）、文字檔上色加行號、其他是十六進位一律一列 8 bytes 接 ASCII（33 格，並排、上下疊都一樣）、讀不到 `(unreadable)`；metadata 四列 `TYPE`（`text` `private key` `image` `PDF` `archive` `binary`、`link → <目標>`、`directory`）`SIZE`（1024 進位一位小數、目錄寫 `N items` 不算隱藏檔）`MODIFIED`（本地時間到分）`MODE`（`ls -l` 的寫法），symlink 三列寫目標的，拿不到的寫 `—`（讀不到的目錄的 `SIZE`、斷掉的 link 的三列），label 層色、值 Text；設定 `hide_secrets_in_preview`（預設關）打開時私鑰露第一行接灰字、其他只有擁有者能讀的檔一行都不露（目錄不算），metadata 照常 | I 的 `Identity file`（假的 `.ssh`，打 `/tmp/terminu-showcase/project/` 走到假的專案：`empty` 是 `(empty)`、`locked` 是 `(permission denied)`）；I `[2] FILES` 的 `[/] Find`（假的專案，每一種檔各一個：`latest.pdf` 是 link、`broken.pdf` 是斷掉的 link、`docs/scan.pdf` 沒有文字、`assets/photo-large.png` 超過 1 MB、`secret.bin` 讀不到）；global 的 `Hide secrets in preview` | `TestFilePickerLayout`、`TestFilePickerHiddenAndOrder`、`TestFilePreviewKinds`、`TestFilePreviewHidesSecrets`、`TestFileInfo`、`TestFilePickerMetaDash` |
 | file-picker §按鍵 | 清單 `Enter`：目錄進去（清篩選、cursor 在 `..` 下第一項）、檔案選中寫回關掉；選檔時目錄永遠不會被選中 | 同上 | `TestFilePicker` |
-| file-picker §選目錄 | 清單只列目錄，`.` → `..` → 目錄；最上面 `. (this directory)`、icon U+F0252；在 `.` 上 `Enter` 選目前的目錄（`Enter:choose`），在目錄上 `Enter` 走進去（`Enter:into`）；其他照 file-picker | I 的 `Path`、`Download to`（**`Download to` 打開的是真的 `~/Downloads`**） | `TestFilePickerDirMode` |
+| file-picker §選目錄 | 清單只列目錄，`.` → `..` → 目錄；最上面 `. (this directory)`、icon U+F0252；在 `.` 上 `Enter` 選目前的目錄（`Enter:choose`），在目錄上 `Enter` 走進去（`Enter:into`）；打字列有篩選字或 wildcard 時沒有 `.`、wildcard 結果只列目錄；其他照 file-picker | I 的 `Path`、`Download to`（**`Download to` 打開的是真的 `~/Downloads`**） | `TestFilePickerDirMode` |
 | file-picker §按鍵 | 打字列：一般字照「比對」篩選目前這一層；路徑（`/`、`~/` 開頭）一直留在打字列、以最後一個 `/` 切成目錄與篩選字；目錄不存在或有 `..` 這一段：清單是空的；`*` `?` wildcard（`**` 往下找）、每列寫相對於起點的路徑、標題寫起點、沒有 `..`；hint 三種 | 同上，在打字列打 `/tmp/terminu-showcase/.ss`、`/tmp/terminu-showcase/.ssh/id_`、`/tmp/terminu-showcase/nope/x`、`/tmp/terminu-showcase/../x`、`/tmp/terminu-showcase/.ssh/**/*.pem`（`~/` 開頭的路徑是真的家目錄） | `TestFilePicker`、`TestFilePickerPathRules`、`TestGlobMatch`、`TestFilePickerHint` |
 
 ## 熱鍵標記（M5）在展示場用到的地方
