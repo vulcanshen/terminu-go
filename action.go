@@ -57,14 +57,4 @@ type Ask struct {
 	Verb     string   // Enter:<verb> in the hint: "delete"
 	Details  []string // what to read before answering, above the question
 	Warn     []int    // which lines of Details are warnings (Peach)
-	// Keys are the confirm's own hotkeys (y, n), listed in its ? (Rules F6).
-	Keys []AskKey
-}
-
-// AskKey is a confirm's own hotkey: Accept makes it Enter; otherwise it
-// cancels, running Do (when set) after the confirm closes.
-type AskKey struct {
-	Key, Desc string
-	Accept    bool
-	Do        func() tea.Cmd
 }

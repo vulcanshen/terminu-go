@@ -27,6 +27,9 @@ func (n *noteView) measure(sw, sh int) (int, int) {
 			content = max(content, Width(l))
 		}
 		content = max(content+4, Width(titleCapsule(n.glyph, n.title, Base, 1<<20))+4, hintWidth(n.hint)+6)
+		if t := len(n.lines); t+4 > max(sh-2, 3) {
+			content = max(content, scrollRoom(n.hint, scrollText(false, t, t, t)))
+		}
 		w = min(content, w)
 	}
 	h := min(len(n.lines)+4, max(sh-2, 3))

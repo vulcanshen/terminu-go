@@ -54,9 +54,8 @@ var (
 )
 
 // layerColors are the popup layer colours, lerp(Lavender, Sapphire, K/4)
-// (components/color). The table in the spec is the reference: the formula
-// lands on .5 in three channels and the table rounds them.
-var layerColors = [4]Color{Hex("#A4C0FA"), Hex("#94C3F5"), Hex("#84C5F0"), Hex("#74c7ec")}
+// with each channel rounded half up (components/color).
+var layerColors = [4]Color{Hex("#A4C0FA"), Hex("#94C3F5"), Hex("#84C5F1"), Hex("#74c7ec")}
 
 // LayerColor is the colour of the popup at layer k, the bottom one being 1;
 // layer 4 and up are Sapphire. A toast is always layer 1.
@@ -123,7 +122,7 @@ const dimKeep = 0.45
 func DimRGB(c RGB) RGB {
 	var out RGB
 	for i := range c {
-		// TODO(tdp G53): .5 rounds up.
+		// Each channel rounds half up, then is compared with the original.
 		v := float64(c[i])*dimKeep + float64(Base.RGB[i])*(1-dimKeep) + 0.5
 		out[i] = min(c[i], uint8(v))
 	}

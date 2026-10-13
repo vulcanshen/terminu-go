@@ -27,8 +27,8 @@ func dialogOpeners() map[string]func(*testApp) {
 		"viewer tabs": func(ta *testApp) {
 			ta.Viewer(&Viewer{Title: "DevTools", Tabs: []string{"Console", "Network", "Sources"}, Lines: lines[:3], Loading: true})
 		},
-		"confirm keys": func(ta *testApp) {
-			ta.Confirm(Ask{Title: "Overwrite", Question: "Overwrite it?", Verb: "overwrite", Keys: []AskKey{{Key: "y", Desc: "overwrite", Accept: true}}}, nil)
+		"confirm": func(ta *testApp) {
+			ta.Confirm(Ask{Title: "Overwrite", Question: "Overwrite it?", Verb: "overwrite"}, nil)
 		},
 		"error": func(ta *testApp) { ta.Error("Save failed", strings.Repeat("hosts.yaml changed on disk. ", 12)) },
 		"terminal": func(ta *testApp) {
@@ -261,35 +261,38 @@ func TestK1DigitsFreeInPopups(t *testing.T) {
 	}
 }
 
+// TestConfirmKeys: Enter and Esc are the only answers (Rules F6): y and n
+// do nothing, and its ? lists just the two.
 func TestConfirmKeys(t *testing.T) {
 	ta := newTestApp(t)
-	accepted, kept := 0, 0
-	ask := Ask{Title: "Overwrite", Question: "Overwrite it?", Verb: "overwrite",
-		Keys: []AskKey{{Key: "y", Desc: "overwrite", Accept: true}, {Key: "n", Desc: "keep the file", Do: func() tea.Cmd { kept++; return nil }}}}
+	accepted := 0
+	ask := Ask{Title: "Overwrite", Question: "Overwrite it?", Verb: "overwrite"}
 	ta.Confirm(ask, func() tea.Cmd { accepted++; return nil })
 	ta.settle()
-	ta.press("Space")
-	if ta.top() == nil {
-		t.Fatal("Space closed the confirm")
+	ta.press("Space", "y", "n")
+	if ta.top() == nil || accepted != 0 {
+		t.Fatalf("Space, y or n answered the confirm: open %v, accepted %d", ta.top() != nil, accepted)
 	}
 	ta.press("?")
 	ref := StripStyles(strings.Join(ta.topView().(*noteView).lines, "\n"))
-	rows := map[string]bool{}
+	var rows []string
 	for _, l := range strings.Split(ref, "\n") {
-		rows[strings.Join(strings.Fields(l), " ")] = true
+		if l = strings.Join(strings.Fields(l), " "); l != "" {
+			rows = append(rows, l)
+		}
 	}
-	if !rows["y overwrite"] || !rows["n keep the file"] {
-		t.Errorf("its own hotkeys are in its ?:\n%s", ref)
+	if strings.Join(rows, "|") != "Enter overwrite|Esc cancel" {
+		t.Errorf("its ? lists only Enter and Esc:\n%s", ref)
 	}
-	ta.press("Esc", "y")
+	ta.press("Esc", "Enter")
 	if accepted != 1 || ta.top() != nil {
-		t.Errorf("y accepts: %d", accepted)
+		t.Errorf("Enter accepts: %d", accepted)
 	}
 	ta.Confirm(ask, func() tea.Cmd { accepted++; return nil })
 	ta.settle()
-	ta.press("n")
-	if accepted != 1 || kept != 1 || ta.top() != nil {
-		t.Errorf("n cancels and runs its Do: accepted %d, kept %d", accepted, kept)
+	ta.press("Esc")
+	if accepted != 1 || ta.top() != nil {
+		t.Errorf("Esc cancels: accepted %d", accepted)
 	}
 }
 

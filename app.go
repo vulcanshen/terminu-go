@@ -619,7 +619,7 @@ func (a *App) panelKeyRef(p *Panel) *noteView {
 		{title: "core keys", rows: core},
 		{title: "app-wide", rows: app},
 	}
-	// TODO(tdp G50): where a section about another surface goes; last for now.
+	// A section about another surface goes last (components/dialog/note).
 	for _, o := range p.OtherKeys {
 		sections = append(sections, refSection{title: o.Title, rows: o.Rows})
 	}
@@ -683,7 +683,7 @@ func (a *App) handleKey(msg tea.KeyMsg) tea.Cmd {
 // popupKey is a key on the top popup: its own, then the core keys it leaves.
 func (a *App) popupKey(l *layer, key string, msg tea.KeyMsg) tea.Cmd {
 	if !l.view.typing() {
-		if k, ok := a.prefix(key); ok {
+		if k, ok := a.prefix(key, func(pair string) bool { return refHas(l.view.keyRef(), pair) }); ok {
 			key = k
 		} else {
 			return nil
@@ -707,15 +707,16 @@ func (a *App) popupKey(l *layer, key string, msg tea.KeyMsg) tea.Cmd {
 }
 
 // prefix joins g with the key after it ("gg", "go"); ok is false while the g
-// waits. A core key after a lone g is itself: a lone g does nothing (Rules
-// K12) and a core key means the same everywhere (K1).
-func (a *App) prefix(key string) (string, bool) {
+// waits. A lone g does nothing, and a key after it that makes no pair known
+// here acts as if the g had not been pressed (Rules K12); a core key after
+// it is always itself (K1).
+func (a *App) prefix(key string, known func(pair string) bool) (string, bool) {
 	if a.pending == "g" {
 		a.pending = ""
-		if a.isCoreKey(key) {
-			return key, true
+		if pair := "g" + key; !a.isCoreKey(key) && (pair == "gg" || known(pair)) {
+			return pair, true
 		}
-		return "g" + key, true // TODO(tdp G59): an unknown pair does nothing
+		return key, true
 	}
 	if key == "g" {
 		a.pending = "g"
@@ -750,7 +751,7 @@ func (a *App) panelKey(key string, msg tea.KeyMsg) tea.Cmd {
 	if p.mode != nil {
 		return a.modeKey(p, key, msg)
 	}
-	k, ok := a.prefix(key)
+	k, ok := a.prefix(key, func(pair string) bool { return a.panelPair(p, pair) })
 	if !ok {
 		return nil
 	}
@@ -828,6 +829,29 @@ func (a *App) panelKey(key string, msg tea.KeyMsg) tea.Cmd {
 }
 
 func isDigit(k string) bool { return len(k) == 1 && k[0] >= '0' && k[0] <= '9' }
+
+// panelPair reports whether a g pair is a hotkey on p: its own or a global.
+func (a *App) panelPair(p *Panel, pair string) bool {
+	acts := append(a.panelActions(p, ItemScope), a.panelActions(p, PanelScope)...)
+	for _, act := range append(acts, a.globalActions()...) {
+		if act.Key == pair {
+			return true
+		}
+	}
+	return false
+}
+
+// refHas reports whether a key reference lists key, alone or joined with |.
+func refHas(secs []refSection, key string) bool {
+	for _, s := range secs {
+		for _, r := range s.rows {
+			if slices.Contains(strings.Split(r.Key, "|"), key) {
+				return true
+			}
+		}
+	}
+	return false
+}
 
 // modeKey is a key inside a mode (Rules K11).
 func (a *App) modeKey(p *Panel, key string, msg tea.KeyMsg) tea.Cmd {

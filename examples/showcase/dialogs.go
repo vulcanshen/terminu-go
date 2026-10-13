@@ -93,11 +93,6 @@ func (ds *dialogsScreen) scenarios() []scenario {
 			return a.Confirm(terminu.Ask{Title: "Delete", Question: "Delete these 60 files?", Verb: "delete", Details: details},
 				toast("Deleted 60 files"))
 		}},
-		{"Confirm: y/n", "confirm", "its own hotkeys, listed in its ?", func() tea.Cmd {
-			return a.Confirm(terminu.Ask{Title: "Overwrite", Question: "Overwrite notes.md? (y/n)", Verb: "overwrite",
-				Keys: []terminu.AskKey{{Key: "y", Desc: "overwrite", Accept: true}, {Key: "n", Desc: "keep the file"}}},
-				toast("Overwrote notes.md"))
-		}},
 		{"Form: New host", "form", "every kind of field; submit empty to see the errors", func() tea.Cmd { return a.Form(ds.hostForm(nil, false)) }},
 		{"Form: open at Port", "form", "opened from a field: the focus starts there", func() tea.Cmd {
 			f := ds.hostForm(nil, false)

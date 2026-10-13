@@ -133,8 +133,25 @@ func (m *menuView) measure(sw, sh int) (int, int) {
 			m.cursor = saved
 		}
 	}
-	w := min(need, max(min(sw-2, 120), 1))
 	h := min(len(m.rows)+4, max(sh-2, 3))
+	if len(m.rows) > h-4 {
+		total := 0
+		for _, r := range m.rows {
+			if r.kind == menuItem {
+				total++
+			}
+		}
+		widest := scrollText(true, total, 0, total)
+		for i, r := range m.rows {
+			if r.kind == menuItem {
+				saved := m.cursor
+				m.cursor = i
+				need = max(need, scrollRoom(m.hint(), widest))
+				m.cursor = saved
+			}
+		}
+	}
+	w := min(need, max(min(sw-2, 120), 1))
 	return w, h
 }
 

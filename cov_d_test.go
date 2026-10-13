@@ -297,6 +297,46 @@ func TestPopupHintDrop(t *testing.T) {
 	}
 }
 
+// TestPopupWidthCountsScroll: a popup that scrolls is wide enough for its
+// whole hint and its scroll position at the widest (components/layout/popup):
+// Esc stays in sight, and the frame keeps its width while it scrolls.
+func TestPopupWidthCountsScroll(t *testing.T) {
+	check := func(name string, open func(ta *testApp), hint string, widest string) {
+		t.Helper()
+		ta := newTestApp(t)
+		ta.resize(120, 12)
+		open(ta)
+		ta.settle()
+		l := ta.top()
+		bottom := covDTop(ta)[l.h-1]
+		if !strings.Contains(bottom, " "+hint+" ") {
+			t.Errorf("%s: the hint is not whole: %q", name, bottom)
+		}
+		if want := Width(hint) + Width(widest) + 9; l.w < want {
+			t.Errorf("%s: %d wide, the hint and %q need %d", name, l.w, widest, want)
+		}
+		w := l.w
+		for range 30 {
+			ta.press("j")
+		}
+		if ta.top().w != w {
+			t.Errorf("%s: the width changed while it scrolled: %d, then %d", name, w, ta.top().w)
+		}
+	}
+	var rows []Action
+	for i := range 20 {
+		rows = append(rows, Action{Label: string(rune('a' + i))})
+	}
+	check("menu", func(ta *testApp) { ta.Menu("Pick", MenuSection{Actions: rows}) }, "Enter:run Esc:close", "20 of 20")
+	var details []string
+	for i := range 30 {
+		details = append(details, string(rune('a'+i%26)))
+	}
+	check("confirm", func(ta *testApp) {
+		ta.Confirm(Ask{Title: "Wipe", Question: "Wipe?", Verb: "wipe", Details: details}, nil)
+	}, "Enter:wipe Esc:cancel", "30-30 of 30")
+}
+
 func TestPopupFrameTextSpacing(t *testing.T) {
 	ta := newTestApp(t)
 	ta.resize(120, 12)

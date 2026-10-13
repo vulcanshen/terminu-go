@@ -225,7 +225,7 @@ func (p *Panel) draw(n, w, h int, focused bool) []string {
 	b := box{width: w, lines: lines, color: color, hintKey: Fg(Blue)}
 	b.head = drawChain(p.capsules(n), color, max(w-2-modeRoom(mode), 1))
 	if p.Loading {
-		b.after = Fg(Text).Render(loadingFrame()) // TODO(tdp G58): which colour
+		b.after = Fg(color).Render(loadingFrame()) // the frame's colour (components/layout/popup)
 	}
 	b.mode = mode
 	inner, ih := w-2, h-2

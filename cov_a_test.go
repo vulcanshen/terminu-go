@@ -1328,6 +1328,20 @@ func TestK12SingleGNoop(t *testing.T) {
 		if _, ok := ta.topView().(*noteView); !ok {
 			t.Error("g then ?: no key reference")
 		}
+		// A pair nobody registered: the g is forgotten and the key acts.
+		ta = newTestApp(t)
+		ta.press("g", "j")
+		if r, _ := ta.list.Current(); r.ID != "1" {
+			t.Errorf("g then j went to %s, not one row down", r.ID)
+		}
+		ta.Menu("Sort by", MenuSection{Actions: []Action{{Label: "Name"}, {Label: "Age"}}})
+		ta.settle()
+		m := ta.topView().(*menuView)
+		was := m.cursor
+		ta.press("g", "j")
+		if m.cursor == was {
+			t.Error("g then j in a menu: the cursor did not move")
+		}
 	})
 }
 

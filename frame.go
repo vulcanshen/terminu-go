@@ -150,6 +150,11 @@ func titleCapsule(glyph, title string, color Color, maxW int) string {
 
 // scrollText is a scroll position: "3 of 40" with a cursor, "1-20 of 120"
 // for what is seen without one.
+// scrollRoom is the width a popup that scrolls needs for its whole hint and
+// its scroll position at the widest (components/layout/popup): `┗━ `, the
+// hint, at least ` ━ `, the position, ` ━┛`.
+func scrollRoom(pairs []KeyHint, widest string) int { return hintWidth(pairs) + Width(widest) + 9 }
+
 func scrollText(cursor bool, first, last, total int) string {
 	if cursor {
 		return itoa(first) + " of " + itoa(total)
@@ -252,8 +257,8 @@ func (b box) draw() []string {
 		tail = ""
 	}
 	// A segment, the space either side, at least one segment after it, the
-	// scroll position and its segment. TODO(tdp G52): a popup is not made wide
-	// enough for both, so the hint's last pairs go first.
+	// scroll position and its segment. A popup is made wide enough for both
+	// (scrollRoom); pairs go from the end only on a terminal too narrow.
 	hintRoom := inner - 1 - 2 - 1 - Width(scroll) - Width(tail)
 	hint := ""
 	if len(b.hint) > 0 && hintRoom > 0 {

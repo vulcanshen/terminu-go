@@ -8,12 +8,12 @@ import (
 
 // confirmView is a confirm popup (components/dialog/confirm): what to read in
 // Overlay0 (a warning in Peach), a blank line, the question in Text last.
-// Enter accepts, Esc cancels; Space does nothing.
+// Enter accepts, Esc cancels, and nothing else answers it (no y, n: Rules
+// F6); Space does nothing.
 type confirmView struct {
 	ask     Ask
 	accept  func() tea.Cmd
-	keys    []ModeKey // its own hotkeys (y/n), listed in its ?
-	content []string  // wrapped, coloured
+	content []string // wrapped, coloured
 	quest   []string
 	top     int
 	visible int
@@ -23,16 +23,6 @@ func newConfirm(ask Ask, accept func() tea.Cmd) *confirmView {
 	return &confirmView{ask: ask, accept: accept}
 }
 
-// askKey runs one of the confirm's own hotkeys: as Enter, or as Esc and then
-// its Do.
-func (c *confirmView) askKey(a *App, k AskKey) tea.Cmd {
-	if k.Accept {
-		return a.acceptConfirm(c)
-	}
-	return tea.Batch(a.closeTop(), run(k.Do))
-}
-
-// TODO(tdp G54): its own hotkeys are only in its ?, not in the hint.
 func (c *confirmView) hint() []KeyHint {
 	return []KeyHint{{"Enter", c.ask.Verb}, {"Esc", "cancel"}}
 }
@@ -64,12 +54,21 @@ func (c *confirmView) measure(sw, sh int) (int, int) {
 		content = max(content, Width(d))
 	}
 	w := min(max(content+4, Width(titleCapsule(glyphConfirm, Upper(c.ask.Title), Base, 1<<20))+4, hintWidth(c.hint())+6), most)
-	c.wrapTo(w - 4)
-	rows := len(c.quest)
-	if len(c.content) > 0 {
-		rows += len(c.content) + 1
+	rows := func() int {
+		c.wrapTo(w - 4)
+		n := len(c.quest)
+		if len(c.content) > 0 {
+			n += len(c.content) + 1
+		}
+		return n
 	}
-	return w, min(rows+4, max(sh-2, 3))
+	h := min(rows()+4, max(sh-2, 3))
+	// Only the details scroll: room for their position at the widest.
+	if t := len(c.content); t > 0 && rows()+4 > h {
+		w = min(max(w, scrollRoom(c.hint(), scrollText(false, t, t, t))), most)
+		h = min(rows()+4, max(sh-2, 3))
+	}
+	return w, h
 }
 
 func (c *confirmView) draw(w, h int, layer Color) []string {
@@ -116,16 +115,6 @@ func (c *confirmView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {
 	case "k", "↑":
 		c.top--
 	default:
-		for _, k := range c.keys {
-			if k.takes(key) {
-				return true, k.Do(key)
-			}
-		}
-		for _, k := range c.ask.Keys {
-			if k.Key == key {
-				return true, c.askKey(a, k)
-			}
-		}
 		return false, nil
 	}
 	return true, nil
@@ -134,15 +123,7 @@ func (c *confirmView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {
 func (c *confirmView) surface() string { return c.ask.Title }
 
 func (c *confirmView) keyRef() []refSection {
-	rows := []KeyRow{{Key: "Enter", Desc: c.ask.Verb}}
-	for _, k := range c.keys {
-		rows = append(rows, KeyRow{Key: k.Key, Desc: k.Desc})
-	}
-	for _, k := range c.ask.Keys {
-		rows = append(rows, KeyRow{Key: k.Key, Desc: k.Desc})
-	}
-	rows = append(rows, KeyRow{Key: "Esc", Desc: "cancel"})
-	secs := []refSection{{rows: rows}}
+	secs := []refSection{{rows: []KeyRow{{Key: "Enter", Desc: c.ask.Verb}, {Key: "Esc", Desc: "cancel"}}}}
 	if len(c.ask.Details) > 0 {
 		secs = append(secs, refSection{title: "move", rows: []KeyRow{{Key: "j|k", Desc: "scroll down, up"}}})
 	}

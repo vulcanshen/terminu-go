@@ -277,17 +277,18 @@ func TestColorTokensOneMeaning(t *testing.T) {
 }
 
 func TestLayerColors(t *testing.T) {
-	table := []Color{Hex("#A4C0FA"), Hex("#94C3F5"), Hex("#84C5F0"), Hex("#74c7ec")}
+	table := []Color{Hex("#A4C0FA"), Hex("#94C3F5"), Hex("#84C5F1"), Hex("#74c7ec")}
 	for k := 1; k <= 6; k++ {
 		got, want := LayerColor(k), table[min(k, 4)-1]
 		if got != want {
 			t.Errorf("layer %d is %v, want %v", k, got, want)
 		}
-		// lerp(Lavender, Sapphire, K/4), four layers and up the end colour.
+		// lerp(Lavender, Sapphire, K/4) rounded half up, four layers and up
+		// the end colour.
 		f := float64(min(k, 4)) / 4
 		for i := range 3 {
 			exact := float64(Lavender.RGB[i]) + (float64(Sapphire.RGB[i])-float64(Lavender.RGB[i]))*f
-			if math.Abs(float64(got.RGB[i])-exact) > 0.5 {
+			if float64(got.RGB[i]) != math.Floor(exact+0.5) {
 				t.Errorf("layer %d channel %d is %d, the lerp gives %.2f", k, i, got.RGB[i], exact)
 			}
 		}
@@ -1138,6 +1139,24 @@ func TestPanelLoadingIconAfterChain(t *testing.T) {
 	}
 	ta.Screen().Panels[1].Loading = true
 	after(covCPlain(Cut(ta.Frame()[2], 40, 80)), "[2] LOG"+glyphHard)
+
+	// The icon is in the frame's colour: Blue with focus, Surface2 without.
+	color := func(line string) Color {
+		t.Helper()
+		for _, c := range covCCells(line) {
+			if loading[c.Ch] {
+				return c.St.Fg
+			}
+		}
+		t.Fatalf("no loading icon in %q", covCPlain(line))
+		return Color{}
+	}
+	if got := color(Cut(ta.Frame()[2], 0, 40)); got != Blue {
+		t.Errorf("the icon on the focused panel is %v, not the frame's Blue", got)
+	}
+	if got := color(Cut(ta.Frame()[2], 40, 80)); got != Surface2 {
+		t.Errorf("the icon on a panel without focus is %v, not the frame's Surface2", got)
+	}
 }
 
 func TestPanelModeLabel(t *testing.T) {
