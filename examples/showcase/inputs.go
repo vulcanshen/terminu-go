@@ -164,7 +164,9 @@ func newInputsScreen(s *showcase) *inputsScreen {
 		EmptyHint: "Press [Space] to see what you can do here",
 	}
 	is.fileList.SetRows(fileRows())
-	is.files = &terminu.Panel{Label: "Files", Body: is.fileList}
+	// This panel's hint lists only what can be pressed now (Rules M6: the
+	// app's choice): View, disabled, leaves it.
+	is.files = &terminu.Panel{Label: "Files", Body: is.fileList, HintPressableOnly: true}
 	is.files.Actions = append([]terminu.Action{
 		{Key: "/", Label: "Find", Desc: "search the files, with a preview", Scope: terminu.PanelScope, Hint: "find", Do: is.find},
 		{Key: "S", Label: "Slow index", Desc: "a search whose results keep arriving", Scope: terminu.PanelScope, Do: is.slowIndex},
@@ -172,7 +174,8 @@ func newInputsScreen(s *showcase) *inputsScreen {
 			Do: func() tea.Cmd { return a.Toast(terminu.Info, "Copied the URL") }},
 		// This panel gives V to an action of its own: the splash does not open
 		// here (Rules S1).
-		{Key: "V", Label: "View", Desc: "the file's text", Scope: terminu.ItemScope, Hint: "view", Do: is.view},
+		{Key: "V", Label: "View", Desc: "the file's text", Scope: terminu.ItemScope, Hint: "view", Do: is.view,
+			Disabled: func() bool { return is.disabled }},
 	}, is.stateActions(is.files)...)
 
 	is.screen = &terminu.Screen{Name: "Inputs", Key: "I", Desc: "every kind of input",

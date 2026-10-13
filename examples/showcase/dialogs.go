@@ -287,7 +287,8 @@ func (ds *dialogsScreen) hostForm(_ *terminu.Form, fail bool) *terminu.Form {
 					return terminu.Checks{Title: "Namespaces", Glyph: glyphTag, Options: namespaces, Checked: nsChecked,
 						Done: func(c []bool) tea.Cmd { nsChecked = c; return nil }}
 				}},
-			{Label: "Order", Options: []string{"asc", "desc"}},
+			// An option that cannot be chosen: grey, the focus skips it.
+			{Label: "Order", Options: []string{"asc", "desc", "random"}, OptionDisabled: func(i int) bool { return i == 2 }},
 			{Label: "Profile", Value: func() string { return profiles[profile] }, Edit: func() terminu.Input {
 				return terminu.Select{Title: "Profile", Glyph: glyphProfile, Options: profiles, Selected: profile,
 					Done: func(i int) tea.Cmd { profile = i; return nil }}

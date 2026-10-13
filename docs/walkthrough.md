@@ -32,6 +32,7 @@ cd ~/Documents/sideproj/terminu-go && go build -o /tmp/showcase ./examples/showc
 | `Tab`、`1`–`N` | 換 panel |
 | `Esc` | 一次關一層 |
 | `q`、`Ctrl-C` | 離開（先問） |
+| `!` | 展示場自己的 core key（Rules K1）：在每個 panel 與 popup 上都打開 app log；打字列上是字元 |
 
 - P 的 `[1] PODS` 上按 `D` 是這個 panel 自己的 `[D]rag`，不會換到 Dialogs 畫面（panel 的熱鍵優先，Rules M4）。要去 Dialogs，
   先 `Tab` 到別的 panel 再按 `D`，或從 Global operation 選。
@@ -44,6 +45,7 @@ cd ~/Documents/sideproj/terminu-go && go build -o /tmp/showcase ./examples/showc
 - `[1] PODS` 是一般清單：`j|k` `u|d` `gg|G` 移、`h|l` 換 tab（PODS／EVENTS）、`/` 篩選、`m` 標記、`x` 刪除（confirm）、
   `s` 排序、`go` 跳到第一個沒在跑的、`D` 拖曳模式（框與模式名變色，`Esc` 離開）。
 - `Space` 裡有切狀態的開關：`Empty`、`Loading`、`Fail`、`Disable`，與四種 toast（`Toast info`、`Toast warning`、`Toast error`、`Toast long`）。
+  `Disable` 之後下框 hint 的 `m:mark` 變停用色；I 的 `[2] FILES` 選了只列按得了的，`Disable` 之後 `V:view` 不見。
 - `[2] LOG` 是一直進來的串流：`Enter` 用 viewer 看全部；`F` 是 `Frozen` 模式，這個模式不暫停 `Tab`，換到別的 panel 時看模式名的細線接頭。
 - `[3] SETTINGS` 是一列一個值；在它上面 `Space` → `Fail`，`Timeout` 的 label 變 Red。
 

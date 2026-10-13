@@ -111,6 +111,10 @@ type Panel struct {
 	// OnEsc is the app's "one level up" for Esc on this panel (Rules K4); it
 	// reports whether there was one.
 	OnEsc func() tea.Cmd
+	// HintPressableOnly leaves what cannot run now out of the bottom-border
+	// hint (Rules M6: the app's choice); otherwise it is listed in the
+	// disabled colour, as in the Space menu and ?.
+	HintPressableOnly bool
 	// OtherKeys are sections of its ? about another surface that has no key
 	// reference of its own (Rules M6: a PTY, a grid), after the panel's own.
 	OtherKeys []KeySection
@@ -153,29 +157,36 @@ func (p *Panel) scopeApplies(a Action) bool {
 }
 
 // hint is the panel's bottom-border hint: what Enter does, then the actions
-// that ask to be in it (layout/panel). None while typing in its filter.
-func (p *Panel) hint() []KeyHint {
+// that ask to be in it (layout/panel); off marks the ones that cannot run now
+// (Rules M6). None while typing in its filter.
+func (p *Panel) hint() (out []KeyHint, off []bool) {
 	if p.typing() {
-		return nil
+		return nil, nil
 	}
 	// In its PTY the panel's keys go to the program: no hint, as on a filter's
 	// typing row; the footer has the exit key (components/layout/panel).
 	if t, ok := p.Body.(*Terminal); ok && t.inside {
-		return nil
+		return nil, nil
 	}
-	var out []KeyHint
-	if a := p.enterAction(); a != nil && a.Hint != "" && !a.disabled() {
-		out = append(out, KeyHint{"Enter", a.Hint})
+	add := func(key, desc string, disabled bool) {
+		if disabled && p.HintPressableOnly {
+			return
+		}
+		out = append(out, KeyHint{key, desc})
+		off = append(off, disabled)
+	}
+	if a := p.enterAction(); a != nil && a.Hint != "" && (!a.disabled() || !p.HintPressableOnly) {
+		add("Enter", a.Hint, a.disabled())
 	} else if h, ok := p.Body.(interface{ EnterHint() string }); ok && h.EnterHint() != "" {
-		out = append(out, KeyHint{"Enter", h.EnterHint()})
+		add("Enter", h.EnterHint(), false)
 	}
 	for _, a := range p.Actions {
-		if a.Key == "Enter" || a.Hint == "" || a.hidden() || a.disabled() || !p.scopeApplies(a) {
+		if a.Key == "Enter" || a.Hint == "" || a.hidden() || !p.scopeApplies(a) {
 			continue
 		}
-		out = append(out, KeyHint{a.Key, a.Hint})
+		add(a.Key, a.Hint, a.disabled())
 	}
-	return out
+	return out, off
 }
 
 // capsules are the panel's [N] and its tabs (layout/panel, capsule chain):
@@ -214,7 +225,7 @@ func (p *Panel) draw(n, w, h int, focused bool) []string {
 	b := box{width: w, lines: lines, color: color, hintKey: Fg(Blue)}
 	b.head = drawChain(p.capsules(n), color, max(w-2-modeRoom(mode), 1))
 	if p.Loading {
-		b.after = Fg(Text).Render(loadingFrame())
+		b.after = Fg(Text).Render(loadingFrame()) // TODO(tdp G58): which colour
 	}
 	b.mode = mode
 	inner, ih := w-2, h-2
@@ -234,7 +245,7 @@ func (p *Panel) draw(n, w, h int, focused bool) []string {
 		}
 	}
 	b.body = body
-	b.hint = p.hint()
+	b.hint, b.hintOff = p.hint()
 	if p.Body != nil {
 		b.scroll = p.Body.Scroll()
 	}

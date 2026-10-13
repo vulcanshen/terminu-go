@@ -32,6 +32,7 @@ func (c *confirmView) askKey(a *App, k AskKey) tea.Cmd {
 	return tea.Batch(a.closeTop(), run(k.Do))
 }
 
+// TODO(tdp G54): its own hotkeys are only in its ?, not in the hint.
 func (c *confirmView) hint() []KeyHint {
 	return []KeyHint{{"Enter", c.ask.Verb}, {"Esc", "cancel"}}
 }

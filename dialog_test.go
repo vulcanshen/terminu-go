@@ -335,3 +335,18 @@ func TestFormSaveFails(t *testing.T) {
 		t.Error("closing it goes back to the form, the focus on the button")
 	}
 }
+
+func TestFormSkipDisabledOption(t *testing.T) {
+	ta := newTestApp(t)
+	order := &FormField{Label: "Order", Options: []string{"asc", "random", "desc"}, OptionDisabled: func(i int) bool { return i == 1 }}
+	ta.Form(&Form{Title: "Sort", Fields: []*FormField{order}, Button: "Save", Submit: func() (tea.Cmd, error) { return nil, nil }})
+	ta.settle()
+	fv := ta.topView().(*formView)
+	ta.press("j")
+	if fv.focus.option != 2 {
+		t.Errorf("j from asc stopped on option %d, not desc", fv.focus.option)
+	}
+	if row := ta.rowWith("random"); !strings.Contains(row, "38;2;88;91;112") {
+		t.Errorf("a disabled option is drawn in Surface2: %q", row)
+	}
+}

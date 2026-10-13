@@ -492,3 +492,22 @@ func TestK1DigitGlobalNotInPanelKeyRef(t *testing.T) {
 		t.Errorf("1 in the global operation popup: ran %v", ta.ran)
 	}
 }
+
+func TestM6HintListsDisabled(t *testing.T) {
+	ta := newTestApp(t)
+	off := false
+	ta.pods.Actions[1].Disabled = func() bool { return off }
+	hint := func() string { return ta.rowWith("Enter:logs") }
+	off = true
+	if row := hint(); !strings.Contains(StripStyles(row), "m:mark") || !strings.Contains(row, "38;2;88;91;112") {
+		t.Errorf("a disabled action stays in the hint, in Surface2: %q", row)
+	}
+	ta.pods.HintPressableOnly = true
+	if strings.Contains(StripStyles(hint()), "m:mark") {
+		t.Error("HintPressableOnly lists a disabled action")
+	}
+	off = false
+	if !strings.Contains(StripStyles(hint()), "m:mark") {
+		t.Error("HintPressableOnly left out an action that can run")
+	}
+}

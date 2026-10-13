@@ -41,6 +41,7 @@ func (e *lineEditor) insert(s string, pasted bool) {
 	gr := uniseg.NewGraphemes(s)
 	for gr.Next() {
 		c := gr.Str()
+		// TODO(tdp G56): a lone \r is a control character, dropped.
 		if len(c) == 1 && (c[0] < 0x20 || c[0] == 0x7f) {
 			if pasted && (c == "\n" || c == "\t") {
 				add = append(add, c)
@@ -51,6 +52,12 @@ func (e *lineEditor) insert(s string, pasted bool) {
 			continue
 		}
 		add = append(add, c)
+	}
+	// A combining mark that comes on its own key joins the character before
+	// it: the two look like one.
+	if len(add) > 0 && e.pos > 0 && uniseg.GraphemeClusterCount(e.g[e.pos-1]+add[0]) == 1 {
+		e.g[e.pos-1] += add[0]
+		add = add[1:]
 	}
 	e.g = append(e.g[:e.pos], append(add, e.g[e.pos:]...)...)
 	e.pos += len(add)
@@ -95,15 +102,41 @@ func (e *lineEditor) key(name string, msg tea.KeyMsg) bool {
 }
 
 // cellText is how a cluster is drawn: a pasted line break or tab as a red \n
-// or \t, two cells that are never cut apart.
+// or \t, two cells that are never cut apart; grey on a grey row.
 func cellText(c string, plain Style) string {
+	marker := Red
+	if plain.Fg == Overlay0 {
+		marker = Overlay0
+	}
 	switch c {
 	case "\n":
-		return Fg(Red).Render(`\n`)
+		return Fg(marker).Render(`\n`)
 	case "\t":
-		return Fg(Red).Render(`\t`)
+		return Fg(marker).Render(`\t`)
 	}
 	return plain.Render(c)
+}
+
+// greyText is s as the user did not type it (the old value offered): through
+// the same filter as a paste, all of it grey (components/input/README).
+func greyText(s string) string {
+	var b, run strings.Builder
+	flush := func() {
+		if run.Len() > 0 {
+			b.WriteString(Fg(Overlay0).Render(run.String()))
+			run.Reset()
+		}
+	}
+	for _, c := range newEditor(s).g {
+		if c == "\n" || c == "\t" {
+			flush()
+			b.WriteString(cellText(c, Fg(Overlay0)))
+			continue
+		}
+		run.WriteString(c)
+	}
+	flush()
+	return b.String()
 }
 
 func cellWidth(c string) int {

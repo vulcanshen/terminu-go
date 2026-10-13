@@ -78,6 +78,10 @@ type App struct {
 	// Splash is the family's easter egg, opened with V on a panel (Rules S).
 	// Every app has one: Run refuses an app without it.
 	Splash Splash
+	// CoreKeys are core keys of the app's own (Rules K1): each means the same
+	// on every panel and popup, but on a typing row, in a PTY and in a mode;
+	// no hotkey may take one.
+	CoreKeys []CoreKey
 
 	screens  []*Screen
 	cur      int
@@ -153,6 +157,9 @@ func (a *App) Size() (w, h int) { return a.w, a.h }
 // runs the app in the alternate screen.
 func (a *App) Run() error {
 	if err := a.checkSplash(); err != nil {
+		return err
+	}
+	if err := a.checkKeys(); err != nil {
 		return err
 	}
 	Probe(a.Name)
@@ -591,6 +598,9 @@ func (a *App) panelKeyRef(p *Panel) *noteView {
 	} else if p.OnEsc != nil {
 		core = append(core, KeyRow{Key: "Esc", Desc: "one level up"})
 	}
+	for _, ck := range a.CoreKeys {
+		core = append(core, KeyRow{Key: ck.Key, Desc: ck.Desc})
+	}
 	core = append(core, KeyRow{Key: "q|Ctrl-C", Desc: "quit"})
 	var app []KeyRow
 	for _, act := range a.globalActions() {
@@ -660,6 +670,10 @@ func (a *App) handleKey(msg tea.KeyMsg) tea.Cmd {
 	if key == "Ctrl-C" {
 		return a.startQuit()
 	}
+	if ck := a.coreKey(key); ck != nil && !a.typingOrMode() {
+		a.pending = ""
+		return run(ck.Do)
+	}
 	if l := a.top(); l != nil {
 		return a.popupKey(l, key, msg)
 	}
@@ -693,11 +707,15 @@ func (a *App) popupKey(l *layer, key string, msg tea.KeyMsg) tea.Cmd {
 }
 
 // prefix joins g with the key after it ("gg", "go"); ok is false while the g
-// waits.
+// waits. A core key after a lone g is itself: a lone g does nothing (Rules
+// K12) and a core key means the same everywhere (K1).
 func (a *App) prefix(key string) (string, bool) {
 	if a.pending == "g" {
 		a.pending = ""
-		return "g" + key, true
+		if a.isCoreKey(key) {
+			return key, true
+		}
+		return "g" + key, true // TODO(tdp G59): an unknown pair does nothing
 	}
 	if key == "g" {
 		a.pending = "g"

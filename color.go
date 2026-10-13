@@ -123,6 +123,7 @@ const dimKeep = 0.45
 func DimRGB(c RGB) RGB {
 	var out RGB
 	for i := range c {
+		// TODO(tdp G53): .5 rounds up.
 		v := float64(c[i])*dimKeep + float64(Base.RGB[i])*(1-dimKeep) + 0.5
 		out[i] = min(c[i], uint8(v))
 	}

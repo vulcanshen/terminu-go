@@ -139,11 +139,21 @@ func renderKey(key string, keyStyle Style, words Color) string {
 // colon and words in Overlay0, dropping whole pairs from the end until they fit
 // in w cells (components/layout/popup, hint).
 func renderHints(pairs []KeyHint, w int, keyStyle Style, words Color) string {
+	return renderHintsOff(pairs, nil, w, keyStyle, words)
+}
+
+// renderHintsOff is renderHints with the pairs that cannot be pressed now
+// (off) all in the disabled colour (Rules M6).
+func renderHintsOff(pairs []KeyHint, off []bool, w int, keyStyle Style, words Color) string {
 	for n := len(pairs); n > 0; n-- {
 		parts := make([]string, n)
 		width := n - 1
 		for i, p := range pairs[:n] {
-			parts[i] = renderKey(p.Key, keyStyle, words) + Fg(words).Render(":"+p.Desc)
+			if i < len(off) && off[i] {
+				parts[i] = renderKey(p.Key, Fg(Surface2), Surface2) + Fg(Surface2).Render(":"+p.Desc)
+			} else {
+				parts[i] = renderKey(p.Key, keyStyle, words) + Fg(words).Render(":"+p.Desc)
+			}
 			width += Width(p.Key) + 1 + Width(p.Desc)
 		}
 		if width <= w {

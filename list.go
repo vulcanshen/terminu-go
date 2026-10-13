@@ -490,11 +490,11 @@ func (l *List) Key(key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 	n := len(l.view)
 	half := max(l.height/2, 1)
 	switch key {
-	case "j", "↓", "l":
+	case "j", "↓", "l", "→":
 		if n > 0 {
 			l.cursor = (l.cursor + 1) % n
 		}
-	case "k", "↑", "h":
+	case "k", "↑", "h", "←":
 		if n > 0 {
 			l.cursor = (l.cursor - 1 + n) % n
 		}
@@ -506,7 +506,7 @@ func (l *List) Key(key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 		l.cursor = 0
 	case "G":
 		l.cursor = max(n-1, 0)
-	case "Home":
+	case "Home": // TODO(tdp G55): Home and End as gg and G
 		l.cursor = 0
 	case "End":
 		l.cursor = max(n-1, 0)

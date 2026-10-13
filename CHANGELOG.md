@@ -30,4 +30,11 @@ Each release names the version of terminu design (tdp) it implements.
   selection
 - `Action.Detail` for a menu row that opens its full text: the menu stays and says `Enter:detail`
 - `App.Splash`: the mechanism of tdp chapter S; `Run` refuses an app without one
+- `App.CoreKeys`: core keys of the app's own, the same on every panel and popup; `Run` refuses a hotkey on one, and a
+  global or screen key on a core key or a movement letter
+- `Panel.OtherKeys`: a section of a panel's key reference about another surface (a PTY, a grid)
+- A panel's hint lists what cannot run now in the disabled colour; `Panel.HintPressableOnly` leaves it out
+- `FormField.OptionDisabled`: an option of a form field that cannot be chosen now; a form refuses a field with more
+  than five options
+- A test for every requirement in `docs/coverage.md` that a unit test can check
 - The showcase's Panels, Inputs, Dialogs and Terminal screens

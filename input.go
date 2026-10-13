@@ -206,7 +206,11 @@ func (li *lineInput) measure(sw, sh int) (int, int) {
 		}
 	}
 	if content > 0 {
-		need := max(content+1, Width(li.prompt)) + 4
+		cursor := 1 // the cursor after the last character
+		if li.unlock {
+			cursor = 0
+		}
+		need := max(content+cursor, Width(li.prompt)) + 4
 		need = max(need, Width(titleCapsule(li.glyph, Upper(li.title), Base, 1<<20))+4)
 		// The whole hint, with the suggestion's keys: only a typing row here,
 		// so the hint lists every key (Rules M3) and the box holds all of it
@@ -235,7 +239,7 @@ func (li *lineInput) draw(w, h int, layer Color) []string {
 	default:
 		after := ""
 		if li.showingOld() {
-			after = Fg(Overlay0).Render(li.old)
+			after = greyText(li.old)
 		}
 		value = li.ed.view(cw, valueStyle, cursor, true, nil, after)
 	}
@@ -267,9 +271,9 @@ func (li *lineInput) maskView(w int, style, cursor Style) string {
 		}
 		return Pad(cursor.Render(" ")+Fg(Overlay0).Render(grey), w)
 	}
-	if li.unlock {
+	if li.unlock { // TODO(tdp G57): no cursor
 		dots := strings.TrimSpace(strings.Repeat(dot+" ", len(li.ed.g)))
-		return Center(style.Render(dots), w)
+		return Center(style.Render(TruncateLeft(dots, w)), w)
 	}
 	return li.ed.view(w, style, cursor, true, func(string) string { return dot }, "")
 }
@@ -300,7 +304,13 @@ func (li *lineInput) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 	if li.kind == kindPassword && (key == "←" || key == "→" || key == "Home" || key == "End" || key == "Delete") {
 		return true, nil // a password only grows at its end
 	}
-	if li.allow != nil && (msg.Type == tea.KeyRunes || msg.Paste) {
+	if li.allow != nil && (msg.Type == tea.KeyRunes || msg.Paste || key == "Space") {
+		if msg.Alt && !msg.Paste {
+			return true, nil // Alt- combinations type nothing
+		}
+		if key == "Space" {
+			msg.Runes = []rune{' '}
+		}
 		var kept []rune
 		for _, r := range msg.Runes {
 			if li.allow(r) {

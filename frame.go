@@ -189,6 +189,7 @@ type box struct {
 	after     string // after head or title, one space either side (the loading icon)
 	mode      string // the mode name, between junctions at the right of the top border
 	hint      []KeyHint
+	hintOff   []bool // the pairs that cannot be pressed now, in the disabled colour
 	hintKey   Style  // the colour of the hint's keys
 	hintWords Color  // the colour of its colons and words; Overlay0 when unset
 	scroll    string // the scroll position at the right of the bottom border
@@ -251,11 +252,12 @@ func (b box) draw() []string {
 		tail = ""
 	}
 	// A segment, the space either side, at least one segment after it, the
-	// scroll position and its segment.
+	// scroll position and its segment. TODO(tdp G52): a popup is not made wide
+	// enough for both, so the hint's last pairs go first.
 	hintRoom := inner - 1 - 2 - 1 - Width(scroll) - Width(tail)
 	hint := ""
 	if len(b.hint) > 0 && hintRoom > 0 {
-		if h := renderHints(b.hint, hintRoom, b.hintKey, b.words()); h != "" {
+		if h := renderHintsOff(b.hint, b.hintOff, hintRoom, b.hintKey, b.words()); h != "" {
 			hint = " " + h + " "
 		}
 	}

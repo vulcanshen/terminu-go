@@ -71,6 +71,11 @@ func newShowcase() *showcase {
 	a.QuitDesc = "leave the showcase"
 	a.Status = s.status
 	a.Splash = splash
+	// A core key of the showcase's own (Rules K1): the same on every panel and
+	// popup.
+	a.CoreKeys = []terminu.CoreKey{{Key: "!", Desc: "the app log", Do: func() tea.Cmd {
+		return a.Viewer(&terminu.Viewer{Title: "App log", Glyph: glyphYaml, Lines: s.appLog()})
+	}}}
 	a.Progress = func() (float64, bool) { return s.task, s.taskOn }
 	s.app = a
 	s.panels = newPanelsScreen(s)
@@ -124,6 +129,16 @@ func (s *showcase) status(w int) string {
 		text += grey.Render("  ·  ") + terminu.Fg(terminu.Green).Render(fmt.Sprintf("copying %3d%%", int(s.task*100)))
 	}
 	return terminu.Truncate(text, w)
+}
+
+// appLog is what the showcase has done, for its own core key.
+func (s *showcase) appLog() []string {
+	return []string{
+		"started " + s.started.Format("15:04:05"),
+		fmt.Sprintf("icon width %d, powerline width %d", terminu.IconWidth(), terminu.PowerlineWidth()),
+		fmt.Sprintf("%d log lines, %d errors, %d warnings", s.panels.logN, s.panels.errors, s.panels.warnings),
+		"pretend files in /tmp/terminu-showcase",
+	}
 }
 
 func (s *showcase) startTask() tea.Cmd {

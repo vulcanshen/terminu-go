@@ -3,7 +3,7 @@
 tdp v0.5.3 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
 （[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
 
-- 「展示場」欄是位置，「測試」欄是測試名稱；還沒寫出來的是預定的。寫好一條就把它變成真的；位置或名稱改了就改這裡。
+- 「展示場」欄是位置，「測試」欄是測試名稱，除了等盲點定案的 `TestS5SplashMatchesIcon`（G48）都寫好了。位置或名稱改了就改這裡。
 - 出處寫法：`K4` 是 `principle/rules-zh_TW.md` 的規則；`P3` 是 `principle/README-zh_TW.md`；`popup §外框` 是
   `components/layout/popup-zh_TW.md` 的那一節，其他元件照檔名（`form`、`finder`…）；`components §大寫` 是 `components/README-zh_TW.md`。
 - `G<n>` 是規範盲點紀錄裡還沒定案的編號（`~/Documents/sideproj/terminu/.local/family-fix/terminu-go/README.md`），定案前照紀錄的
@@ -45,14 +45,14 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | P6 | 亮的就是 focus：最上層 popup、focus 的 panel、finder 有 focus 的那塊、同鍵兩處指示會觸發的那個、沒 focus 那塊上的 cursor 淡化 | 見 F8、T2、finder §狀態、M9、color §色碼；預覽框不在其中、一直不淡化（finder §長相） | 各條的測試 |
 | 術語 Surface | footer、statusbar、tab 列不是 surface，focus 不停在上面 | 任一畫面 `Tab` 只在 panel 之間 | `TestK2TabCyclesPanels` |
 | 術語 輸入態 | 打字列上打的字就是內容；select／picker 的清單、表單本身不是輸入態 | 見 K8 | `TestK8InputState` |
-| 術語 模式 | 一部分鍵換意思、`Esc` 離開；zoom 這類版面切換不是模式 | P `[1] PODS` 的 `[D]rag`；D「Note viewer」的 `v`（visual） | `TestK11Mode*` |
+| 術語 模式 | 一部分鍵換意思、`Esc` 離開；zoom 這類版面切換不是模式 | P `[1] PODS` 的 `[D]rag`；D「Note viewer」的 `v`（visual） | `TestK11ModeCoreKeys`、`TestK11ModeLabel`、`TestK11HotkeysSilentInMode` |
 
 ## Rules — K Core key
 
 | 出處 | 規定 | 展示場 | 測試 |
 |---|---|---|---|
 | K1 | 七種 core key（`Tab` `Enter` `Esc` `Space` `?` `q` `1`–`9`）在每個 surface 意義不變；例外只有輸入態、PTY、模式、表單上的 `q` | 每個畫面、每種 popup | `TestK1CoreKeysEverySurface` |
-| K1 | letter hotkey 不能佔用 core key；app 可另定自己的 core key，定了就在所有 surface 一樣 | lib：登記時拒絕；自訂 core key 的 API | `TestK1HotkeyCannotTakeCoreKey`、`TestK1CustomCoreKeyEverywhere` |
+| K1 | letter hotkey 不能佔用 core key；app 可另定自己的 core key，定了就在所有 surface 一樣 | lib：登記時拒絕（`Run` 也檢查 global 與畫面的鍵）；`App.CoreKeys`：展示場的 `!` 在每個 panel 與 popup 都開 app log，打字列上是字元 | `TestK1HotkeyCannotTakeCoreKey`、`TestK1CustomCoreKeyEverywhere` |
 | K1 | 數字鍵：panel 上（沒有 popup 時）跳到目前畫面的第 N 個 panel；沒有那個號碼不作用；換畫面就是那個畫面的 panel | P 按 `1` `2` `3`、按 `4`（不作用）；換到 I 按 `2` | `TestK1DigitsJumpPanels`、`TestK1DigitsPerScreen` |
 | K1 | app 不能在 panel 上登記數字熱鍵；popup 裡數字自由（select 選項的數字熱鍵）；數字的 global 熱鍵只在 global operation popup 裡按 | lib：登記時拒絕；I 的 `Profile`（`[1] clock`）；global operation popup 的 `[1] About`（在 panel 上按 `1` 是跳 panel，`?` 也不列它） | `TestK1DigitHotkeyRejectedOnPanel`、`TestK1DigitsFreeInPopups`、`TestM4DigitGlobalOnlyInPopup`、`TestK1DigitGlobalNotInPanelKeyRef` |
 | K2 | `Tab`：畫面上換 panel、最後一個回到第一個；不跨畫面、不離開 popup | P 按 `Tab` 走過三個 panel | `TestK2TabCyclesPanels`、`TestK2TabStaysInPopup` |
@@ -119,7 +119,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | M5 | 依位置：label 用括號；句子裡鍵加方括號；hint、footer `鍵:說明`、項目間一格；key reference 兩欄、不加括號冒號 | 空狀態、toast、hint、footer、`?` | `TestM5WritingByPosition` |
 | M5 | hint、footer 的鍵一色（Blue）、冒號與說明一色（Overlay0）；並列的 `\|` 用說明的顏色（Overlay0），key reference 的鍵欄也是 | 每個 hint、footer、`?` | `TestM5HintColors`、`TestM5KeysJoinedWithBar` |
 | M6 | 對象不存在：那一列（區）不出現；存在但現在不能：停用色、說明不變、cursor 跳過、熱鍵不作用 | P `[1] PODS` 的 `Disable` | `TestM6DisabledRow` |
-| M6 | key reference 照同一套（停用的鍵照列、停用色）；hint 與 footer 只列現在按得了的也可以（app 決定） | `Disable` 之後按 `?` | `TestM6KeyReferenceDisabled` |
+| M6 | key reference 照同一套（停用的鍵照列、停用色）；hint 與 footer 只列現在按得了的也可以（app 決定） | `Disable` 之後按 `?`；hint：P `[1] PODS` 的 `m:mark` 變停用色，I `[2] FILES`（`HintPressableOnly`）的 `V:view` 不列 | `TestM6KeyReferenceDisabled`、`TestM6HintListsDisabled` |
 | M6 | key reference 裡講別的 surface 的段落照常顯示 | T `[1] SHELL` 的 `?` 最後一段 `TERMINAL`（放在哪裡規範沒寫，G50） | `TestM6OtherSurfaceSection` |
 | M7 | focus 在 panel 上時 `Space`、`?` 一定有反應；popup 上一定有反應的是 `?` | P `[2] LOG`（沒有 item）按 `Space` | `TestM7PanelEntriesRespond` |
 | M8 | 其他 menu 要分組時第一組是 cursor 相關、之後每組加標題 | D「Menu: Open with」 | `TestM8GroupedMenuOrder` |
@@ -153,8 +153,8 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | F4 | 從 A 開 B，A 留著；取消 B 回 A；多層一樣 | D 的疊法情境 | `TestF4KeepSource` |
 | F5 | 錯誤立刻出現（toast 或 popup）、`Esc` 可關、不阻塞 app；有沒有錯誤歷史由 app 決定 | P `[1] PODS` 的 `Fail`；D「Error popup」 | `TestF5ErrorNonBlocking` |
 | F6 | 要不要 confirm 由 app 決定，決定了每次都問；經 picker 明確選的可算已確認 | lib：動作登記「先問」 | `TestF6ConfirmEveryTime` |
-| F6 | `Enter` 接受、`Esc` 取消；confirm 自己的熱鍵要列在 `?`；寫出接受會做的事；不能被誤觸完成 | D「Confirm: y/n」 | `TestConfirmKeys`、`TestConfirmHotkeysInHelp` |
-| F7 | 寬度兩種：內容確定 = 最寬列 + 4、至少放得下標題與 hint、最多 `min(寬 − 2, 120)`；不確定 = `min(寬 − 2, 120)`；水平置中；開著不變；有整列 cursor 的，右邊的留白跟箭頭一樣寬（powerline 符號寬）；寬度至少 hint + 6（PIN 43 格） | 每種 popup；寬 200 的終端機看 120 上限 | `TestF7WidthKnown`、`TestF7WidthUnknown`、`TestF7WidthCap120` |
+| F6 | `Enter` 接受、`Esc` 取消；confirm 自己的熱鍵要列在 `?`；寫出接受會做的事；不能被誤觸完成 | D「Confirm: y/n」 | `TestConfirmKeys`（`?` 裡的 `y`、`n`；hint 不列它們，G54） |
+| F7 | 寬度兩種：內容確定 = 最寬列 + 4、至少放得下標題與 hint、最多 `min(寬 − 2, 120)`；不確定 = `min(寬 − 2, 120)`；水平置中；開著不變；有整列 cursor 的，右邊的留白跟箭頭一樣寬（powerline 符號寬）；寬度至少 hint + 6（PIN 43 格） | 每種 popup；寬 200 的終端機看 120 上限 | `TestF7WidthKnown`、`TestF7WidthKnownUnlockContent`、`TestF7WidthUnknown`、`TestF7WidthCap120` |
 | F7 | 高度打開時定、最高畫面高 − 2，超過捲；打開時不知道會多高的（有預覽的 finder、textarea）一律取最高；loading 期間與使用者操作造成的改變可以變 | D「Menu: long」；I `[/] Find` 打字篩選 | `TestF7HeightFixed`、`TestF7HeightMax` |
 | F7 | loading 時標題後一定有輪轉 icon；只看整個 popup 的內容 | D「Loading popup」 | `TestF7LoadingIcon`、`TestF7LoadingGrows` |
 | F7 | 垂直置中；toast 的下框在畫面倒數第三列 | 每種 popup；D「Toast」 | `TestF7Position`、`TestToastPosition` |
@@ -297,7 +297,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | form §移動 | 項目：欄位、每個選項、按鈕、有錯誤的錯誤列（在按鈕前） | D「Form: New host」 | `TestFormItems` |
 | form §移動 | `j\|l\|↓\|→` 下一個、`h\|k\|↑\|←` 上一個；跨欄；`gg` 第一個、`G` 按鈕；`u\|d` 以項目為單位半頁、到頭尾停住；`Tab\|Shift-Tab` 一次一欄；頭尾繞回 | 同上 | `TestFormMoveItems`、`TestFormTabStops`、`TestFormWrap`、`TestFormHalfPage` |
 | form §移動 | 跳進 radio 停在選中的（都沒選停第一個）、checkbox 組停第一個，落點跟方向無關 | 同上的 `Auth`、`Agent` | `TestFormTabStops` |
-| form §移動 | 停用的跳過；打開時 focus 在第一個能停的（從某一欄打開就停那欄）；不自動打開第一欄 | D「Form: open at Port」 | `TestFormSkipDisabled`、`TestFormOpenFocus` |
+| form §移動 | 停用的跳過；打開時 focus 在第一個能停的（從某一欄打開就停那欄）；不自動打開第一欄 | D「Form: open at Port」；停用的選項：D「Form: New host」的 `Order` 的 `random` | `TestFormSkipDisabled`、`TestFormSkipDisabledOption`、`TestFormOpenFocus` |
 | form §`Enter` | 欄位：開 input popup 疊在表單上，確定寫回 focus 留原欄，`Esc` 值不變；checkbox popup：`Space` 勾、`Enter` 寫回、`Esc` 取消 | 同上的 `Name`、`Namespaces` | `TestFormEnterField` |
 | form §`Enter` | radio 選項：選它；checkbox 選項：原地翻；都不開 popup、focus 不動、馬上生效；按鈕：送出 | 同上 | `TestFormEnterOption`、`TestFormEnterButton` |
 | form §送出 | 只有按鈕的 `Enter`；不用字母熱鍵；`Esc` 不把 focus 移到動作列 | 同上 | `TestFormSubmitOnlyButton` |
@@ -333,7 +333,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | 出處 | 規定 | 展示場 | 測試 |
 |---|---|---|---|
 | note §長相 | 留白一律有；標題 glyph（app 選）+ 顯示的東西（標題膠囊，`YAML — pod/nginx`）；捲動位置 `N-M of T`（viewer 的選取模式裡 `N of M`）；寬度：確定的照內容、viewer 用上限 | D「Note viewer」 | `TestNoteLayout` |
-| note §按鍵 | 捲動 `j\|k` `u\|d` `gg\|G`；只用 `Esc` 關（`Enter`、`Space` 不關）；error popup（不管怎麼打開的）與表單的打字說明 `Enter` 也能關；hint 熱鍵在前、`Esc:close` 最後 | 同上；D「Error popup」 | `TestNoteKeys`、`TestNoteHint` |
+| note §按鍵 | 捲動 `j\|k` `u\|d` `gg\|G`；只用 `Esc` 關（`Enter`、`Space` 不關）；error popup（不管怎麼打開的）與表單的打字說明 `Enter` 也能關；hint 熱鍵在前、`Esc:close` 最後 | 同上；D「Error popup」 | `TestNoteKeys` |
 | note §選取模式 | 只有 viewer 有；平常沒有游標（`j\|k` 捲、有 tab 時 `h\|l` 切 tab）；第一次 `v` 進模式（框與模式名 Yellow），游標在畫面第一行行首、還沒選，hint `v:select Esc:cancel`；`h\|j\|k\|l` `w\|b\|e` `0\|$` `u\|d` `gg\|G` 移游標、畫面跟著捲；第二次 `v` 從游標開始選（以字為單位、含游標那個字），hint `y:copy Esc:cancel`，再按 `v` 不作用；`y` 複製、整個離開；`Esc` 在哪一步都整個離開、不複製；游標層色底 Base 字，範圍 Yellow 底 Base 字、空行畫一格；捲動位置 `N of M`（游標的行） | D「Note viewer」按 `v` | `TestNoteHotkeysAndMode`、`TestViewerSelectScrollPosition` |
 | note §key reference | 標題 U+F059 + `<surface> keys`（`[2] HOSTS KEYS`、`SPACE MENU KEYS`）；每列一個鍵：縮兩格、鍵補到最寬、空兩格、說明（截斷不折行）；從 menu 來的列 `label — 說明`、label 去掉標記、大小寫照原樣 | 每個 surface 按 `?` | `TestKeyReferenceLayout` |
 | note §key reference | panel 上的區塊依序：`item operation`、`panel operation`、`move`（真的能用的移動鍵）、`core keys`（`Space`、`?`、`Tab`、`1–N`、`q\|Ctrl-C`；`Esc` 只在有作用時）、`app-wide`；區塊標題同 menu | P `[1] PODS`（有 tab：列 `h\|l`）、`[2] LOG`、有篩選時（列 `Esc`） | `TestKeyReferenceSections`、`TestKeyReferenceMoveSection`、`TestKeyReferenceCoreKeys` |

@@ -1,6 +1,7 @@
 package terminu
 
 import (
+	"fmt"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -29,7 +30,10 @@ type FormField struct {
 	Selected int
 	Multi    bool
 	Checked  []bool
-	Disabled func() bool
+	// OptionDisabled reports an option that cannot be chosen now: drawn in
+	// the disabled colour and skipped (components/dialog/form).
+	OptionDisabled func(i int) bool
+	Disabled       func() bool
 	// Check is the whole form's rule for this field (required, depends on
 	// another field, a name taken), run when the form is submitted: what is
 	// wrong, or "".
@@ -37,6 +41,8 @@ type FormField struct {
 }
 
 func (f *FormField) disabled() bool { return f.Disabled != nil && f.Disabled() }
+
+func (f *FormField) optionDisabled(i int) bool { return f.OptionDisabled != nil && f.OptionDisabled(i) }
 
 // Form is several values filled in and submitted together
 // (components/dialog/form): Enter on a field opens its input popup, options
@@ -83,7 +89,14 @@ type formView struct {
 }
 
 // Form opens a form.
+// It panics on a field with more than five options: those go in a select or
+// a checkbox popup (components/dialog/form), a mistake in the program.
 func (a *App) Form(f *Form) tea.Cmd {
+	for _, fl := range f.Fields {
+		if len(fl.Options) > 5 {
+			panic(fmt.Sprintf("terminu: form field %q has %d options; more than five go in a select or a checkbox popup", fl.Label, len(fl.Options)))
+		}
+	}
 	fv := &formView{f: f}
 	fv.focus = fv.items()[0]
 	if f.Focus != nil && !f.Focus.disabled() {
@@ -103,7 +116,9 @@ func (fv *formView) items() []formItem {
 		}
 		if len(f.Options) > 0 {
 			for i := range f.Options {
-				out = append(out, formItem{itemField, f, i})
+				if !f.optionDisabled(i) {
+					out = append(out, formItem{itemField, f, i})
+				}
 			}
 			continue
 		}
@@ -244,7 +259,9 @@ func (fv *formView) draw(w, h int, layer Color) []string {
 			fit := Fit
 			if f.Path {
 				fit = FitLeft
-				value = Fg(Text).Render(homeShort(ansi.Strip(value)))
+				if f.Value != nil && f.Value() != "" {
+					value = Fg(Text).Render(homeShort(f.Value()))
+				}
 			}
 			if fv.focus == (formItem{itemField, f, -1}) {
 				rows = append(rows, " "+lead(true)+fv.block(fit(ansi.Strip(value), room), room+1, layer))
@@ -319,6 +336,18 @@ func (fv *formView) value(f *FormField) string {
 }
 
 func (fv *formView) option(f *FormField, i int) string {
+	if f.optionDisabled(i) {
+		glyph := glyphRadioOff
+		switch {
+		case f.Multi && i < len(f.Checked) && f.Checked[i]:
+			glyph = glyphMarked
+		case f.Multi:
+			glyph = glyphUnchecked
+		case i == f.Selected:
+			glyph = glyphRadioOn
+		}
+		return Fg(Surface2).Render(glyph + " " + f.Options[i])
+	}
 	if f.Multi {
 		if i < len(f.Checked) && f.Checked[i] {
 			return Fg(Green).Render(glyphMarked + " " + f.Options[i])

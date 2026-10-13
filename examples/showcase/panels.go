@@ -195,8 +195,10 @@ func (ps *panelsScreen) podActions() []terminu.Action {
 				ps.logText.Append(terminu.Fg(terminu.Lavender).Render("── following " + ps.current() + " ──"))
 				return a.Toast(terminu.Info, "Following the log of "+ps.current())
 			}},
+		// Disabled, it stays in the hint in the disabled colour (Rules M6).
 		{Key: "m", Label: "mark", Desc: "this pod, for a batch", Scope: terminu.ItemScope, Hint: "mark",
-			Do: func() tea.Cmd { ps.podList.ToggleMark(); return nil }},
+			Disabled: func() bool { return ps.disabled },
+			Do:       func() tea.Cmd { ps.podList.ToggleMark(); return nil }},
 		{Key: "x", Label: "Delete", Desc: "this pod", Scope: terminu.ItemScope,
 			Disabled: func() bool { return ps.disabled },
 			Ask:      &terminu.Ask{Title: "Delete", Question: "Delete this pod?", Verb: "delete", Details: []string{"The pod is removed; its deployment starts a new one.", "This cannot be undone."}, Warn: []int{1}},
