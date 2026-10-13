@@ -51,9 +51,10 @@ cd ~/Documents/sideproj/terminu-go && go build -o /tmp/showcase ./examples/showc
 
 **I — Inputs**：每一種 input。
 - `[1] INPUTS` 每一列 `Enter` 打開它的 popup：文字、密碼、PIN、數字、select、checkbox、textarea、日期、顏色、slider、檔案。
-  `Host` 是預覽由 app 給的 finder（沒有下面的四列資訊）；`Download to` 的值在家目錄底下，寫成 `~`。
+  `Host` 是預覽由 app 給的 finder（沒有下面的四列資訊）。`Path` 與 `Download to` 開「選目錄」的 file-picker：清單只有目錄，
+  最上面一列 `. (this directory)` 按 `Enter` 選目前的目錄。**`Download to` 打開的是你真的 `~/Downloads`**，清單與預覽的樹會列出真的檔名。
 - `Identity file` 開 file-picker，起點是假的 `.ssh`。按 `/` 到打字列，打路徑與 wildcard 試試看，例：`/tmp/terminu-showcase/.ssh/**/*.pem`、
-  `/tmp/terminu-showcase/project/`（假的專案：`empty` 是空目錄、`locked` 讀不到）。
+  `/tmp/terminu-showcase/project/`（假的專案：`empty` 是空目錄、`locked` 讀不到、`broken.pdf` 是斷掉的 link）。
   - **`~/` 開頭的路徑是你真的家目錄**，預覽會畫出真的檔案（包括私鑰）。要試 `~/`、又要截圖時，先在 Global operation 打開
     `Hide secrets in preview`。
 - `[2] FILES`：`/` 開有預覽的 finder，每一種檔各一個（文字、圖、超過 1 MB 的圖、PDF、沒有文字的 PDF、壓縮檔、二進位、symlink、讀不到的檔）；
@@ -70,7 +71,7 @@ cd ~/Documents/sideproj/terminu-go && go build -o /tmp/showcase ./examples/showc
 - `[2] SESSIONS` 每一列 `Enter` 開一個 terminal popup：`shell`、`keys`（`cat -v`，看每個鍵送了什麼）、`top`、`vi`。
 - popup 裡 `Alt-t` 藏起來；`Alt-b` 讓展示場卡 2 秒（C2 用），卡完會跳一個 toast。
 
-**splash**：在 panel 上按 `V`（I 的 `[2] FILES` 除外），任意鍵關掉。畫的圖是暫代的（紀錄 G48）。
+**splash**：在 panel 上按 `V`（I 的 `[2] FILES` 除外），任意鍵關掉。畫的是 tdp 的 mark（藍色 U 框裡一個金色的 T），底 → T → U 框一段一段揭露，最後是下面的字。
 
 ## C2：`Esc` 與 `Alt-Esc`
 

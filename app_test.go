@@ -94,6 +94,7 @@ func keyMsg(name string) tea.KeyMsg {
 		"Enter": tea.KeyEnter, "Esc": tea.KeyEsc, "Tab": tea.KeyTab, "Shift-Tab": tea.KeyShiftTab,
 		"Space": tea.KeySpace, "Backspace": tea.KeyBackspace, "Ctrl-C": tea.KeyCtrlC,
 		"↑": tea.KeyUp, "↓": tea.KeyDown, "←": tea.KeyLeft, "→": tea.KeyRight,
+		"Home": tea.KeyHome, "End": tea.KeyEnd, "PgUp": tea.KeyPgUp, "PgDn": tea.KeyPgDown, "Delete": tea.KeyDelete,
 	}
 	if t, ok := special[name]; ok {
 		if t == tea.KeySpace {

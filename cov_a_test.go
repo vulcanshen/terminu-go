@@ -929,9 +929,6 @@ func TestK7AliasEverywhere(t *testing.T) {
 // it, and Home and End do nothing (Rules K12).
 func TestK12HomeEndOnlyTyping(t *testing.T) {
 	for _, s := range covAMoveSurfaces() {
-		if s.name == "form" {
-			continue // TODO: form.go still takes Home and End as gg and G
-		}
 		for _, keys := range [][]string{{"End"}, {"G", "Home"}, {"j", "Home"}} {
 			t.Run(s.name+"/"+strings.Join(keys, ""), func(t *testing.T) {
 				ta := newTestApp(t)

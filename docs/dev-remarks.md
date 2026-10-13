@@ -1,7 +1,7 @@
 # terminu-go 開發者備忘
 
 terminu-go 是 terminu design principle（tdp）的 Go 實作：給 app 呼叫的 lib，加上展示場 `examples/showcase`。遵循 terminu design
-principle，目前對應 tdp v0.5.3。這個 repo 的任務與規範的讀法見 [`CLAUDE.md`](../CLAUDE.md)。
+principle，目前對應 tdp v0.5.4。這個 repo 的任務與規範的讀法見 [`CLAUDE.md`](../CLAUDE.md)。
 
 ## 運作方式
 
@@ -61,8 +61,10 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
 
 - **自己開 bubbletea program 的 app 沒有那一層輸出**：只拿零件用、畫面自己管的 app（例：locku 的鎖定畫面），renderer 補的「清到
   行尾」不會被拿掉。要不要把 `screenOutput` 開放出去，等第一個這樣用的 app 再決定。
-- **splash**（Rules S）：lib 只做機制（`App.Splash`：`V` 打開、任意鍵關掉、不揭露、只在 panel 上，動畫的 tick）；畫什麼、怎麼揭露是 app 的。
-  `Run` 拒絕沒有 splash、或每個 panel 都把 `V` 讓出去的 app。展示場畫的 mark 是暫代的（盲點 G48），整個畫面換成 splash 是暫時的做法（G49）。
+- **splash**（Rules S）：機制是 `App.Splash`（`V` 打開、任意鍵關掉、不揭露、只在 panel 上、10ms 的 tick）；`NewSplash` 照 S5 畫：
+  讀 app 的 `docs/icon.svg`，一格一個 `nf-fa-square`，下面六列字，揭露動畫全家族一樣。金色的字怎麼分成一個一個字：svg 裡每一個
+  XML 註解開始下一個字（`<!-- K -->`），所以 svg 要照 app 名字的順序列字。`Run` 拒絕沒有 splash、或每個 panel 都把 `V` 讓出去的 app。
+  展示場的 `examples/showcase/icon.svg` 是 tdp v0.5.4 `principle/icon.svg` 的複本（E8）。
 - **檔案預覽**（`preview.go`）：照 input/file-picker 的「預覽」表。語法上色用 `alecthomas/chroma/v2`（MIT，catppuccin-mocha，
   只上前景色）；PDF 用 `dslipak/pdf`（BSD-3，rsc.io/pdf 的分支，能取純文字）；壓縮檔用標準庫（zip、tar、gzip、bzip2）。圖片的 data URI
   只讀畫得到的那一段，不把整個檔案（最多 1 MB）都編碼。預覽框不能捲，PDF 讀到預覽區滿了就停，不一定讀滿 20 頁。

@@ -414,9 +414,9 @@ func (fv *formView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 		fv.focus = items[min(fv.index(items)+half, len(items)-1)]
 	case "u", "PgUp":
 		fv.focus = items[max(fv.index(items)-half, 0)]
-	case "gg", "Home":
+	case "gg":
 		fv.focus = items[0]
-	case "G", "End":
+	case "G":
 		fv.focus = items[len(items)-1]
 	case "e":
 		switch {
