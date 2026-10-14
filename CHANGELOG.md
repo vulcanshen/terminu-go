@@ -2,7 +2,7 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.6.2
+## v0.1.2 — tdp v0.6.2
 
 - Groups in a list: `Row.Group`. Each group's title is Blue and upper case, and the cursor skips it. The group's rows are
   two cells further in and stay together when sorted. A group with no row shown has no title
