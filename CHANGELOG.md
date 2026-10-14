@@ -2,7 +2,7 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.6.0
+## v0.1.0 — tdp v0.6.0
 
 - The repository: module `github.com/vulcanshen/terminu-go`, GPL-3.0, READMEs in English and Traditional Chinese
 - Built on Bubble Tea v1 and Lip Gloss v1, the same as the terminu apps: Bubble Tea v2's renderer and Lip Gloss v2's
