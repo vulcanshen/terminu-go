@@ -2,7 +2,7 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.6.1
+## v0.1.1 — tdp v0.6.1
 
 - A popup that acts on one thing can name it: `Subject` on forms, text, password and number inputs, textareas,
   confirms, date and colour pickers, sliders, finders, selects and checkbox popups. The title reads `EDIT: filu`, the
