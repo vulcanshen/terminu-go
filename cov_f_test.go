@@ -1824,16 +1824,17 @@ func TestColorPickerLayout(t *testing.T) {
 	lines, _ := covFDraw(ta)
 	text := covFText(lines)
 	want := []string{
-		"┃ ████████  ████████                ┃",
-		"┃ ████████  ████████  ███  ███  ███ ┃",
-		"┃ old       new       R    G    B   ┃",
-		"┃ #2A2A3C   #2A2A3C   2A   2A   3C  ┃",
-		"┃                                   ┃",
-		"┃ ───────────────────────────────── ┃",
-		"┃                           Choose  ┃",
-		"┃                                   ┃",
+		"┃ ████████  ████████                   ┃",
+		"┃ ████████  ████████  ███  ███  ███    ┃",
+		"┃ old       new       R    G    B      ┃",
+		"┃ #2A2A3C   #2A2A3C   2A   2A   3C     ┃",
+		"┃                                      ┃",
+		"┃ ──────────────────────────────────── ┃",
+		"┃                              Choose  ┃",
+		"┃                                      ┃",
 	}
-	if len(lines) != 11 || ta.top().w != 37 {
+	// As wide as the widest hint, Enter:choose Tab:fields Esc:cancel.
+	if len(lines) != 11 || ta.top().w != 40 {
 		t.Fatalf("%d×%d:\n%s", ta.top().w, len(lines), strings.Join(text, "\n"))
 	}
 	for i, w := range want {
@@ -1868,7 +1869,7 @@ func TestColorPickerKeys(t *testing.T) {
 	if cv.focus != 0 || !strings.Contains(lines[4], On(layer).Render("R  ")) || !strings.Contains(lines[5], On(layer).Render("2A ")) {
 		t.Errorf("opens on R: focus %d, %q", cv.focus, lines[4])
 	}
-	if h := covFHint(ta); !strings.Contains(h, " Enter:edit Esc:cancel ") {
+	if h := covFHint(ta); !strings.Contains(h, " Enter:edit Tab:actions Esc:cancel ") {
 		t.Errorf("hint on R: %s", h)
 	}
 	for i, k := range []string{"l", "l", "l", "l", "k", "j", "h"} {
@@ -1879,7 +1880,7 @@ func TestColorPickerKeys(t *testing.T) {
 		}
 	}
 	lines, _ = covFDraw(ta)
-	if !strings.Contains(lines[8], On(layer).Render(" Choose ")) || !strings.Contains(covFHint(ta), " Enter:choose Esc:cancel ") {
+	if !strings.Contains(lines[8], On(layer).Render(" Choose ")) || !strings.Contains(covFHint(ta), " Enter:choose Tab:fields Esc:cancel ") {
 		t.Errorf("on Choose: %q", StripStyles(lines[len(lines)-1]))
 	}
 	ta.press("Esc")
@@ -1891,6 +1892,35 @@ func TestColorPickerKeys(t *testing.T) {
 	ta.press("h", "Enter")
 	if got.Set || ta.top() != nil {
 		t.Error("Choose with nothing changed wrote the colour")
+	}
+}
+
+// Tab and Shift-Tab go between the channels and Choose, back to the channel
+// left (Rules K2, components/input/color-picker).
+func TestColorPickerTab(t *testing.T) {
+	ta := newTestApp(t)
+	ta.PickColor(ColorPicker{Title: "Background", Value: Hex("#2A2A3C")})
+	ta.settle()
+	cv := ta.topView().(*colorView)
+	for i, k := range []string{"Tab", "Tab", "l", "Tab", "Shift-Tab", "Shift-Tab", "l", "l", "Tab", "Tab"} {
+		ta.press(k)
+		want := []int{3, 0, 1, 3, 1, 3, 0, 1, 3, 1}[i]
+		if cv.focus != want {
+			t.Errorf("%d %s: focus %d, want %d", i, k, cv.focus, want)
+		}
+	}
+	// h|l still go one by one and wrap through Choose; Tab from there goes
+	// back to the channel left, B.
+	ta.press("l", "l")
+	if cv.focus != colorChoose {
+		t.Fatalf("l to Choose: focus %d", cv.focus)
+	}
+	ta.press("Tab")
+	if cv.focus != 2 {
+		t.Errorf("Tab from Choose reached by l: focus %d, want B", cv.focus)
+	}
+	if ta.top() == nil || len(ta.stack) != 1 {
+		t.Error("Tab left the color picker")
 	}
 }
 

@@ -25,9 +25,12 @@ func (c ColorPicker) typed() bool { return false }
 func (a *App) PickColor(c ColorPicker) tea.Cmd { return c.open(a, nil) }
 
 type colorView struct {
-	c       ColorPicker
-	rgb     RGB
-	focus   int // 0 R, 1 G, 2 B, 3 Choose
+	c     ColorPicker
+	rgb   RGB
+	focus int // 0 R, 1 G, 2 B, 3 Choose
+	// back is the channel the focus was last on: Tab on Choose returns
+	// there (components/input/color-picker).
+	back    int
 	written func()
 }
 
@@ -52,18 +55,24 @@ const colorRowW = 8 + 2 + 8 + 2 + 3 + 2 + 3 + 2 + 3
 // The focus goes R, G, B, then the Choose button (components/input/color-picker).
 const colorChoose = 3
 
+// Tab names the area it goes to, as on a form (components/input/README).
+var (
+	colorChannelHint = []KeyHint{{"Enter", "edit"}, {"Tab", "actions"}, {"Esc", "cancel"}}
+	colorChooseHint  = []KeyHint{{"Enter", "choose"}, {"Tab", "fields"}, {"Esc", "cancel"}}
+)
+
 func (cv *colorView) hint() []KeyHint {
 	if cv.focus == colorChoose {
-		return []KeyHint{{"Enter", "choose"}, {"Esc", "cancel"}}
+		return colorChooseHint
 	}
-	return []KeyHint{{"Enter", "edit"}, {"Esc", "cancel"}}
+	return colorChannelHint
 }
 
 const colorButton = " Choose "
 
 func (cv *colorView) measure(sw, sh int) (int, int) {
 	w := max(colorRowW+4, Width(titleCapsule(cv.c.Glyph, popupTitle(cv.c.Title, cv.c.Subject), Base, 1<<20))+4,
-		hintWidth([]KeyHint{{"Enter", "choose"}, {"Esc", "cancel"}})+6)
+		max(hintWidth(colorChannelHint), hintWidth(colorChooseHint))+6)
 	// The swatches, their names and hex, a blank row, the divider, the button.
 	return min(w, max(min(sw-2, 120), 1)), min(7+4, max(sh-2, 3))
 }
@@ -111,11 +120,24 @@ func (cv *colorView) draw(w, h int, layer Color) []string {
 }
 
 func (cv *colorView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {
+	defer func() {
+		if cv.focus != colorChoose {
+			cv.back = cv.focus
+		}
+	}()
 	switch key {
 	case "h", "k", "←", "↑":
 		cv.focus = (cv.focus + 3) % 4
 	case "l", "j", "→", "↓":
 		cv.focus = (cv.focus + 1) % 4
+	case "Tab", "Shift-Tab":
+		// The channels and the action row, as a form's two areas (Rules K2):
+		// either way is the other one.
+		if cv.focus == colorChoose {
+			cv.focus = cv.back
+		} else {
+			cv.focus = colorChoose
+		}
 	case "Enter":
 		if cv.focus == colorChoose {
 			if cv.rgb == cv.c.Value.RGB || cv.c.Done == nil {
@@ -144,6 +166,7 @@ func (cv *colorView) surface() string { return cv.c.Title }
 func (cv *colorView) keyRef() []refSection {
 	return []refSection{{rows: []KeyRow{
 		{Key: "Enter", Desc: "on R, G or B choose its value; on Choose, choose the colour"},
+		{Key: "Tab|Shift-Tab", Desc: "between R, G, B and Choose, back to the channel left"},
 		{Key: "Esc", Desc: "cancel"},
 	}}, {title: "move", rows: []KeyRow{{Key: "h|l", Desc: "R, G, B, Choose"}}}}
 }
