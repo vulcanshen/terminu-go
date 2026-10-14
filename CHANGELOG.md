@@ -2,6 +2,11 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.6.3
+
+- `Panel.Details` and `Action.ToDetails`: Enter on a list may send the focus to its details panel, on the items the app
+  says. This is the one place Enter changes panels, and the library refuses it on any other key or panel
+
 ## v0.1.2 — tdp v0.6.2
 
 - Groups in a list: `Row.Group`. Each group's title is Blue and upper case, and the cursor skips it. The group's rows are

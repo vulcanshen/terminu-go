@@ -87,7 +87,7 @@ func newShowcase() *showcase {
 	a.AddScreen(s.dialogs.screen)
 	s.terminal = newTerminalScreen(s)
 	a.AddScreen(s.terminal.screen)
-	s.kinds = newKindsScreen()
+	s.kinds = newKindsScreen(a)
 	a.AddScreen(s.kinds.screen)
 	a.Global = []terminu.Action{
 		{Key: "N", Label: "Narrow layout", Desc: "draw one panel at a time, as on a narrow terminal", Scope: terminu.GlobalScope,

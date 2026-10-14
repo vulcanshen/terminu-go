@@ -111,10 +111,28 @@ func (a *App) AddScreen(s *Screen) *Screen {
 			if err := checkPanelKey(act.Key); err != nil {
 				panic(fmt.Sprintf("terminu: panel [%d] %s, action %q: %v", i+1, p.Label, act.Label, err))
 			}
+			if err := checkToDetails(s, p, act); err != nil {
+				panic(fmt.Sprintf("terminu: panel [%d] %s, action %q: %v", i+1, p.Label, act.Label, err))
+			}
 		}
 	}
 	a.screens = append(a.screens, s)
 	return s
+}
+
+// checkToDetails refuses an action that sends the focus to the details
+// anywhere but the one place Rules K3 allows: Enter, on a panel whose Details
+// is another panel of the same screen.
+func checkToDetails(s *Screen, p *Panel, act Action) error {
+	switch {
+	case act.ToDetails == nil:
+		return nil
+	case act.Key != "Enter":
+		return fmt.Errorf("only Enter may send the focus to the details (Rules K3)")
+	case p.Details == nil || p.Details == p || !slices.Contains(s.Panels, p.Details):
+		return fmt.Errorf("its panel's Details is not another panel of the screen (Rules K3)")
+	}
+	return nil
 }
 
 // checkPanelKey refuses a hotkey that a core key or a movement letter owns
@@ -442,10 +460,15 @@ func (a *App) runAction(act Action, fromMenu bool) tea.Cmd {
 		return nil
 	}
 	do := func() tea.Cmd {
-		if act.Do == nil {
-			return nil
+		into := act.ToDetails != nil && act.ToDetails()
+		var cmd tea.Cmd
+		if act.Do != nil {
+			cmd = act.Do()
 		}
-		return act.Do()
+		if into {
+			a.toDetails()
+		}
+		return cmd
 	}
 	if act.Ask != nil {
 		c := newConfirm(*act.Ask, nil)
@@ -906,6 +929,17 @@ func (a *App) modeKey(p *Panel, key string, msg tea.KeyMsg) tea.Cmd {
 		}
 	}
 	return nil
+}
+
+// toDetails sends the focus from the focused panel to its Details (Rules K3).
+func (a *App) toDetails() {
+	s := a.Screen()
+	if s == nil || s.Focused() == nil {
+		return
+	}
+	if i := slices.Index(s.Panels, s.Focused().Details); i >= 0 {
+		a.focusPanel(s, i)
+	}
 }
 
 // focusPanel moves the focus to panel i of s.

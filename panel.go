@@ -99,6 +99,10 @@ type Panel struct {
 	// Actions are the panel's item and panel operations; a "Enter" key is
 	// what Enter does here (Rules K3).
 	Actions []Action
+	// Details is the panel that shows the item under this panel's cursor
+	// (components/layout/panel, details): the "Enter" action may send the
+	// focus there (Action.ToDetails).
+	Details *Panel
 	// Stream marks streaming content, which is not dimmed when unfocused
 	// (Rules T2).
 	Stream bool

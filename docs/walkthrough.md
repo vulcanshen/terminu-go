@@ -75,6 +75,8 @@ cd ~/Documents/sideproj/terminu-go && go build -o /tmp/showcase ./examples/showc
 - `[1] KINDS` 是分組的清單（WORKLOADS、NETWORK、CONFIG、STORAGE、CLUSTER）：`j|k` 會跳過分組標題，`gg|G` 到第一個、最後一個種類；
   `/` 篩選，被篩掉的組連標題一起不見。
 - `[2]` 是 `[1]` cursor 那一種的明細：cursor 一動就換，label 寫那一種的名字；focus 留在 `[1]`，要到 `[2]` 按 `Tab` 或 `2`。
+- 在 namespaced 的種類上按 `Enter` 也會進到 `[2]`（Rules K3 唯一可以用 `Enter` 換 panel 的地方），`Short name` 可以改；
+  cluster 層級的種類（`persistentvolumes`、`storageclasses`、`nodes`、`namespaces`）按 `Enter` 不進去，只跳一個 toast。
 - 把終端機拉矮，捲到一組的第一個種類時，那一組的標題也留在畫面裡。
 
 **splash**：在 panel 上按 `V`（I 的 `[2] FILES` 除外），任意鍵關掉。畫的是 tdp 的 mark（藍色 U 框裡一個金色的 T），底 → T → U 框一段一段揭露，最後是下面的字。

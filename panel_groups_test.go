@@ -157,3 +157,51 @@ func TestValuesOnMove(t *testing.T) {
 		t.Errorf("OnMove: %q, want %q", got, want)
 	}
 }
+
+// TestK3EnterToDetails: Enter on a list may send the focus to its details
+// panel, on the items the app says (Rules K3, components/layout/panel,
+// details).
+func TestK3EnterToDetails(t *testing.T) {
+	ta := &testApp{App: New("test")}
+	kinds := groupList()
+	details := &Panel{Label: "Details", Body: &Pager{}}
+	ran := 0
+	list := &Panel{Label: "Kinds", Body: kinds, Details: details, Actions: []Action{{
+		Key: "Enter", Label: "Edit", Desc: "the kind", Scope: ItemScope, Hint: "edit",
+		ToDetails: func() bool { r, _ := kinds.Current(); return r.ID != "ingresses" },
+		Do:        func() tea.Cmd { ran++; return nil },
+	}}}
+	ta.AddScreen(&Screen{Name: "Kinds", Key: "W", Panels: []*Panel{list, details}})
+	ta.resize(80, 24)
+	ta.press("Enter")
+	if ta.Screen().Focused() != details || ran != 1 {
+		t.Errorf("Enter on pods: focus on %q, Do ran %d times", ta.Screen().Focused().Label, ran)
+	}
+	ta.press("1", "G", "Enter")
+	if ta.Screen().Focused() != list || ran != 2 {
+		t.Errorf("Enter on ingresses, which the app keeps: focus on %q, Do ran %d times", ta.Screen().Focused().Label, ran)
+	}
+}
+
+// TestK3ToDetailsOnlyEnter: only Enter, on a panel whose details are another
+// panel of its screen, may send the focus there (Rules K3).
+func TestK3ToDetailsOnlyEnter(t *testing.T) {
+	yes := func() bool { return true }
+	details := &Panel{Label: "Details", Body: &Pager{}}
+	enter := []Action{{Key: "Enter", Label: "Edit", Scope: ItemScope, ToDetails: yes}}
+	for name, s := range map[string]*Screen{
+		"not Enter": {Name: "A", Key: "W", Panels: []*Panel{{Label: "L", Body: groupList(), Details: details,
+			Actions: []Action{{Key: "e", Label: "Edit", Scope: ItemScope, ToDetails: yes}}}, details}},
+		"no details":        {Name: "B", Key: "W", Panels: []*Panel{{Label: "L", Body: groupList(), Actions: enter}}},
+		"details elsewhere": {Name: "C", Key: "W", Panels: []*Panel{{Label: "L", Body: groupList(), Details: details, Actions: enter}}},
+	} {
+		func() {
+			defer func() {
+				if recover() == nil {
+					t.Errorf("%s: AddScreen took it", name)
+				}
+			}()
+			New("test").AddScreen(s)
+		}()
+	}
+}

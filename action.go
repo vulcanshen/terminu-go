@@ -42,6 +42,11 @@ type Action struct {
 	// worklist, Rules F1): the menu stays and its hint is Enter:detail
 	// (components/dialog/menu).
 	Detail bool
+	// ToDetails, on a panel's "Enter" action only, says whether Enter on the
+	// item under the cursor also sends the focus to the panel's Details: the
+	// one place Enter changes panels, whether and on which items being the
+	// app's call (Rules K3).
+	ToDetails func() bool
 	// Do runs it.
 	Do func() tea.Cmd
 }

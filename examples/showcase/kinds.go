@@ -10,11 +10,12 @@ import (
 // kindsScreen is [K]INDS: a list in groups and a details panel that follows
 // its cursor (components/layout/panel, groups and details). [1] KINDS is the
 // resource kinds in groups; [2] is the kind under its cursor, named after it.
+// Enter on a namespaced kind goes into its details (Rules K3).
 type kindsScreen struct {
 	screen  *terminu.Screen
 	list    *terminu.List
 	details *terminu.Panel
-	kind    kind
+	kind    *kind
 }
 
 type kind struct {
@@ -42,8 +43,8 @@ var kinds = []kind{
 	{"namespaces", "Cluster", "v1", "ns", true, 6},
 }
 
-func newKindsScreen() *kindsScreen {
-	ks := &kindsScreen{kind: kinds[0]}
+func newKindsScreen(a *terminu.App) *kindsScreen {
+	ks := &kindsScreen{kind: &kinds[0]}
 	ks.list = &terminu.List{Filterable: true, EmptyFact: "No kinds match."}
 	rows := make([]terminu.Row, len(kinds))
 	for i, k := range kinds {
@@ -53,19 +54,23 @@ func newKindsScreen() *kindsScreen {
 	// The details follow the cursor at once, with no Enter; the focus stays
 	// (components/layout/panel, details).
 	ks.list.OnMove = func(r terminu.Row) tea.Cmd {
-		for _, k := range kinds {
-			if k.name == r.ID {
-				ks.kind = k
+		for i := range kinds {
+			if kinds[i].name == r.ID {
+				ks.kind = &kinds[i]
 			}
 		}
 		ks.details.Label = ks.kind.name
 		return nil
 	}
-	value := func(f func(k kind) string) func() string { return func() string { return f(ks.kind) } }
+	value := func(f func(k kind) string) func() string { return func() string { return f(*ks.kind) } }
 	ks.details = &terminu.Panel{Label: ks.kind.name, Body: &terminu.Values{Fields: []*terminu.Field{
 		{Label: "Group", Value: value(func(k kind) string { return k.group })},
 		{Label: "API version", Value: value(func(k kind) string { return k.api })},
-		{Label: "Short name", Value: value(func(k kind) string { return k.short }), Empty: "none"},
+		{Label: "Short name", Value: value(func(k kind) string { return k.short }), Empty: "none", Edit: func() tea.Cmd {
+			k := ks.kind
+			return a.Text(terminu.TextInput{Title: "Short name", Subject: k.name, Glyph: glyphPencil,
+				Prompt: "What kubectl takes for " + k.name, Old: k.short, Done: func(v string) tea.Cmd { k.short = v; return nil }})
+		}},
 		{Label: "Scope", Value: value(func(k kind) string {
 			if k.cluster {
 				return "cluster"
@@ -74,7 +79,18 @@ func newKindsScreen() *kindsScreen {
 		})},
 		{Label: "Objects", Value: value(func(k kind) string { return fmt.Sprint(k.count) })},
 	}}}
-	kindsPanel := &terminu.Panel{Label: "Kinds", Body: ks.list}
+	kindsPanel := &terminu.Panel{Label: "Kinds", Body: ks.list, Details: ks.details, Actions: []terminu.Action{
+		// Enter goes into a namespaced kind's details, the one place Enter
+		// changes panels (Rules K3); a cluster-wide kind is read-only here.
+		{Key: "Enter", Label: "Edit", Desc: "go into this kind's details", Scope: terminu.ItemScope, Hint: "edit",
+			ToDetails: func() bool { return !ks.kind.cluster },
+			Do: func() tea.Cmd {
+				if ks.kind.cluster {
+					return a.Toast(terminu.Info, ks.kind.name+" is cluster-wide: read-only here")
+				}
+				return nil
+			}},
+	}}
 	ks.screen = &terminu.Screen{Name: "Kinds", Key: "K", Desc: "a list in groups and details that follow its cursor",
 		Panels: []*terminu.Panel{kindsPanel, ks.details}, NarrowBelow: 60, Layout: ks.layout}
 	return ks
