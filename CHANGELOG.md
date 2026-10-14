@@ -2,6 +2,11 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.6.4
+
+- tdp v0.6.4 adds Windows to where an app keeps its settings, data and cache (Rules E3). The library keeps none of
+  these, so nothing changes; a `~/` path in the file-picker is the user's home directory, `%USERPROFILE%` on Windows
+
 ## v0.1.3 — tdp v0.6.3
 
 - `Panel.Details` and `Action.ToDetails`: Enter on a list may send the focus to its details panel, on the items the app
