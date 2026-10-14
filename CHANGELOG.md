@@ -2,7 +2,7 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.6.5
+## v0.1.5 — tdp v0.6.5
 
 - `Checks.Cursor`: the option a checkbox popup opens with the cursor on, scrolled into sight; the first by default
 
