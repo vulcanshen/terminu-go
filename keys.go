@@ -120,6 +120,17 @@ func Upper(text string) string {
 	return b.String()
 }
 
+// popupTitle is a popup's title text: what it is for in upper case, then
+// the name of what it acts on after ": ", as it is (components/layout/popup):
+// "EDIT: filu".
+func popupTitle(title, subject string) string {
+	t := Upper(title)
+	if subject != "" {
+		t += ": " + subject
+	}
+	return t
+}
+
 // KeyHint is one "key:what" pair of a hint or the footer (Rules M5).
 type KeyHint struct {
 	Key, Desc string

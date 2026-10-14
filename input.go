@@ -14,7 +14,10 @@ import (
 // prompt, the value, an error row.
 type TextInput struct {
 	Title string // what the popup is for, in its title ("Rename")
-	Glyph string // its title glyph: the app's choice
+	// Subject is the one thing it acts on, kept as it is after ": " in the
+	// title: "EDIT: filu" (components/layout/popup).
+	Subject string
+	Glyph   string // its title glyph: the app's choice
 	// Prompt is one line saying what to type ("New name for assets").
 	Prompt string
 	// Verb is what Enter does, for the hint ("rename").
@@ -35,6 +38,9 @@ type TextInput struct {
 // PasswordInput is a masked input (components/input/password).
 type PasswordInput struct {
 	Title, Glyph, Prompt, Verb string
+	// Subject is the one thing it acts on, kept as it is after ": " in the
+	// title: "EDIT: filu" (components/layout/popup).
+	Subject string
 	// Set says a password exists now: eight grey dots stand for it.
 	Set bool
 	// Unlock is the unlock look: one ● per character, a cell apart, centred
@@ -49,6 +55,9 @@ type PasswordInput struct {
 // NumberInput is a number (components/input/number).
 type NumberInput struct {
 	Title, Glyph, Prompt, Verb string
+	// Subject is the one thing it acts on, kept as it is after ": " in the
+	// title: "EDIT: filu" (components/layout/popup).
+	Subject string
 	// Name is the field's name in the range error ("Port").
 	Name     string
 	Old      string
@@ -72,6 +81,7 @@ const (
 type lineInput struct {
 	kind         inputKind
 	title, glyph string
+	subject      string
 	prompt, verb string
 	old          string // the suggestion; for a password, whether one is set
 	hasOld       bool
@@ -123,7 +133,7 @@ func then(written func(), cmd tea.Cmd) tea.Cmd {
 
 func (in TextInput) open(a *App, written func()) tea.Cmd {
 	return a.open(&lineInput{
-		kind: kindText, title: in.Title, glyph: in.Glyph, prompt: in.Prompt, verb: cmpOr(in.Verb, "save"),
+		kind: kindText, title: in.Title, subject: in.Subject, glyph: in.Glyph, prompt: in.Prompt, verb: cmpOr(in.Verb, "save"),
 		old: in.Old, hasOld: in.Old != "", maxLen: in.MaxLen, ed: newEditor(""), check: in.Check,
 		done: func(v string, _ bool) tea.Cmd { return then(written, run2(in.Done, v)) },
 	})
@@ -131,7 +141,7 @@ func (in TextInput) open(a *App, written func()) tea.Cmd {
 
 func (in PasswordInput) open(a *App, written func()) tea.Cmd {
 	return a.open(&lineInput{
-		kind: kindPassword, title: in.Title, glyph: in.Glyph, prompt: in.Prompt, verb: cmpOr(in.Verb, "save"),
+		kind: kindPassword, title: in.Title, subject: in.Subject, glyph: in.Glyph, prompt: in.Prompt, verb: cmpOr(in.Verb, "save"),
 		hasOld: in.Set, maxLen: in.MaxLen, unlock: in.Unlock, ed: newEditor(""), check: in.Check,
 		done: func(v string, clear bool) tea.Cmd {
 			if in.Done == nil {
@@ -144,7 +154,7 @@ func (in PasswordInput) open(a *App, written func()) tea.Cmd {
 
 func (in NumberInput) open(a *App, written func()) tea.Cmd {
 	li := &lineInput{
-		kind: kindNumber, title: in.Title, glyph: in.Glyph, prompt: in.Prompt, verb: cmpOr(in.Verb, "save"),
+		kind: kindNumber, title: in.Title, subject: in.Subject, glyph: in.Glyph, prompt: in.Prompt, verb: cmpOr(in.Verb, "save"),
 		old: in.Old, hasOld: in.Old != "", ed: newEditor(""),
 		done: func(v string, _ bool) tea.Cmd { return then(written, run2(in.Done, v)) },
 	}
@@ -217,7 +227,7 @@ func (li *lineInput) measure(sw, sh int) (int, int) {
 			content = max(content, oldDotsWidth(li.unlock)) // the eight grey dots
 		}
 		need := max(content+extra, Width(li.prompt)) + 4
-		need = max(need, Width(titleCapsule(li.glyph, Upper(li.title), Base, 1<<20))+4)
+		need = max(need, Width(titleCapsule(li.glyph, popupTitle(li.title, li.subject), Base, 1<<20))+4)
 		// The whole hint, with the suggestion's keys: only a typing row here,
 		// so the hint lists every key (Rules M3) and the box holds all of it
 		// (layout/popup, width).
@@ -265,7 +275,7 @@ func (li *lineInput) draw(w, h int, layer Color) []string {
 		Repeat(" ", inner),
 		padRow(errRow, inner),
 	}
-	return popupBox{color: layer, glyph: li.glyph, title: Upper(li.title), hint: li.hint()}.draw(w, Pad2(body, inner, h-4))
+	return popupBox{color: layer, glyph: li.glyph, title: popupTitle(li.title, li.subject), hint: li.hint()}.draw(w, Pad2(body, inner, h-4))
 }
 
 // maskView draws a password: dots for what was typed, eight grey ones for a

@@ -53,7 +53,7 @@ func (c *confirmView) measure(sw, sh int) (int, int) {
 	for _, d := range c.ask.Details {
 		content = max(content, Width(d))
 	}
-	w := min(max(content+4, Width(titleCapsule(glyphConfirm, Upper(c.ask.Title), Base, 1<<20))+4, hintWidth(c.hint())+6), most)
+	w := min(max(content+4, Width(titleCapsule(glyphConfirm, popupTitle(c.ask.Title, c.ask.Subject), Base, 1<<20))+4, hintWidth(c.hint())+6), most)
 	rows := func() int {
 		c.wrapTo(w - 4)
 		n := len(c.quest)
@@ -101,7 +101,7 @@ func (c *confirmView) draw(w, h int, layer Color) []string {
 	if len(c.content) > c.visible && c.visible > 0 {
 		scroll = scrollText(false, c.top+1, min(c.top+c.visible, len(c.content)), len(c.content))
 	}
-	return popupBox{color: layer, glyph: glyphConfirm, title: Upper(c.ask.Title), hint: c.hint(), scroll: scroll}.draw(w, body)
+	return popupBox{color: layer, glyph: glyphConfirm, title: popupTitle(c.ask.Title, c.ask.Subject), hint: c.hint(), scroll: scroll}.draw(w, body)
 }
 
 func (c *confirmView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {

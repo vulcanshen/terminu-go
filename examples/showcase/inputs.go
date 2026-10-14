@@ -72,7 +72,7 @@ func newInputsScreen(s *showcase) *inputsScreen {
 	is.values = &terminu.Values{Header: [2]string{"Input", "Value"}}
 	is.values.Fields = []*terminu.Field{
 		{Label: "Name", Value: func() string { return name }, Edit: func() tea.Cmd {
-			return a.Text(terminu.TextInput{Title: "Rename", Glyph: glyphPencil, Prompt: "New name for " + name, Verb: "rename", Old: name,
+			return a.Text(terminu.TextInput{Title: "Rename", Subject: name, Glyph: glyphPencil, Prompt: "New name for " + name, Verb: "rename", Old: name,
 				Check: func(v string) error {
 					if v == "" {
 						return fmt.Errorf("Name can't be empty")

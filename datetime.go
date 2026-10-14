@@ -13,6 +13,9 @@ var clock = time.Now
 // DatePicker picks a date, or a date and a time (components/input/datetime-picker).
 type DatePicker struct {
 	Title, Glyph string
+	// Subject is the one thing it acts on, kept as it is after ": " in the
+	// title: "EDIT: filu" (components/layout/popup).
+	Subject string
 	// Value is the value now; zero for none.
 	Value time.Time
 	// Time adds the hour and the minute (five minutes a step).
@@ -107,7 +110,7 @@ func (dv *dateView) contentWidth() int {
 
 func (dv *dateView) measure(sw, sh int) (int, int) {
 	w := dv.contentWidth() + 4
-	w = max(w, Width(titleCapsule(dv.d.Glyph, Upper(dv.d.Title), Base, 1<<20))+4)
+	w = max(w, Width(titleCapsule(dv.d.Glyph, popupTitle(dv.d.Title, dv.d.Subject), Base, 1<<20))+4)
 	saved := dv.focus
 	for f := onMonth; f <= onTime; f++ {
 		dv.focus = f
@@ -205,7 +208,7 @@ func (dv *dateView) draw(w, h int, layer Color) []string {
 		}
 		body = append(body, padRow(line, inner))
 	}
-	return popupBox{color: layer, glyph: dv.d.Glyph, title: Upper(dv.d.Title), hint: dv.hint()}.draw(w, Pad2(body, inner, h-4))
+	return popupBox{color: layer, glyph: dv.d.Glyph, title: popupTitle(dv.d.Title, dv.d.Subject), hint: dv.hint()}.draw(w, Pad2(body, inner, h-4))
 }
 
 // timeRow is row i of the time block: the hour column and the minute column,

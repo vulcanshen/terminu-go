@@ -171,11 +171,7 @@ func (t *Terminal) Stop() {
 }
 
 func (t *Terminal) title() string {
-	s := Upper(cmpOr(t.Title, "Shell"))
-	if t.Subject != "" {
-		s += ": " + t.Subject
-	}
-	return s
+	return popupTitle(cmpOr(t.Title, "Shell"), t.Subject)
 }
 
 func (t *Terminal) exitVerb() string {

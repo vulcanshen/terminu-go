@@ -1,13 +1,13 @@
-# tdp v0.6.0 coverage
+# tdp v0.6.1 coverage
 
-tdp v0.6.0 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
+tdp v0.6.1 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
 （[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
 - 出處寫法：`K4` 是 `principle/rules-zh_TW.md` 的規則；`P3` 是 `principle/README-zh_TW.md`；`popup §外框` 是
   `components/layout/popup-zh_TW.md` 的那一節，其他元件照檔名（`form`、`finder`…）；`components §大寫` 是 `components/README-zh_TW.md`。
 - `G<n>` 是規範盲點紀錄裡還沒定案的編號（`~/Documents/sideproj/terminu/.local/family-fix/terminu-go/README.md`），定案前照紀錄的
-  「暫時」做。G1–G22 已經補進 tdp v0.4.0、G23–G29 補進 v0.5.1、G30–G46 補進 v0.5.2（G43 不改規範）、G47 補進 v0.5.3、G48–G66 補進 v0.5.4、G67–G77 補進 v0.5.5、G78–G82 補進 v0.5.6、G83 補進 v0.5.7、G84 補進 v0.5.8、G85 補進 v0.5.9，這裡直接寫規範的條文。v0.6.0 只刪了 S5 講畫 mark 的工具的一句，這份清單不受影響。
+  「暫時」做。G1–G22 已經補進 tdp v0.4.0、G23–G29 補進 v0.5.1、G30–G46 補進 v0.5.2（G43 不改規範）、G47 補進 v0.5.3、G48–G66 補進 v0.5.4、G67–G77 補進 v0.5.5、G78–G82 補進 v0.5.6、G83 補進 v0.5.7、G84 補進 v0.5.8、G85 補進 v0.5.9、G86 補進 v0.6.1，這裡直接寫規範的條文。v0.6.0 只刪了 S5 講畫 mark 的工具的一句，這份清單不受影響。
 - 「lib」表示由 lib 的登記或 API 保證，不需要展示場的某一個畫面；測試照樣要有。
 
 ## 展示場
@@ -218,7 +218,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 |---|---|---|---|
 | §圖與間距 | 圖的結構是規定（框、glyph 位置、間距、對齊、標的顏色）；「縮 N 格」是離框 N 格 | 每個畫面對照規範的圖 | 各元件的版面測試 |
 | §圖與間距 | 欄與欄之間兩格；glyph 與它後面的字之間一格 | 表頭、表單、menu、radio、checkbox、file-picker | `TestTwoCellColumnGap`、`TestGlyphOneCellGap` |
-| §大寫 | 要大寫：panel 膠囊與 tab、畫面 chip、popup 標題、表頭、一列一個值的 label、menu 與 key reference 的區塊標題；熱鍵標記裡的字母與標題裡的名稱、路徑照原樣 | 每個畫面；畫面 chip `[t]ERMINAL`（小寫的熱鍵照原樣）；T terminal popup 的標題 `SESSION: shell` | `TestUppercaseWhereRequired`、`TestUppercaseKeepsHotkeyAndNames` |
+| §大寫 | 要大寫：panel 膠囊與 tab、畫面 chip、popup 標題、表頭、一列一個值的 label、menu 與 key reference 的區塊標題；熱鍵標記裡的字母與標題裡的名稱、路徑照原樣 | 每個畫面；畫面 chip `[t]ERMINAL`（小寫的熱鍵照原樣）；T terminal popup 的標題 `SESSION: shell`；D「Form: long」的 `EDIT: prod-db-01` | `TestUppercaseWhereRequired`、`TestUppercaseKeepsHotkeyAndNames`、`TestPopupTitleSubject` |
 | §大寫 | 不改：值、menu 的 label 與說明、hint 與 footer 的說明、按鍵名、模式名、app 的內容 | 同上 | `TestUppercaseLeavesContent` |
 
 ## layout/screen
@@ -267,7 +267,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | 出處 | 規定 | 展示場 | 測試 |
 |---|---|---|---|
 | popup §外框 | 粗線 `┏━┓`、層色；被蓋在底下照樣是粗線 | 每種 popup | `TestPopupFrame` |
-| popup §外框 | 標題：glyph + 文字做成膠囊，放在 `┏━` 後；兩端圓角 U+E0B6 / U+E0B4；填層色，字 Base 粗體、大寫（名稱與路徑照原樣）；太長從尾端截加 `…` | 每種 popup；D「Popup: long title」 | `TestPopupTitleCapsule`、`TestPopupTitleTruncate` |
+| popup §外框 | 標題：glyph + 文字做成膠囊，放在 `┏━` 後；兩端圓角 U+E0B6 / U+E0B4；填層色，字 Base 粗體、大寫（名稱與路徑照原樣）；寫對哪一個做時，名稱接在 `: ` 後、照原樣（viewer 的 ` — `、file-picker 的 ` · ` 照它們自己的）；太長從尾端截加 `…` | 每種 popup；D「Popup: long title」；D「Confirm」`DELETE: web-a8k2`、「Form: long」`EDIT: prod-db-01`；I `Name` 按 `Enter` 的 `RENAME: assets` | `TestPopupTitleCapsule`、`TestPopupTitleTruncate`、`TestPopupTitleSubject` |
 | popup §外框 | 標題後接 tab 照膠囊串畫（跟圓角的標題之間隔一段線） | D「Popup with tabs」 | `TestPopupTitleTabs` |
 | popup §外框 | 標題 glyph：menu U+F0C9、key reference U+F059、confirm U+F0ECC、toast 依種類、terminal U+F018D、input／表單／note 由 app 選 | 每種 popup | `TestPopupTitleGlyph` |
 | popup §外框 | hint 放 `┗━ ` 後；順序 `Enter` → 自己的鍵 → `Tab:…` → `Esc`（terminal 出口鍵第一）；不寫移動鍵（換塊的照寫，表單的 `Tab:actions`）；框到最寬還放不下才從尾端整組捨（terminal 太窄時）；只有打字列的列全部、80 欄放得下 | 每種 popup；把 terminal 縮到很窄 | `TestPopupHintOrder`、`TestPopupHintDrop` |
@@ -291,7 +291,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | 出處 | 規定 | 展示場 | 測試 |
 |---|---|---|---|
 | form §用途 | 表單上不打字：要打字或選項放不下的欄位 `Enter` 開 input popup；radio、checkbox 畫在表單上原地選 | D「Form: New host」 | `TestFormNoTyping` |
-| form §標題 | 寫表單要做什麼（標題膠囊），不寫型別 | 同上 | — |
+| form §標題 | 寫表單要做什麼（標題膠囊），不寫型別；改的是某一筆時可以帶上它的名稱，`: ` 後照原樣 | 同上；D「Form: long」`EDIT: prod-db-01` | `TestPopupTitleSubject` |
 | form §欄位的排法 | 上下式、左右式，可混用；欄位之間、label 與值之間不空行；label、值、錯誤左緣對齊；左右式 label 欄寬取左右式最長的、與值之間兩格 | D「Form: New profile」（混用） | `TestFormLayouts` |
 | form §選項畫在表單上 | 五個以內畫在表單、超過用 select／checkbox popup；radio 與 checkbox 組一律直排、一個選項一列 | D「Form: New host」的 `Auth`、`Order` | `TestFormOptionsDrawn` |
 | form §focus 與 label | focus 照 menu 的 cursor（層色底 Base 粗體），從項目開頭一直到框（蓋住右邊留白）、最右邊一格是箭頭；按鈕的色塊就是按鈕、沒有箭頭；值空著也一整塊 | 同上 | `TestFormFocusBlock` |

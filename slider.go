@@ -13,7 +13,10 @@ import (
 // to Top, Step apart.
 type Slider struct {
 	Title, Glyph string
-	Bottom, Top  float64
+	// Subject is the one thing it acts on, kept as it is after ": " in the
+	// title: "EDIT: filu" (components/layout/popup).
+	Subject     string
+	Bottom, Top float64
 	// Step is the distance between two numbers: (Top − Bottom) / 10 when 0.
 	Step  float64
 	Value float64
@@ -60,7 +63,7 @@ func (s Slider) open(a *App, written func()) tea.Cmd {
 		}
 	}
 	return Select{
-		Title: s.Title, Glyph: s.Glyph, Options: opts, Selected: sel,
+		Title: s.Title, Subject: s.Subject, Glyph: s.Glyph, Options: opts, Selected: sel,
 		Done: func(i int) tea.Cmd {
 			if s.Done == nil {
 				return nil

@@ -2,6 +2,12 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.6.1
+
+- A popup that acts on one thing can name it: `Subject` on forms, text, password and number inputs, textareas,
+  confirms, date and colour pickers, sliders, finders, selects and checkbox popups. The title reads `EDIT: filu`, the
+  name as it is, as a terminal's already did
+
 ## v0.1.0 — tdp v0.6.0
 
 - The repository: module `github.com/vulcanshen/terminu-go`, GPL-3.0, READMEs in English and Traditional Chinese

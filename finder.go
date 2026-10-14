@@ -24,6 +24,9 @@ type FinderItem struct {
 // append to Items while Loading is true.
 type Finder struct {
 	Title, Glyph string
+	// Subject is the one thing it acts on, kept as it is after ": " in the
+	// title: "EDIT: filu" (components/layout/popup).
+	Subject string
 	// Verb is what Enter on the list does, for the hint ("open").
 	Verb    string
 	Items   []FinderItem
@@ -41,7 +44,10 @@ type Finder struct {
 // Select picks one value from a list (components/input/select).
 type Select struct {
 	Title, Glyph string
-	Options      []string
+	// Subject is the one thing it acts on, kept as it is after ": " in the
+	// title: "EDIT: filu" (components/layout/popup).
+	Subject string
+	Options []string
 	// Keys, when set, are the options' hotkeys (Rules M5); "" for none.
 	Keys []string
 	// Selected is the value now; -1 for none.
@@ -55,8 +61,11 @@ type Select struct {
 // popup): Space checks a row on screen only, Enter writes the whole set back.
 type Checks struct {
 	Title, Glyph string
-	Options      []string
-	Checked      []bool
+	// Subject is the one thing it acts on, kept as it is after ": " in the
+	// title: "EDIT: filu" (components/layout/popup).
+	Subject string
+	Options []string
+	Checked []bool
 	// Done gets the new set. It is not called when nothing changed.
 	Done func([]bool) tea.Cmd
 }
@@ -125,7 +134,7 @@ type finderView struct {
 func (a *App) Find(f *Finder) tea.Cmd {
 	fv := &finderView{
 		kind: findGo, glyph: f.Glyph, name: f.Title, ed: newEditor(""),
-		title: func(int) string { return Upper(f.Title) },
+		title: func(int) string { return popupTitle(f.Title, f.Subject) },
 		rows: func() []finderRow {
 			out := make([]finderRow, len(f.Items))
 			for i, it := range f.Items {
@@ -164,7 +173,7 @@ func (s Select) open(a *App, written func()) tea.Cmd {
 	}
 	fv := &finderView{
 		kind: findSelect, glyph: s.Glyph, name: s.Title, ed: newEditor(""), known: true, onList: true,
-		title:   func(int) string { return Upper(s.Title) },
+		title:   func(int) string { return popupTitle(s.Title, s.Subject) },
 		rows:    func() []finderRow { return rows },
 		green:   func(i int, _ finderRow) bool { return i == s.Selected },
 		verb:    func(finderRow) string { return "choose" },
@@ -196,7 +205,7 @@ func (c Checks) open(a *App, written func()) tea.Cmd {
 	}
 	fv := &finderView{
 		kind: findChecks, glyph: c.Glyph, name: c.Title, ed: newEditor(""), known: true, onList: true,
-		title:   func(int) string { return Upper(c.Title) },
+		title:   func(int) string { return popupTitle(c.Title, c.Subject) },
 		rows:    func() []finderRow { return rows },
 		verb:    func(finderRow) string { return "apply" },
 		checked: make([]bool, len(c.Options)),

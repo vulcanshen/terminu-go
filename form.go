@@ -49,6 +49,9 @@ func (f *FormField) optionDisabled(i int) bool { return f.OptionDisabled != nil 
 // are chosen on the form, the button submits.
 type Form struct {
 	Title, Glyph string
+	// Subject is the one thing it acts on, kept as it is after ": " in the
+	// title: "EDIT: filu" (components/layout/popup).
+	Subject string
 	// Name is the form in the discard question: "Discard changes to New host?"
 	Name   string
 	Fields []*FormField
@@ -311,7 +314,7 @@ func (fv *formView) draw(w, h int, layer Color) []string {
 			}
 		}
 	}
-	return popupBox{color: layer, glyph: fv.f.Glyph, title: Upper(fv.f.Title), hint: fv.hint(), scroll: scroll}.draw(w, body)
+	return popupBox{color: layer, glyph: fv.f.Glyph, title: popupTitle(fv.f.Title, fv.f.Subject), hint: fv.hint(), scroll: scroll}.draw(w, body)
 }
 
 // label is a field's label: the layer colour, Surface2 when disabled, Red

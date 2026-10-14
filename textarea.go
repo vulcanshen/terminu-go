@@ -14,7 +14,10 @@ import (
 // state, where Enter saves.
 type Textarea struct {
 	Title, Glyph string
-	Old          string
+	// Subject is the one thing it acts on, kept as it is after ": " in the
+	// title: "EDIT: filu" (components/layout/popup).
+	Subject string
+	Old     string
 	// Done gets the new text. It is not called when it did not change.
 	Done func(string) tea.Cmd
 }
@@ -210,7 +213,7 @@ func (tv *textareaView) draw(w, h int, layer Color) []string {
 	if len(rows) > n {
 		scroll = scrollText(true, tv.line+1, 0, len(tv.lines))
 	}
-	return popupBox{color: layer, glyph: tv.t.Glyph, title: Upper(tv.t.Title), hint: tv.hint(), scroll: scroll}.draw(w, body)
+	return popupBox{color: layer, glyph: tv.t.Glyph, title: popupTitle(tv.t.Title, tv.t.Subject), hint: tv.hint(), scroll: scroll}.draw(w, body)
 }
 
 func (tv *textareaView) insert(s string) {

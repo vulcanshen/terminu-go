@@ -11,7 +11,10 @@ import (
 // side by side, the red, green and blue channels each chosen from a select.
 type ColorPicker struct {
 	Title, Glyph string
-	Value        Color
+	// Subject is the one thing it acts on, kept as it is after ": " in the
+	// title: "EDIT: filu" (components/layout/popup).
+	Subject string
+	Value   Color
 	// Done gets the new colour. It is not called when it did not change.
 	Done func(Color) tea.Cmd
 }
@@ -59,7 +62,7 @@ func (cv *colorView) hint() []KeyHint {
 const colorButton = " Choose "
 
 func (cv *colorView) measure(sw, sh int) (int, int) {
-	w := max(colorRowW+4, Width(titleCapsule(cv.c.Glyph, Upper(cv.c.Title), Base, 1<<20))+4,
+	w := max(colorRowW+4, Width(titleCapsule(cv.c.Glyph, popupTitle(cv.c.Title, cv.c.Subject), Base, 1<<20))+4,
 		hintWidth([]KeyHint{{"Enter", "choose"}, {"Esc", "cancel"}})+6)
 	// The swatches, their names and hex, a blank row, the divider, the button.
 	return min(w, max(min(sw-2, 120), 1)), min(7+4, max(sh-2, 3))
@@ -104,7 +107,7 @@ func (cv *colorView) draw(w, h int, layer Color) []string {
 		" " + Fg(Overlay0).Render(Repeat("─", inner-2)) + " ",
 		PadLeft(button, inner-1) + " ",
 	}
-	return popupBox{color: layer, glyph: cv.c.Glyph, title: Upper(cv.c.Title), hint: cv.hint()}.draw(w, Pad2(body, inner, h-4))
+	return popupBox{color: layer, glyph: cv.c.Glyph, title: popupTitle(cv.c.Title, cv.c.Subject), hint: cv.hint()}.draw(w, Pad2(body, inner, h-4))
 }
 
 func (cv *colorView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {

@@ -78,7 +78,7 @@ func (ds *dialogsScreen) scenarios() []scenario {
 		{"Menu: long", "menu", "more rows than fit: the menu scrolls", ds.longMenu},
 		{"Menu: long descriptions", "menu", "descriptions cut with …", ds.longDescriptions},
 		{"Confirm", "confirm", "Enter accepts, Esc cancels, Space does nothing", func() tea.Cmd {
-			return a.Confirm(terminu.Ask{Title: "Delete", Question: "Delete web-a8k2?", Verb: "delete"}, toast("Deleted web-a8k2"))
+			return a.Confirm(terminu.Ask{Title: "Delete", Subject: "web-a8k2", Question: "Delete web-a8k2?", Verb: "delete"}, toast("Deleted web-a8k2"))
 		}},
 		{"Confirm: with details", "confirm", "what to read first, a warning in Peach", func() tea.Cmd {
 			return a.Confirm(terminu.Ask{Title: "Connect", Question: "Connect to prod-db-01?", Verb: "connect",
@@ -337,7 +337,7 @@ func (ds *dialogsScreen) longForm() tea.Cmd {
 					Done: func(s string) tea.Cmd { values[label] = s; return nil }}
 			}})
 	}
-	return a.Form(&terminu.Form{Title: "Session settings", Name: "Session settings", Glyph: glyphServer, Button: "Save",
+	return a.Form(&terminu.Form{Title: "Edit", Subject: "prod-db-01", Name: "prod-db-01", Glyph: glyphServer, Button: "Save",
 		Fields: fields, Submit: func() (tea.Cmd, error) { return a.Toast(terminu.Info, "Saved"), nil }})
 }
 

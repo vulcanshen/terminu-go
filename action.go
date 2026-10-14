@@ -52,7 +52,10 @@ func (a Action) disabled() bool { return a.Disabled != nil && a.Disabled() }
 // Ask is a confirm popup (components/dialog/confirm): Enter accepts, Esc
 // cancels.
 type Ask struct {
-	Title    string   // the action's name, after the shield glyph: "Delete"
+	Title string // the action's name, after the shield glyph: "Delete"
+	// Subject is the one thing it acts on, kept as it is after ": " in the
+	// title: "EDIT: filu" (components/layout/popup).
+	Subject  string
 	Question string   // the last line: "Delete web-a8k2?"
 	Verb     string   // Enter:<verb> in the hint: "delete"
 	Details  []string // what to read before answering, above the question

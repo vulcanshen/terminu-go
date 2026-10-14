@@ -770,6 +770,47 @@ func TestUppercaseKeepsHotkeyAndNames(t *testing.T) {
 	}
 }
 
+// TestPopupTitleSubject: a popup that names what it acts on writes the name
+// after ": ", as it is (components/layout/popup, "Title").
+func TestPopupTitleSubject(t *testing.T) {
+	const subject = "filu ~/Work"
+	cases := []struct {
+		name, want string
+		open       func(ta *testApp)
+	}{
+		{"form", "EDIT: ", func(ta *testApp) {
+			f := testForm(nil)
+			f.Title, f.Subject = "Edit", subject
+			ta.Form(f)
+		}},
+		{"text", "RENAME: ", func(ta *testApp) { ta.Text(TextInput{Title: "Rename", Subject: subject}) }},
+		{"password", "PASSWORD: ", func(ta *testApp) { ta.Password(PasswordInput{Title: "Password", Subject: subject}) }},
+		{"number", "PORT: ", func(ta *testApp) { ta.Number(NumberInput{Title: "Port", Subject: subject}) }},
+		{"textarea", "NOTE: ", func(ta *testApp) { ta.Textarea(Textarea{Title: "Note", Subject: subject}) }},
+		{"confirm", "DELETE: ", func(ta *testApp) {
+			ta.Confirm(Ask{Title: "Delete", Subject: subject, Question: "Delete it?", Verb: "delete"}, nil)
+		}},
+		{"date", "DUE: ", func(ta *testApp) { ta.PickDate(DatePicker{Title: "Due", Subject: subject}) }},
+		{"color", "COLOUR: ", func(ta *testApp) { ta.PickColor(ColorPicker{Title: "Colour", Subject: subject}) }},
+		{"slider", "LEVEL: ", func(ta *testApp) { ta.Open(Slider{Title: "Level", Subject: subject, Top: 10}) }},
+		{"finder", "GO: ", func(ta *testApp) { ta.Find(&Finder{Title: "Go", Subject: subject}) }},
+		{"select", "KIND: ", func(ta *testApp) {
+			ta.Select(Select{Title: "Kind", Subject: subject, Options: []string{"a", "b"}, Selected: -1})
+		}},
+		{"checks", "TAGS: ", func(ta *testApp) {
+			ta.Checks(Checks{Title: "Tags", Subject: subject, Options: []string{"a", "b"}, Checked: []bool{false, false}})
+		}},
+	}
+	for _, c := range cases {
+		ta := newTestApp(t)
+		c.open(ta)
+		ta.settle()
+		if title := covCPlain(ta.Frame()[ta.top().y]); !strings.Contains(title, c.want+subject) {
+			t.Errorf("%s: title %q, want %q", c.name, title, c.want+subject)
+		}
+	}
+}
+
 func TestUppercaseLeavesContent(t *testing.T) {
 	ta := newTestApp(t)
 	ta.Status = func(int) string { return "[N]arrow: off" }
