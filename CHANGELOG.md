@@ -2,7 +2,7 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.6.5
+## v0.1.4 — tdp v0.6.5
 
 - The colour picker: `Tab|Shift-Tab` go between R, G, B and `Choose`, back to the channel left, as on a form; the hint
   says `Tab:actions` on a channel and `Tab:fields` on `Choose`, and the popup is 40 cells wide instead of 37 (Rules K2)
