@@ -55,6 +55,7 @@ type showcase struct {
 	inputs   *inputsScreen
 	dialogs  *dialogsScreen
 	terminal *terminalScreen
+	kinds    *kindsScreen
 	task     float64
 	taskOn   bool
 	started  time.Time
@@ -86,6 +87,8 @@ func newShowcase() *showcase {
 	a.AddScreen(s.dialogs.screen)
 	s.terminal = newTerminalScreen(s)
 	a.AddScreen(s.terminal.screen)
+	s.kinds = newKindsScreen()
+	a.AddScreen(s.kinds.screen)
 	a.Global = []terminu.Action{
 		{Key: "N", Label: "Narrow layout", Desc: "draw one panel at a time, as on a narrow terminal", Scope: terminu.GlobalScope,
 			Do: func() tea.Cmd { a.ForceNarrow = !a.ForceNarrow; return nil }},

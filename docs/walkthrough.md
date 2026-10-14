@@ -26,7 +26,7 @@ cd ~/Documents/sideproj/terminu-go && go build -o /tmp/showcase ./examples/showc
 
 | 鍵 | 做什麼 |
 |---|---|
-| `P` `I` `D` `t` | 換到 Panels、Inputs、Dialogs、terminal 畫面（terminal 的鍵是小寫的 `t`，chip 寫成 `[t]ERMINAL`） |
+| `P` `I` `D` `t` `K` | 換到 Panels、Inputs、Dialogs、terminal、Kinds 畫面（terminal 的鍵是小寫的 `t`，chip 寫成 `[t]ERMINAL`） |
 | `Space` | 這裡能做什麼（Space menu）；最下面一列是 Global operation |
 | `?` | 這裡的按鍵（key reference），在任何一層都能按 |
 | `Tab`、`1`–`N` | 換 panel |
@@ -39,7 +39,7 @@ cd ~/Documents/sideproj/terminu-go && go build -o /tmp/showcase ./examples/showc
 - Global operation 裡有展示場自己的開關：`[N]arrow layout`（不管多寬都一次畫一個 panel）、`[1] About`（數字的 global 熱鍵，
   只在這個 popup 裡按得到）、`[S]tart task`（chip 列下的進度條）、`Hide secrets in preview`。
 
-## 四個畫面看什麼
+## 五個畫面看什麼
 
 **P — Panels**：panel 的每一種長相與狀態。
 - `[1] PODS` 是一般清單：`j|k` `u|d` `gg|G` 移、`h|l` 換 tab（PODS／EVENTS）、`/` 篩選、`m` 標記、`x` 刪除（confirm）、
@@ -70,6 +70,12 @@ cd ~/Documents/sideproj/terminu-go && go build -o /tmp/showcase ./examples/showc
 - `[1] SHELL` 是 panel 裡的 shell：`Enter` 進去打字，`Alt-Esc` 出來（先問）。在外面按 `?`，最後一段 `TERMINAL` 寫 shell 裡的鍵。
 - `[2] SESSIONS` 每一列 `Enter` 開一個 terminal popup：`shell`、`keys`（`cat -v`，看每個鍵送了什麼）、`top`、`vi`。
 - popup 裡 `Alt-t` 藏起來；`Alt-b` 讓展示場卡 2 秒（C2 用），卡完會跳一個 toast。
+
+**K — Kinds**：清單分組與明細。
+- `[1] KINDS` 是分組的清單（WORKLOADS、NETWORK、CONFIG、STORAGE、CLUSTER）：`j|k` 會跳過分組標題，`gg|G` 到第一個、最後一個種類；
+  `/` 篩選，被篩掉的組連標題一起不見。
+- `[2]` 是 `[1]` cursor 那一種的明細：cursor 一動就換，label 寫那一種的名字；focus 留在 `[1]`，要到 `[2]` 按 `Tab` 或 `2`。
+- 把終端機拉矮，捲到一組的第一個種類時，那一組的標題也留在畫面裡。
 
 **splash**：在 panel 上按 `V`（I 的 `[2] FILES` 除外），任意鍵關掉。畫的是 tdp 的 mark（藍色 U 框裡一個金色的 T），底 → T → U 框一段一段揭露，最後是下面的字。
 

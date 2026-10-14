@@ -49,8 +49,14 @@ type Values struct {
 	Fields []*Field
 	// Header, when set, is the table header over the labels and the values.
 	Header [2]string
+	// OnMove runs when the cursor comes to another place, by a key or not,
+	// the first time included: the field, and the option in it (-1 for a
+	// field not drawn in place). It runs before the frame is drawn, so a
+	// details panel follows in the same frame (layout/panel, details).
+	OnMove func(f *Field, option int) tea.Cmd
 
-	cursor  int // item index across all fields
+	at      valueItem // where OnMove last ran
+	cursor  int       // item index across all fields
 	top     int
 	visible int
 	scroll  string
@@ -73,6 +79,24 @@ func (v *Values) itemList() []valueItem {
 		}
 	}
 	return out
+}
+
+// moved runs OnMove when the cursor is at another place than last time.
+func (v *Values) moved() tea.Cmd {
+	items := v.itemList()
+	if v.cursor < 0 || v.cursor >= len(items) {
+		v.at = valueItem{}
+		return nil
+	}
+	it := items[v.cursor]
+	if it == v.at {
+		return nil
+	}
+	v.at = it
+	if v.OnMove == nil {
+		return nil
+	}
+	return v.OnMove(it.field, it.option)
 }
 
 // HasItem: a value panel's rows are its items.

@@ -197,12 +197,30 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmd = a.OnMsg(msg)
 		}
 	}
+	cmd = tea.Batch(cmd, a.moved())
 	if !a.spin && a.loading() {
 		a.spin = true
 		cmd = tea.Batch(cmd, spinTick())
 	}
 	a.growLoading()
 	return a, cmd
+}
+
+// moved runs the OnMove of the screen's lists and value panels whose cursor
+// came to another item: after every message and before the frame is drawn
+// (layout/panel, details).
+func (a *App) moved() tea.Cmd {
+	s := a.Screen()
+	if s == nil {
+		return nil
+	}
+	var cmds []tea.Cmd
+	for _, p := range s.Panels {
+		if b, ok := p.Body.(interface{ moved() tea.Cmd }); ok {
+			cmds = append(cmds, b.moved())
+		}
+	}
+	return tea.Batch(cmds...)
 }
 
 func (a *App) inputTabWidth() int {

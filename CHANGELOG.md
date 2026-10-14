@@ -2,6 +2,13 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.6.2
+
+- Groups in a list: `Row.Group`. Each group's title is Blue and upper case, and the cursor skips it. The group's rows are
+  two cells further in and stay together when sorted. A group with no row shown has no title
+- `List.OnMove` and `Values.OnMove`: run when the cursor comes to another item, before the frame is drawn, so a
+  details panel follows another panel's cursor in the same frame
+
 ## v0.1.1 — tdp v0.6.1
 
 - A popup that acts on one thing can name it: `Subject` on forms, text, password and number inputs, textareas,

@@ -29,6 +29,11 @@ type Row struct {
 	// Sort, when set, are the values sorted by instead of the cells (an age
 	// shown as "3d" sorted by seconds).
 	Sort []string
+	// Group is the title of the group the row is in (layout/panel, groups).
+	// A group's rows stay together, the groups in the order they first
+	// appear, sorted within; the rows are drawn two cells further in, under
+	// a title the cursor skips. A group with no row shown has no title.
+	Group string
 }
 
 // SortKey is one column the list is sorted by.
@@ -49,8 +54,15 @@ type List struct {
 	// EmptyFact and EmptyHint are what an empty list says (layout/screen,
 	// empty states); keys in the hint written in brackets.
 	EmptyFact, EmptyHint string
+	// OnMove runs when the cursor comes to another row, by a key or not, the
+	// first time included: before the frame is drawn, so a details panel
+	// shows that row in the same frame (layout/panel, details). It does not
+	// run while no row is under the cursor.
+	OnMove func(Row) tea.Cmd
 
 	rows   []Row
+	groups bool   // some row has a Group
+	at     string // the row OnMove last ran for, "\x00" + its ID
 	sort   []SortKey
 	view   []int // rows shown, in order: sorted, then filtered
 	cursor int   // index into view
@@ -205,6 +217,16 @@ func (l *List) rebuild() {
 			return 0
 		})
 	}
+	l.groups = slices.ContainsFunc(l.rows, func(r Row) bool { return r.Group != "" })
+	if l.groups {
+		rank := map[string]int{}
+		for _, r := range l.rows {
+			if _, ok := rank[r.Group]; !ok {
+				rank[r.Group] = len(rank)
+			}
+		}
+		slices.SortStableFunc(idx, func(a, b int) int { return cmp.Compare(rank[l.rows[a].Group], rank[l.rows[b].Group]) })
+	}
 	if l.filter != nil && !l.filter.empty() {
 		q := l.filter.value()
 		kept := idx[:0]
@@ -268,14 +290,19 @@ func (l *List) Draw(w, h int, focused bool) []string {
 		return append(out, rest...)
 	}
 	arrow := Width(glyphHard)
-	textW := w - 1 - arrow // one cell of padding on the left, the arrow's on the right (layout/panel)
+	indent := ""
+	if l.groups {
+		indent = "  " // items two cells further in than their group's title (layout/panel, groups)
+	}
+	textW := w - 1 - arrow - len(indent) // one cell of padding on the left, the arrow's on the right (layout/panel)
 	markW := 0
 	if l.Marks {
 		markW = IconWidth() + 1
 	}
 	widths := l.widths(textW - markW)
 	if len(l.Columns) > 0 {
-		out = append(out, " "+Repeat(" ", markW)+Pad(Fg(Blue).Render(l.header(widths)), textW-markW)+Repeat(" ", arrow))
+		// TODO(tdp G87): the header goes in with the items, so the columns line up.
+		out = append(out, " "+indent+Repeat(" ", markW)+Pad(Fg(Blue).Render(l.header(widths)), textW-markW)+Repeat(" ", arrow))
 	}
 	rows := h - len(out)
 	l.height = rows
@@ -283,20 +310,33 @@ func (l *List) Draw(w, h int, focused bool) []string {
 		l.scroll = ""
 		return out[:h]
 	}
-	// Scroll the least that keeps the cursor in sight.
-	if l.cursor < l.top {
-		l.top = l.cursor
+	lines := l.lines()
+	cl := slices.IndexFunc(lines, func(ln listLine) bool { return ln.item == l.cursor })
+	// Scroll the least that keeps the cursor in sight, with its group's
+	// title when it is on the group's first row.
+	want := cl
+	if cl > 0 && lines[cl-1].item < 0 {
+		want = cl - 1
 	}
-	if l.cursor >= l.top+rows {
-		l.top = l.cursor - rows + 1
+	if want < l.top {
+		l.top = want
 	}
-	l.top = min(max(l.top, 0), max(len(l.view)-rows, 0))
+	if cl >= l.top+rows {
+		l.top = cl - rows + 1
+	}
+	l.top = min(max(l.top, 0), max(len(lines)-rows, 0))
 	for i := 0; i < rows; i++ {
-		vi := l.top + i
-		if vi >= len(l.view) {
+		li := l.top + i
+		if li >= len(lines) {
 			out = append(out, Repeat(" ", w))
 			continue
 		}
+		if lines[li].item < 0 {
+			// A group title: Blue, upper case, not bold, one cell from the frame.
+			out = append(out, " "+Pad(Fg(Blue).Render(Truncate(Upper(lines[li].title), w-1-arrow)), w-1-arrow)+Repeat(" ", arrow))
+			continue
+		}
+		vi := lines[li].item
 		r := l.view[vi]
 		mark := ""
 		if l.Marks {
@@ -315,20 +355,59 @@ func (l *List) Draw(w, h int, focused bool) []string {
 				cursor = Style{Fg: Base, Bg: DimColor(Subtext1), Bold: true}
 				arrowStyle = Fg(DimColor(Subtext1))
 			}
-			plain := ansi.Strip(" " + mark + text)
+			plain := ansi.Strip(" " + indent + mark + text)
 			out = append(out, cursor.Render(Pad(plain, w-arrow))+arrowStyle.Render(glyphHard))
 			continue
 		}
 		if mark != "" && l.marked[l.rowID(r)] {
 			mark = Fg(Green).Render(glyphMarked) + " "
 		}
-		out = append(out, " "+mark+Pad(text, textW-markW)+Repeat(" ", arrow))
+		out = append(out, " "+indent+mark+Pad(text, textW-markW)+Repeat(" ", arrow))
 	}
 	l.scroll = ""
-	if len(l.view) > rows {
+	if len(lines) > rows {
 		l.scroll = scrollText(true, l.cursor+1, 0, len(l.view))
 	}
 	return out
+}
+
+// listLine is one line of the list's rows: a row (its index in view) or a
+// group's title (item -1).
+type listLine struct {
+	item  int
+	title string
+}
+
+// lines are the rows shown, each group's title before its first row.
+func (l *List) lines() []listLine {
+	out := make([]listLine, 0, len(l.view))
+	prev := ""
+	for vi, r := range l.view {
+		if g := l.rows[r].Group; g != "" && (vi == 0 || g != prev) {
+			out = append(out, listLine{item: -1, title: g})
+		}
+		prev = l.rows[r].Group
+		out = append(out, listLine{item: vi})
+	}
+	return out
+}
+
+// moved runs OnMove when the row under the cursor is another than last time.
+func (l *List) moved() tea.Cmd {
+	r, ok := l.Current()
+	if !ok {
+		l.at = ""
+		return nil
+	}
+	at := "\x00" + l.rowID(l.view[l.cursor])
+	if at == l.at {
+		return nil
+	}
+	l.at = at
+	if l.OnMove == nil {
+		return nil
+	}
+	return l.OnMove(r)
 }
 
 // widths are the columns' widths in w cells, two cells apart: each as wide as
