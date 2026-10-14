@@ -66,6 +66,9 @@ type Checks struct {
 	Subject string
 	Options []string
 	Checked []bool
+	// Cursor is the option the cursor starts on, scrolled into sight; the
+	// app decides (components/input/checkbox). 0, the first, by default.
+	Cursor int
 	// Done gets the new set. It is not called when nothing changed.
 	Done func([]bool) tea.Cmd
 }
@@ -224,6 +227,9 @@ func (c Checks) open(a *App, written func()) tea.Cmd {
 		return tea.Batch(a.closeTop(), c.Done(slices.Clone(fv.checked)))
 	}
 	fv.refilter()
+	if k := slices.Index(fv.shown, c.Cursor); k >= 0 {
+		fv.cursor = k
+	}
 	return a.open(fv)
 }
 

@@ -418,6 +418,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | radio | 五個以內畫在表單或 panel；U+F043E／U+F043D；選中 Green 其他 Text；一律直排、一個選項一列；每個選項一個項目；`Enter` 選、focus 不動、馬上生效 | I 的 `Layout`、`Order` | `TestRadio` |
 | checkbox §長相 | U+F0132（勾）／U+F0131；勾的字 Green；popup 是 finder 骨架沒預覽、checkbox glyph、寬度照選項 | I 的 `Notify`（開關）、`Agent`（一組）、`Namespaces`（popup） | `TestCheckbox` |
 | checkbox §按鍵 | 表單或 panel 上 `Enter` 原地翻；popup：打開在清單、`Space` 只改畫面、`Enter` 整組寫回才生效（從表單：寫回並標改過；單獨：這時才套用；沒改就關）、`Esc` 取消不問；勾的字跟著畫面上的勾變 Green；hint `Enter:apply Space:toggle Tab\|/:filter Esc:cancel` | I 的 `Namespaces`；D「Form: New host」的 `Namespaces` | `TestCheckboxPopup` |
+| checkbox §按鍵 | 打開時 cursor 在哪一列：規範沒寫，由 app 決定（ccdrawu 的 CD8，不改規範）。lib：`Checks.Cursor`，預設第一列，捲到看得見 | 展示場都從第一列開（預設） | `TestCheckboxPopupCursor` |
 | slider | 表單與 panel 上軌道 `━` + `●` + 數字（寬度與顏色 app 定）；`Enter` 開 select（bottom 到 top、每 step 一個，cursor 在目前值，打數字篩選）；沒有自己的鍵；bottom、top、step 必有，step 預設 `(top − bottom) / 10`、可以是小數 | I 的 `Brightness`（0–100）、`Opacity`（0–1，step 0.05） | `TestSlider` |
 | datetime §日期 | 月、年各是可 focus 的項目（focus 時照 cursor）、之間兩格；日曆靠左離框一格、不另外縮；每天 4 格（日期 2 格靠右 + 間距 2）；固定 6 列；cursor 那天就是要寫回的那天；原本的值 Green、打開 cursor 在它（沒有就今天）；今天底線；週末不上色；一週從週一或週日（app）；範圍外 Surface2、cursor 不停 | I 的 `Due date`（有範圍、週一開始） | `TestDatePickerLayout` |
 | datetime §日期加時間 | 右邊直分隔線（不接框、左右各空兩格）；時 00–23、分每 5 分、兩欄之間兩格；目前的值 Green；跟日曆一樣高、超出捲；值不在格上停在之前最近的；沒 focus 那塊與時間塊裡沒 focus 那一欄的 cursor 再淡化（整個 picker 只有一個亮的 cursor）；版面固定、寬度確定 | I 的 `Meeting`（值 10:07） | `TestDatetimePickerLayout`、`TestDatetimeOneBrightCursor` |

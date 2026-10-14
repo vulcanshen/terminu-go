@@ -2,6 +2,10 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.6.5
+
+- `Checks.Cursor`: the option a checkbox popup opens with the cursor on, scrolled into sight; the first by default
+
 ## v0.1.4 — tdp v0.6.5
 
 - The colour picker: `Tab|Shift-Tab` go between R, G, B and `Choose`, back to the channel left, as on a form; the hint

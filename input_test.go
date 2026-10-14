@@ -1,6 +1,7 @@
 package terminu
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
@@ -180,6 +181,37 @@ func TestCheckboxPopup(t *testing.T) {
 	ta.press("Enter")
 	if got != nil || ta.top() != nil {
 		t.Error("Enter with nothing changed should just close")
+	}
+}
+
+// Checks.Cursor opens a checkbox popup with the cursor on that option, in
+// sight even past the first page (ccdrawu's CD8: the app decides).
+func TestCheckboxPopupCursor(t *testing.T) {
+	ta := newTestApp(t)
+	ta.resize(80, 20) // too short for all 29
+	opts := make([]string, 29)
+	for i := range opts {
+		opts[i] = fmt.Sprintf("item-%02d", i)
+	}
+	ta.Checks(Checks{Title: "Show", Options: opts, Checked: make([]bool, len(opts)), Cursor: 20})
+	ta.settle()
+	fv := ta.topView().(*finderView)
+	if i, r, ok := fv.at(); !ok || i != 20 || r.text != "item-20" {
+		t.Fatalf("the cursor on %d %q, want item-20", i, r.text)
+	}
+	if text := ta.screenText(); !strings.Contains(text, "item-20") || strings.Contains(text, "item-00") {
+		t.Errorf("scrolled to item-20:\n%s", text)
+	}
+	ta.press("Space")
+	if !fv.checked[20] {
+		t.Error("Space did not check the row the cursor opened on")
+	}
+	// Out of range: the first, as with no Cursor.
+	ta.press("Esc")
+	ta.Checks(Checks{Title: "Show", Options: opts, Cursor: 99})
+	ta.settle()
+	if i, _, _ := ta.topView().(*finderView).at(); i != 0 {
+		t.Errorf("Cursor out of range opened on %d, want 0", i)
 	}
 }
 
