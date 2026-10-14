@@ -301,7 +301,7 @@ func (l *List) Draw(w, h int, focused bool) []string {
 	}
 	widths := l.widths(textW - markW)
 	if len(l.Columns) > 0 {
-		// TODO(tdp G87): the header goes in with the items, so the columns line up.
+		// The header goes in with the items, so the columns line up.
 		out = append(out, " "+indent+Repeat(" ", markW)+Pad(Fg(Blue).Render(l.header(widths)), textW-markW)+Repeat(" ", arrow))
 	}
 	rows := h - len(out)
