@@ -2,6 +2,12 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.6.9
+
+- `FormButton.Subject` and `Form.ButtonSubject`: the name a button acts on, after its verb on the button. The hint turns
+  only the verb to lower case and keeps the name as it is (`Overwrite KBU.svg` → `Enter:overwrite KBU.svg`). A failure's
+  error popup puts the name after `: ` in its title, kept as it is
+
 ## v0.1.7 — tdp v0.6.8
 
 - `Form.Buttons` and `FormButton`: a form's action area can hold more buttons, in rows on the right, the main submit

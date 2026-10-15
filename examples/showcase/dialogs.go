@@ -344,7 +344,12 @@ func (ds *dialogsScreen) actionsForm() tea.Cmd {
 	saveAs := &terminu.FormButton{Label: "Save As", Submit: func() (tea.Cmd, error) {
 		return a.Toast(terminu.Info, "Saved a copy of "+f.Fields[0].Value()), nil
 	}}
-	f.Buttons = [][]*terminu.FormButton{{test, scan}, {saveAs}}
+	// A button naming what it acts on: the hint keeps the name as it is,
+	// Enter:export hosts.yaml (components/dialog/form, hint).
+	export := &terminu.FormButton{Label: "Export", Subject: "hosts.yaml", Submit: func() (tea.Cmd, error) {
+		return a.Toast(terminu.Info, "Exported "+f.Fields[0].Value()+" to hosts.yaml"), nil
+	}}
+	f.Buttons = [][]*terminu.FormButton{{test, scan, export}, {saveAs}}
 	f.Button, f.Submit = "Connect", nil
 	f.SubmitLong = func(ctx context.Context) (tea.Cmd, error) {
 		host := hostF.Value()

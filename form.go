@@ -56,7 +56,10 @@ type Form struct {
 	Name   string
 	Fields []*FormField
 	// Button is the main submit button's text: what the form does ("Save").
-	Button string
+	// ButtonSubject is the name it acts on, kept as it is after the verb on
+	// the button and in the hint: "Overwrite KBU.svg", "Enter:overwrite
+	// KBU.svg" (components/dialog/form, hint).
+	Button, ButtonSubject string
 	// Buttons are the action area's other buttons, row by row from the top,
 	// each row on the right. The main submit goes at the end of the last
 	// row, the bottom right; an empty last row puts it on a row of its own.
@@ -78,7 +81,9 @@ type Form struct {
 // (components/dialog/form): another submit, or an action that keeps the
 // form open. It has one of Submit, SubmitLong and Run.
 type FormButton struct {
-	Label string
+	// Label is what it does ("Overwrite"); Subject the name it acts on, kept
+	// as it is, as the form's ButtonSubject.
+	Label, Subject string
 	// Submit makes it another submit ("Save As"): it checks the whole form
 	// as the main one does, and the form closes once it is done. SubmitLong
 	// is one that takes long, as the form's.
@@ -208,11 +213,41 @@ func (fv *formView) actionRows() [][]formItem {
 	return rows
 }
 
-func (fv *formView) buttonLabel(it formItem) string {
+// buttonParts are a button's verb and the name it acts on, if any.
+func (fv *formView) buttonParts(it formItem) (label, subject string) {
 	if b := fv.buttons[it.option]; b != nil {
-		return b.Label
+		return b.Label, b.Subject
 	}
-	return fv.button()
+	return fv.button(), fv.f.ButtonSubject
+}
+
+// buttonLabel is the text on a button: "Overwrite KBU.svg".
+func (fv *formView) buttonLabel(it formItem) string {
+	label, subject := fv.buttonParts(it)
+	if subject == "" {
+		return label
+	}
+	return label + " " + subject
+}
+
+// buttonHint is what a button's Enter says in the hint: the verb in lower
+// case, the name as it is, "overwrite KBU.svg" (components/dialog/form, hint;
+// components/README, upper case).
+func (fv *formView) buttonHint(it formItem) string {
+	label, subject := fv.buttonParts(it)
+	if subject == "" {
+		return strings.ToLower(label)
+	}
+	return strings.ToLower(label) + " " + subject
+}
+
+// failed is the error popup of a button's work failing: its verb in the
+// title, the name after ": " as it is (components/layout/popup, title).
+func (fv *formView) failed(a *App, it formItem, err error) tea.Cmd {
+	label, subject := fv.buttonParts(it)
+	n := errorPopup(label+" failed", err.Error(), a.w)
+	n.title = popupTitle(label+" failed", subject)
+	return a.open(n)
 }
 
 // area is the stops of the area the focus is in (components/dialog/form):
@@ -309,7 +344,7 @@ func (fv *formView) hint() []KeyHint {
 	case itemButton:
 		// A button whose work still runs has no Enter until it ends.
 		if fv.running[it.option] == nil {
-			h = append(h, KeyHint{"Enter", strings.ToLower(fv.buttonLabel(it))})
+			h = append(h, KeyHint{"Enter", fv.buttonHint(it)})
 		}
 		h = append(h, KeyHint{"Tab", "fields"})
 	default:
@@ -675,7 +710,7 @@ func (fv *formView) press(a *App, it formItem) tea.Cmd {
 			return formRan{submit: true, cmd: cmd, err: err}
 		})
 	}
-	return fv.submit(a, fv.buttonLabel(it), submit)
+	return fv.submit(a, it, submit)
 }
 
 // start runs a button's work off the update loop: the loading icon after the
@@ -722,11 +757,10 @@ func (m formRan) done(a *App) tea.Cmd {
 	if fv.gone {
 		return nil
 	}
-	label := fv.buttonLabel(m.at)
 	switch {
 	case m.submit && m.err != nil:
 		fv.focus = m.at
-		return a.Error(label+" failed", m.err.Error())
+		return fv.failed(a, m.at, m.err)
 	case m.submit:
 		return tea.Batch(a.closeView(fv), m.cmd)
 	}
@@ -737,9 +771,10 @@ func (m formRan) done(a *App) tea.Cmd {
 	switch {
 	case m.res.Err != nil:
 		fv.focus = m.at
-		return a.Error(label+" failed", m.res.Err.Error())
+		return fv.failed(a, m.at, m.res.Err)
 	case len(m.res.Lines) > 0:
-		return a.Viewer(&Viewer{Title: label, Lines: m.res.Lines})
+		label, subject := fv.buttonParts(m.at)
+		return a.Viewer(&Viewer{Title: label, Subject: subject, Lines: m.res.Lines})
 	case m.res.Toast != "":
 		return a.Toast(Info, m.res.Toast)
 	}
@@ -771,7 +806,7 @@ func (fv *formView) check(fields []*FormField) bool {
 
 // submit checks the whole form; with nothing wrong it does what the button is
 // for and closes (components/dialog/form, errors).
-func (fv *formView) submit(a *App, label string, do func() (tea.Cmd, error)) tea.Cmd {
+func (fv *formView) submit(a *App, it formItem, do func() (tea.Cmd, error)) tea.Cmd {
 	if !fv.check(fv.f.Fields) {
 		return nil
 	}
@@ -780,7 +815,7 @@ func (fv *formView) submit(a *App, label string, do func() (tea.Cmd, error)) tea
 	}
 	cmd, err := do()
 	if err != nil {
-		return a.Error(label+" failed", err.Error())
+		return fv.failed(a, it, err)
 	}
 	return tea.Batch(a.closeTop(), cmd)
 }

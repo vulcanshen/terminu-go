@@ -69,7 +69,8 @@ cd ~/Documents/sideproj/terminu-go && go build -o /tmp/showcase ./examples/showc
 - 「Form: with actions」有好幾個按鈕：`Tab` 到動作區先停在右下角的 `Connect`，`j|k` 在按鈕之間走。`Test` 只要 Host：空著按會被擋，
   填了再按要等一下（標題後面轉 loading icon）才跳 toast，Host 打 `bad-1` 會失敗、開 error popup，關掉後再按 `Enter` 就是重試；
   `Scan` 開一個 note，還把 Port 寫成 22，之後 `Esc` 會先問要不要放棄。`Test` 還在跑時，下框的 hint 沒有 `Enter`，再按也不會
-  再跑一次；這時按 `Esc` 關掉表單，結果就不會跳出來。`Connect` 也要等一下，連上才關掉表單。
+  再跑一次；這時按 `Esc` 關掉表單，結果就不會跳出來。`Connect` 也要等一下，連上才關掉表單。`Export hosts.yaml` 上的 hint 是
+  `Enter:export hosts.yaml`：只有動詞小寫，檔名照原樣。
 - 每一層看：只有最上層亮、底下淡化一次，`Esc` 一次關一層。
 
 **t — terminal**：PTY。

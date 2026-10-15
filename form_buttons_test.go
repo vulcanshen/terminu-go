@@ -405,3 +405,29 @@ func TestFormSubmitAndSubmitLong(t *testing.T) {
 	newTestApp(t).Form(&Form{Title: "X", Submit: func() (tea.Cmd, error) { return nil, nil },
 		SubmitLong: func(context.Context) (tea.Cmd, error) { return nil, nil }})
 }
+
+// A button with a name: the verb in lower case in the hint, the name as it
+// is; a failure titled with the name after ": " (components/dialog/form,
+// hint; components/README, upper case).
+func TestFormButtonSubject(t *testing.T) {
+	ta := newTestApp(t)
+	over := &FormButton{Label: "Overwrite", Subject: "KBU.svg", Submit: func() (tea.Cmd, error) { return nil, errors.New("read-only") }}
+	ta.Form(&Form{Title: "Export", Fields: []*FormField{{Label: "Name", Value: func() string { return "kbu" }}},
+		Button: "Save as", ButtonSubject: "KBU-2.svg", Buttons: [][]*FormButton{{over}}})
+	ta.settle()
+	ta.press("Tab")
+	if _, plain := covEPopup(ta); covERow(plain, " Overwrite KBU.svg   Save as KBU-2.svg ") < 0 {
+		t.Errorf("the buttons with their names:\n%s", strings.Join(plain, "\n"))
+	}
+	if h := covEBottom(ta); !strings.HasPrefix(h, "┗━ Enter:save as KBU-2.svg Tab:fields Esc:cancel ━") {
+		t.Errorf("the main submit: %q", h)
+	}
+	ta.press("k")
+	if h := covEBottom(ta); !strings.HasPrefix(h, "┗━ Enter:overwrite KBU.svg Tab:fields Esc:cancel ━") {
+		t.Errorf("only the verb in lower case: %q", h)
+	}
+	ta.press("Enter")
+	if n, ok := ta.topView().(*noteView); !ok || n.title != "OVERWRITE FAILED: KBU.svg" {
+		t.Errorf("the failure keeps the name as it is: %T\n%s", ta.topView(), ta.screenText())
+	}
+}
