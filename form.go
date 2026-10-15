@@ -1,6 +1,7 @@
 package terminu
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -66,21 +67,30 @@ type Form struct {
 	// opens an error popup over the form, which stays; otherwise the form
 	// closes and the command runs.
 	Submit func() (tea.Cmd, error)
+	// SubmitLong is a Submit that takes long ("Connect"), in its place: it
+	// runs off the update loop, the loading icon after the title and Enter
+	// on its button doing nothing until it ends. ctx ends when the form
+	// closes first; what it returns then is dropped (components/dialog/form).
+	SubmitLong func(ctx context.Context) (tea.Cmd, error)
 }
 
 // FormButton is a button of a form's action area besides the main submit
 // (components/dialog/form): another submit, or an action that keeps the
-// form open. It has Submit or Run, not both.
+// form open. It has one of Submit, SubmitLong and Run.
 type FormButton struct {
 	Label string
 	// Submit makes it another submit ("Save As"): it checks the whole form
-	// as the main one does, and the form closes once it is done.
-	Submit func() (tea.Cmd, error)
+	// as the main one does, and the form closes once it is done. SubmitLong
+	// is one that takes long, as the form's.
+	Submit     func() (tea.Cmd, error)
+	SubmitLong func(ctx context.Context) (tea.Cmd, error)
 	// Run makes it an action that keeps the form open ("Test"). It checks
 	// Needs first, the fields it needs (their Check); then it runs off the
-	// update loop, the loading icon after the title until it ends.
+	// update loop, the loading icon after the title and Enter on it doing
+	// nothing until it ends. ctx ends when the form closes first; its result
+	// is then dropped, Apply too.
 	Needs []*FormField
-	Run   func() FormResult
+	Run   func(ctx context.Context) FormResult
 }
 
 // FormResult is what came of a form's action (components/dialog/form): Err
@@ -120,7 +130,10 @@ type formView struct {
 	back, backAction formItem
 	// buttons are the action area's in reading order, nil the main submit.
 	buttons []*FormButton
-	running map[*FormButton]bool
+	// running are the buttons whose work runs off the update loop, by their
+	// place, with what ends its ctx; gone is set once the form closes.
+	running map[int]context.CancelFunc
+	gone    bool
 	dirty   bool
 	errs    map[*FormField]string
 	errOn   *FormField // whose message the error row shows
@@ -130,19 +143,29 @@ type formView struct {
 
 // Form opens a form.
 // It panics on a field with more than five options: those go in a select or
-// a checkbox popup (components/dialog/form); and on a button with not one of
-// Submit and Run: mistakes in the program.
+// a checkbox popup (components/dialog/form); on a form with both Submit and
+// SubmitLong; and on a button with not one of Submit, SubmitLong and Run:
+// mistakes in the program.
 func (a *App) Form(f *Form) tea.Cmd {
 	for _, fl := range f.Fields {
 		if len(fl.Options) > 5 {
 			panic(fmt.Sprintf("terminu: form field %q has %d options; more than five go in a select or a checkbox popup", fl.Label, len(fl.Options)))
 		}
 	}
-	fv := &formView{f: f, running: map[*FormButton]bool{}}
+	if f.Submit != nil && f.SubmitLong != nil {
+		panic(fmt.Sprintf("terminu: form %q has both Submit and SubmitLong", f.Title))
+	}
+	fv := &formView{f: f, running: map[int]context.CancelFunc{}}
 	for _, row := range f.Buttons {
 		for _, b := range row {
-			if (b.Submit == nil) == (b.Run == nil) {
-				panic(fmt.Sprintf("terminu: form button %q needs one of Submit and Run", b.Label))
+			n := 0
+			for _, set := range []bool{b.Submit != nil, b.SubmitLong != nil, b.Run != nil} {
+				if set {
+					n++
+				}
+			}
+			if n != 1 {
+				panic(fmt.Sprintf("terminu: form button %q needs one of Submit, SubmitLong and Run", b.Label))
 			}
 			fv.buttons = append(fv.buttons, b)
 		}
@@ -284,7 +307,11 @@ func (fv *formView) hint() []KeyHint {
 		// The error row is in the field area: Tab goes to the actions.
 		return []KeyHint{{"Enter", "show"}, {"e", "edit"}, {"Tab", "actions"}, {"Esc", "cancel"}}
 	case itemButton:
-		h = append(h, KeyHint{"Enter", strings.ToLower(fv.buttonLabel(it))}, KeyHint{"Tab", "fields"})
+		// A button whose work still runs has no Enter until it ends.
+		if fv.running[it.option] == nil {
+			h = append(h, KeyHint{"Enter", strings.ToLower(fv.buttonLabel(it))})
+		}
+		h = append(h, KeyHint{"Tab", "fields"})
 	default:
 		switch {
 		case len(it.field.Options) > 0 && it.field.Multi:
@@ -624,35 +651,85 @@ func (fv *formView) enter(a *App) tea.Cmd {
 // press presses a button: a submit, or an action that keeps the form open
 // (components/dialog/form, the action area).
 func (fv *formView) press(a *App, it formItem) tea.Cmd {
-	b := fv.buttons[it.option]
-	switch {
-	case b == nil:
-		return fv.submit(a, fv.button(), fv.f.Submit)
-	case b.Submit != nil:
-		return fv.submit(a, b.Label, b.Submit)
-	case fv.running[b]:
-		return nil // TODO(tdp G89): pressed again while it runs
-	case !fv.check(b.Needs):
-		return nil
+	if fv.running[it.option] != nil {
+		return nil // it still runs: the same thing is not sent twice
 	}
-	fv.running[b] = true
-	run := b.Run
-	return func() tea.Msg { return formRan{fv: fv, b: b, at: it, res: run()} }
+	b := fv.buttons[it.option]
+	submit, long := fv.f.Submit, fv.f.SubmitLong
+	if b != nil {
+		submit, long = b.Submit, b.SubmitLong
+	}
+	switch {
+	case b != nil && b.Run != nil:
+		if !fv.check(b.Needs) {
+			return nil
+		}
+		run := b.Run
+		return fv.start(it, func(ctx context.Context) formRan { return formRan{res: run(ctx)} })
+	case long != nil:
+		if !fv.check(fv.f.Fields) {
+			return nil
+		}
+		return fv.start(it, func(ctx context.Context) formRan {
+			cmd, err := long(ctx)
+			return formRan{submit: true, cmd: cmd, err: err}
+		})
+	}
+	return fv.submit(a, fv.buttonLabel(it), submit)
 }
 
-// formRan is a form's action ended, back on the update loop.
+// start runs a button's work off the update loop: the loading icon after the
+// title until it ends; the form closing ends ctx (components/dialog/form).
+func (fv *formView) start(it formItem, work func(ctx context.Context) formRan) tea.Cmd {
+	ctx, cancel := context.WithCancel(context.Background())
+	fv.running[it.option] = cancel
+	return func() tea.Msg {
+		m := work(ctx)
+		m.fv, m.at = fv, it
+		return m
+	}
+}
+
+// closed is the form gone: what still runs is cancelled, and what it ends
+// with has nowhere to go (components/dialog/form).
+func (fv *formView) closed() {
+	fv.gone = true
+	for _, cancel := range fv.running {
+		cancel()
+	}
+}
+
+// formRan is a button's work ended, back on the update loop: an action's
+// result, or a long submit's command and error.
 type formRan struct {
-	fv  *formView
-	b   *FormButton
-	at  formItem
-	res FormResult
+	fv     *formView
+	at     formItem
+	res    FormResult
+	submit bool
+	cmd    tea.Cmd
+	err    error
 }
 
-// done shows what came of the action: an error popup with the focus on its
-// button, so that Enter tries again; a note to read; a toast.
+// done shows what came of it: an error popup with the focus on its button, so
+// that Enter tries again; a long submit done closes the form; an action's note
+// to read or toast. Once the form is gone it shows nothing.
 func (m formRan) done(a *App) tea.Cmd {
 	fv := m.fv
-	delete(fv.running, m.b)
+	if cancel := fv.running[m.at.option]; cancel != nil {
+		cancel()
+		delete(fv.running, m.at.option)
+	}
+	if fv.gone {
+		return nil
+	}
+	label := fv.buttonLabel(m.at)
+	switch {
+	case m.submit && m.err != nil:
+		fv.focus = m.at
+		return a.Error(label+" failed", m.err.Error())
+	case m.submit:
+		return tea.Batch(a.closeView(fv), m.cmd)
+	}
 	if m.res.Apply != nil {
 		m.res.Apply()
 		fv.dirty = true // a value written into a field counts as a change
@@ -660,9 +737,9 @@ func (m formRan) done(a *App) tea.Cmd {
 	switch {
 	case m.res.Err != nil:
 		fv.focus = m.at
-		return a.Error(m.b.Label+" failed", m.res.Err.Error())
+		return a.Error(label+" failed", m.res.Err.Error())
 	case len(m.res.Lines) > 0:
-		return a.Viewer(&Viewer{Title: m.b.Label, Lines: m.res.Lines})
+		return a.Viewer(&Viewer{Title: label, Lines: m.res.Lines})
 	case m.res.Toast != "":
 		return a.Toast(Info, m.res.Toast)
 	}

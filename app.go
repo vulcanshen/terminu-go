@@ -364,7 +364,35 @@ func (a *App) closeTop() tea.Cmd {
 	if l.frame > openFrames {
 		l.frame = openFrames
 	}
+	gone(l)
 	return a.animate()
+}
+
+// gone tells a popup that wants to know it is closing: a form stops what
+// still runs for it.
+func gone(l *layer) {
+	if c, ok := l.view.(interface{ closed() }); ok {
+		c.closed()
+	}
+}
+
+// closeView closes v's popup and every one above it, those at once, as
+// closeAll does with the whole stack.
+func (a *App) closeView(v popupView) tea.Cmd {
+	i := slices.IndexFunc(a.stack, func(l *layer) bool { return l.view == v && !l.closing })
+	if i < 0 {
+		return nil
+	}
+	kept := a.stack[:i+1]
+	for _, l := range a.stack[i+1:] {
+		if l.closing {
+			kept = append(kept, l)
+		} else {
+			gone(l)
+		}
+	}
+	a.stack = kept
+	return a.closeTop()
 }
 
 // closeAll closes every popup: the top one animates, the rest go at once
@@ -378,6 +406,8 @@ func (a *App) closeAll() tea.Cmd {
 	for _, l := range a.stack {
 		if l == t || l.closing {
 			kept = append(kept, l)
+		} else {
+			gone(l)
 		}
 	}
 	a.stack = kept

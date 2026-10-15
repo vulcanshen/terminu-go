@@ -1,6 +1,7 @@
 package terminu
 
 import (
+	"context"
 	"errors"
 	"slices"
 	"strings"
@@ -35,6 +36,7 @@ type buttonsForm struct {
 	test, saveAs      *FormButton
 	ran, saved, saves int
 	res               FormResult
+	ctx               context.Context // the last Run's
 }
 
 func newButtonsForm() *buttonsForm {
@@ -49,7 +51,11 @@ func newButtonsForm() *buttonsForm {
 	}
 	b.nameF = &FormField{Label: "Name", Value: func() string { return b.name }, Check: required("Name", &b.name)}
 	b.hostF = &FormField{Label: "Host", Value: func() string { return b.host }, Check: required("Host", &b.host)}
-	b.test = &FormButton{Label: "Test", Needs: []*FormField{b.hostF}, Run: func() FormResult { b.ran++; return b.res }}
+	b.test = &FormButton{Label: "Test", Needs: []*FormField{b.hostF}, Run: func(ctx context.Context) FormResult {
+		b.ran++
+		b.ctx = ctx
+		return b.res
+	}}
 	b.saveAs = &FormButton{Label: "Save As", Submit: func() (tea.Cmd, error) { b.saves++; return nil, nil }}
 	b.f = &Form{Title: "New host", Fields: []*FormField{b.nameF, b.hostF}, Buttons: [][]*FormButton{{b.test}, {b.saveAs}},
 		Submit: func() (tea.Cmd, error) { b.saved++; return nil, nil }}
@@ -232,7 +238,9 @@ func TestFormSaveAs(t *testing.T) {
 func TestFormButtonNeedsOne(t *testing.T) {
 	for _, bad := range []*FormButton{
 		{Label: "None"},
-		{Label: "Both", Submit: func() (tea.Cmd, error) { return nil, nil }, Run: func() FormResult { return FormResult{} }},
+		{Label: "Both", Submit: func() (tea.Cmd, error) { return nil, nil }, Run: func(context.Context) FormResult { return FormResult{} }},
+		{Label: "Long and short", Submit: func() (tea.Cmd, error) { return nil, nil },
+			SubmitLong: func(context.Context) (tea.Cmd, error) { return nil, nil }},
 	} {
 		func() {
 			defer func() {
@@ -275,4 +283,125 @@ func TestSwatchOnCursor(t *testing.T) {
 	if got := onBlock(Fg(Green).Render("ok"), On(Blue)); got != On(Blue).Render("ok") {
 		t.Errorf("plain text on the block: %q", got)
 	}
+}
+
+// While its work runs, Enter on the button does nothing and the hint leaves
+// its Enter out, back once it ends (components/dialog/form).
+func TestFormActionWhileRunning(t *testing.T) {
+	ta := newTestApp(t)
+	b := newButtonsForm()
+	b.host = "web-01"
+	b.res = FormResult{Toast: "Connected to web-01"}
+	ta.Form(b.f)
+	ta.settle()
+	ta.press("Tab", "j") // Test
+	cmd := ta.press("Enter")
+	if h := covEBottom(ta); !strings.HasPrefix(h, "┗━ Tab:fields Esc:cancel ━") {
+		t.Errorf("while it runs the hint has no Enter: %q", h)
+	}
+	if again := ta.press("Enter"); again != nil {
+		ta.deliver(again)
+	}
+	ta.deliver(cmd)
+	if b.ran != 1 {
+		t.Errorf("Enter while it ran sent it again: ran %d", b.ran)
+	}
+	if h := covEBottom(ta); !strings.HasPrefix(h, "┗━ Enter:test Tab:fields Esc:cancel ━") {
+		t.Errorf("once it ends Enter is back: %q", h)
+	}
+}
+
+// Closed before its action ends, the form takes nothing back: ctx ends, and
+// no toast, note, error popup or Apply (components/dialog/form).
+func TestFormClosedDropsResult(t *testing.T) {
+	for _, close := range [][]string{{"Esc"}, {"j", "Enter"}} { // Esc; Save As, another submit
+		ta := newTestApp(t)
+		b := newButtonsForm()
+		b.name, b.host = "web", "web-01"
+		applied := false
+		b.res = FormResult{Err: errors.New("refused"), Apply: func() { applied = true }}
+		ta.Form(b.f)
+		ta.settle()
+		ta.press("Tab", "j") // Test
+		cmd := ta.press("Enter")
+		ta.press(close...)
+		if ta.top() != nil {
+			t.Fatalf("%v did not close the form: %T", close, ta.topView())
+		}
+		ta.deliver(cmd)
+		if b.ran != 1 || b.ctx.Err() == nil {
+			t.Errorf("%v: its ctx did not end: ran %d", close, b.ran)
+		}
+		if ta.top() != nil || applied || strings.Contains(ta.screenText(), "refused") {
+			t.Errorf("%v: the result showed after the form closed: top %T, applied %v", close, ta.topView(), applied)
+		}
+	}
+}
+
+// A submit that takes long runs off the update loop: the loading icon, no
+// second press; failing it opens an error popup over the form, done it closes
+// the form and runs its command.
+func TestFormSubmitLong(t *testing.T) {
+	ta := newTestApp(t)
+	b := newButtonsForm()
+	var fail error
+	connects := 0
+	b.f.Submit = nil
+	b.f.Button = "Connect"
+	b.f.SubmitLong = func(context.Context) (tea.Cmd, error) {
+		connects++
+		return func() tea.Msg { return nil }, fail
+	}
+	ta.Form(b.f)
+	ta.settle()
+	fv := ta.topView().(*formView)
+	ta.deliver(ta.press("Tab", "Enter"))
+	if connects != 0 || fv.errs[b.nameF] == "" {
+		t.Fatalf("Connect checks the whole form first: connects %d", connects)
+	}
+	b.name, b.host = "web", "web-01"
+	fail = errors.New("connection refused")
+	ta.press("Tab")
+	cmd := ta.press("Enter")
+	if !fv.isLoading() || !strings.HasPrefix(covEBottom(ta), "┗━ Tab:fields Esc:cancel ━") {
+		t.Errorf("it runs: loading %v, hint %q", fv.isLoading(), covEBottom(ta))
+	}
+	ta.deliver(cmd)
+	if n, ok := ta.topView().(*noteView); !ok || !strings.Contains(n.title, "CONNECT FAILED") || buttonAt(fv) != "Connect" {
+		t.Fatalf("a failure opens an error popup over the form: %T, on %s", ta.topView(), buttonAt(fv))
+	}
+	ta.press("Esc")
+	fail = nil
+	ta.deliver(ta.press("Enter"))
+	if connects != 2 || ta.top() != nil {
+		t.Errorf("done, the form closes: connects %d, top %T", connects, ta.topView())
+	}
+	// Done under a popup opened from the form, it closes that one too.
+	b = newButtonsForm()
+	b.name, b.host = "web", "web-01"
+	b.nameF.Edit = func() Input { return TextInput{Title: "Name", Old: b.name} }
+	b.f.Submit, b.f.SubmitLong = nil, func(context.Context) (tea.Cmd, error) { return nil, nil }
+	ta.Form(b.f)
+	ta.settle()
+	cmd = ta.press("Tab", "Enter")
+	ta.press("Tab", "Enter") // Name's input popup over the form
+	if _, ok := ta.topView().(*lineInput); !ok {
+		t.Fatalf("no input over the form: %T", ta.topView())
+	}
+	ta.deliver(cmd)
+	ta.settle()
+	if ta.top() != nil {
+		t.Errorf("the form done closes with what is over it: %T", ta.topView())
+	}
+}
+
+// A form with both Submit and SubmitLong is a mistake in the program.
+func TestFormSubmitAndSubmitLong(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Error("no panic")
+		}
+	}()
+	newTestApp(t).Form(&Form{Title: "X", Submit: func() (tea.Cmd, error) { return nil, nil },
+		SubmitLong: func(context.Context) (tea.Cmd, error) { return nil, nil }})
 }

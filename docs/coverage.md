@@ -1,6 +1,6 @@
-# tdp v0.6.7 coverage
+# tdp v0.6.8 coverage
 
-tdp v0.6.7 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
+tdp v0.6.8 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
 （[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -313,6 +313,8 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | form §動作區 | 按鈕可以不只一個：主要的送出在右下角；每一列放哪些按鈕、排幾列由 app 決定，每一列靠右、同一列的按鈕之間隔一格。lib：`Form.Buttons`（一列一列，主要的送出接在最後一列的最後；最後一列空著就是它自己一列） | D「Form: with actions」（`Test` `Scan` 一列、`Save As` `Save` 一列） | `TestFormButtonsLayout` |
 | form §動作區 | 其他按鈕：另一種送出（`FormButton.Submit`，整張表單檢查、送出後關掉）或不關表單的動作（`FormButton.Run`）；兩個都給或都不給是程式的錯 | D「Form: with actions」的 `Save As`、`Test` | `TestFormSaveAs`、`TestFormButtonNeedsOne` |
 | form §動作區 | 不關表單的動作：先只檢查它要的欄位（`Needs`），沒過跟送出被擋一樣；跑的時候標題後面放 loading icon；成功 toast 一句、結果是內容時開 note、失敗開 error popup（關掉後 focus 在按鈕上，再按 `Enter` 重試）；focus 留在按鈕上；動作寫進某一欄時算改過（`FormResult.Apply`） | D「Form: with actions」：Host 空著按 `Test`；填了再按（等一下才連上）；Host 打 `bad-1` 再按；`Scan` 開 note、把 Port 寫成 22，之後 `Esc` 先問 | `TestFormActionRun`、`TestFormActionResults` |
+| form §動作區 | 還在跑時：focus 停在那顆按鈕上按 `Enter` 不作用，hint 拿掉它的 `Enter`，跑完放回來；跑得久的送出也一樣（lib：`SubmitLong`，失敗開 error popup、完成關掉表單） | D「Form: with actions」按 `Test` 後馬上再按；主要的送出是跑得久的 `Connect` | `TestFormActionWhileRunning`、`TestFormSubmitLong` |
+| form §動作區 | 還沒跑完表單就關掉（`Esc`、按了另一顆送出）：動作算取消、能停就停（`Run` 與 `SubmitLong` 拿到的 ctx 結束），結果不顯示：沒有 toast、note、error popup，也不做 `Apply` | D「Form: with actions」按 `Test` 後馬上 `Esc` | `TestFormClosedDropsResult` |
 | form §移動 | 項目：欄位、每個選項、每個按鈕、有錯誤的錯誤列；分兩區：欄位區是欄位與錯誤列（錯誤列在最後一欄後面），動作區是按鈕 | D「Form: New host」 | `TestFormItems` |
 | form §移動 | `j\|l\|↓\|→` 下一個、`h\|k\|↑\|←` 上一個，只在 focus 所在的那一區；跨欄；動作區照閱讀順序（一列由左到右、再下一列）；`gg\|G` 這一區的頭尾；`u\|d` 以項目為單位半頁、到頭尾停住；每一區各自頭尾繞回 | 同上；D「Form: with actions」的按鈕 | `TestFormMoveItems`、`TestFormWrap`、`TestFormHalfPage`、`TestFormActionAreaMoves` |
 | form §移動 | `Tab\|Shift-Tab` 在欄位區與動作區之間來回，兩邊都回到離開前那一項；第一次到動作區停在主要的送出；錯誤列屬於欄位區（在上面按 `Tab` 到動作區）、`j\|k` 與 `e` 到得了 | D「Form: long」改一欄後 `Tab`、`Enter`；D「Form: with actions」 | `TestFormTabBlocks`、`TestFormActionAreaMoves` |

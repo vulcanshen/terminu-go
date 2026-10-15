@@ -2,12 +2,15 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.6.7
+## Unreleased — tdp v0.6.8
 
 - `Form.Buttons` and `FormButton`: a form's action area can hold more buttons, in rows on the right, the main submit
   at the bottom right. A button is another submit (`Submit`, e.g. Save As) or an action that keeps the form open
   (`Run`, e.g. Test): it checks only the fields it `Needs`, runs off the update loop with the loading icon after the
   title, and its `FormResult` shows as a toast, a note, or an error popup that Enter after it tries again
+- While a button's work runs, Enter on it does nothing and the hint leaves its `Enter` out. `Form.SubmitLong` and
+  `FormButton.SubmitLong` are submits that take long (Connect), run the same way. Closing the form ends the `ctx` that
+  `Run` and `SubmitLong` get, and drops what they return: no toast, note or error popup, no `Apply`
 - A form moves in two areas: `j|k` and `gg|G` stay in the field area (the error row its last item) or the action area,
   each wrapping on its own, and `Tab|Shift-Tab` go between them. `G` no longer goes to the button; the first `Tab`
   lands on the main submit. On the error row the hint says `Tab:actions`

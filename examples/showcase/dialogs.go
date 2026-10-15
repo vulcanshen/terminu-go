@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -104,7 +105,7 @@ func (ds *dialogsScreen) scenarios() []scenario {
 		{"Form: save fails", "form", "the action fails: an error popup over the form", func() tea.Cmd {
 			return a.Form(ds.hostForm(nil, true))
 		}},
-		{"Form: with actions", "form", "more buttons: [Test] and [Scan] keep the form open, [Save As] submits too; Host bad-… fails", ds.actionsForm},
+		{"Form: with actions", "form", "more buttons: [Test] and [Scan] keep the form open, [Save As] submits too, [Connect] takes long; Host bad-… fails", ds.actionsForm},
 		{"Note viewer", "note", "its own keys [/] [y]; [v] then [v] again selects text", ds.yaml},
 		{"Popup with tabs", "note", "tabs after the title; [h]|[l] switch", ds.devtools},
 		{"Loading popup", "note", "lines arriving: the loading icon turns", ds.loadingPopup},
@@ -301,21 +302,34 @@ func (ds *dialogsScreen) hostForm(_ *terminu.Form, fail bool) *terminu.Form {
 
 // actionsForm is the host form with more buttons (components/dialog/form,
 // the action area): Test and Scan keep the form open and need only Host;
-// Save As is another submit. Tab lands on the main Save, bottom right.
+// Save As is another submit; the main Connect takes long. Tab lands on
+// Connect, bottom right.
 func (ds *dialogsScreen) actionsForm() tea.Cmd {
 	a := ds.s.app
 	f := ds.hostForm(nil, false)
 	hostF, portF := f.Fields[1], f.Fields[2]
 	needs := []*terminu.FormField{hostF}
-	test := &terminu.FormButton{Label: "Test", Needs: needs, Run: func() terminu.FormResult {
-		host := hostF.Value()
-		time.Sleep(1500 * time.Millisecond) // long enough to see the loading icon
+	// dial stands for a connection that takes a while, refused by a host
+	// named bad-…; closing the form stops it.
+	dial := func(ctx context.Context, host string) error {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(1500 * time.Millisecond): // long enough to see the loading icon
+		}
 		if strings.HasPrefix(host, "bad") {
-			return terminu.FormResult{Err: errors.New("ssh: connect to host " + host + " port 22: Connection refused")}
+			return errors.New("ssh: connect to host " + host + " port 22: Connection refused")
+		}
+		return nil
+	}
+	test := &terminu.FormButton{Label: "Test", Needs: needs, Run: func(ctx context.Context) terminu.FormResult {
+		host := hostF.Value()
+		if err := dial(ctx, host); err != nil {
+			return terminu.FormResult{Err: err}
 		}
 		return terminu.FormResult{Toast: "Connected to " + host}
 	}}
-	scan := &terminu.FormButton{Label: "Scan", Needs: needs, Run: func() terminu.FormResult {
+	scan := &terminu.FormButton{Label: "Scan", Needs: needs, Run: func(context.Context) terminu.FormResult {
 		host := hostF.Value()
 		return terminu.FormResult{
 			Lines: []string{
@@ -331,6 +345,14 @@ func (ds *dialogsScreen) actionsForm() tea.Cmd {
 		return a.Toast(terminu.Info, "Saved a copy of "+f.Fields[0].Value()), nil
 	}}
 	f.Buttons = [][]*terminu.FormButton{{test, scan}, {saveAs}}
+	f.Button, f.Submit = "Connect", nil
+	f.SubmitLong = func(ctx context.Context) (tea.Cmd, error) {
+		host := hostF.Value()
+		if err := dial(ctx, host); err != nil {
+			return nil, err
+		}
+		return a.Toast(terminu.Info, "Connected to "+host+" and saved it"), nil
+	}
 	return a.Form(f)
 }
 
