@@ -2,7 +2,7 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.6.12
+## v0.1.11 — tdp v0.6.12
 
 - The header row of a one-value-per-row panel (`Values.Header`) is Overlay0, so it no longer runs into the Blue labels
   under it. A list's header stays Blue
