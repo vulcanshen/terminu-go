@@ -2,7 +2,7 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.6.11
+## v0.1.10 — tdp v0.6.11
 
 - `TextInput`, `PasswordInput` and `Textarea` take a `Name`, as `NumberInput` does: the value's name in its errors when
   the title says what the popup does (`Name can't have control characters` on a `SAVE AS`, not `Save as can't have
