@@ -2,7 +2,7 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.6.10
+## v0.1.9 — tdp v0.6.10
 
 - `App.Popup`, `Popup` and `PopupBody`: a popup of the app's own on the library's popup stack. The app draws what is
   inside the frame and handles its keys; the library draws the frame, the title and the hint in the layer colour, plays
