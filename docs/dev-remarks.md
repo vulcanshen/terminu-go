@@ -90,6 +90,7 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
 go test -race ./...
 go vet ./...
 gofmt -l .
+make showcase    # 用目前的程式碼建展示場（/tmp/showcase）並打開
 ```
 
 Go 原始碼裡的 Nerd Font glyph 一律寫成 `\U0000E0B0` 這種 8 位數的 code point（tdp E4）。用工具寫檔時，`\uE0B0` 這種 4 位數的寫法
@@ -108,4 +109,31 @@ proto/c1/tmux-check.sh 2 2 replay 80 24 j j p    # 同一串按鍵之後的畫�
 
 ## 發布
 
-還沒發布。建 GitHub repo、push、打 tag 都先問 user。
+公開在 [github.com/vulcanshen/terminu-go](https://github.com/vulcanshen/terminu-go)，版本是 v0.x 的 tag（v0.1.0 起，對應
+tdp v0.6.0）。v0.x 之間 API 還可能變。每一版對應的 tdp 版本寫在 [CHANGELOG](../CHANGELOG.md)。
+
+**push 與打 tag 都先問 user**，每一次都問。
+
+發一版的步驟：
+
+1. CHANGELOG 最上面的 `## Unreleased — tdp vX.Y.Z` 改成 `## vA.B.C — tdp vX.Y.Z`，單獨一個 commit：`vA.B.C: implements tdp vX.Y.Z`。
+2. 跑 `go test -race ./...`、`go vet ./...`、`gofmt -l .`。
+3. 打 annotated tag，先推 main、再推 tag：
+
+   ```sh
+   git tag -a vA.B.C -m "terminu-go vA.B.C — tdp vX.Y.Z"
+   git push origin main && git push origin vA.B.C
+   ```
+
+4. 在 repo 外面建一個乾淨的 module，確認 proxy 抓得到、build 得過：
+   `GOWORK=off go get github.com/vulcanshen/terminu-go@vA.B.C && GOWORK=off go build ./...`。
+5. 通知用 lib 的 app（kamonu、ccdrawu）：這版改了什麼、要不要改呼叫的程式、怎麼升級。
+
+踩過的坑與定下來的做法：
+
+- **tag 一推出去就被 proxy.golang.org 永久快取**：不搬、不刪、不重打。發錯了就發下一版。
+- **tdp 發版、lib 卻不用改時不單獨發**（只動了文件裡寫的 tdp 版本）：commit 留在本機，跟下一個有改 lib 的版本一起發。
+  CHANGELOG 那一節維持 `Unreleased`，發版時把版本拉到最新的 tdp。例：tdp v0.6.4 的跟進是跟著 v0.1.4 一起出去的。
+- **README 與 CHANGELOG 寫的 tdp 版本，要先在 terminu 的 GitHub 上有那個 tag**，別人才查得到。tdp 還只在本機時先別發。
+- **用 lib 的 app 不用 `replace`**：go.mod require 發布的版本；本機用 gitignore 掉的 `go.work`（`go work init . ../terminu-go`）
+  接上這個 repo 的工作目錄。app 發版前用 `GOWORK=off go build ./... && GOWORK=off go test ./...`，確認只靠發布的版本也過。

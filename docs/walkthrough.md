@@ -12,6 +12,7 @@ cd ~/Documents/sideproj/terminu-go && go build -o /tmp/showcase ./examples/showc
 ```
 
 - **tmux 裡**：平常的 Ghostty 視窗直接跑 `/tmp/showcase`。
+  也可以在 repo 裡打 `make showcase`，用目前的程式碼建好執行檔再打開，一步就好。
 - **不進 tmux 的 Ghostty**：`open -na Ghostty.app --args --command="/bin/zsh -f"` 開一個視窗，在裡面跑 `/tmp/showcase`。
 
 展示場的假檔案（假的專案與假的 `.ssh`）每次啟動時寫在 `/tmp/terminu-showcase`，看完可以整個刪掉。
