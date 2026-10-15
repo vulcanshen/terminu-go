@@ -2,7 +2,7 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.6.8
+## v0.1.7 — tdp v0.6.8
 
 - `Form.Buttons` and `FormButton`: a form's action area can hold more buttons, in rows on the right, the main submit
   at the bottom right. A button is another submit (`Submit`, e.g. Save As) or an action that keeps the form open
