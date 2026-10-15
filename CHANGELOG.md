@@ -2,6 +2,15 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.6.6
+
+- `App.Reorder`: a popup for putting items in an order by hand, the panel's Drag mode in a popup. `D` picks up an
+  item, `j|k` move it (wrapping at the ends), `Enter` drops it, `Esc` puts it back; `Enter` then applies the order,
+  and `Esc` asks first once the order changed. `Done` gets the options' indexes in their new order
+- `List.Draggable`, `Hold`, `MoveHeld`, `Drop`: the row held in a panel's Drag mode is drawn as the cursor in Yellow
+  with the swap glyph in the mark column, and moves wrapping at the ends. The Drag mode and its keys stay the app's
+- In a popup's mode (a reorder's Drag, a viewer's selection mode) the app's own core keys do nothing, as in a panel's
+
 ## v0.1.5 — tdp v0.6.5
 
 - `Checks.Cursor`: the option a checkbox popup opens with the cursor on, scrolled into sight; the first by default

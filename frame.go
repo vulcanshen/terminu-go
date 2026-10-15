@@ -20,6 +20,7 @@ const (
 	glyphSortDesc   = "\U0000F161" // nf-fa-sort_amount_desc
 	glyphMarked     = "\U000F0132" // nf-md-checkbox_marked
 	glyphUnchecked  = "\U000F0131" // nf-md-checkbox_blank_outline
+	glyphSwap       = "\U000F04E2" // nf-md-swap_vertical: the item held in the Drag mode
 	glyphRadioOn    = "\U000F043E" // nf-md-radiobox_marked
 	glyphRadioOff   = "\U000F043D" // nf-md-radiobox_blank
 	glyphMenu       = "\U0000F0C9" // nf-fa-bars

@@ -1,6 +1,6 @@
-# tdp v0.6.5 coverage
+# tdp v0.6.6 coverage
 
-tdp v0.6.5 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
+tdp v0.6.6 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
 （[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -92,13 +92,15 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | K11 | 模式裡 `Space` 不作用；`?` 開模式的 key reference；`Esc` 離開、回到進入前的狀態；`q`、`Ctrl-C` 照 K9 | P `[1] PODS` 的 `[D]rag` | `TestK11ModeCoreKeys` |
 | K11 | 模式裡只有模式自己的鍵與上表的 core key 作用：panel 熱鍵與 global 熱鍵都不作用，按了不出聲 | Drag 裡按 `m`（panel 熱鍵）、`I`（global 熱鍵） | `TestK11HotkeysSilentInMode` |
 | K11 | 模式可以暫停 `Tab` 與數字鍵，按了要有回應（toast）；toast 在時第一個 `Esc` 先收 toast | Drag 裡按 `Tab`、`2` | `TestK11TabPausedToast`、`TestK11DigitsPausedToast` |
-| K11 | 模式名在框的上框右側、外框換模式色、離開恢復；不只靠顏色 | Drag；D「Note viewer」的 `v` | `TestK11ModeLabel` |
+| K11 | 模式名在框的上框右側、外框換模式色、離開恢復；不只靠顏色 | Drag；D「Note viewer」的 `v`；I 的 `Segments` 按 `D` | `TestK11ModeLabel`、`TestReorderDrag` |
+| K11 | popup 裡的模式（reorder 的 Drag、viewer 的選取模式）也一樣：只有模式的鍵與上表的 core key 作用，app 自己的 core key 也不作用 | I 的 `Segments` 按 `D` 再按 `!`；D「Note viewer」按 `v` 再按 `!` | `TestReorderDragModeKeys`、`TestK11PopupModeCoreKeys` |
 | K12 | 不在打字的地方 `j k u d g G h l` 保留給移動，任何動作都不佔 | lib：登記時拒絕（panel 與 menu；popup 裡數字可以） | `TestK12HotkeyCannotTakeMovement`、`TestK12HotkeyCannotTakeMovementInMenu`、`TestK1DigitsFreeInPopups` |
 | K12 | 有左右結構：`h\|l` 左右（切 tab、跨側、日曆前後一天） | P `[1] PODS` 的 tab；I 的 `Meeting` | `TestK12HLSwitchTabs`、`TestDatetimePicker` |
 | K12 | 一維清單：`h\|k` 往前、`j\|l` 往後；在有 tab 的 panel 裡 `h\|l` 給 tab | D「Form: New host」；P `[3] SETTINGS`；I `[1] INPUTS` | `TestK12OneDimensional` |
 | K12 | `u\|d` 半頁、`gg\|G` 頭尾；單按 `g` 不作用，後面接沒登記成組合的鍵時當 `g` 沒按過（`g` 然後 `j` 往下一列）；其他 `g` 開頭可當熱鍵；不收 `Ctrl-U\|Ctrl-D` | P `[1] PODS`（40 列）；展示場登記一個 `[go]to` | `TestK12HalfPageAndEnds`、`TestK12SingleGNoop`、`TestK12NoCtrlUD` |
 | K12 | `Home`、`End` 只在打字列（游標到最前、最後）；清單、menu、viewer、textarea 的「移」都不作用 | 任一清單、menu、D「Note viewer」、I 的 `Comment` 上按 `Home`、`End` | `TestK12HomeEndOnlyTyping` |
 | K12 | 一步一步的移動（`j\|k`、`h\|l`、方向鍵、`Tab`）到頭尾繞回：panel 清單、一列一個值、menu、表單、finder／select／checkbox popup、panel 的 tab、picker 的欄與項目 | P `[1] PODS` 在最後一列按 `j`；tab 在最後一個按 `l`；每種清單各一次 | `TestK12StepWraps` |
+| K12 | Drag mode 拿著的一項也繞回（panel 的 Drag、reorder）：拿著最後一項往後到第一個、其他各往後一格；拿著第一項往前到最後一個 | P `[1] PODS` 按 `D` 再按 `k`；I 的 `Segments` 在最後一項按 `D` `j` | `TestPanelDragHeldRow`、`TestReorderDragWraps` |
 | K12 | `u\|d` 到頭尾停住、不繞；照空間走的不繞：日曆的日子、月與年、左右兩側、一段文字裡的移動 | P `[1] PODS` 在倒數幾列按 `d`；I 的 `Meeting` 日曆；D「Note viewer」的 visual | `TestK12HalfPageStops`、`TestK12SpatialNoWrap` |
 | K12 | 一段文字裡（viewer 的選取模式、textarea 的移動狀態）加 `w\|b\|e`、`0\|$`；viewer 平常 `h\|l` 給 tab，選取模式裡 `h\|l` 移游標、不切 tab | D「Note viewer」的 visual；D「Popup with tabs」（平常 `h\|l` 切 tab，`v` 之後 `h\|l` 移游標）；I 的 `Comment` 移動狀態 | `TestK12TextMotions`、`TestNoteHotkeysAndMode` |
 
@@ -148,11 +150,12 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | F1 | confirm 可以帶回答前要看的內容，長時 `j\|k` 捲 | D「Confirm: with details」「Confirm: long」 | `TestConfirmScrollsContent` |
 | F1 | 依階段換類別、同一時間一類；`Tab` 切、`Esc` 關整個；預覽不拿 focus；只有有 focus 的那邊亮 | I `[/] Find` | `TestFinderPhases` |
 | F1 | 清單加搜尋就是 finder（select、checkbox popup、file-picker） | I 的 `Profile`、`Namespaces`、`Identity file` | 見 finder |
+| F1 | 沒有搜尋的清單是 menu，只有 reorder 例外：它搬動項目、確定後寫回整個順序，是 input | I 的 `Segments` | 見 reorder |
 | F1 | toast 不是一層（不淡化、不算層數），但 `Esc` 先收它 | D「Toast over a popup」 | `TestToastNotALayer` |
 | F1 | 多步驟流程每一步是自己的 popup | D「Menu: Sort by」（欄位 → 方向） | `TestMultiStepStacks` |
 | F2 | 開關都有動畫，全家族同一種：中間拉一條線、再上下展開，收起倒著播；每格 32ms、各 9 格；打開的動畫播完前不收鍵 | 每種 popup | `TestF2AnimationFrames`、`TestF2NoKeysWhileOpening` |
 | F3 | `Esc` 立刻開始關閉任何 popup（含 toast）；關閉照常有動畫；在關的 popup 不再理會 `Esc` 與其他鍵 | 連按兩下 `Esc` 關兩層 | `TestF3EscImmediate`、`TestF3ClosingIgnoresKeys` |
-| F3 | 例外：PTY（toast 只能等時間到）、textarea 寫入狀態、改過的表單與 textarea 先 confirm | T；I 的 `Comment`；D「Form: New host」改過再 `Esc` | `TestF3Exceptions` |
+| F3 | 例外：PTY（toast 只能等時間到）、textarea 寫入狀態、改過的表單、textarea 與 reorder 先 confirm | T；I 的 `Comment`；D「Form: New host」改過再 `Esc`；I 的 `Segments` 搬過再 `Esc` | `TestF3Exceptions`、`TestReorderEsc` |
 | F4 | 從 A 開 B，A 留著；取消 B 回 A；多層一樣 | D 的疊法情境 | `TestF4KeepSource` |
 | F5 | 錯誤立刻出現（toast 或 popup）、`Esc` 可關、不阻塞 app；有沒有錯誤歷史由 app 決定 | P `[1] PODS` 的 `Fail`；D「Error popup」 | `TestF5ErrorNonBlocking` |
 | F6 | 要不要 confirm 由 app 決定，決定了每次都問；經 picker 明確選的可算已確認 | lib：動作登記「先問」 | `TestF6ConfirmEveryTime` |
@@ -210,6 +213,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | color §呈現規則 6 | 粗體只用在：cursor 上的字、popup 標題、膠囊的字、模式名、標題後的 loading icon | 每種畫面 | `TestBoldOnlyWhereAllowed` |
 | color §色碼 | 每個意義的色碼與用處（Base、Blue、Surface2、層色、Lavender、Green、Yellow、Peach、Red、Overlay0、Text、Subtext1、Surface1） | 每個畫面 | `TestColorTable` |
 | color §色碼 | 畫面不塗底色：沒指定背景的格子留給終端機；Base 只用在色塊上的字、膠囊接縫沒填色的那一邊、淡化的目標 | 換一個不是 Base 的終端機底色看 | `TestNoBackgroundPainted` |
+| color §色碼 | 模式色 Yellow 也用在 Drag 拿著的那一列 | P `[1] PODS` 的 `[D]rag`；I 的 `Segments` 按 `D` | `TestPanelDragHeldRow`、`TestReorderDrag` |
 | color §色碼 | cursor 色塊：popup 層色底、panel Subtext1 底，字 Base 粗體；沒 focus 那塊的 cursor 再淡化一次；放在色塊上的字一律 Base | P 的 cursor；I `[/] Find` 的兩塊 | `TestCursorBlock` |
 | color §淡化 | `dim(c) = c × 0.45 + base × 0.55`，每個通道四捨五入，前景背景都算；256 色的 16–255 照標準值；0–15 用終端機的調色盤（啟動時 OSC 4 問，問不到用 xterm 的值） | F8、T2 的畫面；在 tmux 裡改調色盤看 | `TestDimFormula`、`TestDimPaletteFromOSC4`、`TestDimPaletteFallbackXterm` |
 | color §淡化 | 絕不變亮（每通道取小）；一律輸出 24-bit；沒指定前景給 `dim(Text)`；bold、reverse、游標移動、文字不動 | 同上 | `TestDimNeverBrighter`、`TestDimTruecolorOut`、`TestDimDefaultFg` |
@@ -253,6 +257,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | panel §一般清單 | 表頭 Blue 不加粗、大寫、固定不捲；每欄是數字或文字：數字靠右照數值排、文字靠左照文字排；欄間兩格；排序欄位加 U+F160（升）/ U+F161（降）；多欄排序在箭頭前加順位 `(2)` | P `[1] PODS` 的 `Sort by`（Name 升冪、Age 降冪、兩欄） | `TestListHeader`、`TestListSortGlyphs`、`TestListSortNumbers` |
 | panel §一般清單 | 捲動位置：放不下時 `N of M`（框線色），全放得下不寫；沒有 cursor 的寫 `N-M of T` | P `[1] PODS`（40 列）、`[2] LOG` | `TestPanelScrollPosition` |
 | panel §一般清單 | 標記欄：每列最前一格，標記的畫 Green U+F0132，沒標記的空白，欄寬一直保留 | P `[1] PODS` 的 `[m]ark` | `TestListMarkColumn` |
+| panel §一般清單 | Drag mode 拿著的那一列（進 Drag 的鍵由 app 決定）：照 cursor 畫，Subtext1 換成 Yellow 底、Base 粗體，箭頭也是 Yellow；標記欄畫 U+F04E2，放下後回到原本的標記；有 Drag 的 panel 每一列都保留標記欄；按鍵同 reorder 拿著時（`j\|k` 搬、到頭尾繞回，`Enter` 放下，`Esc` 放回）。lib：`List.Draggable`、`Hold`、`MoveHeld`、`Drop`，Drag mode 與它的鍵由 app 登記 | P `[1] PODS` 的 `[D]rag`（先 `m` 標記一列再拿起它） | `TestPanelDragHeldRow` |
 | panel §一般清單 | 截斷從尾端加 `…`；路徑、檔名可以從前面截 | P `[1] PODS` 的長名字；I `[2] FILES` 的路徑 | `TestListTruncate` |
 | panel §一般清單 | 空的照空狀態 | `Empty` | `TestEmptyState` |
 | panel §分組 | 分組標題 Blue、大寫、不加粗、沒有 glyph、離框一格；項目多縮兩格；組與組之間不空列、不畫分隔線；失焦跟著淡化 | K `[1] KINDS` | `TestPanelListGroups`、`TestPanelDetailsFollowCursor`（失焦） |
@@ -314,7 +319,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | form §在欄位上打字 | 要打字的欄位上按表單操作鍵以外的可列印字元（含數字、`q`）跳說明 note：標題是欄位名、`Enter`／`Esc` 關、focus 不動；其他項目上不跳 | D「Form: New host」的 `Name` 上打 `s` | `TestFormTypingNote` |
 | form §在欄位上打字 | 表單操作鍵不跳 note：移動鍵、`u\|d`、`g`（單按不作用）、`G`、`e`（沒錯時不作用）、`Enter`、`Esc`、`Space`（不作用）、`?`（key reference） | 同上，按 `e` `u` `g` `?` | `TestFormOperationKeys` |
 | form §hint | `Enter:` 後的字跟著 focus 換（`edit`／`choose`／checkbox 選項 `Enter\|Space:toggle`／按鈕小寫）；有問題的欄位加 `e:error`；`Tab` 寫要去的那塊：欄位上 `Tab:actions`、按鈕與錯誤列上 `Tab:fields`；錯誤列 `Enter:show e:edit Tab:fields Esc:cancel`；不寫 `j\|k`；`Esc:cancel` | 同上 | `TestFormHint` |
-| form §取消 | 沒改過 `Esc` 直接關；改過先 confirm（`Enter` 放棄、`Esc` 回表單值都在）；「改過了」只要寫回過就設、不清掉；只有表單與 textarea 問 | D「Form: New host」改一欄再 `Esc` | `TestFormDiscardConfirm`、`TestFormDirtyFlag` |
+| form §取消 | 沒改過 `Esc` 直接關；改過先 confirm（`Enter` 放棄、`Esc` 回表單值都在）；「改過了」只要寫回過就設、不清掉；只有表單、textarea 與 reorder 問 | D「Form: New host」改一欄再 `Esc`；I 的 `Segments` | `TestFormDiscardConfirm`、`TestFormDirtyFlag`、`TestReorderEsc` |
 | form §錯誤 | 一欄自己的規則在 input popup 擋；整張表單的規則送出時檢查；沒過：不存、每個有問題的 label Red、錯誤列寫第一個、focus 跳過去 | D「Form: New host」空著送出、Port 打 `0` | `TestFormValidation` |
 | form §錯誤 | `e`：有問題的欄位 → 錯誤列換成這一欄的訊息；錯誤列 `Enter` 開完整訊息的 error popup（標題欄位名、`Enter`／`Esc` 關）；錯誤列 `e` 回那一欄 | 同上 | `TestFormSubmitChecks` |
 | form §錯誤 | 送出動作失敗：error popup，關掉回表單、focus 在按鈕；錯誤跟著檢查走、第一次送出前不檢查 | D「Form: save fails」 | `TestFormSaveFails`、`TestFormNoCheckBeforeSubmit` |
@@ -389,7 +394,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | input §貼上的控制字元 | 一行的值：貼上的控制字元一個都不丟、畫成紅字不切開：`\r` `\n` `\t` 寫名字（2 格）、其他 C0、DEL、C1 寫 `\xNN`（4 格）；`\r\n` 是兩個；灰列裡跟著灰；游標停在上面時整個控制字元 Red 底、Base 字（textarea 的寫與移也一樣）；`Backspace` 整個刪；遮罩照遮 | I 的 `Name` 貼上多行、貼上帶顏色的字，`←` 移到控制字元上 | `TestPasteMarkers`、`TestPasteControlChars`、`TestCursorOnControlChar` |
 | input §貼上的控制字元 | 不是打字來的值走同一個過濾；會被拿去用的在 `Enter` 時擋、錯誤列點名欄位（`Name can't have control characters`）；在去空白字元之前檢查；搜尋與篩選的打字列只畫不擋 | I 的 `Name`；I `[/] Find` 貼上 | `TestPasteBlockedOnEnter`、`TestPasteSearchNotBlocked` |
 | input §值 | 一行的值確定時去掉前後的空白字元（所有 Unicode 空白：一般空格、U+3000、NBSP…）；password 不去 | I 的 `Name` 打 `　x ` | `TestInputTrimWhitespace` |
-| input §在表單與 panel 上怎麼顯示 | Text；空值灰字寫「空著代表什麼」（app 寫、不教按鍵）；太長尾端截、路徑前面截；各 input 的顯示（password 8 個 `•`、textarea 第一行 + `…`、checkbox popup 用 `, ` 接、color 色塊 + hex、file `~`…） | I `[1] INPUTS` 每一列（含空的）；家目錄寫成 `~`：`Download to` | `TestValueDisplay` |
+| input §在表單與 panel 上怎麼顯示 | Text；空值灰字寫「空著代表什麼」（app 寫、不教按鍵）；太長尾端截、路徑前面截；各 input 的顯示（password 8 個 `•`、textarea 第一行 + `…`、checkbox popup 用 `, ` 接、reorder 照目前的順序用 `, ` 接、color 色塊 + hex、file `~`…） | I `[1] INPUTS` 每一列（含空的）；家目錄寫成 `~`：`Download to` | `TestValueDisplay` |
 
 ## input — 各種
 
@@ -431,6 +436,11 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | file-picker §按鍵 | 清單 `Enter`：目錄進去（清篩選、cursor 在 `..` 下第一項）、檔案選中寫回關掉；選檔時目錄永遠不會被選中 | 同上 | `TestFilePicker` |
 | file-picker §選目錄 | 清單只列目錄，`.` → `..` → 目錄；最上面 `. (this directory)`、icon U+F0252；在 `.` 上 `Enter` 選目前的目錄（`Enter:choose`），在目錄上 `Enter` 走進去（`Enter:into`）；打字列有篩選字或 wildcard 時沒有 `.`、wildcard 結果只列目錄；其他照 file-picker | I 的 `Path`、`Download to`（**`Download to` 打開的是真的 `~/Downloads`**） | `TestFilePickerDirMode` |
 | file-picker §按鍵 | 打字列：一般字照「比對」篩選目前這一層；路徑（`/`、`~/` 開頭）一直留在打字列、以最後一個 `/` 切成目錄與篩選字；目錄不存在或有 `..` 這一段：清單是空的；`*` `?` wildcard（`**` 往下找）、每列寫相對於起點的路徑、標題寫起點、沒有 `..`；hint 三種 | 同上，在打字列打 `/tmp/terminu-showcase/.ss`、`/tmp/terminu-showcase/.ssh/id_`、`/tmp/terminu-showcase/nope/x`、`/tmp/terminu-showcase/../x`、`/tmp/terminu-showcase/.ssh/**/*.pem`（`~/` 開頭的路徑是真的家目錄） | `TestFilePicker`、`TestFilePickerPathRules`、`TestGlobMatch`、`TestFilePickerHint` |
+| reorder §用途 | 一項一項搬、排出順序，值是整個順序；就是 panel 的 Drag mode 放進 popup；跟排序選擇器不同；沒有搜尋，不是 finder | I 的 `Segments` | `TestReorderDrag` |
+| reorder §長相 | 每一列列首一格給 glyph、空一格接項目（Text），這一格一直保留；cursor 照 menu（層色底、Base 粗體、箭頭）；拿著的一項 Yellow 底、Base 粗體、箭頭 Yellow、列首 U+F04E2，框與模式名 Yellow、上框右側 `┫Drag┣`；標題寫排的是什麼；寬度打開時確定：最寬的項目 + 列首兩格 + 4，至少 35 格（hint 29 + 6）；放不下時捲、`N of M` | I 的 `Segments`（`D` 拿起） | `TestReorderLayout`、`TestReorderDrag`、`TestReorderScroll` |
+| reorder §按鍵 | 打開在清單；沒拿東西：`j\|k` 移 cursor 繞回、`u\|d` 半頁、`gg\|G` 頭尾；`D` 拿起；`Enter` 寫回整個順序（沒變不寫）；`Esc` 沒改過直接關、改過先問 `Discard changes to <標題>?`（`Esc` 回清單、順序還在）；「改過了」放下的位置不同就設、不清掉；`Space` 不作用；hint `Enter:apply D:drag Esc:cancel` | I 的 `Segments` | `TestReorderDrag`、`TestReorderEsc`、`TestReorderSpace` |
+| reorder §按鍵 | 拿著一項（Drag mode）：`j\|k` 跟下一項、上一項交換，cursor 跟著，到頭尾繞回；`Enter` 放下、cursor 留在那一項；`Esc` 放回拿起前的位置；其他鍵不作用（`D` 不是放下）；hint `Enter:drop Esc:cancel`；`?` 是 Drag mode 的鍵 | 同上 | `TestReorderDrag`、`TestReorderDragWraps`、`TestReorderDragModeKeys` |
+| reorder §值 | 表單與 panel 上照目前的順序用 `, ` 接，太長加 `…` | I `[1] INPUTS` 的 `Segments` | `TestValueDisplay` |
 
 ## 熱鍵標記（M5）在展示場用到的地方
 
@@ -468,6 +478,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | U+F0C9 | `nf-fa-bars` | popup §外框（menu） | Space menu |
 | U+F059 | `nf-fa-question_circle` | popup §外框、note §key reference | 任一處按 `?` |
 | U+F0ECC | `nf-md-shield_alert` | popup §外框、confirm | D「Confirm」 |
+| U+F04E2 | `nf-md-swap_vertical` | panel §一般清單（Drag 拿著的列）、reorder §長相 | P `[1] PODS` 的 `[D]rag`；I 的 `Segments` 按 `D` |
 | U+F018D | `nf-md-console` | popup §外框、terminal | T 的 terminal popup |
 | U+F024 | `nf-fa-flag` | toast（Info） | P 的 `Toast info` |
 | U+F078F | `nf-md-alarm_light` | toast（Warning） | P 的 `Toast warning` |

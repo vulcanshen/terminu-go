@@ -36,6 +36,7 @@ func inputOpeners(t *testing.T) map[string]func(*testApp) {
 		"date":     func(ta *testApp) { ta.PickDate(DatePicker{Title: "Due date"}) },
 		"datetime": func(ta *testApp) { ta.PickDate(DatePicker{Title: "Meeting", Time: true}) },
 		"color":    func(ta *testApp) { ta.PickColor(ColorPicker{Title: "Background", Value: Hex("#2A2A3C")}) },
+		"reorder":  func(ta *testApp) { ta.Reorder(Reorder{Title: "Order", Options: long}) },
 		"form":     func(ta *testApp) { ta.Form(testForm(nil)) },
 		"form+select": func(ta *testApp) {
 			ta.Form(testForm(nil))

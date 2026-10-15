@@ -92,6 +92,7 @@ func covAPopups() []covASurface {
 		{"form", func(ta *testApp) { ta.Form(testForm(nil)); ta.settle(); ta.press("G") }},
 		{"date picker", func(ta *testApp) { ta.PickDate(DatePicker{Title: "Due date"}) }},
 		{"color picker", func(ta *testApp) { ta.PickColor(ColorPicker{Title: "Background", Value: Hex("#2A2A3C")}) }},
+		{"reorder", func(ta *testApp) { ta.Reorder(Reorder{Title: "Order", Options: []string{"Usage", "Cost"}}) }},
 		{"textarea, moving", func(ta *testApp) {
 			ta.Textarea(Textarea{Title: "Comment", Old: "one"})
 			ta.settle()

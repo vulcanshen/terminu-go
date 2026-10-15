@@ -56,6 +56,7 @@ func newInputsScreen(s *showcase) *inputsScreen {
 		profile        = 0
 		namespaces     = []string{"default", "kube-system", "monitoring", "ingress-nginx", "cert-manager", "argocd", "logging", "vault"}
 		nsChecked      = []bool{true, false, false, false, false, false, false, false}
+		segments       = []string{"Model", "Usage", "Cost", "Context", "Git", "Branch", "Clock"}
 		brightness     = 70.0
 		opacity        = 0.85
 		today          = time.Now()
@@ -117,6 +118,16 @@ func newInputsScreen(s *showcase) *inputsScreen {
 		{Label: "Namespaces", Value: func() string { return joinChecked(namespaces, nsChecked) }, Empty: "none", Edit: func() tea.Cmd {
 			return a.Checks(terminu.Checks{Title: "Namespaces", Glyph: glyphTag, Options: namespaces, Checked: nsChecked,
 				Done: func(c []bool) tea.Cmd { nsChecked = c; return nil }})
+		}},
+		{Label: "Segments", Value: func() string { return strings.Join(segments, ", ") }, Edit: func() tea.Cmd {
+			return a.Reorder(terminu.Reorder{Title: "Segments", Options: segments, Done: func(o []int) tea.Cmd {
+				next := make([]string, len(o))
+				for i, k := range o {
+					next[i] = segments[k]
+				}
+				segments = next
+				return nil
+			}})
 		}},
 		{Label: "Layout", Options: []string{"row", "column", "grid"}},
 		{Label: "Order", Options: []string{"asc", "desc"}},

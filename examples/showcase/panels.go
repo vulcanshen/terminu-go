@@ -47,6 +47,7 @@ func newPanelsScreen(s *showcase) *panelsScreen {
 			{Title: "Name", Flex: true}, {Title: "Ready"}, {Title: "Status"}, {Title: "Restarts", Number: true}, {Title: "Age", Number: true},
 		},
 		Marks:      true,
+		Draggable:  true,
 		Filterable: true,
 		EmptyFact:  "No pods here",
 		EmptyHint:  "Press [Space] to see what you can do here",
@@ -303,17 +304,20 @@ func (ps *panelsScreen) startDrag() tea.Cmd {
 	before := append([]terminu.Row(nil), ps.podList.Rows()...)
 	sorting := ps.podList.Sorting()
 	ps.podList.SortBy() // dragging sets the order by hand
+	ps.podList.Hold()
 	ps.pods.EnterMode(&terminu.Mode{
 		Name: "Drag", Exit: "cancel", Pause: true,
 		Keys: []terminu.ModeKey{
 			{Key: "j|k", Keys: []string{"j", "k", "↓", "↑"}, Desc: "move it down, up", NoFooter: true,
-				Do: func(key string) tea.Cmd { ps.moveRow(key == "j" || key == "↓"); return nil }},
+				Do: func(key string) tea.Cmd { ps.podList.MoveHeld(key == "j" || key == "↓"); return nil }},
 			{Key: "Enter", Desc: "drop", Do: func(string) tea.Cmd {
+				ps.podList.Drop()
 				ps.pods.LeaveMode()
 				return ps.s.app.Toast(terminu.Info, "Dropped "+ps.dragFrom)
 			}},
 		},
 		OnExit: func() tea.Cmd {
+			ps.podList.Drop()
 			ps.podList.SetRows(before)
 			ps.podList.SortBy(sorting...)
 			ps.podList.Select(ps.dragFrom)
@@ -321,27 +325,6 @@ func (ps *panelsScreen) startDrag() tea.Cmd {
 		},
 	})
 	return nil
-}
-
-// moveRow moves the dragged pod one row down or up.
-func (ps *panelsScreen) moveRow(down bool) {
-	rows := append([]terminu.Row(nil), ps.podList.Rows()...)
-	i := -1
-	for k, r := range rows {
-		if r.ID == ps.dragFrom {
-			i = k
-		}
-	}
-	j := i - 1
-	if down {
-		j = i + 1
-	}
-	if i < 0 || j < 0 || j >= len(rows) {
-		return
-	}
-	rows[i], rows[j] = rows[j], rows[i]
-	ps.podList.SetRows(rows)
-	ps.podList.Select(ps.dragFrom)
 }
 
 // sortMenu is a two-step sort: a column, then a direction (Rules F1: each

@@ -30,10 +30,12 @@ func (a *App) isCoreKey(key string) bool {
 }
 
 // typingOrMode reports the surfaces where the app's core keys do not work:
-// a typing row (Rules K8) and a panel in a mode (K11). A PTY never gets here.
+// a typing row (Rules K8) and a panel or a popup in a mode (K11). A PTY never
+// gets here.
 func (a *App) typingOrMode() bool {
 	if l := a.top(); l != nil {
-		return l.view.typing()
+		m, ok := l.view.(interface{ inMode() bool })
+		return l.view.typing() || ok && m.inMode()
 	}
 	s := a.Screen()
 	if s == nil {

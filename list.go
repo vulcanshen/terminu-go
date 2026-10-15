@@ -49,6 +49,9 @@ type List struct {
 	// Marks keeps a column for marks in front of every row (Principle P3,
 	// batches of marked items).
 	Marks bool
+	// Draggable keeps that column too, for the swap glyph of the row held in
+	// a Drag mode (layout/panel): Hold, MoveHeld, Drop.
+	Draggable bool
 	// Filterable lets / open a panel filter on the list.
 	Filterable bool
 	// EmptyFact and EmptyHint are what an empty list says (layout/screen,
@@ -68,6 +71,7 @@ type List struct {
 	cursor int   // index into view
 	top    int   // first row shown
 	marked map[string]bool
+	held   bool // the row under the cursor is held in a Drag mode
 
 	filter *lineEditor
 	typing bool
@@ -158,6 +162,40 @@ func (l *List) Marked() []string {
 
 // ClearMarks unmarks every row.
 func (l *List) ClearMarks() { l.marked = nil }
+
+// Hold picks up the row under the cursor in the panel's Drag mode
+// (layout/panel): it is drawn as the cursor in the mode's colour, Yellow,
+// with the swap glyph in its mark column, until Drop. It reports whether
+// there was a row. The Drag mode and its keys are the app's (Panel.EnterMode).
+func (l *List) Hold() bool {
+	_, ok := l.Current()
+	l.held = ok
+	return ok
+}
+
+// Holding reports a row held.
+func (l *List) Holding() bool { return l.held }
+
+// Drop puts the held row down where it is; its own mark shows again.
+func (l *List) Drop() { l.held = false }
+
+// MoveHeld swaps the held row with the next or the previous row shown, the
+// cursor going with it. Past the ends it wraps: the last moved down goes to
+// the top and the others move down one (Rules K12). It moves the rows
+// themselves: a sorted list shows no move, so the app leaves the sort first.
+func (l *List) MoveHeld(down bool) {
+	if !l.held {
+		return
+	}
+	shown := make([]Row, len(l.view))
+	for i, r := range l.view {
+		shown[i] = l.rows[r]
+	}
+	l.cursor = moveWrap(shown, l.cursor, down)
+	for i, r := range l.view {
+		l.rows[r] = shown[i]
+	}
+}
 
 // Empty reports whether the list has no rows at all.
 func (l *List) Empty() bool { return len(l.rows) == 0 }
@@ -296,7 +334,7 @@ func (l *List) Draw(w, h int, focused bool) []string {
 	}
 	textW := w - 1 - arrow - len(indent) // one cell of padding on the left, the arrow's on the right (layout/panel)
 	markW := 0
-	if l.Marks {
+	if l.Marks || l.Draggable {
 		markW = IconWidth() + 1
 	}
 	widths := l.widths(textW - markW)
@@ -339,7 +377,7 @@ func (l *List) Draw(w, h int, focused bool) []string {
 		vi := lines[li].item
 		r := l.view[vi]
 		mark := ""
-		if l.Marks {
+		if markW > 0 {
 			if l.marked[l.rowID(r)] {
 				mark = glyphMarked + " "
 			} else {
@@ -350,6 +388,12 @@ func (l *List) Draw(w, h int, focused bool) []string {
 		if vi == l.cursor {
 			cursor := On(Subtext1)
 			arrowStyle := Fg(Subtext1)
+			if l.held {
+				// The held row: the cursor in the mode's colour, the swap
+				// glyph in its mark column (layout/panel, Rules K11).
+				cursor, arrowStyle = On(Yellow), Fg(Yellow)
+				mark = Pad(glyphSwap, markW)
+			}
 			if l.Typing() {
 				// The focus is on the typing row: the list's cursor is dimmed once (P6).
 				cursor = Style{Fg: Base, Bg: DimColor(Subtext1), Bold: true}

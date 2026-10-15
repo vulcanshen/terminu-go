@@ -681,6 +681,10 @@ func run2tab(f func(int) tea.Cmd, i int) tea.Cmd {
 
 func (vv *viewerView) surface() string { return vv.title() }
 
+// inMode reports the selection mode, where the app's own core keys do not
+// work (Rules K11).
+func (vv *viewerView) inMode() bool { return vv.v.inMode }
+
 func (vv *viewerView) keyRef() []refSection {
 	v := vv.v
 	move := []KeyRow{
