@@ -131,7 +131,7 @@ func (cv *colorView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {
 	case "l", "j", "→", "↓":
 		cv.focus = (cv.focus + 1) % 4
 	case "Tab", "Shift-Tab":
-		// The channels and the action row, as a form's two areas (Rules K2):
+		// The channels and the action area, as a form's two areas (Rules K2):
 		// either way is the other one.
 		if cv.focus == colorChoose {
 			cv.focus = cv.back

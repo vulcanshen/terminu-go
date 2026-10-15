@@ -2,7 +2,6 @@ package terminu
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/x/ansi"
 )
 
 // Field is one value of a Values panel (layout/panel, one value per row).
@@ -162,7 +161,8 @@ func (v *Values) Draw(w, h int, focused bool) []string {
 				if f.Path {
 					fit = FitLeft
 				}
-				rows = append(rows, " "+lead+"  "+On(Subtext1).Render(fit(ansi.Strip(value), valW))+Fg(Subtext1).Render(glyphHard))
+				// A swatch keeps its colour on the block (components/color).
+				rows = append(rows, " "+lead+"  "+onBlock(fit(value, valW), On(Subtext1))+Fg(Subtext1).Render(glyphHard))
 			} else {
 				fit := Fit
 				if f.Path {

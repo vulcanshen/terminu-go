@@ -208,6 +208,8 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case tea.KeyMsg:
 		cmd = a.handleKey(msg)
+	case formRan:
+		cmd = msg.done(a)
 	case termOutput, termExited:
 		cmd, _ = a.terminalMsg(msg)
 	default:

@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/x/ansi"
 )
 
 // FormField is one field of a Form (components/dialog/form).
@@ -55,14 +54,46 @@ type Form struct {
 	// Name is the form in the discard question: "Discard changes to New host?"
 	Name   string
 	Fields []*FormField
-	// Button is the submit button's text: what the form does ("Save").
+	// Button is the main submit button's text: what the form does ("Save").
 	Button string
+	// Buttons are the action area's other buttons, row by row from the top,
+	// each row on the right. The main submit goes at the end of the last
+	// row, the bottom right; an empty last row puts it on a row of its own.
+	Buttons [][]*FormButton
 	// Focus, when set, is the field the form opens on.
 	Focus *FormField
 	// Submit does what the form is for once every Check passes. An error
 	// opens an error popup over the form, which stays; otherwise the form
 	// closes and the command runs.
 	Submit func() (tea.Cmd, error)
+}
+
+// FormButton is a button of a form's action area besides the main submit
+// (components/dialog/form): another submit, or an action that keeps the
+// form open. It has Submit or Run, not both.
+type FormButton struct {
+	Label string
+	// Submit makes it another submit ("Save As"): it checks the whole form
+	// as the main one does, and the form closes once it is done.
+	Submit func() (tea.Cmd, error)
+	// Run makes it an action that keeps the form open ("Test"). It checks
+	// Needs first, the fields it needs (their Check); then it runs off the
+	// update loop, the loading icon after the title until it ends.
+	Needs []*FormField
+	Run   func() FormResult
+}
+
+// FormResult is what came of a form's action (components/dialog/form): Err
+// opens an error popup, the focus on the button so that Enter tries again;
+// else Lines open a note to read; else Toast says it in one sentence.
+type FormResult struct {
+	Toast string
+	Lines []string
+	Err   error
+	// Apply, when set, runs on the update loop as it ends, before the result
+	// shows: where the action writes a value into a field, which then counts
+	// as changed.
+	Apply func()
 }
 
 type formItemKind int
@@ -74,7 +105,7 @@ const (
 )
 
 // formItem is one place the focus stops at: a field, one of its options, the
-// error row, the button.
+// error row, a button (option: its place in the action area).
 type formItem struct {
 	kind   formItemKind
 	field  *FormField
@@ -84,9 +115,12 @@ type formItem struct {
 type formView struct {
 	f     *Form
 	focus formItem
-	// back is the item of the field area the focus was last on: Tab on the
-	// button or the error row returns there (components/dialog/form).
-	back    formItem
+	// back and backAction are the items of the field area and the action
+	// area the focus was last on: Tab returns there (components/dialog/form).
+	back, backAction formItem
+	// buttons are the action area's in reading order, nil the main submit.
+	buttons []*FormButton
+	running map[*FormButton]bool
 	dirty   bool
 	errs    map[*FormField]string
 	errOn   *FormField // whose message the error row shows
@@ -96,15 +130,30 @@ type formView struct {
 
 // Form opens a form.
 // It panics on a field with more than five options: those go in a select or
-// a checkbox popup (components/dialog/form), a mistake in the program.
+// a checkbox popup (components/dialog/form); and on a button with not one of
+// Submit and Run: mistakes in the program.
 func (a *App) Form(f *Form) tea.Cmd {
 	for _, fl := range f.Fields {
 		if len(fl.Options) > 5 {
 			panic(fmt.Sprintf("terminu: form field %q has %d options; more than five go in a select or a checkbox popup", fl.Label, len(fl.Options)))
 		}
 	}
-	fv := &formView{f: f}
-	fv.focus = fv.items()[0]
+	fv := &formView{f: f, running: map[*FormButton]bool{}}
+	for _, row := range f.Buttons {
+		for _, b := range row {
+			if (b.Submit == nil) == (b.Run == nil) {
+				panic(fmt.Sprintf("terminu: form button %q needs one of Submit and Run", b.Label))
+			}
+			fv.buttons = append(fv.buttons, b)
+		}
+	}
+	fv.buttons = append(fv.buttons, nil)
+	// The first time Tab goes to the action area it lands on the main submit.
+	fv.backAction = fv.main()
+	fv.focus = fv.main()
+	if items := fv.fieldItems(); len(items) > 0 {
+		fv.focus = items[0]
+	}
 	if f.Focus != nil && !f.Focus.disabled() {
 		fv.focus = fv.landing(f.Focus)
 	}
@@ -112,10 +161,56 @@ func (a *App) Form(f *Form) tea.Cmd {
 	return a.open(fv)
 }
 
-// items lists the stops in order: each field (each option of one drawn on
-// the form), the error row when there is an error, the button. Disabled
-// fields are skipped.
-func (fv *formView) items() []formItem {
+// main is the main submit, the last button: the bottom right.
+func (fv *formView) main() formItem {
+	return formItem{kind: itemButton, option: len(fv.buttons) - 1}
+}
+
+// actionRows are the action area's rows of buttons, top to bottom.
+func (fv *formView) actionRows() [][]formItem {
+	var rows [][]formItem
+	i := 0
+	for _, row := range fv.f.Buttons {
+		var r []formItem
+		for range row {
+			r = append(r, formItem{kind: itemButton, option: i})
+			i++
+		}
+		rows = append(rows, r)
+	}
+	if len(rows) == 0 {
+		rows = append(rows, nil)
+	}
+	rows[len(rows)-1] = append(rows[len(rows)-1], fv.main())
+	return rows
+}
+
+func (fv *formView) buttonLabel(it formItem) string {
+	if b := fv.buttons[it.option]; b != nil {
+		return b.Label
+	}
+	return fv.button()
+}
+
+// area is the stops of the area the focus is in (components/dialog/form):
+// the field area, or the buttons in reading order.
+func (fv *formView) area() []formItem {
+	if fv.focus.kind != itemButton {
+		if items := fv.fieldItems(); len(items) > 0 {
+			return items
+		}
+	}
+	var out []formItem
+	for i := range fv.buttons {
+		out = append(out, formItem{kind: itemButton, option: i})
+	}
+	return out
+}
+
+// fieldItems lists the field area's stops in order: each field (each option
+// of one drawn on the form), then the error row when there is an error.
+// Disabled fields are skipped.
+func (fv *formView) fieldItems() []formItem {
 	var out []formItem
 	for _, f := range fv.f.Fields {
 		if f.disabled() {
@@ -134,7 +229,7 @@ func (fv *formView) items() []formItem {
 	if fv.errOn != nil {
 		out = append(out, formItem{kind: itemError, option: -1})
 	}
-	return append(out, formItem{kind: itemButton, option: -1})
+	return out
 }
 
 func (fv *formView) index(items []formItem) int {
@@ -186,9 +281,10 @@ func (fv *formView) hint() []KeyHint {
 	// Tab names the area it goes to (components/dialog/form).
 	switch it := fv.focus; it.kind {
 	case itemError:
-		return []KeyHint{{"Enter", "show"}, {"e", "edit"}, {"Tab", "fields"}, {"Esc", "cancel"}}
+		// The error row is in the field area: Tab goes to the actions.
+		return []KeyHint{{"Enter", "show"}, {"e", "edit"}, {"Tab", "actions"}, {"Esc", "cancel"}}
 	case itemButton:
-		h = append(h, KeyHint{"Enter", strings.ToLower(fv.button())}, KeyHint{"Tab", "fields"})
+		h = append(h, KeyHint{"Enter", strings.ToLower(fv.buttonLabel(it))}, KeyHint{"Tab", "fields"})
 	default:
 		switch {
 		case len(it.field.Options) > 0 && it.field.Multi:
@@ -220,8 +316,8 @@ func (fv *formView) measure(sw, sh int) (int, int) {
 	for _, f := range fv.f.Fields {
 		rows += fieldRows(f)
 	}
-	// The fields, a blank row, the error row, the separator, the button row.
-	return popupWidth(sw, 0, false), min(rows+4+4, max(sh-2, 3))
+	// The fields, a blank row, the error row, the separator, the button rows.
+	return popupWidth(sw, 0, false), min(rows+3+len(fv.actionRows())+4, max(sh-2, 3))
 }
 
 func (fv *formView) draw(w, h int, layer Color) []string {
@@ -269,15 +365,16 @@ func (fv *formView) draw(w, h int, layer Color) []string {
 				}
 			}
 			if fv.focus == (formItem{itemField, f, -1}) {
-				rows = append(rows, " "+lead(true)+fv.block(fit(ansi.Strip(value), room), room+1, layer))
+				rows = append(rows, " "+lead(true)+fv.block(fit(value, room), room+1, layer))
 				continue
 			}
 			rows = append(rows, " "+lead(true)+fit(value, room)+" ")
 		}
 	}
 	// The fields area scrolls the least that keeps the focused field whole;
-	// the error row, the separator and the button stay (components/dialog/form).
-	area := max(h-8, 1)
+	// the error row, the separator and the buttons stay (components/dialog/form).
+	actions := fv.actionRows()
+	area := max(h-7-len(actions), 1)
 	fv.visible = area
 	if fv.focus.kind == itemField {
 		top := fieldTop[fv.focus.field]
@@ -297,13 +394,20 @@ func (fv *formView) draw(w, h int, layer Color) []string {
 	body = append(body, Repeat(" ", inner))
 	body = append(body, fv.errorRow(cw, layer))
 	body = append(body, " "+Fg(Overlay0).Render(Repeat("─", cw))+" ")
-	button := " " + fv.button() + " "
-	if fv.focus.kind == itemButton {
-		button = On(layer).Render(button)
-	} else {
-		button = Style{Fg: Text, Bg: Surface1}.Render(button)
+	// Each row of buttons on the right, one cell between two buttons.
+	for _, row := range actions {
+		var parts []string
+		for _, it := range row {
+			button := " " + fv.buttonLabel(it) + " "
+			if fv.focus == it {
+				button = On(layer).Render(button)
+			} else {
+				button = Style{Fg: Text, Bg: Surface1}.Render(button)
+			}
+			parts = append(parts, button)
+		}
+		body = append(body, PadLeft(strings.Join(parts, " "), inner-1)+" ")
 	}
-	body = append(body, PadLeft(button, inner-1)+" ")
 	scroll := ""
 	// The position counts fields only; on the error row or the button there
 	// is no field to count, so it is not written (components/dialog/form).
@@ -314,8 +418,13 @@ func (fv *formView) draw(w, h int, layer Color) []string {
 			}
 		}
 	}
-	return popupBox{color: layer, glyph: fv.f.Glyph, title: popupTitle(fv.f.Title, fv.f.Subject), hint: fv.hint(), scroll: scroll}.draw(w, body)
+	return popupBox{color: layer, glyph: fv.f.Glyph, title: popupTitle(fv.f.Title, fv.f.Subject), hint: fv.hint(), scroll: scroll,
+		loading: fv.isLoading()}.draw(w, body)
 }
+
+// isLoading reports an action running: the loading icon goes after the title
+// (components/dialog/form, the action area).
+func (fv *formView) isLoading() bool { return len(fv.running) > 0 }
 
 // label is a field's label: the layer colour, Surface2 when disabled, Red
 // when its value is wrong (components/dialog/form). It is not upper case.
@@ -366,10 +475,11 @@ func (fv *formView) option(f *FormField, i int) string {
 }
 
 // block is the focus from the item's start to the frame: the layer colour,
-// Base bold, the right-most cell an arrow (components/dialog/form).
+// Base bold, a swatch keeping its colour, the right-most cell an arrow
+// (components/dialog/form, components/color).
 func (fv *formView) block(s string, w int, layer Color) string {
 	arrow := Width(glyphHard)
-	return On(layer).Render(Fit(ansi.Strip(s), w-arrow)) + Fg(layer).Render(glyphHard)
+	return onBlock(Fit(s, w-arrow), On(layer)) + Fg(layer).Render(glyphHard)
 }
 
 func (fv *formView) errorRow(cw int, layer Color) string {
@@ -383,19 +493,24 @@ func (fv *formView) errorRow(cw int, layer Color) string {
 	return " " + Fit(Fg(Red).Render(msg), cw) + " "
 }
 
+// step moves one item within the focus's area, wrapping at its ends (Rules
+// K12): j|k never leave the area.
 func (fv *formView) step(dir int) {
-	items := fv.items()
+	items := fv.area()
 	i := fv.index(items)
 	fv.focus = items[(i+dir+len(items))%len(items)]
 }
 
-// tab moves between the field area and the action row, the error row going
-// with the button: to the button from a field, back to the item left from
-// the button or the error row (components/dialog/form, Rules K2).
+// tab moves between the field area, the error row included, and the action
+// area, back to the item left in each; the first time to the main submit
+// (components/dialog/form, Rules K2).
 func (fv *formView) tab() {
-	items := fv.items()
-	if fv.focus.kind == itemField {
-		fv.focus = items[len(items)-1]
+	if fv.focus.kind != itemButton {
+		fv.focus = fv.backAction
+		return
+	}
+	items := fv.fieldItems()
+	if len(items) == 0 {
 		return
 	}
 	fv.focus = items[0]
@@ -408,11 +523,13 @@ func (fv *formView) tab() {
 
 func (fv *formView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 	defer func() {
-		if fv.focus.kind == itemField {
+		if fv.focus.kind == itemButton {
+			fv.backAction = fv.focus
+		} else {
 			fv.back = fv.focus
 		}
 	}()
-	items := fv.items()
+	items := fv.area()
 	half := max(fv.visible/2, 1)
 	switch key {
 	case "j", "l", "↓", "→":
@@ -483,7 +600,7 @@ func (fv *formView) enter(a *App) tea.Cmd {
 		}
 		return a.Error(label, fv.errs[fv.errOn])
 	case itemButton:
-		return fv.submit(a)
+		return fv.press(a, it)
 	}
 	f := it.field
 	switch {
@@ -504,11 +621,60 @@ func (fv *formView) enter(a *App) tea.Cmd {
 	return nil
 }
 
-// submit checks the whole form; with nothing wrong it does what the form is
-// for (components/dialog/form, errors).
-func (fv *formView) submit(a *App) tea.Cmd {
+// press presses a button: a submit, or an action that keeps the form open
+// (components/dialog/form, the action area).
+func (fv *formView) press(a *App, it formItem) tea.Cmd {
+	b := fv.buttons[it.option]
+	switch {
+	case b == nil:
+		return fv.submit(a, fv.button(), fv.f.Submit)
+	case b.Submit != nil:
+		return fv.submit(a, b.Label, b.Submit)
+	case fv.running[b]:
+		return nil // TODO(tdp G89): pressed again while it runs
+	case !fv.check(b.Needs):
+		return nil
+	}
+	fv.running[b] = true
+	run := b.Run
+	return func() tea.Msg { return formRan{fv: fv, b: b, at: it, res: run()} }
+}
+
+// formRan is a form's action ended, back on the update loop.
+type formRan struct {
+	fv  *formView
+	b   *FormButton
+	at  formItem
+	res FormResult
+}
+
+// done shows what came of the action: an error popup with the focus on its
+// button, so that Enter tries again; a note to read; a toast.
+func (m formRan) done(a *App) tea.Cmd {
+	fv := m.fv
+	delete(fv.running, m.b)
+	if m.res.Apply != nil {
+		m.res.Apply()
+		fv.dirty = true // a value written into a field counts as a change
+	}
+	switch {
+	case m.res.Err != nil:
+		fv.focus = m.at
+		return a.Error(m.b.Label+" failed", m.res.Err.Error())
+	case len(m.res.Lines) > 0:
+		return a.Viewer(&Viewer{Title: m.b.Label, Lines: m.res.Lines})
+	case m.res.Toast != "":
+		return a.Toast(Info, m.res.Toast)
+	}
+	return nil
+}
+
+// check runs the Check of fields, the whole form's rules for them; the errors
+// stand until the next check (components/dialog/form, errors). On a problem
+// the focus goes to the first field with one.
+func (fv *formView) check(fields []*FormField) bool {
 	fv.errs, fv.errOn = map[*FormField]string{}, nil
-	for _, f := range fv.f.Fields {
+	for _, f := range fields {
 		if f.Check == nil {
 			continue
 		}
@@ -521,14 +687,23 @@ func (fv *formView) submit(a *App) tea.Cmd {
 	}
 	if fv.errOn != nil {
 		fv.focus = fv.landing(fv.errOn)
+		return false
+	}
+	return true
+}
+
+// submit checks the whole form; with nothing wrong it does what the button is
+// for and closes (components/dialog/form, errors).
+func (fv *formView) submit(a *App, label string, do func() (tea.Cmd, error)) tea.Cmd {
+	if !fv.check(fv.f.Fields) {
 		return nil
 	}
-	if fv.f.Submit == nil {
+	if do == nil {
 		return a.closeTop()
 	}
-	cmd, err := fv.f.Submit()
+	cmd, err := do()
 	if err != nil {
-		return a.Error(fv.button()+" failed", err.Error())
+		return a.Error(label+" failed", err.Error())
 	}
 	return tea.Batch(a.closeTop(), cmd)
 }
@@ -541,13 +716,13 @@ func (fv *formView) keyRef() []refSection {
 			{Key: "Enter", Desc: "edit the field, choose or toggle the option, press the button"},
 			{Key: "Space", Desc: "toggle the checkbox option"},
 			{Key: "e", Desc: "between a field that is wrong and the error row"},
-			{Key: "Tab|Shift-Tab", Desc: "between the fields and the button, back to the item left"},
+			{Key: "Tab|Shift-Tab", Desc: "between the fields and the buttons, back to the item left"},
 			{Key: "Esc", Desc: "cancel (asks first when something changed)"},
 		}},
 		{title: "move", rows: []KeyRow{
-			{Key: "j|k", Desc: "next, previous"},
+			{Key: "j|k", Desc: "next, previous in this area"},
 			{Key: "u|d", Desc: "half a page up, down"},
-			{Key: "gg|G", Desc: "to the first, the button"},
+			{Key: "gg|G", Desc: "to the first, the last in this area"},
 		}},
 	}
 }

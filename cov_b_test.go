@@ -1471,7 +1471,7 @@ func TestT1KeepOrClear(t *testing.T) {
 	ta.Form(testForm(nil))
 	ta.settle()
 	form := ta.topView()
-	ta.press("G", "k", "k", "Enter", "j", "Enter")
+	ta.press("G", "k", "Enter", "j", "Enter")
 	if ta.topView() != form {
 		t.Errorf("after the select: %T", ta.topView())
 	}

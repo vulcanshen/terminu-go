@@ -65,6 +65,9 @@ cd ~/Documents/sideproj/terminu-go && go build -o /tmp/showcase ./examples/showc
 - `[1] DIALOGS` 每一列是一個情境，`Enter` 打開：各種 menu（分組、兩步、工作清單、很長）、confirm、表單、viewer（選取模式按 `v` 兩次）、
   有 tab 的 popup（也有選取模式：平常 `h|l` 切 tab，`v` 之後 `h|l` 移游標）、loading popup、error popup（短的與長的）、toast、
   好幾層疊在一起。每一列的說明寫了要看什麼。
+- 「Form: with actions」有好幾個按鈕：`Tab` 到動作區先停在右下角的 `Save`，`j|k` 在按鈕之間走。`Test` 只要 Host：空著按會被擋，
+  填了再按要等一下（標題後面轉 loading icon）才跳 toast，Host 打 `bad-1` 會失敗、開 error popup，關掉後再按 `Enter` 就是重試；
+  `Scan` 開一個 note，還把 Port 寫成 22，之後 `Esc` 會先問要不要放棄。
 - 每一層看：只有最上層亮、底下淡化一次，`Esc` 一次關一層。
 
 **t — terminal**：PTY。

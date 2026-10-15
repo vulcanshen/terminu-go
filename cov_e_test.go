@@ -93,7 +93,7 @@ func TestFormNoTyping(t *testing.T) {
 	if _, ok := ta.topView().(*formView); !ok || r.name != "web" {
 		t.Fatalf("what is typed in the popup is written back to the form: %q, top %T", r.name, ta.topView())
 	}
-	ta.press("G", "k", "k", "Enter") // Profile: its options are in a select
+	ta.press("G", "k", "Enter") // Profile: its options are in a select
 	if f, ok := ta.topView().(*finderView); !ok || f.kind != findSelect {
 		t.Fatalf("Enter on Profile opens a select: %T", ta.topView())
 	}
@@ -121,7 +121,7 @@ func TestFormLayouts(t *testing.T) {
 	}}
 	ta.Form(f)
 	ta.settle()
-	ta.press("G", "Enter") // the check fails: the error row shows Name is taken
+	ta.press("Tab", "Enter") // the check fails: the error row shows Name is taken
 	_, plain := covEPopup(ta)
 	name, timeout, cmd := covERow(plain, "Name"), covERow(plain, "Timeout"), covERow(plain, "Command line")
 	value, layout, errRow := covERow(plain, "tmux new-session"), covERow(plain, "Layout"), covERow(plain, "Name is taken")
@@ -213,7 +213,7 @@ func TestFormFocusBlock(t *testing.T) {
 	if covECol(styled[row], covEBlock(layer)) != covECol(plain[row], glyphRadioOn) || !strings.HasSuffix(plain[row], glyphHard+"┃") {
 		t.Errorf("on an option the block starts at the option: %q", plain[row])
 	}
-	ta.press("G")
+	ta.press("Tab")
 	styled, plain = covEPopup(ta)
 	row = covERow(plain, "Save")
 	if !strings.Contains(styled[row], On(layer).Render(" Save ")) || strings.Contains(plain[row], glyphHard) {
@@ -245,7 +245,7 @@ func TestFormLabelColors(t *testing.T) {
 		!strings.Contains(row("Credential"), Fg(Text).Render("vault")) {
 		t.Errorf("a disabled label is Surface2, the field in its place, its value another colour: %q", row("Credential"))
 	}
-	ta.press("G", "Enter", "j") // submit: Name and Key are wrong; the focus away from Name
+	ta.press("Tab", "Enter", "j") // submit: Name and Key are wrong; the focus away from Name
 	styled, plain = covEPopup(ta)
 	if !strings.Contains(row("Name"), Fg(Red).Render("Name")) || !strings.Contains(row("Name"), Fg(Overlay0).Render("required")) {
 		t.Errorf("a wrong value's label is Red, its value another colour: %q", row("Name"))
@@ -269,7 +269,7 @@ func TestFormButton(t *testing.T) {
 			t.Errorf("the button is neither [ Save ] nor a capsule: %q", plain[row])
 		}
 	}
-	ta.press("G")
+	ta.press("Tab")
 	styled, _ = covEPopup(ta)
 	if !strings.Contains(styled[row], On(LayerColor(1)).Render(" Save ")) {
 		t.Errorf("with the focus the button is a block of the layer colour, Base bold: %q", styled[row])
@@ -281,7 +281,7 @@ func TestFormActionRowFixed(t *testing.T) {
 	ta.resize(80, 14) // the fields need to scroll
 	ta.Form(testForm(nil))
 	ta.settle()
-	ta.press("G", "Enter", "gg") // Name is required
+	ta.press("Tab", "Enter", "gg") // Name is required
 	check := func(when string) int {
 		_, plain := covEPopup(ta)
 		b := covERow(plain, "Save")
@@ -325,17 +325,17 @@ func TestFormItems(t *testing.T) {
 		seen = append(seen, formStop(fv))
 		ta.press("j")
 	}
-	want := []string{"Name", "Port", "Auth:0", "Auth:1", "Auth:2", "Agent:0", "Profile", "Command", "button"}
+	want := []string{"Name", "Port", "Auth:0", "Auth:1", "Auth:2", "Agent:0", "Profile", "Command", "Name"}
 	if !slices.Equal(seen, want) {
-		t.Errorf("items %v, want %v: a field, each option, the button", seen, want)
+		t.Errorf("items %v, want %v: a field, each option; j stays in the field area", seen, want)
 	}
-	ta.press("G", "k")
+	ta.press("G")
 	if formStop(fv) != "Command" {
 		t.Errorf("with no error there is no error row: %s", formStop(fv))
 	}
-	ta.press("G", "Enter", "G", "k") // Name is required
+	ta.press("Tab", "Enter", "G") // Name is required
 	if formStop(fv) != "error" {
-		t.Errorf("with an error the error row is an item, before the button: %s", formStop(fv))
+		t.Errorf("with an error the error row is the field area's last item: %s", formStop(fv))
 	}
 }
 
@@ -365,8 +365,8 @@ func TestFormMoveItems(t *testing.T) {
 		t.Errorf("before a field's first item comes the last of the one above: %s", formStop(fv))
 	}
 	ta.press("G")
-	if formStop(fv) != "button" {
-		t.Errorf("G goes to the button: %s", formStop(fv))
+	if formStop(fv) != "Command" {
+		t.Errorf("G goes to the field area's last item: %s", formStop(fv))
 	}
 	ta.press("gg")
 	if formStop(fv) != "Name" {
@@ -380,7 +380,7 @@ func TestFormWrap(t *testing.T) {
 	ta.settle()
 	fv := ta.topView().(*formView)
 	for _, c := range []struct{ start, key, want string }{
-		{"G", "j", "Name"}, {"gg", "k", "button"}, {"G", "↓", "Name"}, {"gg", "↑", "button"},
+		{"G", "j", "Name"}, {"gg", "k", "Command"}, {"G", "↓", "Name"}, {"gg", "↑", "Command"},
 	} {
 		ta.press(c.start, c.key)
 		if formStop(fv) != c.want {
@@ -396,14 +396,14 @@ func TestFormHalfPage(t *testing.T) {
 	ta.Frame()
 	fv := ta.topView().(*formView)
 	half := max(fv.visible/2, 1)
-	items := []string{"Name", "Port", "Auth:0", "Auth:1", "Auth:2", "Agent:0", "Profile", "Command", "button"}
+	items := []string{"Name", "Port", "Auth:0", "Auth:1", "Auth:2", "Agent:0", "Profile", "Command"}
 	last := len(items) - 1
 	ta.press("d")
 	if want := items[min(half, last)]; formStop(fv) != want {
 		t.Errorf("d moves half a page of items: %s, want %s", formStop(fv), want)
 	}
 	ta.press("G", "d")
-	if formStop(fv) != "button" {
+	if formStop(fv) != "Command" {
 		t.Errorf("d stops at the end, no wrapping: %s", formStop(fv))
 	}
 	ta.press("u")
@@ -428,7 +428,7 @@ func TestFormSkipDisabled(t *testing.T) {
 	ta.settle()
 	fv := ta.topView().(*formView)
 	for _, c := range []struct{ keys, want string }{
-		{"gg j", "Port"}, {"G k", "Port"}, {"G k k", "Name"},
+		{"gg j", "Port"}, {"G", "Port"}, {"G k", "Name"},
 	} {
 		ta.press(strings.Fields(c.keys)...)
 		if formStop(fv) != c.want {
@@ -568,7 +568,7 @@ func TestFormEnterButton(t *testing.T) {
 	r := &formResult{name: "web-01"}
 	ta.Form(testForm(r))
 	ta.settle()
-	ta.press("G", "Enter")
+	ta.press("Tab", "Enter")
 	if r.submitted != 1 || ta.top() != nil {
 		t.Errorf("Enter on the button submits the form: %d, top %T", r.submitted, ta.topView())
 	}
@@ -635,9 +635,9 @@ func TestFormHint(t *testing.T) {
 		{"gg", "Enter:edit Tab:actions Esc:cancel"},
 		{"j j", "Enter:choose Tab:actions Esc:cancel"},         // Auth: password
 		{"j j j", "Enter|Space:toggle Tab:actions Esc:cancel"}, // Agent: forward
-		{"G", "Enter:save Tab:fields Esc:cancel"},
+		{"Tab", "Enter:save Tab:fields Esc:cancel"},
 		{"Enter", "Enter:edit e:error Tab:actions Esc:cancel"}, // Name is required: the focus on Name
-		{"e", "Enter:show e:edit Tab:fields Esc:cancel"},       // the error row
+		{"e", "Enter:show e:edit Tab:actions Esc:cancel"},      // the error row is in the field area
 	} {
 		ta.press(strings.Fields(c.keys)...)
 		if b := covEBottom(ta); !strings.HasPrefix(b, "┗━ "+c.want+" ━") {
@@ -648,7 +648,7 @@ func TestFormHint(t *testing.T) {
 	f.Button = "Connect"
 	ta.Form(f)
 	ta.settle()
-	ta.press("G")
+	ta.press("Tab")
 	if b := covEBottom(ta); !strings.HasPrefix(b, "┗━ Enter:connect Tab:fields Esc:cancel ━") {
 		t.Errorf("on the button Enter: is its text in lower case: %q", b)
 	}
@@ -709,7 +709,7 @@ func TestFormValidation(t *testing.T) {
 	if _, ok := ta.topView().(*lineInput); !ok || r.port != "" || !strings.Contains(ta.screenText(), "Port must be 1-65535") {
 		t.Fatalf("a field's own rule stops the value in its input popup: %T, %q", ta.topView(), r.port)
 	}
-	ta.press("Esc", "G", "Enter")
+	ta.press("Esc", "Tab", "Enter")
 	if r.submitted != 0 || ta.topView() != fv {
 		t.Fatalf("a form that fails its checks is not saved and stays: submitted %d", r.submitted)
 	}
@@ -741,18 +741,18 @@ func TestFormNoCheckBeforeSubmit(t *testing.T) {
 		}
 		ta.press("j")
 	}
-	ta.press("G", "Enter")
+	ta.press("Tab", "Enter")
 	ta.press("Enter", "w", "e", "b", "Enter") // Name fixed
 	styled, plain := covEPopup(ta)
 	if !strings.Contains(styled[covERow(plain, "Name")], Fg(Red).Render("Name")) || covERow(plain, "Name is required") < 0 {
 		t.Error("the error stays until the next submit, the value fixed or not")
 	}
-	ta.press("j", "j", "j", "j", "Enter", "G", "Enter") // Auth: credential, submit
+	ta.press("j", "j", "j", "j", "Enter", "Tab", "Enter") // Auth: credential, submit
 	styled, plain = covEPopup(ta)
 	if strings.Contains(styled[covERow(plain, "Name")], Fg(Red).Render("Name")) || covERow(plain, "Command can't be used") < 0 {
 		t.Errorf("the next submit checks again:\n%s", strings.Join(plain, "\n"))
 	}
-	ta.press("gg", "j", "j", "Enter", "G", "Enter") // Auth: password
+	ta.press("gg", "j", "j", "Enter", "Tab", "Enter") // Auth: password
 	if r.submitted != 1 {
 		t.Error("with nothing wrong the form is saved")
 	}
@@ -969,7 +969,7 @@ func TestErrorPopupLayout(t *testing.T) {
 	ta = newTestApp(t)
 	ta.Form(testForm(nil))
 	ta.settle()
-	ta.press("G", "Enter", "e", "Enter") // Name is required: the error row's full message
+	ta.press("Tab", "Enter", "e", "Enter") // Name is required: the error row's full message
 	if _, plain = covEPopup(ta); !strings.Contains(plain[0], "\U000F0238 NAME") {
 		t.Errorf("opened from the form's error row its title is the field's name: %q", plain[0])
 	}
@@ -981,7 +981,7 @@ func TestErrorPopupClose(t *testing.T) {
 	ta.Form(testForm(r))
 	ta.settle()
 	fv := ta.topView().(*formView)
-	ta.press("G", "Enter", "e") // Name is required; on the error row
+	ta.press("Tab", "Enter", "e") // Name is required; on the error row
 	for _, k := range []string{"Enter", "Esc"} {
 		ta.press("Enter")
 		if _, ok := ta.topView().(*noteView); !ok {

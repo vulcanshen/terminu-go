@@ -327,7 +327,7 @@ func TestFormSaveFails(t *testing.T) {
 	f.Submit = func() (tea.Cmd, error) { return nil, errors.New("hosts.yaml changed on disk since it was opened.") }
 	ta.Form(f)
 	ta.settle()
-	ta.press("G", "Enter")
+	ta.press("Tab", "Enter")
 	n, ok := ta.topView().(*noteView)
 	if !ok || n.title != "SAVE FAILED" {
 		t.Fatalf("a failing save opens SAVE FAILED: %T", ta.topView())

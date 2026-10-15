@@ -2,8 +2,10 @@ package terminu
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 )
 
 // RGB is a 24-bit colour.
@@ -102,6 +104,61 @@ func (s Style) Render(text string) string {
 		return text
 	}
 	return "\x1b[" + p + "m" + text + "\x1b[0m"
+}
+
+// sgrAt matches an SGR sequence at the start of a string.
+var sgrAt = regexp.MustCompile(`^\x1b\[[0-9;:]*m`)
+
+// onBlock draws styled text on a cursor block: every character turns to the
+// block's style, Base on the block's colour, except the swatches, runs of █
+// whose content is a colour, which keep their own (components/color, the
+// cursor block).
+func onBlock(s string, block Style) string {
+	var out, plain strings.Builder // plain: the text waiting to go on the block
+	flush := func() {
+		out.WriteString(block.Render(plain.String()))
+		plain.Reset()
+	}
+	cur := "" // the SGR sequences in force
+	for len(s) > 0 {
+		if s[0] == 0x1b {
+			seq := sgrAt.FindString(s)
+			switch {
+			case seq == "":
+				seq = s[:1] // not a colour: dropped
+			case seq == "\x1b[0m" || seq == "\x1b[m":
+				cur = ""
+			default:
+				cur += seq
+			}
+			s = s[len(seq):]
+			continue
+		}
+		end := strings.IndexByte(s, 0x1b)
+		if end < 0 {
+			end = len(s)
+		}
+		text := s[:end]
+		s = s[end:]
+		for text != "" {
+			swatch := strings.HasPrefix(text, "█")
+			n := 0
+			for n < len(text) && strings.HasPrefix(text[n:], "█") == swatch {
+				_, size := utf8.DecodeRuneInString(text[n:])
+				n += size
+			}
+			run := text[:n]
+			text = text[n:]
+			if swatch && cur != "" {
+				flush()
+				out.WriteString(cur + "\x1b[" + sgrRGB(false, block.Bg.RGB) + "m" + run + "\x1b[0m")
+				continue
+			}
+			plain.WriteString(run)
+		}
+	}
+	flush()
+	return out.String()
 }
 
 func sgrRGB(fg bool, c RGB) string {

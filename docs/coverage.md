@@ -1,6 +1,6 @@
-# tdp v0.6.6 coverage
+# tdp v0.6.7 coverage
 
-tdp v0.6.6 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
+tdp v0.6.7 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
 （[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -57,7 +57,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | K1 | 數字鍵：panel 上（沒有 popup 時）跳到目前畫面的第 N 個 panel；沒有那個號碼不作用；換畫面就是那個畫面的 panel | P 按 `1` `2` `3`、按 `4`（不作用）；換到 I 按 `2` | `TestK1DigitsJumpPanels`、`TestK1DigitsPerScreen` |
 | K1 | app 不能在 panel 上登記數字熱鍵；popup 裡數字自由（select 選項的數字熱鍵）；數字的 global 熱鍵只在 global operation popup 裡按 | lib：登記時拒絕；I 的 `Profile`（`[1] clock`）；global operation popup 的 `[1] About`（在 panel 上按 `1` 是跳 panel，`?` 也不列它） | `TestK1DigitHotkeyRejectedOnPanel`、`TestK1DigitsFreeInPopups`、`TestM4DigitGlobalOnlyInPopup`、`TestK1DigitGlobalNotInPanelKeyRef` |
 | K2 | `Tab`：畫面上換 panel、最後一個回到第一個；不跨畫面、不離開 popup | P 按 `Tab` 走過三個 panel | `TestK2TabCyclesPanels`、`TestK2TabStaysInPopup` |
-| K2 | 有動作列的 popup：欄位區與動作列，回來時停在離開前那一項；一定有 `Shift-Tab`。表單與 color picker（色版與 `Choose`） | D「Form: New host」、「Form: long」；I 的 `Background`（color） | `TestFormTabBlocks`、`TestColorPickerTab` |
+| K2 | 有動作區的 popup：欄位區與動作區，回來時停在離開前那一項；一定有 `Shift-Tab`；各區裡的項目用 hjkl。表單與 color picker（色版與 `Choose`） | D「Form: New host」、「Form: long」、「Form: with actions」；I 的 `Background`（color） | `TestFormTabBlocks`、`TestFormActionAreaMoves`、`TestColorPickerTab` |
 | K2 | 有好幾塊的 popup（finder、datetime picker）：在塊之間 | I `[2] FILES` 的 `[/] Find`；I 的 `Meeting`（datetime） | `TestFinderTabBlocks`、`TestDatetimePicker` |
 | K2 | 打字列（finder、select、panel filter）：到清單 | 同上；P `[1] PODS` 按 `/` | `TestFinderTypingTab`、`TestPanelFilterTab` |
 | K2 | 只有一塊的 input popup：有灰字提議時接受提議，沒有時不作用 | I 的 `Name`（有舊值）與 `Nickname`（空的） | `TestInputSuggestionTab`、`TestInputNoSuggestionTabNoop` |
@@ -214,6 +214,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | color §色碼 | 每個意義的色碼與用處（Base、Blue、Surface2、層色、Lavender、Green、Yellow、Peach、Red、Overlay0、Text、Subtext1、Surface1） | 每個畫面 | `TestColorTable` |
 | color §色碼 | 畫面不塗底色：沒指定背景的格子留給終端機；Base 只用在色塊上的字、膠囊接縫沒填色的那一邊、淡化的目標 | 換一個不是 Base 的終端機底色看 | `TestNoBackgroundPainted` |
 | color §色碼 | 模式色 Yellow 也用在 Drag 拿著的那一列 | P `[1] PODS` 的 `[D]rag`；I 的 `Segments` 按 `D` | `TestPanelDragHeldRow`、`TestReorderDrag` |
+| color §色碼 | 例外是色塊：內容本身就是顏色的格子（`ColorText` 的 `███`）在 cursor 色塊上保留自己的顏色，同一塊上的其他字照樣換成 Base。lib：表單、一列一個值的 panel、一般清單的 cursor | I `[1] INPUTS` 的 `Background` 停在上面 | `TestSwatchOnCursor` |
 | color §色碼 | cursor 色塊：popup 層色底、panel Subtext1 底，字 Base 粗體；沒 focus 那塊的 cursor 再淡化一次；放在色塊上的字一律 Base | P 的 cursor；I `[/] Find` 的兩塊 | `TestCursorBlock` |
 | color §淡化 | `dim(c) = c × 0.45 + base × 0.55`，每個通道四捨五入，前景背景都算；256 色的 16–255 照標準值；0–15 用終端機的調色盤（啟動時 OSC 4 問，問不到用 xterm 的值） | F8、T2 的畫面；在 tmux 裡改調色盤看 | `TestDimFormula`、`TestDimPaletteFromOSC4`、`TestDimPaletteFallbackXterm` |
 | color §淡化 | 絕不變亮（每通道取小）；一律輸出 24-bit；沒指定前景給 `dim(Text)`；bold、reverse、游標移動、文字不動 | 同上 | `TestDimNeverBrighter`、`TestDimTruecolorOut`、`TestDimDefaultFg` |
@@ -266,7 +267,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | panel §loading 與錯誤 | loading：icon 在整串膠囊後、用框線色（focus Blue、失焦 Surface2）；沒內容時中間寫一句（`󰪞 loading pods…`）；重新載入舊內容留著 | `Loading`（空的時候與有內容時各一次） | `TestPanelLoading`、`TestPanelLoadingIconAfterChain`（顏色） |
 | panel §loading 與錯誤 | 錯誤：置中兩句，事實 Red、提示 Overlay0；舊內容在就留著、錯誤用 toast 報 | `Fail`（空的時候與有內容時各一次） | `TestPanelError` |
 | panel §一列一個值 | 照表單：項目逐一移動（有 tab 時 `h\|l` 給 tab）；`Enter` 開 input popup，radio、checkbox 原地選；確定後 focus 留在同一列 | P `[3] SETTINGS`；I `[1] INPUTS` | `TestValuePanelMoves`、`TestValuePanelEnter` |
-| panel §一列一個值 | 沒有送出：確定的那一刻就生效；沒有動作列、沒有「改過了要先問」 | 同上 | `TestValuePanelAppliesNow` |
+| panel §一列一個值 | 沒有送出：確定的那一刻就生效；沒有動作區、沒有「改過了要先問」 | 同上 | `TestValuePanelAppliesNow` |
 | panel §明細 | 另一個 panel 的 cursor 一移動，明細立刻換成那一筆，label 寫那一筆的名字時一起換；不用 `Enter`，cursor 移動時 focus 不動；app 也可以讓清單上的 `Enter` 把 focus 送到明細（K3） | K `[1] KINDS` 上 `j\|k`，看 `[2]`；`Enter` 進 `[2]` | `TestPanelDetailsFollowCursor`、`TestValuesOnMove` |
 | panel §一列一個值 | focus 色塊 Subtext1 底 Base 粗體、最右邊一格是箭頭，從項目開頭到 panel 內右緣；label 大寫，一般 Blue、停用 Surface2、出錯 Red；label 欄寬取最長的 label、與值之間兩格 | `[3] SETTINGS` 的 `Disable`（`Remote` 停用）、`Fail`（`Timeout` 的 label 變 Red） | `TestValuePanelFocusBlock`、`TestValuePanelLabels` |
 | panel §panel filter | `/` 在最上面出現打字列、即時篩選、不開 popup；最前面 U+F105 跟清單的字對齊（離框一格）、空一格才接打的字，打字時框線色（Blue）、在清單時 Overlay0；右邊 `符合/總數`，Overlay0；打字列按鍵與比對同 finder；篩選後保持 panel 的排序 | P `[1] PODS` 按 `/` | `TestPanelFilter` |
@@ -307,22 +308,25 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | form §選項畫在表單上 | 五個以內畫在表單、超過用 select／checkbox popup；radio 與 checkbox 組一律直排、一個選項一列 | D「Form: New host」的 `Auth`、`Order` | `TestFormOptionsDrawn` |
 | form §focus 與 label | focus 照 menu 的 cursor（層色底 Base 粗體），從項目開頭一直到框（蓋住右邊留白）、最右邊一格是箭頭；按鈕的色塊就是按鈕、沒有箭頭；值空著也一整塊 | 同上 | `TestFormFocusBlock` |
 | form §focus 與 label | label 不因 focus 變色：一般層色、停用 Surface2、值出錯 Red（優先）；停用的留原位；值不跟 label 同色 | D「Form: New host」的 `Credential`（停用）；送出失敗 | `TestFormLabelColors` |
-| form §動作列 | 按鈕：文字左右各一格、一塊底色；沒 focus Surface1 底 Text 字、focus 層色底 Base 粗體；寫要做的事；不用 `[ Save ]`、不用膠囊 | D「Form: New host」 | `TestFormButton` |
-| form §動作列 | 位置：欄位區 → 空一列 → 錯誤列 → 分隔線 → 動作列；按鈕靠右離框一格；錯誤列、分隔線、動作列固定不捲；只有一個按鈕；沒有取消按鈕 | D「Form: long」（欄位要捲） | `TestFormActionRowFixed` |
-| form §移動 | 項目：欄位、每個選項、按鈕、有錯誤的錯誤列（在按鈕前） | D「Form: New host」 | `TestFormItems` |
-| form §移動 | `j\|l\|↓\|→` 下一個、`h\|k\|↑\|←` 上一個；跨欄；`gg` 第一個、`G` 按鈕；`u\|d` 以項目為單位半頁、到頭尾停住；`j\|k` 頭尾繞回 | 同上 | `TestFormMoveItems`、`TestFormWrap`、`TestFormHalfPage` |
-| form §移動 | `Tab\|Shift-Tab` 在欄位區與動作列之間來回：欄位區任一項 → 按鈕，按鈕 → 離開前那一項；錯誤列跟按鈕同一塊（`Tab` 不停、在上面按 `Tab` 回欄位區）、`j\|k` 與 `e` 到得了 | D「Form: long」改一欄後 `Tab`、`Enter` | `TestFormTabBlocks` |
+| form §動作區 | 按鈕：文字左右各一格、一塊底色；沒 focus Surface1 底 Text 字、focus 層色底 Base 粗體；寫按下去要做的事；不用 `[ Save ]`、不用膠囊 | D「Form: New host」 | `TestFormButton` |
+| form §動作區 | 位置：欄位區 → 空一列 → 錯誤列 → 分隔線 → 動作區；按鈕靠右離框一格；錯誤列、分隔線、動作區固定不捲；沒有取消按鈕 | D「Form: long」（欄位要捲） | `TestFormActionRowFixed` |
+| form §動作區 | 按鈕可以不只一個：主要的送出在右下角；每一列放哪些按鈕、排幾列由 app 決定，每一列靠右、同一列的按鈕之間隔一格。lib：`Form.Buttons`（一列一列，主要的送出接在最後一列的最後；最後一列空著就是它自己一列） | D「Form: with actions」（`Test` `Scan` 一列、`Save As` `Save` 一列） | `TestFormButtonsLayout` |
+| form §動作區 | 其他按鈕：另一種送出（`FormButton.Submit`，整張表單檢查、送出後關掉）或不關表單的動作（`FormButton.Run`）；兩個都給或都不給是程式的錯 | D「Form: with actions」的 `Save As`、`Test` | `TestFormSaveAs`、`TestFormButtonNeedsOne` |
+| form §動作區 | 不關表單的動作：先只檢查它要的欄位（`Needs`），沒過跟送出被擋一樣；跑的時候標題後面放 loading icon；成功 toast 一句、結果是內容時開 note、失敗開 error popup（關掉後 focus 在按鈕上，再按 `Enter` 重試）；focus 留在按鈕上；動作寫進某一欄時算改過（`FormResult.Apply`） | D「Form: with actions」：Host 空著按 `Test`；填了再按（等一下才連上）；Host 打 `bad-1` 再按；`Scan` 開 note、把 Port 寫成 22，之後 `Esc` 先問 | `TestFormActionRun`、`TestFormActionResults` |
+| form §移動 | 項目：欄位、每個選項、每個按鈕、有錯誤的錯誤列；分兩區：欄位區是欄位與錯誤列（錯誤列在最後一欄後面），動作區是按鈕 | D「Form: New host」 | `TestFormItems` |
+| form §移動 | `j\|l\|↓\|→` 下一個、`h\|k\|↑\|←` 上一個，只在 focus 所在的那一區；跨欄；動作區照閱讀順序（一列由左到右、再下一列）；`gg\|G` 這一區的頭尾；`u\|d` 以項目為單位半頁、到頭尾停住；每一區各自頭尾繞回 | 同上；D「Form: with actions」的按鈕 | `TestFormMoveItems`、`TestFormWrap`、`TestFormHalfPage`、`TestFormActionAreaMoves` |
+| form §移動 | `Tab\|Shift-Tab` 在欄位區與動作區之間來回，兩邊都回到離開前那一項；第一次到動作區停在主要的送出；錯誤列屬於欄位區（在上面按 `Tab` 到動作區）、`j\|k` 與 `e` 到得了 | D「Form: long」改一欄後 `Tab`、`Enter`；D「Form: with actions」 | `TestFormTabBlocks`、`TestFormActionAreaMoves` |
 | form §移動 | 停用的跳過；打開時 focus 在第一個能停的（從某一欄打開就停那欄）；不自動打開第一欄；跳進 radio、checkbox 那一欄（從那欄打開、送出被擋、`e` 回去）停在第一個有值的選項（radio 已選的、checkbox 第一個勾的，都沒有停第一個） | D「Form: open at Port」；停用的選項：D「Form: New host」的 `Order` 的 `random` | `TestFormSkipDisabled`、`TestFormSkipDisabledOption`、`TestFormOpenFocus` |
 | form §`Enter` | 欄位：開 input popup 疊在表單上，確定寫回 focus 留原欄，`Esc` 值不變；checkbox popup：`Space` 勾、`Enter` 寫回、`Esc` 取消 | 同上的 `Name`、`Namespaces` | `TestFormEnterField` |
-| form §`Enter` | radio 選項：選它；checkbox 選項：原地翻（`Space` 也能翻）；都不開 popup、focus 不動、馬上生效；按鈕：送出 | 同上 | `TestFormEnterOption`、`TestFormEnterButton`、`TestFormCheckboxSpace` |
-| form §送出 | 只有按鈕的 `Enter`；不用字母熱鍵；`Esc` 不把 focus 移到動作列 | 同上 | `TestFormSubmitOnlyButton` |
+| form §`Enter` | radio 選項：選它；checkbox 選項：原地翻（`Space` 也能翻）；都不開 popup、focus 不動、馬上生效；按鈕：按下它（送出或做它的動作） | 同上 | `TestFormEnterOption`、`TestFormEnterButton`、`TestFormCheckboxSpace` |
+| form §送出 | 只有送出按鈕的 `Enter`；`Tab` 第一次就停在主要的送出；不用字母熱鍵；`Esc` 不把 focus 移到動作區 | 同上 | `TestFormSubmitOnlyButton` |
 | form §在欄位上打字 | 要打字的欄位上按表單操作鍵以外的可列印字元（含數字、`q`）跳說明 note：標題是欄位名、`Enter`／`Esc` 關、focus 不動；其他項目上不跳 | D「Form: New host」的 `Name` 上打 `s` | `TestFormTypingNote` |
 | form §在欄位上打字 | 表單操作鍵不跳 note：移動鍵、`u\|d`、`g`（單按不作用）、`G`、`e`（沒錯時不作用）、`Enter`、`Esc`、`Space`（不作用）、`?`（key reference） | 同上，按 `e` `u` `g` `?` | `TestFormOperationKeys` |
-| form §hint | `Enter:` 後的字跟著 focus 換（`edit`／`choose`／checkbox 選項 `Enter\|Space:toggle`／按鈕小寫）；有問題的欄位加 `e:error`；`Tab` 寫要去的那塊：欄位上 `Tab:actions`、按鈕與錯誤列上 `Tab:fields`；錯誤列 `Enter:show e:edit Tab:fields Esc:cancel`；不寫 `j\|k`；`Esc:cancel` | 同上 | `TestFormHint` |
+| form §hint | `Enter:` 後的字跟著 focus 換（`edit`／`choose`／checkbox 選項 `Enter\|Space:toggle`／按鈕小寫）；有問題的欄位加 `e:error`；`Tab` 寫要去的那塊：欄位區（含錯誤列）`Tab:actions`、按鈕上 `Tab:fields`；錯誤列 `Enter:show e:edit Tab:actions Esc:cancel`；按鈕寫按鈕的字小寫（`Enter:save as`、`Enter:test`）；不寫 `j\|k`；`Esc:cancel` | 同上 | `TestFormHint` |
 | form §取消 | 沒改過 `Esc` 直接關；改過先 confirm（`Enter` 放棄、`Esc` 回表單值都在）；「改過了」只要寫回過就設、不清掉；只有表單、textarea 與 reorder 問 | D「Form: New host」改一欄再 `Esc`；I 的 `Segments` | `TestFormDiscardConfirm`、`TestFormDirtyFlag`、`TestReorderEsc` |
 | form §錯誤 | 一欄自己的規則在 input popup 擋；整張表單的規則送出時檢查；沒過：不存、每個有問題的 label Red、錯誤列寫第一個、focus 跳過去 | D「Form: New host」空著送出、Port 打 `0` | `TestFormValidation` |
 | form §錯誤 | `e`：有問題的欄位 → 錯誤列換成這一欄的訊息；錯誤列 `Enter` 開完整訊息的 error popup（標題欄位名、`Enter`／`Esc` 關）；錯誤列 `e` 回那一欄 | 同上 | `TestFormSubmitChecks` |
-| form §錯誤 | 送出動作失敗：error popup，關掉回表單、focus 在按鈕；錯誤跟著檢查走、第一次送出前不檢查 | D「Form: save fails」 | `TestFormSaveFails`、`TestFormNoCheckBeforeSubmit` |
+| form §錯誤 | 送出動作失敗：error popup，關掉回表單、focus 在按鈕；錯誤跟著檢查走（送出與不關表單的動作都算檢查，直到下一次檢查）、第一次送出前不檢查 | D「Form: save fails」 | `TestFormSaveFails`、`TestFormNoCheckBeforeSubmit` |
 
 ## dialog/menu
 
@@ -385,7 +389,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | 出處 | 規定 | 展示場 | 測試 |
 |---|---|---|---|
 | input §什麼是 input | 打字列上是輸入態；不打字的部分 core key 照 K1（`?` key reference、`q`／`Ctrl-C` 離開、`Space` 不作用、`hjkl` 移動）；`Enter` 照 K3；`Esc` 關值不變；從表單開的確定後 focus 留原欄 | I `[1] INPUTS` 每一列 | `TestInputCommon` |
-| input §什麼是 input | 有按鈕的 input popup 照表單的動作列：`Tab\|Shift-Tab` 在欄位區與動作列之間來回、回來停在離開前那一項；hint 在欄位上 `Tab:actions`、在按鈕上 `Tab:fields`。lib 裡有按鈕的 input popup 只有 color picker | I 的 `Background`（color） | `TestColorPickerTab`、`TestColorPickerKeys` |
+| input §什麼是 input | 有按鈕的 input popup 照表單的動作區：`Tab\|Shift-Tab` 在欄位區與動作區之間來回、回來停在離開前那一項；hint 在欄位上 `Tab:actions`、在按鈕上 `Tab:fields`。lib 裡有按鈕的 input popup 只有 color picker | I 的 `Background`（color） | `TestColorPickerTab`、`TestColorPickerKeys` |
 | input §單行骨架 | 說明列一句話 Overlay0、空一列；打字列最前面 `nf-fa-angle_right`（層色，離框一格）、空一格接值；值 Lavender、游標 Lavender 底 Base 字；錯誤列；hint `Enter:<動詞> Esc:cancel`（列出全部操作）；寬度：自由打字用上限、有長度上限照內容 | I 的 `Name`、`Timeout`、`Password` | `TestSingleLineSkeleton`、`TestInputAngle` |
 | input §值比框長時 | 顯示游標附近那段、截掉的那邊補 `…`；游標一定看得到、只捲剛好的量；照顯示寬度、一個字不切半（紅色 `\n` 也是） | I 的 `Name`（打一串長的），`Home`／`End` | `TestInputLongValue` |
 | input §編輯鍵 | 字元、`Space` 插入；`←\|→`；`Home\|End`；`Backspace`、`Delete`；一個字是看起來的一個字；不收 `Ctrl-U`、`Ctrl-W`；其他 `Ctrl-`、`Alt-` 不作用不打字 | I 的 `Name`（打中文、emoji、組合字元） | `TestInputEditKeys`、`TestInputGraphemes`、`TestInputCtrlAltIgnored` |
@@ -431,7 +435,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | datetime §值 | 可設最早最晚；表單與 panel 上格式 app 定，空照空值 | I `[1] INPUTS` | `TestDatePickerRange` |
 | color-picker §長相 | 一列：old、new、R、G、B，五個項目之間兩格；old／new 色塊 8×2 + 名字 + hex；R、G、B 色塊 3×1（畫該色版自己的顏色）+ hex；下面分隔線與 `Choose` 按鈕（照表單的按鈕）、沒有錯誤列；寬度確定，照最寬的 hint 是 40 格 | I 的 `Background` | `TestColorPickerLayout` |
 | color-picker §按鍵 | 可 focus：R、G、B、`Choose`（`h\|l`、`j\|k` 前後、到頭尾繞回；old、new 不拿 focus）；打開在 R；focus 的色版下面兩列（名字與 hex）照 cursor、跟色塊一樣寬；R/G/B `Enter` 開 select 00–FF（`2A (42)`、hex 十進位都能篩），回來 new 跟著變、focus 留著；`Choose` 上 `Enter` 確定；`Esc` 不改；`Tab\|Shift-Tab` 在色版與 `Choose` 之間來回、回來停在離開前的色版；hint 兩種（`Enter:edit Tab:actions Esc:cancel`、`Enter:choose Tab:fields Esc:cancel`） | 同上 | `TestColorPickerKeys`、`TestColorPickerTab`、`TestColorPickerChannelSelect` |
-| color-picker §值 | 表單與 panel 上一小格色塊 + hex | I `[1] INPUTS` | `TestValueDisplay` |
+| color-picker §值 | 表單與 panel 上一小格色塊 + hex；cursor 在這一欄時色塊保留自己的顏色、hex 換成 Base | I `[1] INPUTS` 的 `Background` | `TestValueDisplay`、`TestSwatchOnCursor` |
 | file-picker §長相 | 根目錄 app 給、只是起點，最上面 `..`（`/` 沒有）；目前的目錄寫在標題（欄位名後，太長從前截）；打字列打開是空的；每列前目錄／檔案 icon（顏色 app 定）；原本的值 cursor 停在它、字 Green；`..` → 目錄 → 檔案、照名字不分大小寫，隱藏檔只在篩選字 `.` 開頭時列（`*` 不比對隱藏檔、`**` 不走進隱藏目錄）；打字列前面 U+F105；四塊：打字列、清單、預覽、metadata；預覽最多讀 64 KB：目錄與壓縮檔是三層的樹（`├─` `└─` `│` Overlay0、隱藏檔不列、滿了最後一列 `…`、`(empty)`、`(permission denied)`）、圖片第一列灰字 `data:image/png · 12.4 KB` 空一列接 data URI（超過 1 MB 只寫一句）、PDF 第一列灰字頁數空一列接前 20 頁的文字（最多 128 KB，沒有文字寫 `(no extractable text)`）、文字檔上色加行號、其他是十六進位一律一列 8 bytes 接 ASCII（33 格，並排、上下疊都一樣）、讀不到 `(unreadable)`；metadata 四列 `TYPE`（`text` `private key` `image` `PDF` `archive` `binary`、`link → <目標>`、`directory`）`SIZE`（1024 進位一位小數、目錄寫 `N items` 不算隱藏檔）`MODIFIED`（本地時間到分）`MODE`（`ls -l` 的寫法），symlink 三列寫目標的，拿不到的寫 `—`（讀不到的目錄的 `SIZE`、斷掉的 link 的三列），label 層色、值 Text；設定 `hide_secrets_in_preview`（預設關）打開時私鑰露第一行接灰字、其他只有擁有者能讀的檔一行都不露（目錄不算），metadata 照常 | I 的 `Identity file`（假的 `.ssh`，打 `/tmp/terminu-showcase/project/` 走到假的專案：`empty` 是 `(empty)`、`locked` 是 `(permission denied)`）；I `[2] FILES` 的 `[/] Find`（假的專案，每一種檔各一個：`latest.pdf` 是 link、`broken.pdf` 是斷掉的 link、`docs/scan.pdf` 沒有文字、`assets/photo-large.png` 超過 1 MB、`secret.bin` 讀不到）；global 的 `Hide secrets in preview` | `TestFilePickerLayout`、`TestFilePickerHiddenAndOrder`、`TestFilePreviewKinds`、`TestFilePreviewHidesSecrets`、`TestFileInfo`、`TestFilePickerMetaDash` |
 | file-picker §按鍵 | 清單 `Enter`：目錄進去（清篩選、cursor 在 `..` 下第一項）、檔案選中寫回關掉；選檔時目錄永遠不會被選中 | 同上 | `TestFilePicker` |
 | file-picker §選目錄 | 清單只列目錄，`.` → `..` → 目錄；最上面 `. (this directory)`、icon U+F0252；在 `.` 上 `Enter` 選目前的目錄（`Enter:choose`），在目錄上 `Enter` 走進去（`Enter:into`）；打字列有篩選字或 wildcard 時沒有 `.`、wildcard 結果只列目錄；其他照 file-picker | I 的 `Path`、`Download to`（**`Download to` 打開的是真的 `~/Downloads`**） | `TestFilePickerDirMode` |

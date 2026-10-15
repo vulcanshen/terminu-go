@@ -674,7 +674,7 @@ func TestErrorRowTruncate(t *testing.T) {
 	ta.press("Esc")
 	ta.Form(&Form{Title: "New host", Fields: []*FormField{{Label: "Name", Check: func() string { return long }}}})
 	ta.settle()
-	ta.press("G", "Enter")
+	ta.press("Tab", "Enter")
 	if text := strings.Join(covDTop(ta), "\n"); !strings.Contains(text, "…") || strings.Contains(text, "with a letter") {
 		t.Errorf("the form's error row is cut with …:\n%s", text)
 	}
@@ -726,7 +726,7 @@ func TestErrorRowChangesOnCheckOnly(t *testing.T) {
 	r := &formResult{}
 	ta.Form(testForm(r))
 	ta.settle()
-	ta.press("G", "Enter")
+	ta.press("Tab", "Enter")
 	if !strings.Contains(ta.screenText(), "Name is required") {
 		t.Fatal("submitting with no name wrote no error")
 	}
@@ -743,7 +743,7 @@ func TestActionFailureErrorPopup(t *testing.T) {
 	ta.Form(f)
 	ta.settle()
 	form := ta.topView()
-	ta.press("G", "Enter")
+	ta.press("Tab", "Enter")
 	if _, ok := ta.topView().(*noteView); !ok || len(ta.stack) != 2 || ta.stack[0].view != form {
 		t.Fatalf("the error popup goes over the form: %T, %d layers", ta.topView(), len(ta.stack))
 	}

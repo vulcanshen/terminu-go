@@ -41,7 +41,7 @@ func inputOpeners(t *testing.T) map[string]func(*testApp) {
 		"form+select": func(ta *testApp) {
 			ta.Form(testForm(nil))
 			ta.settle()
-			ta.press("G", "k", "k", "Enter")
+			ta.press("G", "k", "Enter")
 		},
 	}
 }
@@ -525,26 +525,31 @@ func TestFormTabBlocks(t *testing.T) {
 		}
 	}
 	for _, c := range []struct{ keys, want string }{
-		{"gg j G Tab", "Port"}, // G left the field area at Port
-		{"gg k Tab", "Name"},   // k wrapped from the first field to the button
+		{"gg k", "Command"}, // k wraps within the field area, never to the button
+		{"G", "Command"},    // G is the field area's last item
+		{"Tab k", "button"}, // the action area wraps within itself
 	} {
 		ta.press(strings.Fields(c.keys)...)
 		if formStop(fv) != c.want {
 			t.Errorf("%s: %s, want %s", c.keys, formStop(fv), c.want)
 		}
 	}
-	ta.press("G", "Enter") // Name is required: the focus on Name
+	ta.press("Enter") // Name is required: the focus on Name
 	ta.press("j", "j", "Tab")
 	if formStop(fv) != "button" {
-		t.Errorf("Tab is never on the error row: %s", formStop(fv))
+		t.Errorf("Tab from the field area goes to the button: %s", formStop(fv))
 	}
 	ta.press("k", "Tab")
 	if formStop(fv) != "Auth:0" {
-		t.Errorf("Tab on the error row returns to the item left, as on the button: %s", formStop(fv))
+		t.Errorf("Tab on the button returns to the item left: %s", formStop(fv))
 	}
 	ta.press("gg", "e", "Tab")
-	if formStop(fv) != "Name" {
-		t.Errorf("e to the error row, Tab back to the field: %s", formStop(fv))
+	if formStop(fv) != "button" {
+		t.Errorf("the error row is in the field area: Tab goes to the actions: %s", formStop(fv))
+	}
+	ta.press("Tab")
+	if formStop(fv) != "error" {
+		t.Errorf("and Tab comes back to the error row: %s", formStop(fv))
 	}
 }
 
@@ -604,7 +609,7 @@ func TestFormSubmitChecks(t *testing.T) {
 	ta.settle()
 	fv := ta.topView().(*formView)
 	ta.press("gg", "j", "j", "j", "j", "Enter") // Auth: credential
-	ta.press("G", "Enter")
+	ta.press("Tab", "Enter")
 	if r.submitted != 0 {
 		t.Fatal("the form was submitted with errors")
 	}
@@ -632,7 +637,7 @@ func TestFormSubmitChecks(t *testing.T) {
 	}
 	// Fix both and submit.
 	r.name = "web-01"
-	ta.press("gg", "j", "j", "Enter", "G", "Enter")
+	ta.press("gg", "j", "j", "Enter", "Tab", "Enter")
 	if r.submitted != 1 {
 		t.Errorf("submitted %d times", r.submitted)
 	}
@@ -882,7 +887,7 @@ func TestFormScrollPosition(t *testing.T) {
 	if !strings.Contains(ta.screenText(), "3 of 6") {
 		t.Errorf("Auth is the third of six fields:\n%s", ta.screenText())
 	}
-	ta.press("G")
+	ta.press("Tab")
 	if strings.Contains(ta.screenText(), " of 6") {
 		t.Error("on the button the position is not written")
 	}

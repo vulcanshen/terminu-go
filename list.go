@@ -399,8 +399,8 @@ func (l *List) Draw(w, h int, focused bool) []string {
 				cursor = Style{Fg: Base, Bg: DimColor(Subtext1), Bold: true}
 				arrowStyle = Fg(DimColor(Subtext1))
 			}
-			plain := ansi.Strip(" " + indent + mark + text)
-			out = append(out, cursor.Render(Pad(plain, w-arrow))+arrowStyle.Render(glyphHard))
+			// Base on the block, a swatch keeping its colour (components/color).
+			out = append(out, onBlock(Pad(" "+indent+mark+text, w-arrow), cursor)+arrowStyle.Render(glyphHard))
 			continue
 		}
 		if mark != "" && l.marked[l.rowID(r)] {

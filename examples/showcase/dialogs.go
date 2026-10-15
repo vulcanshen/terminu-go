@@ -104,6 +104,7 @@ func (ds *dialogsScreen) scenarios() []scenario {
 		{"Form: save fails", "form", "the action fails: an error popup over the form", func() tea.Cmd {
 			return a.Form(ds.hostForm(nil, true))
 		}},
+		{"Form: with actions", "form", "more buttons: [Test] and [Scan] keep the form open, [Save As] submits too; Host bad-… fails", ds.actionsForm},
 		{"Note viewer", "note", "its own keys [/] [y]; [v] then [v] again selects text", ds.yaml},
 		{"Popup with tabs", "note", "tabs after the title; [h]|[l] switch", ds.devtools},
 		{"Loading popup", "note", "lines arriving: the loading icon turns", ds.loadingPopup},
@@ -296,6 +297,41 @@ func (ds *dialogsScreen) hostForm(_ *terminu.Form, fail bool) *terminu.Form {
 			return a.Toast(terminu.Info, "Saved "+name), nil
 		},
 	}
+}
+
+// actionsForm is the host form with more buttons (components/dialog/form,
+// the action area): Test and Scan keep the form open and need only Host;
+// Save As is another submit. Tab lands on the main Save, bottom right.
+func (ds *dialogsScreen) actionsForm() tea.Cmd {
+	a := ds.s.app
+	f := ds.hostForm(nil, false)
+	hostF, portF := f.Fields[1], f.Fields[2]
+	needs := []*terminu.FormField{hostF}
+	test := &terminu.FormButton{Label: "Test", Needs: needs, Run: func() terminu.FormResult {
+		host := hostF.Value()
+		time.Sleep(1500 * time.Millisecond) // long enough to see the loading icon
+		if strings.HasPrefix(host, "bad") {
+			return terminu.FormResult{Err: errors.New("ssh: connect to host " + host + " port 22: Connection refused")}
+		}
+		return terminu.FormResult{Toast: "Connected to " + host}
+	}}
+	scan := &terminu.FormButton{Label: "Scan", Needs: needs, Run: func() terminu.FormResult {
+		host := hostF.Value()
+		return terminu.FormResult{
+			Lines: []string{
+				"# " + host + ":22 SSH-2.0-OpenSSH_9.6",
+				host + " ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFakeKeyForTheShowcaseOnly0000000000",
+				host + " ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYFakeKeyForTheShowcase",
+			},
+			// The port it answered on goes into Port: the form counts as changed.
+			Apply: func() { portF.Edit().(terminu.NumberInput).Done("22") },
+		}
+	}}
+	saveAs := &terminu.FormButton{Label: "Save As", Submit: func() (tea.Cmd, error) {
+		return a.Toast(terminu.Info, "Saved a copy of "+f.Fields[0].Value()), nil
+	}}
+	f.Buttons = [][]*terminu.FormButton{{test, scan}, {saveAs}}
+	return a.Form(f)
 }
 
 func (ds *dialogsScreen) profileForm() tea.Cmd {
