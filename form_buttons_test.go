@@ -148,8 +148,10 @@ func TestFormActionRun(t *testing.T) {
 		t.Fatalf("Tab back to Test: %s", buttonAt(fv))
 	}
 	cmd := ta.press("Enter")
-	if !fv.isLoading() || !slices.ContainsFunc(loadingFrames[:], func(f string) bool { return strings.Contains(ta.screenText(), f) }) {
-		t.Error("the loading icon after the title while it runs")
+	// One frame drawn once: the icon turns with the clock (layout/popup).
+	text := ta.screenText()
+	if !fv.isLoading() || !slices.ContainsFunc(loadingFrames[:], func(f string) bool { return strings.Contains(text, f) }) {
+		t.Errorf("the loading icon after the title while it runs: %v\n%s", fv.isLoading(), text)
 	}
 	ta.deliver(cmd)
 	if b.ran != 1 || fv.isLoading() || ta.topView() != fv || buttonAt(fv) != "Test" {
