@@ -7,7 +7,7 @@ terminu design（tdp）的 Go 實作：一個像 bubbletea 那樣讓 app 直接�
 - 建在 bubbletea **v1**（`github.com/charmbracelet/bubbletea` v1.3.10）與 lipgloss v1（v1.1.0）上，跟五個 app 相同。
   原本定 v2，2026-10-08 改回 v1（紀錄的 C1、G22）：v2 的 renderer 與 lipgloss v2 的合成都處理不了 icon 佔兩格，要用 v2 就得
   自己重寫輸出層。user：v2 還不成熟，不該為了它打破既有狀態、重新造輪；等 v2 成熟再升。
-- 規範：`~/Documents/sideproj/terminu`，目前實作的版本是 **tdp v0.6.11**
+- 規範：`~/Documents/sideproj/terminu`，目前實作的版本是 **tdp v0.6.12**
 
 上面這些與下面「lib 的範圍」都已經跟 user 定案，不要重提。
 
@@ -17,7 +17,7 @@ terminu design（tdp）的 Go 實作：一個像 bubbletea 那樣讓 app 直接�
 
 1. **驗證規範。** 完全照 tdp 的文字寫出 lib 與展示場，找出規範沒寫、寫得模糊、前後矛盾、或做出來不好用的地方（下面叫「盲點」）。
    tdp v0.3.0 從零改寫過，v0.4.0 補上了這個 repo 第一批回報的 22 條盲點（紀錄裡 G1–G22 都在「已定」），v0.5.0 換了外觀，
-   v0.5.1 補上第二批的 G23–G29，v0.5.2 補上第三批的 G30–G46（G43 擱著），v0.5.3 補上 G47，v0.5.4 補上第四批的 G48–G66，v0.5.5 補上第五批的 G67–G77，v0.5.6 補上第六批的 G78–G82，v0.5.7 補上 G83，v0.5.8 補上 G84，v0.5.9 補上 G85，v0.6.0 刪掉 S5 講畫 mark 工具的那一句（kamonu 的 KM4），v0.6.1 補上 G86（kamonu 的 KM5），v0.6.2 補上 ccdrawu 的 CD1、CD2（清單的分組、明細），v0.6.3 補上 CD3（K3 唯一的例外：`Enter` 可以把 focus 送到明細），v0.6.4 補上 CD4（E3 的 Windows），v0.6.5 補上 CD6（K2：有動作列的 popup，color picker 也用 `Tab` 在欄位區與動作列之間來回），v0.6.6 補上 CD9（新元件 reorder：panel 的 Drag mode 放進 popup；K12 拿著的一項到頭尾繞回），v0.6.7 補上 kamonu 的 KM1、KM3（表單的動作區可以有好幾個按鈕、`Tab` 切兩區、hjkl 在區裡移；cursor 蓋到色塊時色塊保留自己的顏色），v0.6.8 補上 G89（按鈕的工作還在跑時 `Enter` 不作用、hint 拿掉；表單關掉時還在跑的動作取消），v0.6.9 補上 kamonu 的 KM6（按鈕的 hint 只有動詞小寫，名稱、路徑照原樣），v0.6.10 補上 G90（source 收起、target 同時打開：在收的不算一層、不跳色），v0.6.11 補上 kamonu 的 KM7（輸入的錯誤點名值的名字：標題是動作時由 app 另外給）；
+   v0.5.1 補上第二批的 G23–G29，v0.5.2 補上第三批的 G30–G46（G43 擱著），v0.5.3 補上 G47，v0.5.4 補上第四批的 G48–G66，v0.5.5 補上第五批的 G67–G77，v0.5.6 補上第六批的 G78–G82，v0.5.7 補上 G83，v0.5.8 補上 G84，v0.5.9 補上 G85，v0.6.0 刪掉 S5 講畫 mark 工具的那一句（kamonu 的 KM4），v0.6.1 補上 G86（kamonu 的 KM5），v0.6.2 補上 ccdrawu 的 CD1、CD2（清單的分組、明細），v0.6.3 補上 CD3（K3 唯一的例外：`Enter` 可以把 focus 送到明細），v0.6.4 補上 CD4（E3 的 Windows），v0.6.5 補上 CD6（K2：有動作列的 popup，color picker 也用 `Tab` 在欄位區與動作列之間來回），v0.6.6 補上 CD9（新元件 reorder：panel 的 Drag mode 放進 popup；K12 拿著的一項到頭尾繞回），v0.6.7 補上 kamonu 的 KM1、KM3（表單的動作區可以有好幾個按鈕、`Tab` 切兩區、hjkl 在區裡移；cursor 蓋到色塊時色塊保留自己的顏色），v0.6.8 補上 G89（按鈕的工作還在跑時 `Enter` 不作用、hint 拿掉；表單關掉時還在跑的動作取消），v0.6.9 補上 kamonu 的 KM6（按鈕的 hint 只有動詞小寫，名稱、路徑照原樣），v0.6.10 補上 G90（source 收起、target 同時打開：在收的不算一層、不跳色），v0.6.11 補上 kamonu 的 KM7（輸入的錯誤點名值的名字：標題是動作時由 app 另外給），v0.6.12 補上 ccdrawu 的 CD10（一列一個值的 panel 的表頭用 Overlay0）；
    還沒有任何 app 照它做過，
    這個 repo 是第一個。
 2. **成為家族共用的 lib。** 規範確認之後，家族的五個 app（kbu、filu、sshu、webu、locku）改用這個 lib，不再各自實作規範。
@@ -27,8 +27,8 @@ terminu design（tdp）的 Go 實作：一個像 bubbletea 那樣讓 app 直接�
 
 ### 讀什麼
 
-- 讀 terminu **最新 tag** 的內容（現在是 v0.6.11）。main 上還沒發版的改動不算；不確定時用
-  `git -C ~/Documents/sideproj/terminu diff v0.6.11 -- principle components` 看有沒有差。
+- 讀 terminu **最新 tag** 的內容（現在是 v0.6.12）。main 上還沒發版的改動不算；不確定時用
+  `git -C ~/Documents/sideproj/terminu diff v0.6.12 -- principle components` 看有沒有差。
 - **v0.5.0 換了外觀**（配色不變）：框線、膠囊、menu 區塊標題、cursor 尾端的箭頭、標題大寫、固定的開關動畫。規範的圖現在用真的
   Nerd Font 字形。畫框、膠囊、cursor 的程式集中在少數幾個地方，不要散在各元件裡寫死 —— 外觀之後可能還會調。
 - 規定只認這些檔的文字：`principle/README-zh_TW.md`、`principle/rules-zh_TW.md`、`components/` 底下全部。
@@ -75,7 +75,7 @@ terminu design（tdp）的 Go 實作：一個像 bubbletea 那樣讓 app 直接�
 ```
 ### G<n> <一句話標題>
 - 狀態：待定
-- 規範：<檔案> 的 <段落或規則編號>（tdp v0.6.11）
+- 規範：<檔案> 的 <段落或規則編號>（tdp v0.6.12）
 - 卡在：lib 需要知道什麼才能做下去
 - 可能：A …；B …（各附一句後果）
 - 暫時：跳過／暫時照 A 做（程式裡標 `TODO(tdp G<n>)`）

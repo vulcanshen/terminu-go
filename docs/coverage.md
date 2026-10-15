@@ -1,6 +1,6 @@
-# tdp v0.6.11 coverage
+# tdp v0.6.12 coverage
 
-tdp v0.6.11 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
+tdp v0.6.12 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
 （[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -274,6 +274,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | panel §一列一個值 | 沒有送出：確定的那一刻就生效；沒有動作區、沒有「改過了要先問」 | 同上 | `TestValuePanelAppliesNow` |
 | panel §明細 | 另一個 panel 的 cursor 一移動，明細立刻換成那一筆，label 寫那一筆的名字時一起換；不用 `Enter`，cursor 移動時 focus 不動；app 也可以讓清單上的 `Enter` 把 focus 送到明細（K3） | K `[1] KINDS` 上 `j\|k`，看 `[2]`；`Enter` 進 `[2]` | `TestPanelDetailsFollowCursor`、`TestValuesOnMove` |
 | panel §一列一個值 | focus 色塊 Subtext1 底 Base 粗體、最右邊一格是箭頭，從項目開頭到 panel 內右緣；label 大寫，一般 Blue、停用 Surface2、出錯 Red；label 欄寬取最長的 label、與值之間兩格 | `[3] SETTINGS` 的 `Disable`（`Remote` 停用）、`Fail`（`Timeout` 的 label 變 Red） | `TestValuePanelFocusBlock`、`TestValuePanelLabels` |
+| panel §一列一個值 | 表頭（`PROPERTY  VALUE`）Overlay0，不用 label 的 Blue；panel 失焦時跟著淡化（T2）；一般清單的表頭照舊 Blue | P `[3] SETTINGS` 的 `PROPERTY  VALUE`；I `[1] INPUTS` 的 `INPUT  VALUE` | `TestValuePanelHeader` |
 | panel §panel filter | `/` 在最上面出現打字列、即時篩選、不開 popup；最前面 U+F105 跟清單的字對齊（離框一格）、空一格才接打的字，打字時框線色（Blue）、在清單時 Overlay0；右邊 `符合/總數`，Overlay0；打字列按鍵與比對同 finder；篩選後保持 panel 的排序 | P `[1] PODS` 按 `/` | `TestPanelFilter` |
 | panel §panel filter | 清單上 `Tab` 下一個 panel；清單上 `Esc` 清掉篩選；選了之後清單留著篩選、打字列變灰；清單上 `/` 回打字列接著打 | 同上 | `TestPanelFilterListKeys` |
 | panel §panel filter | focus 離開篩選留著；回來時直接在打字列上（`Tab` 經過停兩下） | 同上 + `Tab` 繞一圈 | `TestPanelFilterFocusReturn` |

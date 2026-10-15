@@ -134,7 +134,9 @@ func (v *Values) Draw(w, h int, focused bool) []string {
 	var rows []string
 	var itemRow []int // the row each item starts on
 	if v.Header[0] != "" {
-		rows = append(rows, " "+Fg(Blue).Render(Pad(Upper(v.Header[0]), lw)+"  "+Fit(Upper(v.Header[1]), valW))+Repeat(" ", arrow))
+		// Dim text: a Blue header would run into the Blue labels under it
+		// (components/layout/panel).
+		rows = append(rows, " "+Fg(Overlay0).Render(Pad(Upper(v.Header[0]), lw)+"  "+Fit(Upper(v.Header[1]), valW))+Repeat(" ", arrow))
 	}
 	headerRows := len(rows)
 	idx := 0

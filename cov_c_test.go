@@ -1897,6 +1897,20 @@ func TestValuePanelLabels(t *testing.T) {
 	covCWant(t, "unfocused label", settings(), "LAYOUT", DimColor(Blue), Color{})
 }
 
+// A one-value-per-row panel's header is Overlay0, not the labels' Blue, and
+// is dimmed with the panel (components/layout/panel).
+func TestValuePanelHeader(t *testing.T) {
+	ta := newTestApp(t)
+	ta.values.Header = [2]string{"Property", "Value"}
+	ta.press("3")
+	settings := func() []string { return covCCrop(ta.Frame(), 80, 120) }
+	covCWant(t, "header", settings(), "PROPERTY", Overlay0, Color{})
+	covCWant(t, "header", settings(), "VALUE", Overlay0, Color{})
+	covCWant(t, "label", settings(), "NAME", Blue, Color{})
+	ta.press("Tab")
+	covCWant(t, "unfocused header", settings(), "PROPERTY", DimColor(Overlay0), Color{})
+}
+
 func TestPanelFilterListKeys(t *testing.T) {
 	ta := newTestApp(t)
 	ta.press("/", "1", "5", "Enter")
