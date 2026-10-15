@@ -2,7 +2,7 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.6.6
+## v0.1.6 — tdp v0.6.6
 
 - `App.Reorder`: a popup for putting items in an order by hand, the panel's Drag mode in a popup. `D` picks up an
   item, `j|k` move it (wrapping at the ends), `Enter` drops it, `Esc` puts it back; `Enter` then applies the order,
