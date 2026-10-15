@@ -1001,7 +1001,7 @@ func TestTextareaHomeEnd(t *testing.T) {
 
 // In a textarea a pasted line break (\n, \r\n, a lone \r) is a line break;
 // any other control character stays, drawn as its red name and deleted whole,
-// and the text is not saved while it holds one: the error row names the field
+// and the text is not saved while it holds one: the error row names the value
 // (components/input/textarea).
 func TestTextareaPasteControlChars(t *testing.T) {
 	ta := newTestApp(t)

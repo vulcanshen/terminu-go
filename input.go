@@ -22,6 +22,11 @@ type TextInput struct {
 	Prompt string
 	// Verb is what Enter does, for the hint ("rename").
 	Verb string
+	// Name is the value's name in its errors when the title says what the
+	// popup does rather than what the value is called: "Name can't have
+	// control characters" on a "Save as" (components/input/README). Left
+	// unset, the title names it.
+	Name string
 	// Old is the value now: offered in grey from the cursor on, Tab takes it
 	// (components/input/README, the grey suggestion).
 	Old string
@@ -41,6 +46,9 @@ type PasswordInput struct {
 	// Subject is the one thing it acts on, kept as it is after ": " in the
 	// title: "EDIT: filu" (components/layout/popup).
 	Subject string
+	// Name is the value's name in its errors when the title is not
+	// ("Password" on a "Log in"); left unset, the title names it.
+	Name string
 	// Set says a password exists now: eight grey dots stand for it.
 	Set bool
 	// Unlock is the unlock look: one ● per character, a cell apart, centred
@@ -58,7 +66,8 @@ type NumberInput struct {
 	// Subject is the one thing it acts on, kept as it is after ": " in the
 	// title: "EDIT: filu" (components/layout/popup).
 	Subject string
-	// Name is the field's name in the range error ("Port").
+	// Name is the value's name in its errors ("Port must be 1-65535"); left
+	// unset, the title names it.
 	Name     string
 	Old      string
 	Min, Max float64
@@ -82,6 +91,7 @@ type lineInput struct {
 	kind         inputKind
 	title, glyph string
 	subject      string
+	name         string // the value's name in its errors: the app's Name, else the title
 	prompt, verb string
 	old          string // the suggestion; for a password, whether one is set
 	hasOld       bool
@@ -133,7 +143,7 @@ func then(written func(), cmd tea.Cmd) tea.Cmd {
 
 func (in TextInput) open(a *App, written func()) tea.Cmd {
 	return a.open(&lineInput{
-		kind: kindText, title: in.Title, subject: in.Subject, glyph: in.Glyph, prompt: in.Prompt, verb: cmpOr(in.Verb, "save"),
+		kind: kindText, title: in.Title, name: cmpOr(in.Name, in.Title), subject: in.Subject, glyph: in.Glyph, prompt: in.Prompt, verb: cmpOr(in.Verb, "save"),
 		old: in.Old, hasOld: in.Old != "", maxLen: in.MaxLen, ed: newEditor(""), check: in.Check,
 		done: func(v string, _ bool) tea.Cmd { return then(written, run2(in.Done, v)) },
 	})
@@ -141,7 +151,7 @@ func (in TextInput) open(a *App, written func()) tea.Cmd {
 
 func (in PasswordInput) open(a *App, written func()) tea.Cmd {
 	return a.open(&lineInput{
-		kind: kindPassword, title: in.Title, subject: in.Subject, glyph: in.Glyph, prompt: in.Prompt, verb: cmpOr(in.Verb, "save"),
+		kind: kindPassword, title: in.Title, name: cmpOr(in.Name, in.Title), subject: in.Subject, glyph: in.Glyph, prompt: in.Prompt, verb: cmpOr(in.Verb, "save"),
 		hasOld: in.Set, maxLen: in.MaxLen, unlock: in.Unlock, ed: newEditor(""), check: in.Check,
 		done: func(v string, clear bool) tea.Cmd {
 			if in.Done == nil {
@@ -154,7 +164,7 @@ func (in PasswordInput) open(a *App, written func()) tea.Cmd {
 
 func (in NumberInput) open(a *App, written func()) tea.Cmd {
 	li := &lineInput{
-		kind: kindNumber, title: in.Title, subject: in.Subject, glyph: in.Glyph, prompt: in.Prompt, verb: cmpOr(in.Verb, "save"),
+		kind: kindNumber, title: in.Title, name: cmpOr(in.Name, in.Title), subject: in.Subject, glyph: in.Glyph, prompt: in.Prompt, verb: cmpOr(in.Verb, "save"),
 		old: in.Old, hasOld: in.Old != "", ed: newEditor(""),
 		done: func(v string, _ bool) tea.Cmd { return then(written, run2(in.Done, v)) },
 	}
@@ -399,7 +409,7 @@ func (li *lineInput) confirm(a *App) tea.Cmd {
 			return tea.Batch(a.closeTop(), li.done("", true))
 		}
 		if li.ed.hasControl() {
-			li.err = cmpOr(li.title, "The value") + " can't have control characters"
+			li.err = cmpOr(li.name, "The value") + " can't have control characters"
 			return nil
 		}
 		v := li.ed.value()
@@ -415,7 +425,7 @@ func (li *lineInput) confirm(a *App) tea.Cmd {
 		return a.closeTop() // nothing touched: no change
 	}
 	if li.ed.hasControl() {
-		li.err = cmpOr(li.title, "The value") + " can't have control characters"
+		li.err = cmpOr(li.name, "The value") + " can't have control characters"
 		return nil
 	}
 	v := strings.TrimFunc(li.ed.value(), unicode.IsSpace)

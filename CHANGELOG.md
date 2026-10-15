@@ -2,6 +2,13 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.6.11
+
+- `TextInput`, `PasswordInput` and `Textarea` take a `Name`, as `NumberInput` does: the value's name in its errors when
+  the title says what the popup does (`Name can't have control characters` on a `SAVE AS`, not `Save as can't have
+  control characters`). Left unset, the title names it, as before
+- The showcase's `RENAME` input names its value `Name`
+
 ## v0.1.9 — tdp v0.6.10
 
 - `App.Popup`, `Popup` and `PopupBody`: a popup of the app's own on the library's popup stack. The app draws what is

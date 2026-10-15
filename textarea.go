@@ -17,7 +17,10 @@ type Textarea struct {
 	// Subject is the one thing it acts on, kept as it is after ": " in the
 	// title: "EDIT: filu" (components/layout/popup).
 	Subject string
-	Old     string
+	// Name is the text's name in its errors when the title is not ("Notes"
+	// on an "Edit"); left unset, the title names it (components/input/README).
+	Name string
+	Old  string
 	// Done gets the new text. It is not called when it did not change.
 	Done func(string) tea.Cmd
 }
@@ -480,10 +483,10 @@ func (tv *textareaView) moveKey(a *App, key string) (bool, tea.Cmd) {
 		tv.insert("\n")
 		return true, nil
 	case "Enter":
-		// A control character is not saved: the error row names the field,
+		// A control character is not saved: the error row names the value,
 		// as on a one-line input (components/input/textarea).
 		if tv.hasControl() {
-			tv.err = cmpOr(tv.t.Title, "The text") + " can't have control characters"
+			tv.err = cmpOr(tv.t.Name, cmpOr(tv.t.Title, "The text")) + " can't have control characters"
 			return true, nil
 		}
 		tv.err = ""

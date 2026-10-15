@@ -2027,3 +2027,34 @@ func TestFilePickerHint(t *testing.T) {
 		t.Errorf("typing row: %s", h)
 	}
 }
+
+// An error names the value by its name (components/input/README): an input
+// whose title says what it does ("Save as") is given the name; without one
+// the title names it, as on a form's field.
+func TestInputErrorNamesValue(t *testing.T) {
+	ta := newTestApp(t)
+	for _, c := range []struct {
+		open func() tea.Cmd
+		want string
+	}{
+		{func() tea.Cmd { return ta.Text(TextInput{Title: "Save as", Name: "Name"}) }, "Name can't have control characters"},
+		{func() tea.Cmd { return ta.Password(PasswordInput{Title: "Log in", Name: "Password"}) }, "Password can't have control characters"},
+		{func() tea.Cmd { return ta.Text(TextInput{Title: "Name"}) }, "Name can't have control characters"},
+	} {
+		c.open()
+		ta.settle()
+		covFPaste(ta, "web\n01")
+		ta.press("Enter")
+		if text := ta.screenText(); ta.top() == nil || !strings.Contains(text, c.want) {
+			t.Errorf("want %q:\n%s", c.want, text)
+		}
+		ta.press("Esc")
+	}
+	ta.Textarea(Textarea{Title: "Edit", Subject: "notes", Name: "Notes"})
+	ta.settle()
+	covFPaste(ta, "x\x1by")
+	ta.press("Esc", "Enter")
+	if text := ta.screenText(); !strings.Contains(text, "Notes can't have control characters") {
+		t.Errorf("the textarea's error:\n%s", text)
+	}
+}
