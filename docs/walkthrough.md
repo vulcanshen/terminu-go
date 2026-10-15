@@ -71,6 +71,9 @@ cd ~/Documents/sideproj/terminu-go && go build -o /tmp/showcase ./examples/showc
   `Scan` 開一個 note，還把 Port 寫成 22，之後 `Esc` 會先問要不要放棄。`Test` 還在跑時，下框的 hint 沒有 `Enter`，再按也不會
   再跑一次；這時按 `Esc` 關掉表單，結果就不會跳出來。`Connect` 也要等一下，連上才關掉表單。`Export hosts.yaml` 上的 hint 是
   `Enter:export hosts.yaml`：只有動詞小寫，檔名照原樣。
+- 「Popup: the app’s own」是展示場自己畫的 popup（`DRAW: icon`）：框裡的格子與按鍵是展示場的，框、動畫、淡化是 lib 的。`hjkl` 移、
+  `Enter` 或 `Space` 畫一格，`Tab` 到 `Save`、再按回格子；`q` 不作用。畫過一格之後 `Esc` 先問要不要放棄，`Ctrl-C` 的離開 confirm
+  多一句 Peach 的 `Changes to icon are not saved.`；`?` 只列它自己的鍵。
 - 每一層看：只有最上層亮、底下淡化一次，`Esc` 一次關一層。
 
 **t — terminal**：PTY。

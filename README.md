@@ -11,7 +11,9 @@ the `?` key reference, the hint on each panel's bottom border, the footer, confi
 themselves come from the same registration, they cannot drift apart.
 
 Screens the library does not own (a full-screen lock screen, several terminals side by side) can still use its parts:
-confirm, toast and every kind of input work on their own.
+confirm, toast and every kind of input work on their own. A popup of your own (a grid to draw on) goes on the same
+stack as the library's: you draw what is inside and handle its keys; the frame, the animation, the fading and `Esc` are
+the library's, and its confirms and inputs open over yours.
 
 It is built on [Bubble Tea](https://github.com/charmbracelet/bubbletea) v1 and [Lip Gloss](https://github.com/charmbracelet/lipgloss) v1.
 
@@ -33,10 +35,50 @@ them). An app that runs a terminal inside itself sets both `TERMINU__` variables
 
 ## Quick start
 
-The API is not settled yet: the library is still checking the spec against a working implementation. This section will
-show a minimal app once it is.
+A whole app, a list of tasks with one action on it ([`examples/minimal`](examples/minimal/main.go)):
 
-To see what it does, run the showcase, an example app that shows every component on fake data:
+```go
+// minimal is the smallest terminu app: one list and one action on it.
+package main
+
+import (
+	_ "embed"
+	"log"
+	"slices"
+
+	tea "github.com/charmbracelet/bubbletea"
+	terminu "github.com/vulcanshen/terminu-go"
+)
+
+//go:embed icon.svg
+var icon []byte // the app's mark, drawn by its splash (V)
+
+func main() {
+	app := terminu.New("todo")
+	list := &terminu.List{Columns: []terminu.Column{{Title: "Task", Flex: true}}}
+	list.SetRows([]terminu.Row{{ID: "1", Cells: []string{"Write the README"}}, {ID: "2", Cells: []string{"Tag v1.0.0"}}})
+	done := terminu.Action{Key: "x", Label: "Done", Desc: "this task", Scope: terminu.ItemScope, Hint: "done",
+		Do: func() tea.Cmd {
+			row, _ := list.Current()
+			list.SetRows(slices.DeleteFunc(list.Rows(), func(r terminu.Row) bool { return r.ID == row.ID }))
+			return app.Toast(terminu.Info, "Done: "+row.Cells[0])
+		}}
+	app.AddScreen(&terminu.Screen{Name: "Tasks", Panels: []*terminu.Panel{{Label: "Tasks", Body: list, Actions: []terminu.Action{done}}}})
+	var err error
+	if app.Splash, err = terminu.NewSplash(icon, "todo", "v0.1.0", "Things to do"); err != nil {
+		log.Fatal(err)
+	}
+	if err := app.Run(); err != nil {
+		log.Fatal(err)
+	}
+}
+```
+
+`x` marks the task under the cursor done. `Space` lists what can be done there, `?` lists the keys, `V` opens the
+splash, `q` leaves. Every terminu app has a splash with its own mark (tdp Rules S); `icon.svg` is that mark, and the
+example uses a copy of terminu's.
+
+To see everything it does, run the showcase, an example app that shows every component on fake data:
 
 ```sh
 go run github.com/vulcanshen/terminu-go/examples/showcase@latest
@@ -54,7 +96,7 @@ app reads them from its own and hands them over.
 
 ## Which terminu design
 
-terminu-go implements **tdp v0.6.9**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
+terminu-go implements **tdp v0.6.10**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
 
 ## Links
 

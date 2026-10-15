@@ -1532,3 +1532,30 @@ func TestT2StreamNotDimmed(t *testing.T) {
 		t.Errorf("an unfocused PTY is dimmed: %s", got)
 	}
 }
+
+// A menu that clears itself for the popup it opens (Rules T1): both
+// animations play at once, and the closing menu is not a layer, so the new
+// popup has the first layer's colour from its first frame (components/color).
+func TestT1SourceClosesWhileTargetOpens(t *testing.T) {
+	ta := newTestApp(t)
+	ta.Menu("Open", MenuSection{Actions: []Action{{Key: "o", Label: "Open", Desc: "the YAML",
+		Do: func() tea.Cmd { return ta.Viewer(testViewer()) }}}})
+	ta.settle()
+	ta.Update(keyMsg("o"))
+	if len(ta.stack) != 2 || !ta.stack[0].closing || ta.stack[1].frame != 1 {
+		t.Fatalf("the menu does not close while the viewer opens: %d layers", len(ta.stack))
+	}
+	for range openFrames - 1 {
+		ta.Update(animMsg{})
+	}
+	if len(ta.stack) != 2 {
+		t.Fatalf("the menu is gone before the viewer is open: %d layers", len(ta.stack))
+	}
+	if row := ta.rowWith("YAML"); !strings.Contains(row, Fg(LayerColor(1)).Render("┏")) {
+		t.Errorf("the viewer is not in the first layer's colour: %q", row)
+	}
+	ta.Update(animMsg{})
+	if len(ta.stack) != 1 {
+		t.Errorf("%d layers once the menu has closed", len(ta.stack))
+	}
+}

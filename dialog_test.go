@@ -39,6 +39,13 @@ func dialogOpeners() map[string]func(*testApp) {
 			term.mu.Unlock()
 			ta.open(&termView{t: term, a: ta.App})
 		},
+		// Bigger than the narrow screens, then bigger than any, then rows
+		// the app drew too wide and too many.
+		"app popup": func(ta *testApp) { ta.Popup(testPopup(&testBody{w: 52, h: 21})) },
+		"app popup huge": func(ta *testApp) {
+			ta.Popup(Popup{Title: "Draw", Subject: strings.Repeat("kamonu", 30), Body: &testBody{w: 300, h: 100}})
+		},
+		"app popup sloppy": func(ta *testApp) { ta.Popup(testPopup(&testBody{w: 40, h: 6, sloppy: true})) },
 	}
 }
 

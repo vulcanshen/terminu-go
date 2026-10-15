@@ -1,7 +1,7 @@
 # terminu-go 開發者備忘
 
 terminu-go 是 terminu design principle（tdp）的 Go 實作：給 app 呼叫的 lib，加上展示場 `examples/showcase`。遵循 terminu design
-principle，目前對應 tdp v0.6.9。這個 repo 的任務與規範的讀法見 [`CLAUDE.md`](../CLAUDE.md)。
+principle，目前對應 tdp v0.6.10。這個 repo 的任務與規範的讀法見 [`CLAUDE.md`](../CLAUDE.md)。
 
 ## 運作方式
 
@@ -31,6 +31,10 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   finder、select、checkbox popup、file-picker 共用 `finder.go` 的骨架（打字列、筆數、分隔線、清單、預覽），各自只換標記、`Enter`
   與清單的來源。
 - **上色**：自己寫 SGR（`Style.Render`，一律 24-bit），淡化（`Dim`）就是改寫每一列的 SGR。
+- **app 自己的 popup**（`apppopup.go`）：`App.Popup` 把 app 的 `PopupBody` 包成 popup 疊裡的一層，跟 lib 自己的 popup 一樣走
+  `measure`、`draw`、`key`。app 給框裡的大小（`Size`）、內容（`Draw`，框線到框線的寬度）、按鍵（`Key`）、hint、key reference 的鍵；
+  框、標題、層色、動畫、淡化，以及 app 沒收的 `Esc`、`?`、`q` 都是 lib 的。`ClosePopup` 用 body 找到那一層，跟 `closeView` 一樣連上面
+  的一起關。body 可以多一個 `QuitNote() string`：離開流程開 confirm 時從下往上問每一個開著的 app popup，不是空的排在 Details 最後、標 Peach。
 
 `proto/c1` 是驗證盲點紀錄 C1 的拋棄式原型，不是 lib 的一部分；lib 寫好後刪掉（go.mod 裡的 lipgloss 只有它在用）。
 
@@ -48,6 +52,17 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
 - **連上色也不用 lip gloss**：lip gloss v1 的顏色要先設全域的 color profile（`lipgloss.SetColorProfile`），lib 去改它會改到用 lib 的 app；
   `Style.Render` 碰到多列字串還會用自己的寬度補空白。lib 要的只有「這段字用這個顏色」，自己寫 SGR 就夠了，輸出也一定是 24-bit
   （淡化的前提）。app 內容的顏色要用 lip gloss 照用，淡化照樣改得到它的 SGR。
+- **app 自己的 popup 進 lib 的疊**（2026-10-15，user）：kamonu 畫格子的 popup 原本插不進 lib 的疊，kamonu 只好不用 `App.Run`、
+  自己包一層 program，照抄 Probe 與拿掉 `ESC [ K`，連疊在上面的 confirm、文字輸入、error popup、key reference 都自己畫。kamonu 記的
+  KM2（「lib 不放 app 自己的 popup」）理解成 lib 不做格子這種元件；通用的入口可以做：內容與按鍵歸 app，框與 core key 歸 lib。
+  在五個 app 改用 lib 之前把 API 定下來，現在改只動到 kamonu 與 ccdrawu。
+  - `Draw` 拿框線到框線的寬度，左右的留白 app 自己留：layout/popup 規定整列 cursor 與表單的 focus 色塊蓋住留白，lib 先留好就做不到。
+  - 離開的 confirm 多一句用 `QuitNote`，不讓 app 自己換 `App.Quit`：kamonu 的回饋，沒存的狀態在三處變、三處復原，漏一處主畫面的
+    `Quit` 也會帶著那句；在離開流程開始時問 body，不用存狀態。`App.Quit` 是 nil 時有 note 照樣先問（`Quit <app>?`）：app 給了 note
+    就是要使用者看到。
+  - 表單送出成功只關表單自己（`closeOnly`），不是關最上層：kamonu 在 `NEW KAMON` 的 Submit 裡開 `DRAW`，關最上層會關掉剛開的
+    `DRAW`、留下表單。層色也改成只數底下開著的層，`DRAW` 從第一格就是第 1 層色，不會等表單收完才跳色。在收的那層不算一層，規範原本沒寫，G90 補進 tdp v0.6.10。
+  - 打字列、模式、loading、下框的捲動位置先不做；要的時候用 optional method 加，`PopupBody` 不變。
 - **icon 與 powerline 符號各量各的**（tdp E5）：兩種寬度各自照「app 的變數 → 家族的變數 → 探測」決定
   （`<APP>__ICON_WIDTH`／`TERMINU__ICON_WIDTH`、`<APP>__POWERLINE_WIDTH`／`TERMINU__POWERLINE_WIDTH`）；探測時印一個 file icon、
   一個 powerline 符號，各問一次游標位置。有整列 cursor 的地方，右邊的留白跟箭頭一樣寬（layout/popup、layout/panel）。
@@ -64,7 +79,7 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
 - **splash**（Rules S）：機制是 `App.Splash`（`V` 打開、任意鍵關掉、不揭露、只在 panel 上、10ms 的 tick）；`NewSplash` 照 S5 畫：
   讀 app 的 `docs/icon.svg`，一格一個 `nf-fa-square`，下面六列字，揭露動畫全家族一樣。金色的字怎麼分成一個一個字：svg 裡每一個
   XML 註解開始下一個字（`<!-- K -->`），所以 svg 要照 app 名字的順序列字。`Run` 拒絕沒有 splash、或每個 panel 都把 `V` 讓出去的 app。
-  展示場的 `examples/showcase/icon.svg` 是 tdp v0.5.4 `principle/icon.svg` 的複本（E8）。
+  展示場的 `examples/showcase/icon.svg` 是 tdp v0.5.4 `principle/icon.svg` 的複本（E8），`examples/minimal/icon.svg` 再複製一份。
 - **檔案預覽**（`preview.go`）：照 input/file-picker 的「預覽」表。語法上色用 `alecthomas/chroma/v2`（MIT，catppuccin-mocha，
   只上前景色）；PDF 用 `dslipak/pdf`（BSD-3，rsc.io/pdf 的分支，能取純文字）；壓縮檔用標準庫（zip、tar、gzip、bzip2）。圖片的 data URI
   只讀畫得到的那一段，不把整個檔案（最多 1 MB）都編碼。預覽框不能捲，PDF 讀到預覽區滿了就停，不一定讀滿 20 頁。

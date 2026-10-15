@@ -91,8 +91,10 @@ type App struct {
 	w, h     int
 	pending  string // "g" waiting for its second key
 	quitting bool
-	anim     bool
-	spin     bool
+	// quitConfirm is the quit flow's confirm while quitting.
+	quitConfirm *confirmView
+	anim        bool
+	spin        bool
 
 	splashOn    bool
 	splashFrame int
@@ -357,7 +359,22 @@ func (a *App) closeTop() tea.Cmd {
 	if l == nil {
 		return nil
 	}
-	if _, ok := l.view.(*confirmView); ok && a.quitting && a.isQuitConfirm(l) {
+	return a.closeLayer(l)
+}
+
+// closeOnly starts closing v's popup alone: a popup opened over it stays (a
+// form's submit that opens the next popup).
+func (a *App) closeOnly(v popupView) tea.Cmd {
+	for _, l := range a.stack {
+		if l.view == v && !l.closing {
+			return a.closeLayer(l)
+		}
+	}
+	return nil
+}
+
+func (a *App) closeLayer(l *layer) tea.Cmd {
+	if a.isQuitConfirm(l) {
 		a.quitting = false
 	}
 	l.closing = true
@@ -388,6 +405,9 @@ func (a *App) closeView(v popupView) tea.Cmd {
 		if l.closing {
 			kept = append(kept, l)
 		} else {
+			if a.isQuitConfirm(l) {
+				a.quitting = false
+			}
 			gone(l)
 		}
 	}
@@ -523,23 +543,52 @@ func (a *App) quitAction() Action {
 	return Action{Key: "q", Label: "Quit", Desc: desc, Scope: GlobalScope, Do: a.startQuit}
 }
 
-// startQuit is the quit flow (Rules K9).
+// startQuit is the quit flow (Rules K9). What a popup of the app's own would
+// lose goes last in the confirm, in Peach; it asks then even when Quit is nil.
 func (a *App) startQuit() tea.Cmd {
-	if a.Quit == nil {
+	notes := a.quitNotes()
+	if a.Quit == nil && len(notes) == 0 {
 		return tea.Quit
 	}
 	if a.quitting {
 		return nil
 	}
+	ask := Ask{Question: "Quit " + a.Name + "?", Verb: "quit"}
+	if a.Quit != nil {
+		ask = *a.Quit
+	}
+	ask.Title = cmpOr(ask.Title, "Quit")
+	if len(notes) > 0 {
+		ask.Details, ask.Warn = slices.Clone(ask.Details), slices.Clone(ask.Warn)
+		if len(ask.Details) > 0 {
+			ask.Details = append(ask.Details, "")
+		}
+		for _, n := range notes {
+			ask.Warn = append(ask.Warn, len(ask.Details))
+			ask.Details = append(ask.Details, n)
+		}
+	}
 	a.quitting = true
-	c := newConfirm(*a.Quit, func() tea.Cmd { return tea.Quit })
-	c.ask.Title = cmpOr(c.ask.Title, "Quit")
-	return a.open(c)
+	a.quitConfirm = newConfirm(ask, func() tea.Cmd { return tea.Quit })
+	return a.open(a.quitConfirm)
+}
+
+// quitNotes are the QuitNote of the popups of the app's own that are open,
+// from the bottom.
+func (a *App) quitNotes() []string {
+	var out []string
+	for _, l := range a.stack {
+		if v, ok := l.view.(*appPopup); ok && !l.closing {
+			if q, ok := v.p.Body.(interface{ QuitNote() string }); ok && q.QuitNote() != "" {
+				out = append(out, q.QuitNote())
+			}
+		}
+	}
+	return out
 }
 
 func (a *App) isQuitConfirm(l *layer) bool {
-	c, ok := l.view.(*confirmView)
-	return ok && a.Quit != nil && c.ask.Question == a.Quit.Question
+	return a.quitting && l.view == a.quitConfirm
 }
 
 func cmpOr(s, def string) string {
@@ -1013,10 +1062,18 @@ func (a *App) Frame() []string {
 		lines = DimLines(lines) // everything under the top popup (Rules F8)
 	}
 	top := a.top()
+	under, open := slices.Index(a.stack, top), 0
 	for i, l := range a.stack {
-		color := LayerColor(i + 1)
+		// A popup's layer counts the open ones under it: one closing is not
+		// a layer any more, and a target opening while its source closes
+		// has its own layer's colour from its first frame (components/color,
+		// Rules T1).
+		color := LayerColor(open + 1)
+		if !l.closing {
+			open++
+		}
 		full := l.view.draw(l.w, l.h, color)
-		if l != top && !l.closing {
+		if i < under {
 			full = DimLines(full)
 		}
 		rows, first, dx := l.drawFrame(full, color)

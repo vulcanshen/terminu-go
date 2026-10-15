@@ -817,7 +817,8 @@ func (fv *formView) submit(a *App, it formItem, do func() (tea.Cmd, error)) tea.
 	if err != nil {
 		return fv.failed(a, it, err)
 	}
-	return tea.Batch(a.closeTop(), cmd)
+	// Only the form closes: a popup the submit opened stays over it.
+	return tea.Batch(a.closeOnly(fv), cmd)
 }
 
 func (fv *formView) surface() string { return fv.f.Title }

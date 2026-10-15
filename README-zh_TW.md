@@ -9,6 +9,8 @@
 地方、`Esc` 一次關一層、popup 上再疊 popup。menu、key reference 與實際的按鍵出自同一份登記，所以不會對不上。
 
 函式庫管不到的畫面（全螢幕的鎖定畫面、好幾個並排的終端機），照樣可以用它的零件：confirm、toast 與每一種 input 都能單獨用。
+app 自己的 popup（例如畫格子的）也放進同一疊：框裡畫什麼、按鍵做什麼由你決定；外框、開關動畫、淡化與 `Esc` 交給函式庫，
+函式庫的 confirm 與 input 也會疊在你的 popup 上面。
 
 建在 [Bubble Tea](https://github.com/charmbracelet/bubbletea) v1 與 [Lip Gloss](https://github.com/charmbracelet/lipgloss) v1 上。
 
@@ -28,9 +30,49 @@ go get github.com/vulcanshen/terminu-go
 
 ## 快速開始
 
-API 還沒定案：函式庫還在用實作檢驗規範。定案後這裡會放一個最小的 app。
+一個完整的 app：一份待辦清單，上面一個動作（[`examples/minimal`](examples/minimal/main.go)）：
 
-想看它做得到什麼，跑展示場（用假資料展示每一個元件的範例 app）：
+```go
+// minimal is the smallest terminu app: one list and one action on it.
+package main
+
+import (
+	_ "embed"
+	"log"
+	"slices"
+
+	tea "github.com/charmbracelet/bubbletea"
+	terminu "github.com/vulcanshen/terminu-go"
+)
+
+//go:embed icon.svg
+var icon []byte // the app's mark, drawn by its splash (V)
+
+func main() {
+	app := terminu.New("todo")
+	list := &terminu.List{Columns: []terminu.Column{{Title: "Task", Flex: true}}}
+	list.SetRows([]terminu.Row{{ID: "1", Cells: []string{"Write the README"}}, {ID: "2", Cells: []string{"Tag v1.0.0"}}})
+	done := terminu.Action{Key: "x", Label: "Done", Desc: "this task", Scope: terminu.ItemScope, Hint: "done",
+		Do: func() tea.Cmd {
+			row, _ := list.Current()
+			list.SetRows(slices.DeleteFunc(list.Rows(), func(r terminu.Row) bool { return r.ID == row.ID }))
+			return app.Toast(terminu.Info, "Done: "+row.Cells[0])
+		}}
+	app.AddScreen(&terminu.Screen{Name: "Tasks", Panels: []*terminu.Panel{{Label: "Tasks", Body: list, Actions: []terminu.Action{done}}}})
+	var err error
+	if app.Splash, err = terminu.NewSplash(icon, "todo", "v0.1.0", "Things to do"); err != nil {
+		log.Fatal(err)
+	}
+	if err := app.Run(); err != nil {
+		log.Fatal(err)
+	}
+}
+```
+
+`x` 把 cursor 所在的待辦標成完成。`Space` 列出這裡能做什麼，`?` 列出按鍵，`V` 打開 splash，`q` 離開。每個 terminu app 都有
+一個畫著自己 mark 的 splash（tdp Rules S）；`icon.svg` 就是那個 mark，這個範例用的是 terminu 的副本。
+
+想看它做得到的全部，跑展示場（用假資料展示每一個元件的範例 app）：
 
 ```sh
 go run github.com/vulcanshen/terminu-go/examples/showcase@latest
@@ -47,7 +89,7 @@ go run github.com/vulcanshen/terminu-go/examples/showcase@latest
 
 ## 實作哪一版 terminu design
 
-terminu-go 實作 **tdp v0.6.9**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
+terminu-go 實作 **tdp v0.6.10**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
 
 ## 相關連結
 

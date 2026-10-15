@@ -124,6 +124,7 @@ func (ds *dialogsScreen) scenarios() []scenario {
 			}
 			return a.Error("Deploy failed", msg)
 		}},
+		{"Popup: the app’s own", "app’s own", "the app draws the inside, the lib the frame: draw on the grid, [Tab] to Save; Esc and Ctrl-C say when changed", ds.draw},
 		{"Toast", "toast", "a short message on the third row from the bottom", toast("Copied 3 paths")},
 		{"Toast over a popup", "toast", "a popup, then a toast: Esc takes the toast first", func() tea.Cmd {
 			return tea.Batch(ds.yaml(), tea.Tick(600*time.Millisecond, func(time.Time) tea.Msg {

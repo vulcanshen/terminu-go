@@ -1,6 +1,6 @@
-# tdp v0.6.9 coverage
+# tdp v0.6.10 coverage
 
-tdp v0.6.9 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
+tdp v0.6.10 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
 （[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -83,6 +83,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | K8 | textarea 寫入狀態 `Tab` 插入 `input_tab_width` 個空白（E3 的設定，預設 4），不插 `\t` | I 的 `Comment` | `TestTextarea` |
 | K9 | `q` 與 `Ctrl-C` 同一個離開流程；`q` 在輸入態是字元、在表單上不作用；`Ctrl-C` 在輸入態與表單上有效；PTY 裡兩個都屬於子程序 | 任一 panel；D「Form: New host」上按 `q` | `TestK9QuitSameFlow`、`TestK9QNoopOnForm` |
 | K9 | 離開流程由 app 決定（直接 / 先確認 / 選擇）；進行中再按 `Ctrl-C` 立刻離開；離開列在 global operation popup | 展示場：先 confirm（`Quit showcase?`） | `TestK9SecondCtrlCQuits`、`TestK9QuitInGlobalPopup` |
+| K9 | app 自己的 popup 有東西沒存時（`QuitNote`），離開的 confirm 最後加一句 Peach，`App.Quit` 是 nil 也先問；離開的 confirm 被底下的 popup 帶著關掉時，離開流程結束、下一次 `Ctrl-C` 再問 | D「Popup: the app’s own」畫一格再 `Ctrl-C`（`Changes to icon are not saved.`） | `TestAppPopupQuitNote`、`TestK9QuitConfirmClosedUnder` |
 | K10 | PTY 裡按鍵都給子程序；core key 與熱鍵失效 | T `[1] SHELL` 裡按 `Space ? q Tab Esc 1` | `TestK10KeysToChild` |
 | K10 | 至少一個出口鍵（`Alt-Esc`），focus 在 PTY 時常駐揭露 | T：footer `Alt-Esc:leave …`；terminal popup 下框 | `TestK10ExitKeyShown` |
 | K10 | `Alt-Esc` 離開或結束時一律先 confirm（`Enter` 離開、`Esc` 回 PTY）；PTY 裡面的動作不用問 | T `[1] SHELL`、terminal popup | `TestK10AltEscConfirms` |
@@ -153,6 +154,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | F1 | 沒有搜尋的清單是 menu，只有 reorder 例外：它搬動項目、確定後寫回整個順序，是 input | I 的 `Segments` | 見 reorder |
 | F1 | toast 不是一層（不淡化、不算層數），但 `Esc` 先收它 | D「Toast over a popup」 | `TestToastNotALayer` |
 | F1 | 多步驟流程每一步是自己的 popup | D「Menu: Sort by」（欄位 → 方向） | `TestMultiStepStacks` |
+| F1 | 七類以外的 popup 是 app 自己的一類，app 記成偏離（例：kamonu 畫格子的 popup）。lib 給入口 `App.Popup`：框裡的內容與按鍵歸 app；框、標題（`DRAW: icon`）、hint、層色、開關動畫、淡化、F7 的大小歸 lib；app 沒收的 `Esc` 關這一層、`?` 開它的 key reference（只列它自己的鍵）、`q` 進離開流程，`Ctrl-C` 不經過它；lib 的 confirm、input、error popup 疊在它上面，`ClosePopup` 連同上面的一起關 | D「Popup: the app’s own」：`hjkl` 移、`Enter` 畫、`Tab` 到 Save、改過再 `Esc` 先問、`q` 不作用 | `TestAppPopupFrame`、`TestAppPopupSize`、`TestAppPopupKeys`、`TestAppPopupStack`、`TestAppPopupComparable` |
 | F2 | 開關都有動畫，全家族同一種：中間拉一條線、再上下展開，收起倒著播；每格 32ms、各 9 格；打開的動畫播完前不收鍵 | 每種 popup | `TestF2AnimationFrames`、`TestF2NoKeysWhileOpening` |
 | F3 | `Esc` 立刻開始關閉任何 popup（含 toast）；關閉照常有動畫；在關的 popup 不再理會 `Esc` 與其他鍵 | 連按兩下 `Esc` 關兩層 | `TestF3EscImmediate`、`TestF3ClosingIgnoresKeys` |
 | F3 | 例外：PTY（toast 只能等時間到）、textarea 寫入狀態、改過的表單、textarea 與 reorder 先 confirm | T；I 的 `Comment`；D「Form: New host」改過再 `Esc`；I 的 `Segments` 搬過再 `Esc` | `TestF3Exceptions`、`TestReorderEsc` |
@@ -167,6 +169,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | F7 | 值可能不合格的 popup 預留一列錯誤列；動作失敗開 error popup | I 的 `Port`；D「Form: save fails」 | `TestF7ErrorRowReserved` |
 | F7 | terminal：寬 `寬 − 2`；上面留 statusbar 或 chip 列（含分隔線）、下面到最後一列蓋掉 footer；上下左右都不留白 | T `[2] SESSIONS` 的 `[Alt-t]erm` | `TestTerminalPopupSize` |
 | F8 | 最上層以外全部淡化（底下 popup 與 base 畫面），一直只有最上層亮 | D 的三層疊法 | `TestF8DimAllButTop` |
+| F8 | 在收的 popup 不算一層（color 的層色）：層色只數底下開著的層，表單送出後開的下一個 popup 從第一格就是第 1 層色；壓在最上層底下、還在收的也淡化。表單送出只關表單自己，送出時開的 popup 留著 | 用 lib 的 app：kamonu 的 `NEW KAMON` 按 Create 開 `DRAW`（展示場沒有這種流程） | `TestAppPopupFromFormSubmit` |
 | F8 | 串流內容與警示色一起淡化；淡化照 color 的算法改每一個顏色、形狀不動 | P `[2] LOG` 上開 popup | `TestF8DimStreamToo`、`TestDimEveryColor` |
 | F8 | 對畫好的畫面淡化一次（失焦 panel 更暗）；toast 不觸發；底下 popup 的框是自己層色的淡化 | 同上 | `TestF8DimOnce`、`TestF8BorderKeepsLayerColor` |
 
@@ -177,6 +180,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | X1 | 沒有 mouse 也能完整操作 | 全部用鍵盤走過 | 整份清單的按鍵測試 |
 | X2 | 有 mouse 時每個動作對應一個鍵盤動作 | lib 先不做 mouse；做的時候補 | （做 mouse 時補） |
 | T1 | 預設保留 source；短 confirm、選值保留；長 session、大幅切換 context 清掉 | D 的疊法；`[2] SESSIONS` 的 `[Alt-t]erm` 從 Space menu 打開會清掉 menu | `TestT1KeepOrClear` |
+| T1 | 清掉 source 時，target 打開的同時 source 收起，兩段動畫一起播、不等 source 收完；在收的 source 不算一層，target 從第一格就是自己那一層的層色，source 收完時不跳色（layout/popup 的開關動畫、color 的層色） | `[2] SESSIONS` 的 `[Alt-t]erm` 從 Space menu 打開，看 terminal 的框一路都是第 1 層色 | `TestT1SourceClosesWhileTargetOpens`、`TestAppPopupFromFormSubmit` |
 | T2 | 失焦 panel 用 F8 的淡化變暗；串流內容失焦不變暗；popup 蓋上時一律淡化 | P：focus 在 `[1]`，`[2] LOG` 不暗、`[3]` 暗 | `TestT2UnfocusedDim`、`TestT2StreamNotDimmed` |
 | S 開頭 | splash 佔滿整個畫面，原本的畫面都不畫 | P `[1] PODS` 按 `V` | `TestS1SplashOnV`、`TestS5SplashFillsScreen` |
 | S1 | 在 panel 上按 `V` 開 splash；某 panel 可把 `V` 給自己用，至少一個 panel 仍是 splash | P `[1] PODS` 按 `V`；I `[2] FILES` 的 `V` 給 `[V]iew` | `TestS1SplashOnV`、`TestS1EveryAppHasSplash` |

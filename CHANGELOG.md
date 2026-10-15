@@ -2,6 +2,21 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.6.10
+
+- `App.Popup`, `Popup` and `PopupBody`: a popup of the app's own on the library's popup stack. The app draws what is
+  inside the frame and handles its keys; the library draws the frame, the title and the hint in the layer colour, plays
+  the animation, fades what is under it, and does the `Esc`, `?` and `q` the app leaves. The library's confirms, inputs,
+  error popups and key references open over it. `App.ClosePopup` closes it with everything over it
+- A `PopupBody` with `QuitNote() string` adds a Peach line to the quit confirm while it has something unsaved; the quit
+  flow then asks even when `App.Quit` is nil
+- A form whose submit opens another popup closes only itself: the new popup stays. A popup's layer colour counts only
+  the open layers under it (tdp v0.6.10): a popup that opens while the one under it closes (a menu clearing itself for
+  the terminal it opens, a form's submit) has its own layer's colour from its first frame, where it took the next
+  layer's until the closing one was gone
+- The quit confirm closed together with the popup under it ends the quit flow: the next `Ctrl-C` asks again
+- `examples/minimal`: the smallest app, shown in the README's Quick start
+
 ## v0.1.8 — tdp v0.6.9
 
 - `FormButton.Subject` and `Form.ButtonSubject`: the name a button acts on, after its verb on the button. The hint turns
