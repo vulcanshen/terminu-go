@@ -68,6 +68,8 @@ type Checks struct {
 	Checked []bool
 	// Cursor is the option the cursor starts on, scrolled into sight; the
 	// app decides (components/input/checkbox). 0, the first, by default.
+	// On a disabled option it goes on to the next that can be chosen, or
+	// back when none after can.
 	Cursor int
 	// Disabled reports an option that cannot be changed now: drawn in its
 	// place in Surface2, tick and all, and skipped by the cursor; a ticked

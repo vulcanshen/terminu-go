@@ -1,6 +1,6 @@
-# tdp v0.6.13 coverage
+# tdp v0.6.14 coverage
 
-tdp v0.6.13 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
+tdp v0.6.14 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
 （[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -435,7 +435,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | radio | 五個以內畫在表單或 panel；U+F043E／U+F043D；選中 Green 其他 Text；一律直排、一個選項一列；每個選項一個項目；`Enter` 選、focus 不動、馬上生效 | I 的 `Layout`、`Order` | `TestRadio` |
 | checkbox §長相 | U+F0132（勾）／U+F0131；勾的字 Green；popup 是 finder 骨架沒預覽、checkbox glyph、寬度照選項 | I 的 `Notify`（開關）、`Agent`（一組）、`Namespaces`（popup） | `TestCheckbox` |
 | checkbox §按鍵 | 表單或 panel 上 `Enter` 原地翻；popup：打開在清單、`Space` 只改畫面、`Enter` 整組寫回才生效（從表單：寫回並標改過；單獨：這時才套用；沒改就關）、`Esc` 取消不問；勾的字跟著畫面上的勾變 Green；hint `Enter:apply Space:toggle Tab\|/:filter Esc:cancel` | I 的 `Namespaces`；D「Form: New host」的 `Namespaces` | `TestCheckboxPopup` |
-| checkbox §按鍵 | 打開時 cursor 停在第一個能選的選項（跳過停用的）；app 要停在別列時用 `Checks.Cursor`（ccdrawu 的 CD8），停在停用的就往後找；捲到看得見 | 展示場都從第一列開（預設） | `TestCheckboxPopupCursor`、`TestCheckboxPopupDisabled` |
+| checkbox §按鍵 | 打開時 cursor 停在 app 指定的那一項（`Checks.Cursor`，ccdrawu 的 CD8；沒指定是第一項），捲到看得見；那一項停用時往後找第一個能選的，後面都沒有就往前找 | 展示場都從第一列開（預設） | `TestCheckboxPopupCursor`、`TestCheckboxPopupDisabled` |
 | checkbox §長相、§按鍵 | 停用的選項照樣畫在原位，整列 Surface2、勾也是；cursor 跳過（`j\|k` 繞回、`gg`、`G` 都跳過），`Space` 碰不到；勾著的維持原狀、`Enter` 寫回時照樣算在裡面；篩選時照樣列出，篩完只剩停用的跟沒有結果一樣（打字列的 `Enter` 不作用）。lib：`Checks.Disabled`；表單上一個一個停用的選項本來就這樣畫（`FormField.OptionDisabled`） | I 的 `Namespaces`：`kube-system`（勾著）與 `vault` 停用；打 `vau` | `TestCheckboxPopupDisabled`、`TestFormSkipDisabledOption` |
 | slider | 表單與 panel 上軌道 `━` + `●` + 數字（寬度與顏色 app 定）；`Enter` 開 select（bottom 到 top、每 step 一個，cursor 在目前值，打數字篩選）；沒有自己的鍵；bottom、top、step 必有，step 預設 `(top − bottom) / 10`、可以是小數 | I 的 `Brightness`（0–100）、`Opacity`（0–1，step 0.05） | `TestSlider` |
 | datetime §日期 | 月、年各是可 focus 的項目（focus 時照 cursor）、之間兩格；日曆靠左離框一格、不另外縮；每天 4 格（日期 2 格靠右 + 間距 2）；固定 6 列；cursor 那天就是要寫回的那天；原本的值 Green、打開 cursor 在它（沒有就今天）；今天底線；週末不上色；一週從週一或週日（app）；範圍外 Surface2、cursor 不停 | I 的 `Due date`（有範圍、週一開始） | `TestDatePickerLayout` |

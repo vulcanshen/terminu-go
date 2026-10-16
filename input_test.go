@@ -1128,6 +1128,17 @@ func TestCheckboxPopupDisabled(t *testing.T) {
 	ta.settle()
 	fv = ta.topView().(*finderView)
 	cursorOn("delta")
+	ta.press("Esc")
+	// None after it can be chosen: back to one before it.
+	ta.Checks(Checks{Title: "Items", Options: []string{"alpha", "beta", "kappa"}, Cursor: 2,
+		Disabled: func(i int) bool { return i == 2 }})
+	ta.settle()
+	fv = ta.topView().(*finderView)
+	cursorOn("beta")
+	ta.press("Esc")
+	ta.Checks(c)
+	ta.settle()
+	fv = ta.topView().(*finderView)
 
 	// Only disabled options left: still listed, but nowhere to stop.
 	ta.press("/", "k", "a", "p")
