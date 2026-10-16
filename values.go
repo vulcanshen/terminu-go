@@ -19,7 +19,11 @@ type Field struct {
 	Selected int
 	Multi    bool
 	Checked  []bool
-	Disabled func() bool
+	// OptionUnavailable reports a checkbox option that is not available:
+	// drawn in Surface2, the tick too, but stopped on and flipped like any
+	// other (components/input/checkbox).
+	OptionUnavailable func(i int) bool
+	Disabled          func() bool
 	// Err marks the field's value as wrong: its label turns Red.
 	Err func() bool
 	// Edit is what Enter does on a field that is not drawn in place: open its
@@ -31,7 +35,15 @@ type Field struct {
 }
 
 func (f *Field) disabled() bool { return f.Disabled != nil && f.Disabled() }
-func (f *Field) hasErr() bool   { return f.Err != nil && f.Err() }
+
+// checkGlyph is a checkbox's glyph: ticked or not.
+func checkGlyph(on bool) string {
+	if on {
+		return glyphMarked
+	}
+	return glyphUnchecked
+}
+func (f *Field) hasErr() bool { return f.Err != nil && f.Err() }
 
 // items is how many places the cursor stops at in the field: one per option
 // drawn in place, one otherwise.
@@ -201,11 +213,12 @@ func (v *Values) Draw(w, h int, focused bool) []string {
 
 // valueText is item k of f as shown.
 func (v *Values) valueText(f *Field, k int) string {
-	// TODO(tdp G91): a disabled field's options are drawn as values, not as
-	// disabled options.
 	switch {
 	case len(f.Options) > 0 && f.Multi:
 		on := k < len(f.Checked) && f.Checked[k]
+		if f.OptionUnavailable != nil && f.OptionUnavailable(k) {
+			return Fg(Surface2).Render(checkGlyph(on) + " " + f.Options[k])
+		}
 		if on {
 			return Fg(Green).Render(glyphMarked + " " + f.Options[k])
 		}

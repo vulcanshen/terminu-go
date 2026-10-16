@@ -1077,16 +1077,15 @@ func TestCursorOnControlChar(t *testing.T) {
 	}
 }
 
-// A disabled option in a checkbox popup (components/input/checkbox): drawn
-// in its place in Surface2, tick and all; the cursor skips it, so Space never
-// reaches it; a ticked one stays in the set Enter writes back. Filtered down
-// to disabled options only, it is as with no results.
-func TestCheckboxPopupDisabled(t *testing.T) {
+// An option not available in a checkbox popup (components/input/checkbox):
+// drawn in Surface2, the tick too, but the cursor stops on it, Space flips it
+// and Enter writes back what is on screen; filtering lists it.
+func TestCheckboxPopupUnavailable(t *testing.T) {
 	ta := newTestApp(t)
 	var got []bool
 	c := Checks{Title: "Items", Options: []string{"alpha", "beta", "kappa", "delta"}, Checked: []bool{false, false, true, false},
-		Disabled: func(i int) bool { return i == 0 || i == 2 },
-		Done:     func(v []bool) tea.Cmd { got = v; return nil }}
+		Unavailable: func(i int) bool { return i == 0 || i == 2 },
+		Done:        func(v []bool) tea.Cmd { got = v; return nil }}
 	ta.Checks(c)
 	ta.settle()
 	fv := ta.topView().(*finderView)
@@ -1096,7 +1095,8 @@ func TestCheckboxPopupDisabled(t *testing.T) {
 			t.Errorf("the cursor on %q (%v), want %q", r.text, ok, want)
 		}
 	}
-	cursorOn("beta") // the first that can be chosen
+	cursorOn("alpha") // the first, not available or not
+	ta.press("j")
 	lines, _ := covFDraw(ta)
 	for _, want := range []string{
 		Fg(Surface2).Render(glyphUnchecked) + " " + Fg(Surface2).Render("alpha"),
@@ -1107,50 +1107,21 @@ func TestCheckboxPopupDisabled(t *testing.T) {
 		}
 	}
 	ta.press("j")
-	cursorOn("delta")
-	ta.press("j")
-	cursorOn("beta") // wrapping past alpha
-	ta.press("k")
-	cursorOn("delta")
-	ta.press("g", "g")
-	cursorOn("beta")
-	ta.press("G")
-	cursorOn("delta")
+	cursorOn("kappa")
+	if row := ta.rowWith("kappa"); strings.Contains(row, "38;2;88;91;112") {
+		t.Errorf("the cursor on kappa is drawn in Surface2, not as the cursor block: %q", row)
+	}
 	ta.press("Space", "Enter")
-	if !slices.Equal(got, []bool{false, false, true, true}) {
-		t.Errorf("Enter wrote %v: kappa stays ticked", got)
+	if !slices.Equal(got, []bool{false, false, false, false}) {
+		t.Errorf("Enter wrote %v: Space unticks kappa", got)
 	}
-
-	// The app's Cursor on a disabled option: the next that can be chosen.
-	got = nil
-	c.Cursor = 2
+	// Filtering lists it, and Enter on the typing row goes to it.
 	ta.Checks(c)
 	ta.settle()
 	fv = ta.topView().(*finderView)
-	cursorOn("delta")
-	ta.press("Esc")
-	// None after it can be chosen: back to one before it.
-	ta.Checks(Checks{Title: "Items", Options: []string{"alpha", "beta", "kappa"}, Cursor: 2,
-		Disabled: func(i int) bool { return i == 2 }})
-	ta.settle()
-	fv = ta.topView().(*finderView)
-	cursorOn("beta")
-	ta.press("Esc")
-	ta.Checks(c)
-	ta.settle()
-	fv = ta.topView().(*finderView)
-
-	// Only disabled options left: still listed, but nowhere to stop.
-	ta.press("/", "k", "a", "p")
-	if len(fv.shown) != 1 || !strings.Contains(ta.screenText(), "kappa") {
-		t.Fatalf("kappa not listed: %v", fv.shown)
+	ta.press("/", "k", "a", "p", "Enter")
+	if fv.typing() || len(fv.shown) != 1 {
+		t.Errorf("filtered to kappa: typing %v, %d rows", fv.typing(), len(fv.shown))
 	}
-	ta.press("Enter")
-	if !fv.typing() {
-		t.Error("Enter on the typing row went to a list with nowhere to stop")
-	}
-	ta.press("Tab", "Space", "Enter")
-	if got != nil || ta.top() == nil || !fv.checked[2] {
-		t.Errorf("Space or Enter acted with nowhere to stop: wrote %v, ticks %v", got, fv.checked)
-	}
+	cursorOn("kappa")
 }

@@ -33,7 +33,11 @@ type FormField struct {
 	// OptionDisabled reports an option that cannot be chosen now: drawn in
 	// the disabled colour and skipped (components/dialog/form).
 	OptionDisabled func(i int) bool
-	Disabled       func() bool
+	// OptionUnavailable reports a checkbox option that is not available:
+	// drawn in Surface2, the tick too, but stopped on and flipped like any
+	// other (components/input/checkbox).
+	OptionUnavailable func(i int) bool
+	Disabled          func() bool
 	// Check is the whole form's rule for this field (required, depends on
 	// another field, a name taken), run when the form is submitted: what is
 	// wrong, or "".
@@ -43,6 +47,10 @@ type FormField struct {
 func (f *FormField) disabled() bool { return f.Disabled != nil && f.Disabled() }
 
 func (f *FormField) optionDisabled(i int) bool { return f.OptionDisabled != nil && f.OptionDisabled(i) }
+
+func (f *FormField) optionUnavailable(i int) bool {
+	return f.OptionUnavailable != nil && f.OptionUnavailable(i)
+}
 
 // Form is several values filled in and submitted together
 // (components/dialog/form): Enter on a field opens its input popup, options
@@ -524,10 +532,12 @@ func (fv *formView) option(f *FormField, i int) string {
 		}
 		return Fg(Surface2).Render(glyph + " " + f.Options[i])
 	}
-	// TODO(tdp G91): a disabled field's options are drawn as values, not as
-	// disabled options.
 	if f.Multi {
-		if i < len(f.Checked) && f.Checked[i] {
+		on := i < len(f.Checked) && f.Checked[i]
+		if f.optionUnavailable(i) {
+			return Fg(Surface2).Render(checkGlyph(on) + " " + f.Options[i])
+		}
+		if on {
 			return Fg(Green).Render(glyphMarked + " " + f.Options[i])
 		}
 		return Fg(Text).Render(glyphUnchecked + " " + f.Options[i])

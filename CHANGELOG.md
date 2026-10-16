@@ -2,13 +2,12 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.6.14
+## Unreleased — tdp v0.6.15
 
-- `Checks.Disabled`: an option in a checkbox popup that cannot be changed now. It is drawn in its place in Surface2,
-  the tick too; the cursor skips it, so `Space` never reaches it; a ticked one stays in the set `Enter` writes back.
-  Filtering still lists it, and with only disabled options left the popup is as with no results. A `Checks.Cursor` on
-  a disabled option opens on the next one that can be chosen, or the one before when none after can (tdp v0.6.14)
-- The showcase's `Namespaces` popup has two disabled options, `kube-system` ticked and `vault` not
+- A checkbox option can be marked not available: `Checks.Unavailable` in a checkbox popup, `FormField.OptionUnavailable`
+  and `Field.OptionUnavailable` for a group drawn in place. It is drawn in Surface2, the tick too, and otherwise works
+  like any other option: the cursor stops on it and it flips. What it means is up to the app
+- The showcase marks `kube-system` and `vault` in the `Namespaces` popup and `X11` in both `Agent` groups not available
 
 ## v0.1.11 — tdp v0.6.12
 

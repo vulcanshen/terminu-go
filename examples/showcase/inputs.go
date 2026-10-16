@@ -116,11 +116,11 @@ func newInputsScreen(s *showcase) *inputsScreen {
 				Keys: []string{"1", "2", "3", "4", "5", "6", "7"}, Done: func(i int) tea.Cmd { profile = i; return nil }})
 		}},
 		{Label: "Namespaces", Value: func() string { return joinChecked(namespaces, nsChecked) }, Empty: "none", Edit: func() tea.Cmd {
-			// kube-system is always watched and vault is out of reach:
-			// disabled options, one ticked, one not (components/input/checkbox).
+			// kube-system and vault are out of reach: options not available,
+			// kube-system ticked from before (components/input/checkbox).
 			return a.Checks(terminu.Checks{Title: "Namespaces", Glyph: glyphTag, Options: namespaces, Checked: nsChecked,
-				Disabled: func(i int) bool { return i == 1 || i == 7 },
-				Done:     func(c []bool) tea.Cmd { nsChecked = c; return nil }})
+				Unavailable: func(i int) bool { return i == 1 || i == 7 },
+				Done:        func(c []bool) tea.Cmd { nsChecked = c; return nil }})
 		}},
 		{Label: "Segments", Value: func() string { return strings.Join(segments, ", ") }, Edit: func() tea.Cmd {
 			return a.Reorder(terminu.Reorder{Title: "Segments", Options: segments, Done: func(o []int) tea.Cmd {
@@ -135,7 +135,9 @@ func newInputsScreen(s *showcase) *inputsScreen {
 		{Label: "Layout", Options: []string{"row", "column", "grid"}},
 		{Label: "Order", Options: []string{"asc", "desc"}},
 		{Label: "Notify", Options: []string{"notify on errors"}, Multi: true, Checked: []bool{true}},
-		{Label: "Agent", Options: []string{"forward", "X11", "compression"}, Multi: true, Checked: []bool{true, false, true}},
+		// No display here: X11 is not available (components/input/checkbox).
+		{Label: "Agent", Options: []string{"forward", "X11", "compression"}, Multi: true, Checked: []bool{true, false, true},
+			OptionUnavailable: func(i int) bool { return i == 1 }},
 		{Label: "Brightness", Value: func() string { return terminu.SliderTrack(brightness, 0, 100, 12, terminu.Text) }, Edit: func() tea.Cmd {
 			return a.Open(terminu.Slider{Title: "Brightness", Glyph: glyphTune, Bottom: 0, Top: 100, Value: brightness,
 				Done: func(v float64) tea.Cmd { brightness = v; return nil }})

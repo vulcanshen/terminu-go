@@ -2058,3 +2058,35 @@ func TestInputErrorNamesValue(t *testing.T) {
 		t.Errorf("the textarea's error:\n%s", text)
 	}
 }
+
+// An option not available drawn in place, on a panel and on a form
+// (components/input/checkbox): Surface2, the tick too, but stopped on and
+// flipped like any other.
+func TestCheckboxUnavailableInPlace(t *testing.T) {
+	agent := &Field{Label: "Agent", Options: []string{"forward", "X11"}, Multi: true, Checked: []bool{false, true},
+		OptionUnavailable: func(i int) bool { return i == 1 }}
+	v := &Values{Fields: []*Field{agent}}
+	lines := v.Draw(40, 3, true)
+	if !strings.Contains(lines[1], Fg(Surface2).Render(glyphMarked+" X11")) {
+		t.Errorf("on a panel:\n%s", strings.Join(covFText(lines), "\n"))
+	}
+	v.Key("j", keyMsg("j"))
+	v.Key("Enter", keyMsg("Enter"))
+	if v.cursor != 1 || agent.Checked[1] {
+		t.Errorf("on a panel: the cursor on %d, X11 ticked %v", v.cursor, agent.Checked[1])
+	}
+
+	ta := newTestApp(t)
+	x11 := &FormField{Label: "Agent", Options: []string{"forward", "X11"}, Multi: true, Checked: []bool{false, true},
+		OptionUnavailable: func(i int) bool { return i == 1 }}
+	ta.Form(&Form{Title: "Host", Fields: []*FormField{x11}, Button: "Save", Submit: func() (tea.Cmd, error) { return nil, nil }})
+	ta.settle()
+	fv := ta.topView().(*formView)
+	if row := ta.rowWith("X11"); !strings.Contains(row, Fg(Surface2).Render(glyphMarked+" X11")) {
+		t.Errorf("on a form: %q", row)
+	}
+	ta.press("j", "Space")
+	if fv.focus.option != 1 || x11.Checked[1] {
+		t.Errorf("on a form: the focus on %d, X11 ticked %v", fv.focus.option, x11.Checked[1])
+	}
+}

@@ -279,7 +279,8 @@ func (ds *dialogsScreen) hostForm(_ *terminu.Form, fail bool) *terminu.Form {
 					}
 					return ""
 				}},
-			{Label: "Agent", Options: []string{"forward"}, Multi: true},
+			// No display here: X11 is not available (components/input/checkbox).
+			{Label: "Agent", Options: []string{"forward", "X11"}, Multi: true, OptionUnavailable: func(i int) bool { return i == 1 }},
 			{Label: "Namespaces", Value: func() string { return joinChecked(namespaces, nsChecked) }, Empty: "none",
 				Edit: func() terminu.Input {
 					return terminu.Checks{Title: "Namespaces", Glyph: glyphTag, Options: namespaces, Checked: nsChecked,

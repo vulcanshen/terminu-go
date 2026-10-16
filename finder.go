@@ -68,13 +68,11 @@ type Checks struct {
 	Checked []bool
 	// Cursor is the option the cursor starts on, scrolled into sight; the
 	// app decides (components/input/checkbox). 0, the first, by default.
-	// On a disabled option it goes on to the next that can be chosen, or
-	// back when none after can.
 	Cursor int
-	// Disabled reports an option that cannot be changed now: drawn in its
-	// place in Surface2, tick and all, and skipped by the cursor; a ticked
-	// one stays in the set (components/input/checkbox).
-	Disabled func(i int) bool
+	// Unavailable reports an option that is not available: drawn in
+	// Surface2, the tick too, but the cursor stops on it and Space flips it
+	// like any other; what it means is the app's (components/input/checkbox).
+	Unavailable func(i int) bool
 	// Done gets the new set. It is not called when nothing changed.
 	Done func([]bool) tea.Cmd
 }
@@ -96,11 +94,11 @@ type finderRow struct {
 	icon  string
 	color Color // the icon's colour
 	dir   bool  // a file-picker's directory
-	// disabled is a checkbox popup's option that cannot be changed now:
-	// Surface2, skipped by the cursor.
-	disabled bool
-	path     string
-	item     FinderItem
+	// unavailable is a checkbox popup's option that is not available:
+	// Surface2, the tick too.
+	unavailable bool
+	path        string
+	item        FinderItem
 }
 
 // finderView is the finder skeleton every kind shares: the typing row with
@@ -213,7 +211,7 @@ func (a *App) Select(s Select) tea.Cmd { return s.open(a, nil) }
 func (c Checks) open(a *App, written func()) tea.Cmd {
 	rows := make([]finderRow, len(c.Options))
 	for i, o := range c.Options {
-		rows[i] = finderRow{text: o, disabled: c.Disabled != nil && c.Disabled(i)}
+		rows[i] = finderRow{text: o, unavailable: c.Unavailable != nil && c.Unavailable(i)}
 	}
 	fv := &finderView{
 		kind: findChecks, glyph: c.Glyph, name: c.Title, ed: newEditor(""), known: true, onList: true,
@@ -239,7 +237,6 @@ func (c Checks) open(a *App, written func()) tea.Cmd {
 	if k := slices.Index(fv.shown, c.Cursor); k >= 0 {
 		fv.cursor = k
 	}
-	fv.settle(rows, 1) // the first option that can be chosen
 	return a.open(fv)
 }
 
@@ -274,38 +271,15 @@ func (f *finderView) refilter() {
 		}
 	}
 	f.cursor = min(max(f.cursor, 0), max(len(f.shown)-1, 0))
-	f.settle(rows, 1)
 }
 
-// settle moves the cursor off a disabled option: to the nearest one it can
-// stop on going by dir, else the other way. With none it stays, and at
-// reports nothing, as with no results (components/input/checkbox).
-func (f *finderView) settle(rows []finderRow, dir int) {
-	stop := func(k int) bool { return !rows[f.shown[k]].disabled }
-	if f.cursor >= len(f.shown) || stop(f.cursor) {
-		return
-	}
-	for _, d := range []int{dir, -dir} {
-		for k := f.cursor + d; k >= 0 && k < len(f.shown); k += d {
-			if stop(k) {
-				f.cursor = k
-				return
-			}
-		}
-	}
-}
-
-// at is the row under the cursor; nothing when the cursor has nowhere to
-// stop.
+// at is the row under the cursor.
 func (f *finderView) at() (int, finderRow, bool) {
 	if f.cursor >= len(f.shown) {
 		return 0, finderRow{}, false
 	}
 	rows := f.rows()
 	i := f.shown[f.cursor]
-	if rows[i].disabled {
-		return 0, finderRow{}, false
-	}
 	return i, rows[i], true
 }
 
@@ -449,7 +423,7 @@ func (f *finderView) drawList(w, h int, layer Color) []string {
 		r := rows[i]
 		mark := f.mark(i, r)
 		label := f.rowLabel(r)
-		if k == f.cursor && !r.disabled {
+		if k == f.cursor {
 			plain := label
 			if mark != "" {
 				plain = mark + " " + label
@@ -465,7 +439,7 @@ func (f *finderView) drawList(w, h int, layer Color) []string {
 		if f.green != nil && f.green(i, r) {
 			style = Fg(Green)
 		}
-		if r.disabled {
+		if r.unavailable {
 			style = Fg(Surface2) // the tick too: unavailable wins over in effect
 		}
 		line := style.Render(label)
@@ -532,16 +506,9 @@ func cmpColor(c, def Color) Color {
 	return c
 }
 
-// move steps the cursor by dir, wrapping (Rules K12) and skipping disabled
-// options (components/input/checkbox).
 func (f *finderView) move(dir int) {
-	rows, n := f.rows(), len(f.shown)
-	for k, step := f.cursor, 0; step < n; step++ {
-		k = (k + dir + n) % n
-		if !rows[f.shown[k]].disabled {
-			f.cursor = k
-			return
-		}
+	if n := len(f.shown); n > 0 {
+		f.cursor = (f.cursor + dir + n) % n
 	}
 }
 
@@ -556,8 +523,7 @@ func (f *finderView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 		case "↓":
 			f.move(1)
 		case "Enter":
-			// Only disabled options left is as no results.
-			if _, _, ok := f.at(); ok {
+			if len(f.shown) > 0 {
 				f.onList = true
 			}
 		case "Tab":
@@ -577,16 +543,12 @@ func (f *finderView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 		f.move(-1)
 	case "d", "PgDn":
 		f.cursor = min(f.cursor+half, max(len(f.shown)-1, 0))
-		f.settle(f.rows(), 1)
 	case "u", "PgUp":
 		f.cursor = max(f.cursor-half, 0)
-		f.settle(f.rows(), -1)
 	case "gg":
 		f.cursor = 0
-		f.settle(f.rows(), 1)
 	case "G":
 		f.cursor = max(len(f.shown)-1, 0)
-		f.settle(f.rows(), -1)
 	case "Tab", "/":
 		f.onList = false
 	case "Enter":
