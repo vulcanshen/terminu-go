@@ -524,6 +524,8 @@ func (fv *formView) option(f *FormField, i int) string {
 		}
 		return Fg(Surface2).Render(glyph + " " + f.Options[i])
 	}
+	// TODO(tdp G91): a disabled field's options are drawn as values, not as
+	// disabled options.
 	if f.Multi {
 		if i < len(f.Checked) && f.Checked[i] {
 			return Fg(Green).Render(glyphMarked + " " + f.Options[i])

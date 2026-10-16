@@ -201,6 +201,8 @@ func (v *Values) Draw(w, h int, focused bool) []string {
 
 // valueText is item k of f as shown.
 func (v *Values) valueText(f *Field, k int) string {
+	// TODO(tdp G91): a disabled field's options are drawn as values, not as
+	// disabled options.
 	switch {
 	case len(f.Options) > 0 && f.Multi:
 		on := k < len(f.Checked) && f.Checked[k]

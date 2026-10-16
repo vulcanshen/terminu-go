@@ -55,7 +55,7 @@ func newInputsScreen(s *showcase) *inputsScreen {
 		profiles       = []string{"clock", "matrix", "pipes", "rain", "stars", "tunnel", "fire"}
 		profile        = 0
 		namespaces     = []string{"default", "kube-system", "monitoring", "ingress-nginx", "cert-manager", "argocd", "logging", "vault"}
-		nsChecked      = []bool{true, false, false, false, false, false, false, false}
+		nsChecked      = []bool{true, true, false, false, false, false, false, false}
 		segments       = []string{"Model", "Usage", "Cost", "Context", "Git", "Branch", "Clock"}
 		brightness     = 70.0
 		opacity        = 0.85
@@ -116,8 +116,11 @@ func newInputsScreen(s *showcase) *inputsScreen {
 				Keys: []string{"1", "2", "3", "4", "5", "6", "7"}, Done: func(i int) tea.Cmd { profile = i; return nil }})
 		}},
 		{Label: "Namespaces", Value: func() string { return joinChecked(namespaces, nsChecked) }, Empty: "none", Edit: func() tea.Cmd {
+			// kube-system is always watched and vault is out of reach:
+			// disabled options, one ticked, one not (components/input/checkbox).
 			return a.Checks(terminu.Checks{Title: "Namespaces", Glyph: glyphTag, Options: namespaces, Checked: nsChecked,
-				Done: func(c []bool) tea.Cmd { nsChecked = c; return nil }})
+				Disabled: func(i int) bool { return i == 1 || i == 7 },
+				Done:     func(c []bool) tea.Cmd { nsChecked = c; return nil }})
 		}},
 		{Label: "Segments", Value: func() string { return strings.Join(segments, ", ") }, Edit: func() tea.Cmd {
 			return a.Reorder(terminu.Reorder{Title: "Segments", Options: segments, Done: func(o []int) tea.Cmd {

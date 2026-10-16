@@ -1076,3 +1076,70 @@ func TestCursorOnControlChar(t *testing.T) {
 		t.Errorf("moving in a textarea:\n%s", strings.Join(lines, "\n"))
 	}
 }
+
+// A disabled option in a checkbox popup (components/input/checkbox): drawn
+// in its place in Surface2, tick and all; the cursor skips it, so Space never
+// reaches it; a ticked one stays in the set Enter writes back. Filtered down
+// to disabled options only, it is as with no results.
+func TestCheckboxPopupDisabled(t *testing.T) {
+	ta := newTestApp(t)
+	var got []bool
+	c := Checks{Title: "Items", Options: []string{"alpha", "beta", "kappa", "delta"}, Checked: []bool{false, false, true, false},
+		Disabled: func(i int) bool { return i == 0 || i == 2 },
+		Done:     func(v []bool) tea.Cmd { got = v; return nil }}
+	ta.Checks(c)
+	ta.settle()
+	fv := ta.topView().(*finderView)
+	cursorOn := func(want string) {
+		t.Helper()
+		if _, r, ok := fv.at(); !ok || r.text != want {
+			t.Errorf("the cursor on %q (%v), want %q", r.text, ok, want)
+		}
+	}
+	cursorOn("beta") // the first that can be chosen
+	lines, _ := covFDraw(ta)
+	for _, want := range []string{
+		Fg(Surface2).Render(glyphUnchecked) + " " + Fg(Surface2).Render("alpha"),
+		Fg(Surface2).Render(glyphMarked) + " " + Fg(Surface2).Render("kappa"),
+	} {
+		if !strings.Contains(strings.Join(lines, "\n"), want) {
+			t.Errorf("not all Surface2: %q\n%s", StripStyles(want), StripStyles(strings.Join(lines, "\n")))
+		}
+	}
+	ta.press("j")
+	cursorOn("delta")
+	ta.press("j")
+	cursorOn("beta") // wrapping past alpha
+	ta.press("k")
+	cursorOn("delta")
+	ta.press("g", "g")
+	cursorOn("beta")
+	ta.press("G")
+	cursorOn("delta")
+	ta.press("Space", "Enter")
+	if !slices.Equal(got, []bool{false, false, true, true}) {
+		t.Errorf("Enter wrote %v: kappa stays ticked", got)
+	}
+
+	// The app's Cursor on a disabled option: the next that can be chosen.
+	got = nil
+	c.Cursor = 2
+	ta.Checks(c)
+	ta.settle()
+	fv = ta.topView().(*finderView)
+	cursorOn("delta")
+
+	// Only disabled options left: still listed, but nowhere to stop.
+	ta.press("/", "k", "a", "p")
+	if len(fv.shown) != 1 || !strings.Contains(ta.screenText(), "kappa") {
+		t.Fatalf("kappa not listed: %v", fv.shown)
+	}
+	ta.press("Enter")
+	if !fv.typing() {
+		t.Error("Enter on the typing row went to a list with nowhere to stop")
+	}
+	ta.press("Tab", "Space", "Enter")
+	if got != nil || ta.top() == nil || !fv.checked[2] {
+		t.Errorf("Space or Enter acted with nowhere to stop: wrote %v, ticks %v", got, fv.checked)
+	}
+}
