@@ -2,7 +2,7 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.6.15
+## v0.1.12 — tdp v0.6.15
 
 - A checkbox option can be marked not available: `Checks.Unavailable` in a checkbox popup, `FormField.OptionUnavailable`
   and `Field.OptionUnavailable` for a group drawn in place. It is drawn in Surface2, the tick too, and otherwise works
