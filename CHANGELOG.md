@@ -2,6 +2,11 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.7.0
+
+- tdp v0.7.0 adds the project spec: how a family app's repo is laid out, versioned and released (Rules E6). The
+  library and the showcase follow the Rules E8 table instead, so nothing changes
+
 ## v0.1.12 — tdp v0.6.15
 
 - A checkbox option can be marked not available: `Checks.Unavailable` in a checkbox popup, `FormField.OptionUnavailable`

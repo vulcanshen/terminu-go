@@ -1,6 +1,6 @@
-# tdp v0.6.15 coverage
+# tdp v0.7.0 coverage
 
-tdp v0.6.15 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
+tdp v0.7.0 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
 （[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -203,7 +203,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | E5 | icon 與 powerline 符號（U+E0A0–U+E0D7）各量各的；啟動時 CPR 探測（unix）；順序 `<APP>__ICON_WIDTH` → `TERMINU__ICON_WIDTH` → 探測，powerline 照 `<APP>__POWERLINE_WIDTH` → `TERMINU__POWERLINE_WIDTH` → 探測；Windows 預設一格 | 在 icon 佔兩格的 tmux 裡啟動看 statusbar（寫出兩種寬度） | `TestE5WidthOrder`、`TestE5ProbeCPR` |
 | E5 | 有 PTY 的 app 開子程序時設 `TERMINU__ICON_WIDTH`、`TERMINU__POWERLINE_WIDTH`（自己的格數） | T `[1] SHELL` 裡 `echo $TERMINU__ICON_WIDTH $TERMINU__POWERLINE_WIDTH` | `TestE5ChildEnv` |
 | E5 | 疊 popup 不當掉：比畫面寬、高、兩邊都大都切，不 panic | 縮小終端機再開 popup | `TestE5CompositeOversized` |
-| E6 | lib：git tag，沒有 binary；展示場不發布；L4 的畫面測試兩邊都要 | — | `TestL4EveryRowFullWidth` |
+| E6 | lib：git tag，沒有 binary；展示場不發布；L4 的畫面測試兩邊都要；E6 指向的 project（v0.7.0：app 的 repo 怎麼排、怎麼發布）lib 與展示場不套，照 E8 的表 | — | `TestL4EveryRowFullWidth` |
 | E7 | lib 的 README 自己的結構（安裝 `go get`、快速開始是程式碼、寫明展示場怎麼跑；設定段寫出 E3 的共用設定 key 怎麼交給 lib）；dev-remarks 同一個骨架 | 對照這個 repo 的 README 與 `docs/dev-remarks.md` | — |
 | E8 | 分工表；lib 不偏離 tdp | dev-remarks「偏離 tdp」是空的；做不到的都在紀錄裡 | — |
 
