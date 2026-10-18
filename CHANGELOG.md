@@ -6,6 +6,8 @@ Each release names the version of terminu design (tdp) it implements.
 
 - tdp v0.7.0 adds the project spec: how a family app's repo is laid out, versioned and released (Rules E6). The
   library and the showcase follow the Rules E8 table instead, so nothing changes
+- A select or checkbox popup that scrolls is wide enough for its whole hint and its scroll position at the widest,
+  as a menu already was: with 18 options at 80×24 its frame was 42 cells and dropped `Esc:cancel` (demou's DM3)
 
 ## v0.1.12 — tdp v0.6.15
 

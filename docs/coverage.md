@@ -292,7 +292,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | popup §外框 | 內容上下各留一列、左右離框一格（terminal 上下左右都不留） | D「Menu: long」 | `TestPopupMargins` |
 | popup §外框 | 清單的 cursor 從框貼到框、字照樣離框一格；表單的 focus 色塊從值到框；右邊的留白是 U+E0B0、色塊的顏色，跟箭頭一樣寬；只有整列的 cursor 有箭頭 | Space menu；D「Form: New host」 | `TestPopupCursorCoversPadding`、`TestCursorArrow` |
 | popup §外框 | 分隔線不接框：橫的左右各留一格、直的不畫進上下留白；Overlay0 | Space menu（區塊之間）；D「Menu: Open with」；I 的 `Meeting` | `TestPopupSeparator` |
-| popup §寬度 | 兩種寬度（見 F7）；「確定」= 打開那一刻就知道最寬（PIN 一開就 43 格：hint 37 + 6）；要捲的也放得下捲動位置（hint + 捲動位置最寬時 + 9，`20 of 20`、`T-T of T`），捲的時候框不變寬窄 | I 的 `PIN`；D「Menu: long」、「Confirm: long」在矮的 terminal | `TestF7WidthKnown`、`TestPopupWidthCountsScroll` |
+| popup §寬度 | 兩種寬度（見 F7）；「確定」= 打開那一刻就知道最寬（PIN 一開就 43 格：hint 37 + 6）；要捲的也放得下捲動位置（hint + 捲動位置最寬時 + 9，`20 of 20`、`T-T of T`），捲的時候框不變寬窄；select、checkbox popup 也是（demou 的 DM3） | I 的 `PIN`；D「Menu: long」、「Confirm: long」在矮的 terminal | `TestF7WidthKnown`、`TestPopupWidthCountsScroll` |
 | popup §寬度 | 窄的內容靠左離框一格；toast 文字與 password 解鎖遮罩置中 | D「Confirm」、「Toast」；I 的 `PIN` | `TestPopupNarrowContentAlign` |
 | popup §開關動畫 | 拉線 4 格（正中間那一列的層色 `━` 從中間往左右拉到 popup 寬）→ 停 1 格 → 展開 4 格（從中間往上下露出）；收起倒著播；每格 32ms | 每種 popup，含 toast 與 terminal | `TestF2AnimationFrames` |
 | popup §開關動畫 | 打開的第一格起底下就淡化；開始收起時底下立刻亮回來；打開的動畫播完前與收起時不收鍵 | 同上 | `TestF2DimFromFirstFrame`、`TestF2NoKeysWhileOpening` |
@@ -396,7 +396,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | 出處 | 規定 | 展示場 | 測試 |
 |---|---|---|---|
 | input §什麼是 input | 打字列上是輸入態；不打字的部分 core key 照 K1（`?` key reference、`q`／`Ctrl-C` 離開、`Space` 不作用、`hjkl` 移動）；`Enter` 照 K3；`Esc` 關值不變；從表單開的確定後 focus 留原欄 | I `[1] INPUTS` 每一列 | `TestInputCommon` |
-| input §什麼是 input | 錯誤點名的是值的名字：從表單欄位開的是那一欄的名字；自己打開、標題寫在做什麼（`RENAME`、`SAVE AS`）的，用 app 另外給的名字（`Name`），沒給才用標題；text、password、number、textarea 都一樣 | I 的 `Name`（標題 `RENAME`）貼上多行按 `Enter`：`Name can't have control characters` | `TestInputErrorNamesValue`、`TestPasteBlockedOnEnter` |
+| input §什麼是 input | 錯誤點名的是值的名字：從表單欄位開的是那一欄的名字；自己打開、標題寫在做什麼（`RENAME`、`SAVE AS`）的，用 app 另外給的名字（`Name`；沒給時用標題，是 lib 的退路）；text、password、number、textarea 都一樣 | I 的 `Name`（標題 `RENAME`）貼上多行按 `Enter`：`Name can't have control characters` | `TestInputErrorNamesValue`、`TestPasteBlockedOnEnter` |
 | input §什麼是 input | 有按鈕的 input popup 照表單的動作區：`Tab\|Shift-Tab` 在欄位區與動作區之間來回、回來停在離開前那一項；hint 在欄位上 `Tab:actions`、在按鈕上 `Tab:fields`。lib 裡有按鈕的 input popup 只有 color picker | I 的 `Background`（color） | `TestColorPickerTab`、`TestColorPickerKeys` |
 | input §單行骨架 | 說明列一句話 Overlay0、空一列；打字列最前面 `nf-fa-angle_right`（層色，離框一格）、空一格接值；值 Lavender、游標 Lavender 底 Base 字；錯誤列；hint `Enter:<動詞> Esc:cancel`（列出全部操作）；寬度：自由打字用上限、有長度上限照內容 | I 的 `Name`、`Timeout`、`Password` | `TestSingleLineSkeleton`、`TestInputAngle` |
 | input §值比框長時 | 顯示游標附近那段、截掉的那邊補 `…`；游標一定看得到、只捲剛好的量；照顯示寬度、一個字不切半（紅色 `\n` 也是） | I 的 `Name`（打一串長的），`Home`／`End` | `TestInputLongValue` |
@@ -423,7 +423,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | textarea §按鍵 | 寫（輸入態、`Enter` 換行、`Tab` 插 `input_tab_width` 個空白（設定、預設 4）、hint `Esc:move`、游標 Lavender 一格）／移（游標層色一格；`Esc` 進來、`i` `a` `o` 回寫、`Enter` 確定、hint `Enter:save i:write Esc:cancel`）；移裡 `Esc` 關（改過先 confirm）；打開在「寫」、舊值帶入、游標在最後、沒有灰字提議 | 同上（有舊值） | `TestTextarea` |
 | textarea §按鍵 | 寫的編輯鍵加 `↑↓`（照畫出的列）、`←→` 跨行、行首 `Backspace` 合併、`Home\|End` 到整篇的頭尾；移的鍵 `hjkl` `w\|b\|e` `0\|$` `u\|d` `gg\|G`；移不是模式也不是輸入態（`?` 開 key reference） | 同上 | `TestTextareaWriteKeys`、`TestTextareaMoveKeys`、`TestTextareaHomeEnd` |
 | textarea §按鍵 | 貼上的換行（`\n`、`\r\n`、單獨的 `\r`）是真的換行；其他控制字元留在值裡畫紅字、`Backspace` 整個刪；有控制字元時「移」裡的 `Enter` 擋下，錯誤列點名值（`Notes can't have control characters`），換行與 `\t` 不算 | I 的 `Comment` 貼上帶顏色的字 | `TestTextareaPasteControlChars` |
-| finder §長相 | 兩塊：打字列（最前面 U+F105、離框一格、空一格接打的字；focus 在打字列時層色、在清單時 Overlay0；右邊 `符合/總數`，Overlay0）、分隔線、清單；打字列的字跟清單的字對齊；清單的 cursor 從框貼到框 | I `[/] Find` | `TestFinderLayout` |
+| finder §長相 | 兩塊：打字列（最前面 U+F105、離框一格、空一格接打的字；focus 在打字列時層色、在清單時 Overlay0；右邊 `符合/總數`，Overlay0）、分隔線、清單；清單的 cursor 從框貼到框 | I `[/] Find` | `TestFinderLayout` |
 | finder §長相 | 一般 finder 一定有預覽（select、checkbox popup 沒有）；兩框合起來一個 popup 寬；高度一律取最高；寬 ≥ 96 左右並排各一半（有 metadata 時右框是預覽／分隔線／四列 metadata）；不到 96、有 metadata：上面是清單框與 `INFO` 框各一半、下面是整條寬的預覽框，上下各一半；不到 96、沒有 metadata：清單在上、預覽在下，各一半；預覽標題是那一筆的名字、不拿 focus；預覽檔案或目錄的 finder 照 file-picker 的預覽，其他的內容 app 給、沒有 metadata；預覽框用層色、內容不淡化、下框不寫字 | 有 metadata：I `[2] FILES` 的 `[/] Find`；沒有 metadata、預覽是 app 給的：I 的 `Host`；寬 120 與 80 各看一次 | `TestFinderPreview`、`TestFinderFileLayout` |
 | finder §長相 | 邊找邊列：標題後 loading icon、一筆都沒到寫 `(indexing…)`；高度打開時定、寬度用上限 | I `[2] FILES` 的 `[S]low index` | `TestFinderStreaming` |
 | finder §清單的標記 | select 前面 radio glyph、checkbox popup 前面 checkbox glyph；目前的值字 Green；cursor 在目前的值上照 cursor | I 的 `Profile`、`Namespaces` | `TestFinderMarkers` |
@@ -484,6 +484,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | U+F160 | `nf-fa-sort_amount_asc` | panel §一般清單（升冪；C3） | P `[1] PODS` 表頭 |
 | U+F161 | `nf-fa-sort_amount_desc` | panel §一般清單（降冪；C3） | 同上 |
 | U+F105 | `nf-fa-angle_right` | finder §長相、panel §panel filter、file-picker（打字列最前面） | I `[/] Find`；P `[1] PODS` 按 `/` |
+| U+F0252 | `nf-md-folder_move` | file-picker §選目錄（`. (this directory)`） | I 的 `Path`、`Download to` |
 | U+F0132 | `nf-md-checkbox_marked` | panel §一般清單（標記）、checkbox、finder §清單的標記 | P 標記的列；I 的 `Agent`、`Namespaces` |
 | U+F0131 | `nf-md-checkbox_blank_outline` | checkbox、finder §清單的標記 | I 的 `Agent`、`Namespaces` |
 | U+F043E | `nf-md-radiobox_marked` | radio、select | I 的 `Layout`、`Profile` |
@@ -497,6 +498,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | U+F078F | `nf-md-alarm_light` | toast（Warning） | P 的 `Toast warning` |
 | U+F0238 | `nf-md-fire` | toast（Error）、note §error popup | P 的 `Toast error`；D「Error popup」 |
 | U+F0A9E–U+F0AA5 | `nf-md-circle_slice_1` – `_8` | popup §loading | D「Loading popup」；P `Loading` |
+| U+F0C8 | `nf-fa-square` | rules S5（mark 的每一格） | P `[1] PODS` 按 `V` |
 
 規範直接寫出字元（不是 PUA）的符號，一起看：`┏━┓`（focus 的 panel、popup）、`┌─┐`（失焦的 panel）、`┫ ┣` `┤ ├`（模式名的接頭）、
 `━`（畫面 chip 列下的分隔線、開關動畫的線、slider 軌道）、`╌`（U+254C，menu 區塊之間）、`─`（popup 裡的分隔線）、`│`（datetime 的

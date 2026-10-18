@@ -341,7 +341,14 @@ func (f *finderView) measure(sw, sh int) (int, int) {
 	content = max(content+Width(glyphHard), Width(glyphTyping)+1+8+2+count) // the typing row: the angle, eight cells, the count
 	w := max(content+3, Width(titleCapsule(f.glyph, f.title(1<<20), Base, 1<<20))+4,
 		hintWidth(f.listHint())+6, hintWidth(f.typingHint())+6)
-	return min(w, most), min(len(rows)+6, max(sh-2, 3))
+	h := min(len(rows)+6, max(sh-2, 3))
+	if len(rows) > h-6 {
+		// Room for the scroll position at its widest too, so the hint stays
+		// whole (components/layout/popup, width).
+		widest := scrollText(true, len(rows), 0, len(rows))
+		w = max(w, scrollRoom(f.listHint(), widest), scrollRoom(f.typingHint(), widest))
+	}
+	return min(w, most), h
 }
 
 func (f *finderView) draw(w, h int, layer Color) []string {

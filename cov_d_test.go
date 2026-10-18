@@ -335,6 +335,15 @@ func TestPopupWidthCountsScroll(t *testing.T) {
 	check("confirm", func(ta *testApp) {
 		ta.Confirm(Ask{Title: "Wipe", Question: "Wipe?", Verb: "wipe", Details: details}, nil)
 	}, "Enter:wipe Esc:cancel", "30-30 of 30")
+	// The finders too (demou's DM3: 18 options left Esc:cancel out).
+	options := make([]string, 18)
+	for i := range options {
+		options[i] = string(rune('a' + i))
+	}
+	check("select", func(ta *testApp) { ta.Select(Select{Title: "Pick", Options: options, Selected: -1}) },
+		"Enter:choose Tab|/:filter Esc:cancel", "18 of 18")
+	check("checks", func(ta *testApp) { ta.Checks(Checks{Title: "Pick", Options: options}) },
+		"Enter:apply Space:toggle Tab|/:filter Esc:cancel", "18 of 18")
 }
 
 func TestPopupFrameTextSpacing(t *testing.T) {
