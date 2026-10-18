@@ -8,6 +8,8 @@ Each release names the version of terminu design (tdp) it implements.
   library and the showcase follow the Rules E8 table instead, so nothing changes
 - A select or checkbox popup that scrolls is wide enough for its whole hint and its scroll position at the widest,
   as a menu already was: with 18 options at 80×24 its frame was 42 cells and dropped `Esc:cancel` (demou's DM3)
+- On a finder list filtered to nothing, the hint keeps the finder's own word (`Enter:apply` on a checkbox popup), not
+  `Enter:choose`, which could be wider than the frame and drop `Esc:cancel`
 
 ## v0.1.12 — tdp v0.6.15
 

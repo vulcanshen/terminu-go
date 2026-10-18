@@ -346,6 +346,22 @@ func TestPopupWidthCountsScroll(t *testing.T) {
 		"Enter:apply Space:toggle Tab|/:filter Esc:cancel", "18 of 18")
 }
 
+// TestFinderHintNoResults: on a list a filter left empty, the hint keeps the
+// finder's word, so it fits the width taken when the popup opened
+// (components/layout/popup: the hint is always whole).
+func TestFinderHintNoResults(t *testing.T) {
+	ta := newTestApp(t)
+	ta.resize(120, 30)
+	ta.Checks(Checks{Title: "Pick", Options: []string{"alpha", "beta"}})
+	ta.settle()
+	ta.press("Tab", "z", "z", "Tab")
+	l := ta.top()
+	bottom := covDTop(ta)[l.h-1]
+	if hint := "Enter:apply Space:toggle Tab|/:filter Esc:cancel"; !strings.Contains(bottom, " "+hint+" ") {
+		t.Errorf("the hint is not whole: %q", bottom)
+	}
+}
+
 func TestPopupFrameTextSpacing(t *testing.T) {
 	ta := newTestApp(t)
 	ta.resize(120, 12)

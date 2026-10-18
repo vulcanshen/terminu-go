@@ -292,7 +292,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | popup §外框 | 內容上下各留一列、左右離框一格（terminal 上下左右都不留） | D「Menu: long」 | `TestPopupMargins` |
 | popup §外框 | 清單的 cursor 從框貼到框、字照樣離框一格；表單的 focus 色塊從值到框；右邊的留白是 U+E0B0、色塊的顏色，跟箭頭一樣寬；只有整列的 cursor 有箭頭 | Space menu；D「Form: New host」 | `TestPopupCursorCoversPadding`、`TestCursorArrow` |
 | popup §外框 | 分隔線不接框：橫的左右各留一格、直的不畫進上下留白；Overlay0 | Space menu（區塊之間）；D「Menu: Open with」；I 的 `Meeting` | `TestPopupSeparator` |
-| popup §寬度 | 兩種寬度（見 F7）；「確定」= 打開那一刻就知道最寬（PIN 一開就 43 格：hint 37 + 6）；要捲的也放得下捲動位置（hint + 捲動位置最寬時 + 9，`20 of 20`、`T-T of T`），捲的時候框不變寬窄；select、checkbox popup 也是（demou 的 DM3） | I 的 `PIN`；D「Menu: long」、「Confirm: long」在矮的 terminal | `TestF7WidthKnown`、`TestPopupWidthCountsScroll` |
+| popup §寬度 | 兩種寬度（見 F7）；「確定」= 打開那一刻就知道最寬（PIN 一開就 43 格：hint 37 + 6）；要捲的也放得下捲動位置（hint + 捲動位置最寬時 + 9，`20 of 20`、`T-T of T`），捲的時候框不變寬窄；select、checkbox popup 也是（demou 的 DM3）；篩到沒有結果、focus 在清單時，hint 照樣是打開時那個動詞 | I 的 `PIN`；D「Menu: long」、「Confirm: long」在矮的 terminal | `TestF7WidthKnown`、`TestPopupWidthCountsScroll`、`TestFinderHintNoResults` |
 | popup §寬度 | 窄的內容靠左離框一格；toast 文字與 password 解鎖遮罩置中 | D「Confirm」、「Toast」；I 的 `PIN` | `TestPopupNarrowContentAlign` |
 | popup §開關動畫 | 拉線 4 格（正中間那一列的層色 `━` 從中間往左右拉到 popup 寬）→ 停 1 格 → 展開 4 格（從中間往上下露出）；收起倒著播；每格 32ms | 每種 popup，含 toast 與 terminal | `TestF2AnimationFrames` |
 | popup §開關動畫 | 打開的第一格起底下就淡化；開始收起時底下立刻亮回來；打開的動畫播完前與收起時不收鍵 | 同上 | `TestF2DimFromFirstFrame`、`TestF2NoKeysWhileOpening` |

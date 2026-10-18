@@ -303,10 +303,10 @@ func (f *finderView) mark(i int, r finderRow) string {
 func (f *finderView) rowLabel(r finderRow) string { return cmpOr(r.label, r.text) }
 
 func (f *finderView) listHint() []KeyHint {
-	verb := "choose"
-	if _, r, ok := f.at(); ok {
-		verb = f.verb(r)
-	}
+	// With no results the finder's own word, not another: the width was
+	// taken from it when the popup opened.
+	_, r, _ := f.at()
+	verb := f.verb(r)
 	h := []KeyHint{{"Enter", verb}}
 	if f.kind == findChecks {
 		h = append(h, KeyHint{"Space", "toggle"})
