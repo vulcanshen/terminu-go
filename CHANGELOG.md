@@ -2,7 +2,7 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.7.1
+## Unreleased — tdp v0.7.2
 
 - tdp v0.7.0 adds the project spec: how a family app's repo is laid out, versioned and released (Rules E6). The
   library and the showcase follow the Rules E8 table instead, so nothing changes
@@ -25,6 +25,10 @@ Each release names the version of terminu design (tdp) it implements.
 - Every group of the showcase's `Open with` menu has a title, the first too (Rules M8); `MenuSection` says so
 - A select or checkbox popup that scrolls is wide enough for its whole hint and its scroll position at the widest,
   as a menu already was: with 18 options at 80×24 its frame was 42 cells and dropped `Esc:cancel` (demou's DM3)
+- Typing in a panel filter that matches nothing, the footer leaves `Enter` out: `Tab:list Esc:clear` (tdp v0.7.2)
+- tdp v0.7.2 also writes down what the library already did: in the textarea and the viewer a space that does not
+  fit starts the next row (G94); a panel's hint with no item in its list leaves out `Enter` and the keys on an item;
+  a popup at its tallest leaves the chip row or the statusbar and the footer in view, covering the divider
 
 ## v0.1.12 — tdp v0.6.15
 

@@ -1207,6 +1207,9 @@ func (a *App) footerHints() []KeyHint {
 	}
 	switch {
 	case p.typing():
+		if !p.Body.HasItem() { // nothing matches: Enter does nothing (components/layout/screen)
+			return []KeyHint{{"Tab", "list"}, {"Esc", "clear"}}
+		}
 		return []KeyHint{{"Enter|Tab", "list"}, {"Esc", "clear"}}
 	case p.mode != nil:
 		out := []KeyHint{{"?", "help"}}

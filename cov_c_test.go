@@ -910,6 +910,7 @@ func TestFooterVariants(t *testing.T) {
 		{"normal", nil, "Space:menu ?:help Tab|1–3:panels q:quit"},
 		{"mode", []string{"D"}, "?:help Enter:drop Esc:cancel"},
 		{"filter typing", []string{"Esc", "/"}, "Enter|Tab:list Esc:clear"},
+		{"filter, no results", []string{"z", "z", "z"}, "Tab:list Esc:clear"},
 		{"popup", []string{"Esc", "Space"}, "Space:menu ?:help Tab|1–3:panels q:quit"},
 		{"one panel", []string{"Esc", "O"}, "Space:menu ?:help q:quit"},
 	}
@@ -1288,6 +1289,45 @@ func TestPanelNoHintWhileFiltering(t *testing.T) {
 	}
 	if got := shell(); !strings.HasPrefix(got, "┗━ Enter:type") {
 		t.Errorf("out of the PTY: %q", got)
+	}
+}
+
+// TestPanelHintNoItems: with no item in its list, filtered to nothing or
+// empty to begin with, the hint leaves out Enter and the keys on an item and
+// keeps those on the whole panel (components/layout/panel, hint).
+func TestPanelHintNoItems(t *testing.T) {
+	ta := &testApp{App: New("test")}
+	l := groupList()
+	p := &Panel{Label: "Kinds", Body: l, Actions: []Action{
+		{Key: "Enter", Label: "Open", Desc: "this kind", Scope: ItemScope, Hint: "open", Do: ta.record("open")},
+		{Key: "x", Label: "Delete", Desc: "this kind", Scope: ItemScope, Hint: "delete", Do: ta.record("delete")},
+		{Key: "n", Label: "New", Desc: "a kind", Scope: PanelScope, Hint: "new", Do: ta.record("new")},
+	}}
+	ta.AddScreen(&Screen{Name: "Kinds", Key: "W", Panels: []*Panel{p}})
+	ta.resize(80, 24)
+	hint := func() string {
+		h, _ := p.hint()
+		var out []string
+		for _, k := range h {
+			out = append(out, k.Key+":"+k.Desc)
+		}
+		return strings.Join(out, " ")
+	}
+	if got := hint(); got != "Enter:open x:delete n:new" {
+		t.Errorf("with items: %q", got)
+	}
+	ta.press("/", "z", "z", "z", "Tab")
+	if got := hint(); got != "n:new" {
+		t.Errorf("filtered to nothing: %q", got)
+	}
+	ta.press("Enter", "x")
+	if len(ta.ran) > 0 {
+		t.Errorf("with no item, %v ran", ta.ran)
+	}
+	ta.press("Esc")
+	l.SetRows(nil)
+	if got := hint(); got != "n:new" {
+		t.Errorf("empty: %q", got)
 	}
 }
 

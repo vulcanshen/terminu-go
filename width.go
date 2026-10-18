@@ -228,7 +228,8 @@ func Repeat(s string, n int) string { return strings.Repeat(s, max(n, 0)) }
 // Wrap breaks plain text into lines of at most w cells (components,
 // wrapping): at spaces and on either side of a wide character; inside a word
 // only when it is longer than a line, cut by cells, a wide character never
-// cut in half. Line breaks in s are kept.
+// cut in half. Line breaks in s are kept. TODO(tdp G95): a space that does
+// not fit is dropped, not drawn at the start of the next line.
 func Wrap(s string, w int) []string {
 	if w <= 0 {
 		return nil
@@ -298,8 +299,7 @@ func pieces(word string) []string {
 // components, wrapping): after a space or on either side of a wide
 // character; inside a word only when it is longer than a row, a wide
 // character never cut in half. cells is each character's width, space whether
-// it is a space or a tab. TODO(tdp G94): a space that does not fit starts the
-// next row.
+// it is a space or a tab. A space that does not fit starts the next row.
 func foldAt(cells []int, space []bool, w int) []int {
 	wide := func(i int) bool { return cells[i] > 1 && !space[i] }
 	starts := []int{0}

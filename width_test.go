@@ -157,8 +157,7 @@ func TestFoldAt(t *testing.T) {
 		{"see \U00004E2D\U00006587", 6, "see \U00004E2D|\U00006587"},
 		{"ab abcdefgh", 4, "ab |abcd|efgh"},
 		{"ab\tcd", 6, "ab\t|cd"},
-		// TODO(tdp G94): the space that does not fit starts the next row.
-		{"hello world", 5, "hello| |world"},
+		{"hello world", 5, "hello| |world"}, // the space that does not fit starts the next row
 	} {
 		if got := fold(c.s, c.w); got != c.want {
 			t.Errorf("fold(%q, %d) = %q, want %q", c.s, c.w, got, c.want)

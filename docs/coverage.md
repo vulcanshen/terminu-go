@@ -1,13 +1,13 @@
-# tdp v0.7.1 coverage
+# tdp v0.7.2 coverage
 
-tdp v0.7.1 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
+tdp v0.7.2 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
 （[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
 - 出處寫法：`K4` 是 `principle/rules-zh_TW.md` 的規則；`P3` 是 `principle/README-zh_TW.md`；`popup §外框` 是
   `components/layout/popup-zh_TW.md` 的那一節，其他元件照檔名（`form`、`finder`…）；`components §大寫` 是 `components/README-zh_TW.md`。
 - `G<n>` 是規範盲點紀錄裡還沒定案的編號（`~/Documents/sideproj/terminu/.local/family-fix/terminu-go/README.md`），定案前照紀錄的
-  「暫時」做。G1–G22 已經補進 tdp v0.4.0、G23–G29 補進 v0.5.1、G30–G46 補進 v0.5.2（G43 不改規範）、G47 補進 v0.5.3、G48–G66 補進 v0.5.4、G67–G77 補進 v0.5.5、G78–G82 補進 v0.5.6、G83 補進 v0.5.7、G84 補進 v0.5.8、G85 補進 v0.5.9、G86 補進 v0.6.1，這裡直接寫規範的條文。G87（有表頭的清單分組時表頭縮不縮）已定、不改規範：分組只用在單欄、沒有表頭的清單。v0.6.0 只刪了 S5 講畫 mark 的工具的一句，這份清單不受影響。G93 補進 v0.7.1。
+  「暫時」做。G1–G22 已經補進 tdp v0.4.0、G23–G29 補進 v0.5.1、G30–G46 補進 v0.5.2（G43 不改規範）、G47 補進 v0.5.3、G48–G66 補進 v0.5.4、G67–G77 補進 v0.5.5、G78–G82 補進 v0.5.6、G83 補進 v0.5.7、G84 補進 v0.5.8、G85 補進 v0.5.9、G86 補進 v0.6.1，這裡直接寫規範的條文。G87（有表頭的清單分組時表頭縮不縮）已定、不改規範：分組只用在單欄、沒有表頭的清單。v0.6.0 只刪了 S5 講畫 mark 的工具的一句，這份清單不受影響。G93 補進 v0.7.1，G94 補進 v0.7.2。
 - 「lib」表示由 lib 的登記或 API 保證，不需要展示場的某一個畫面；測試照樣要有。
 
 ## 展示場
@@ -125,7 +125,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | M5 | 依位置：label 用括號；句子裡鍵加方括號；hint、footer `鍵:說明`、項目間一格；key reference 兩欄、不加括號冒號 | 空狀態、toast、hint、footer、`?` | `TestM5WritingByPosition` |
 | M5 | hint、footer 的鍵一色（Blue）、冒號與說明一色（Overlay0）；並列的 `\|` 用說明的顏色（Overlay0），key reference 的鍵欄也是 | 每個 hint、footer、`?` | `TestM5HintColors`、`TestM5KeysJoinedWithBar` |
 | M6 | 對象不存在：那一列（區）不出現；存在但現在不能：停用色、說明不變、cursor 跳過、熱鍵不作用 | P `[1] PODS` 的 `Disable` | `TestM6DisabledRow` |
-| M6 | key reference 照同一套（停用的鍵照列、停用色）；hint 與 footer 只列現在按得了的也可以（app 決定） | `Disable` 之後按 `?`；hint：P `[1] PODS` 的 `m:mark` 變停用色，I `[2] FILES`（`HintPressableOnly`）的 `V:view` 不列 | `TestM6KeyReferenceDisabled`、`TestM6HintListsDisabled` |
+| M6 | key reference 照同一套（停用的鍵照列、停用色）；hint 與 footer 只列現在按得了的也可以（app 決定），例外是元件規定一定要拿掉的：表單的按鈕還在跑時、finder 沒有結果時、panel 的清單一項都沒有時 | `Disable` 之後按 `?`；hint：P `[1] PODS` 的 `m:mark` 變停用色，I `[2] FILES`（`HintPressableOnly`）的 `V:view` 不列；三個例外見 form §按鈕、finder §hint、panel §框 | `TestM6KeyReferenceDisabled`、`TestM6HintListsDisabled`、`TestFormActionWhileRunning`、`TestFinderHintNoResults`、`TestPanelHintNoItems` |
 | M6 | key reference 裡講別的 surface 的段落照常顯示，排在最後（`app-wide` 之後） | T `[1] SHELL` 的 `?` 最後一段 `TERMINAL` | `TestM6OtherSurfaceSection` |
 | M7 | focus 在 panel 上時 `Space`、`?` 一定有反應；popup 上一定有反應的是 `?` | P `[2] LOG`（沒有 item）按 `Space` | `TestM7PanelEntriesRespond` |
 | M8 | 其他 menu 要分組時第一組是 cursor 相關；每一組都加標題，第一組也是（lib：`MenuSection.Title`） | D「Menu: Open with」 | `TestM8GroupedMenuOrder` |
@@ -163,7 +163,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | F6 | 要不要 confirm 由 app 決定，決定了每次都問；經 picker 明確選的可算已確認 | lib：動作登記「先問」 | `TestF6ConfirmEveryTime` |
 | F6 | `Enter` 接受、`Esc` 取消，回答只有這兩個鍵（沒有 `y`、`n`）；寫出接受會做的事；不能被誤觸完成 | D「Confirm」 | `TestConfirmKeys`（`y`、`n` 不作用，`?` 只列 `Enter`、`Esc`） |
 | F7 | 寬度兩種：內容確定 = 最寬列 + 4、至少放得下標題與 hint、最多 `min(寬 − 2, 120)`；不確定 = `min(寬 − 2, 120)`；水平置中；開著不變；有整列 cursor 的，右邊的留白跟箭頭一樣寬（powerline 符號寬）；寬度至少 hint + 6（PIN 43 格） | 每種 popup；寬 200 的終端機看 120 上限 | `TestF7WidthKnown`、`TestF7WidthKnownUnlockContent`、`TestF7WidthUnknown`、`TestF7WidthCap120` |
-| F7 | 高度打開時定、最高畫面高 − 2，超過捲；打開時不知道會多高的（有預覽的 finder、textarea）一律取最高；loading 期間與使用者操作造成的改變可以變 | D「Menu: long」；I `[/] Find` 打字篩選 | `TestF7HeightFixed`、`TestF7HeightMax` |
+| F7 | 高度打開時定、最高畫面高 − 2（chip 列或 statusbar 與 footer 看得到，chip 列下面的分隔線可以被蓋住），超過捲；打開時不知道會多高的（有預覽的 finder、textarea）一律取最高；loading 期間與使用者操作造成的改變可以變 | D「Menu: long」；I `[/] Find` 打字篩選 | `TestF7HeightFixed`、`TestF7HeightMax` |
 | F7 | loading 時標題後一定有輪轉 icon；只看整個 popup 的內容 | D「Loading popup」 | `TestF7LoadingIcon`、`TestF7LoadingGrows` |
 | F7 | 垂直置中；toast 的下框在畫面倒數第三列 | 每種 popup；D「Toast」 | `TestF7Position`、`TestToastPosition` |
 | F7 | 值可能不合格的 popup 預留一列錯誤列；動作失敗開 error popup | I 的 `Port`；D「Form: save fails」 | `TestF7ErrorRowReserved` |
@@ -229,7 +229,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 |---|---|---|---|
 | §圖與間距 | 圖的結構是規定（框、glyph 位置、間距、對齊、標的顏色）；「縮 N 格」是離框 N 格 | 每個畫面對照規範的圖 | 各元件的版面測試 |
 | §圖與間距 | 欄與欄之間兩格；glyph 與它後面的字之間一格 | 表頭、表單、menu、radio、checkbox、file-picker | `TestTwoCellColumnGap`、`TestGlyphOneCellGap` |
-| §折行 | textarea、viewer、confirm、toast、error popup、splash 太窄時都照同一套：在空白處斷，下一個字放不下就整個接到下一列；寬字每個字之間都可以斷，一列填滿再換列；一個字比一列還長才照格子切；寬字不切成兩半。lib：textarea 與 viewer 保留每個字元，放不下的空白接到下一列開頭（G94，暫時） | I 的 `Comment`；D「Note viewer」把視窗縮窄、「Confirm: long」、「Error popup: long」；P 的 `Toast long`；把視窗縮窄按 `V` | `TestWrap`、`TestFoldAt`、`TestTextareaWrapAndNumbers`、`TestViewerFoldsAtSpaces`、`TestTextareaUpToShorterRow` |
+| §折行 | textarea、viewer、confirm、toast、error popup、splash 太窄時都照同一套：在空白處斷，下一個字放不下就整個接到下一列；寬字每個字之間都可以斷，一列填滿再換列；一個字比一列還長才照格子切；寬字不切成兩半；放不下的空白接到下一列開頭（textarea 的游標停在上面也有格子）。lib：textarea 與 viewer 這樣做；confirm、toast、error popup、splash 斷在空白處時那個空白不畫（G95，暫時） | I 的 `Comment`；D「Note viewer」把視窗縮窄、「Confirm: long」、「Error popup: long」；P 的 `Toast long`；把視窗縮窄按 `V` | `TestWrap`、`TestFoldAt`、`TestTextareaWrapAndNumbers`、`TestViewerFoldsAtSpaces`、`TestTextareaUpToShorterRow` |
 | §大寫 | 要大寫：panel 膠囊與 tab、畫面 chip、popup 標題、表頭、清單的分組標題、一列一個值的 label、menu 與 key reference 的區塊標題；熱鍵標記裡的字母照原樣；名稱、路徑在標題與 hint 裡都照原樣（表單按鈕的 hint 只有動詞小寫：`Enter:export hosts.yaml`） | 每個畫面；畫面 chip `[t]ERMINAL`（小寫的熱鍵照原樣）；T terminal popup 的標題 `SESSION: shell`；D「Form: long」的 `EDIT: prod-db-01`；D「Form: with actions」的 `Export hosts.yaml` | `TestUppercaseWhereRequired`、`TestUppercaseKeepsHotkeyAndNames`、`TestPopupTitleSubject`、`TestFormButtonSubject` |
 | §大寫 | 不改：值、menu 的 label 與說明、hint 與 footer 的說明、按鍵名、模式名、app 的內容 | 同上 | `TestUppercaseLeavesContent` |
 
@@ -239,7 +239,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 |---|---|---|---|
 | screen §由上往下 | 最上面一列（多畫面：chip 列 + 全寬分隔線；單畫面：可有 statusbar）、panel 區、最下面一列 footer；每個畫面的 panel 從 `[1]` 編號 | 每個畫面；lib 的單畫面版本由測試畫 | `TestScreenRows` |
 | screen §footer | 一列、M5 寫法、鍵 Blue 冒號說明 Overlay0；放不下從尾端整組捨 | 縮到 40 欄 | `TestFooterDropsWholePairs` |
-| screen §footer | 一般 `Space:menu ?:help Tab\|1–N:panels q:quit`；單 panel `Space:menu ?:help q:quit`；模式 `?:help` + 模式的鍵 + `Esc:<動詞>`；filter 打字中 `Enter\|Tab:list Esc:clear`；PTY 在 panel 裡：出口鍵 + 保留鍵；popup 開著時照底下畫面的寫、跟著淡化 | P 一般與 Drag；P filter；T `[1] SHELL`；任一 popup；lib 的單 panel 版本 | `TestFooterVariants`、`TestFooterUnderPopupDimmed` |
+| screen §footer | 一般 `Space:menu ?:help Tab\|1–N:panels q:quit`；單 panel `Space:menu ?:help q:quit`；模式 `?:help` + 模式的鍵 + `Esc:<動詞>`；filter 打字中 `Enter\|Tab:list Esc:clear`，沒有結果時 `Tab:list Esc:clear`；PTY 在 panel 裡：出口鍵 + 保留鍵；popup 開著時照底下畫面的寫、跟著淡化 | P 一般與 Drag；P filter（打 `zz` 沒有結果）；T `[1] SHELL`；任一 popup；lib 的單 panel 版本 | `TestFooterVariants`、`TestFooterUnderPopupDimmed` |
 | screen §footer | terminal popup 開著時被它蓋掉 | T 的 terminal popup | `TestTerminalPopupSize` |
 | screen §畫面 chip 列 | 每個畫面一個膠囊、串的顏色 Blue（選中填 Blue 字 Base 粗體、沒選中字 Blue）；放不下先縮 `[P] [I] [D] [T]` 再收掉沒選中的 | 每個畫面；縮窄 | `TestScreenChips`、`TestScreenChipsShrink` |
 | screen §畫面 chip 列 | 右邊放 statusbar；下面全寬粗線 `━` Overlay0；長工作時從左填 Green 進度條、狀態文字 Green；terminal popup 開著時 chip 列與分隔線留著 | `Start task`；開 terminal popup 時再看一次 | `TestChipRowProgress` |
@@ -256,7 +256,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | panel §框 | 上框右邊模式名，夾在接頭之間（粗線 `┫ ┣`、細線 `┤ ├`），模式色加粗、大小寫照原樣；盡量一個詞；放不下先截標題；膠囊跟著換模式色 | P `[1] PODS` 的 `[D]rag`（粗線）；P `[2] LOG` 的 `[F]reeze` 之後按 `Tab`（細線）；縮窄 | `TestPanelModeLabel`、`TestPanelModeLabelKeptWhenNarrow` |
 | panel §框 | 下框左邊 hint（每個 panel 都有；focus 在 panel filter 打字列上、在 panel 裡的 PTY 時不寫，回來時再寫）；下框右邊捲動位置 | 每個 panel；P 按 `/` 打字；T `[1] SHELL` 按 `Enter` 進去 | `TestPanelHint`、`TestPanelNoHintWhileFiltering`、`TestK10ExitKeyShown` |
 | panel §框 | 框上的字與角之間隔一段線（`┗━ Enter:logs`、`3 of 40 ━┛`、`┫Drag┣━┓`），只有 `[N] label` 膠囊緊接左上角 | 每個 panel | `TestPanelFrameTextSpacing` |
-| panel §框 | hint：這個 panel 自己的鍵（`Enter` 做什麼、常用熱鍵），不寫移動鍵與 footer 已有的 core key；focus 時鍵 Blue 說明 Overlay0、失焦跟著淡化；放不下從尾端整組捨、捲動位置留著 | 每個 panel；縮窄 | `TestPanelHintContent`、`TestPanelHintDrop` |
+| panel §框 | hint：這個 panel 自己的鍵（`Enter` 做什麼、常用熱鍵），不寫移動鍵與 footer 已有的 core key；清單一項都沒有時（panel filter 篩到空，或本來就空）拿掉 `Enter` 與對項目的熱鍵，只留對整個 panel 的；focus 時鍵 Blue 說明 Overlay0、失焦跟著淡化；放不下從尾端整組捨、捲動位置留著 | 每個 panel；縮窄；I `[2] FILES` 的 `Empty`（只剩 `/:find`），或按 `/` 打 `zz` 再 `Tab` | `TestPanelHintContent`、`TestPanelHintDrop`、`TestPanelHintNoItems` |
 | panel §膠囊串 | 兩端斜角 U+E0BA / U+E0B0；選中的填串色、字 Base 粗體；沒選中的不填、字用串色；斜角與接縫照 Powerline 上色（前景左段的底、背景右段的底，沒選中的底當 Base）；串色：panel 是框線色、popup 是層色、chip 是 Blue；`[N]` 膠囊與目前 tab 都算選中 | P `[1] PODS` 換 tab；D「Popup with tabs」 | `TestCapsuleChain` |
 | panel §膠囊串 | 接縫：換色 U+E0B0、同色 U+E0B1；字前後不加空白、大寫；放不下先縮沒選中的成第一個字，再從尾端收成 `…`，選中的永遠留著、不撐寬框 | 縮窄 | `TestCapsuleChainShrink` |
 | panel §一般清單 | cursor：Subtext1 底、Base 粗體、佔滿內寬、整列 Base 字；右邊的留白（跟箭頭一樣寬）畫 U+E0B0、Subtext1；失焦跟著淡化 | P `[1] PODS` | `TestListCursor`、`TestCursorArrow` |
