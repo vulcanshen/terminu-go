@@ -2,14 +2,29 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.7.0
+## Unreleased — tdp v0.7.1
 
 - tdp v0.7.0 adds the project spec: how a family app's repo is laid out, versioned and released (Rules E6). The
   library and the showcase follow the Rules E8 table instead, so nothing changes
+- tdp v0.7.1 adds a checklist, tdp broken into items for judging how much of it an app meets; the library does not
+  apply it
+- Text wraps one way wherever it wraps (tdp v0.7.1, the components' "Wrapping"): at spaces, a word moving whole to the
+  next row, and between any two wide characters, so Chinese fills a row first; a word is cut by cells only when it is
+  longer than a row, and a wide character never in half. The textarea and the viewer cut a word wherever the row
+  ended; a confirm, a toast, an error popup and the splash moved a run of Chinese whole to the next line
+- In the textarea, moving up or down onto a row that folded short stops on its last character, not on the first of
+  the next row
+- A finder with no results, a search still listing before its first result included, leaves `Enter` out of the hint,
+  as `Enter` does nothing there (`Tab:list Esc:cancel`, `Tab|/:filter Esc:cancel`), and puts it back once there are
+  results (G93). On a checkbox popup's list `Enter` still applies the checks, now with no results too, and only
+  `Space` is left out. The width stays what it was when the popup opened
+- The colour picker's hjkl move only among R, G and B, wrapping there; `Choose` is reached only with `Tab`, as a
+  form's two areas
+- A grouped list with marks draws them in the two cells its items are further in: the text stays three cells in, as
+  with no marks
+- Every group of the showcase's `Open with` menu has a title, the first too (Rules M8); `MenuSection` says so
 - A select or checkbox popup that scrolls is wide enough for its whole hint and its scroll position at the widest,
   as a menu already was: with 18 options at 80×24 its frame was 42 cells and dropped `Esc:cancel` (demou's DM3)
-- On a finder list filtered to nothing, the hint keeps the finder's own word (`Enter:apply` on a checkbox popup), not
-  `Enter:choose`, which could be wider than the frame and drop `Esc:cancel`
 
 ## v0.1.12 — tdp v0.6.15
 

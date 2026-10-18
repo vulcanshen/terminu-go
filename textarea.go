@@ -111,13 +111,17 @@ type vrow struct{ line, start, end int }
 func (tv *textareaView) rows(w int) []vrow {
 	var out []vrow
 	for li, l := range tv.lines {
-		start, used := 0, 0
+		// It folds at a space, as components' wrapping says.
+		cells, space := make([]int, len(l)), make([]bool, len(l))
 		for i, c := range l {
-			cw := tv.cellW(c)
-			if used+cw > w && i > start {
-				out = append(out, vrow{li, start, i})
-				start, used = i, 0
-			}
+			cells[i], space[i] = tv.cellW(c), c == " " || c == "\t"
+		}
+		starts := foldAt(cells, space, w)
+		for k, s := range starts[1:] {
+			out = append(out, vrow{li, starts[k], s})
+		}
+		start, used := starts[len(starts)-1], 0
+		for _, cw := range cells[start:] {
 			used += cw
 		}
 		// The cursor at the end of a full row goes on a row of its own.
@@ -259,6 +263,11 @@ func (tv *textareaView) vertical(dir int) {
 	for tv.col < r.end && used+tv.cellW(tv.lines[r.line][tv.col]) <= x {
 		used += tv.cellW(tv.lines[r.line][tv.col])
 		tv.col++
+	}
+	// A row the line goes on from is shorter where it folded: its end is the
+	// next row's first character, so the cursor stops on its last one.
+	if tv.col == r.end && r.end > r.start && next+1 < len(rows) && rows[next+1].line == r.line {
+		tv.col--
 	}
 	if !tv.writing {
 		tv.clampMove()

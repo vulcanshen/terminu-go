@@ -1872,12 +1872,17 @@ func TestColorPickerKeys(t *testing.T) {
 	if h := covFHint(ta); !strings.Contains(h, " Enter:edit Tab:actions Esc:cancel ") {
 		t.Errorf("hint on R: %s", h)
 	}
-	for i, k := range []string{"l", "l", "l", "l", "k", "j", "h"} {
+	// hjkl stay among R, G and B, round at the ends; only Tab reaches Choose.
+	for i, k := range []string{"l", "l", "l", "l", "k", "j", "h", "h"} {
 		ta.press(k)
-		want := []int{1, 2, 3, 0, 3, 0, 3}[i]
+		want := []int{1, 2, 0, 1, 0, 1, 0, 2}[i]
 		if cv.focus != want {
-			t.Errorf("%s: focus %d, want %d (R G B Choose, wrapping)", k, cv.focus, want)
+			t.Errorf("%s: focus %d, want %d (R G B, wrapping)", k, cv.focus, want)
 		}
+	}
+	ta.press("Tab", "h", "l", "j", "k")
+	if cv.focus != colorChoose {
+		t.Errorf("hjkl moved off Choose: focus %d", cv.focus)
 	}
 	lines, _ = covFDraw(ta)
 	if !strings.Contains(lines[8], On(layer).Render(" Choose ")) || !strings.Contains(covFHint(ta), " Enter:choose Tab:fields Esc:cancel ") {
@@ -1889,7 +1894,7 @@ func TestColorPickerKeys(t *testing.T) {
 	}
 	ta.PickColor(in)
 	ta.settle()
-	ta.press("h", "Enter")
+	ta.press("Tab", "Enter")
 	if got.Set || ta.top() != nil {
 		t.Error("Choose with nothing changed wrote the colour")
 	}
@@ -1904,20 +1909,16 @@ func TestColorPickerTab(t *testing.T) {
 	cv := ta.topView().(*colorView)
 	for i, k := range []string{"Tab", "Tab", "l", "Tab", "Shift-Tab", "Shift-Tab", "l", "l", "Tab", "Tab"} {
 		ta.press(k)
-		want := []int{3, 0, 1, 3, 1, 3, 0, 1, 3, 1}[i]
+		want := []int{3, 0, 1, 3, 1, 3, 3, 3, 1, 3}[i]
 		if cv.focus != want {
 			t.Errorf("%d %s: focus %d, want %d", i, k, cv.focus, want)
 		}
 	}
-	// h|l still go one by one and wrap through Choose; Tab from there goes
-	// back to the channel left, B.
-	ta.press("l", "l")
-	if cv.focus != colorChoose {
-		t.Fatalf("l to Choose: focus %d", cv.focus)
-	}
-	ta.press("Tab")
-	if cv.focus != 2 {
-		t.Errorf("Tab from Choose reached by l: focus %d, want B", cv.focus)
+	// Tab from Choose goes back to the channel left, G; from B, l goes round
+	// to R, not on to Choose (Rules K12).
+	ta.press("Tab", "l", "l")
+	if cv.focus != 0 {
+		t.Errorf("l from B: focus %d, want R", cv.focus)
 	}
 	if ta.top() == nil || len(ta.stack) != 1 {
 		t.Error("Tab left the color picker")

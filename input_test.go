@@ -725,8 +725,28 @@ func TestTextareaWrapAndNumbers(t *testing.T) {
 	ta.Textarea(Textarea{Title: "Comment", Old: strings.Repeat("word ", 12) + "\nshort"})
 	ta.settle()
 	text := ta.screenText()
-	if !strings.Contains(text, "┃  1 word") || !strings.Contains(text, "┃  2 short") || !strings.Contains(text, "┃    ord word") {
+	if !strings.Contains(text, "┃  1 word") || !strings.Contains(text, "┃  2 short") || !strings.Contains(text, "┃    word word") {
 		t.Errorf("wrapped rows have no number, each line's first does:\n%s", text)
+	}
+	// It folds at a space: a word goes to the next row whole (components,
+	// wrapping).
+	if strings.Contains(text, "┃    ord") {
+		t.Errorf("a word was cut in half:\n%s", text)
+	}
+}
+
+// TestTextareaUpToShorterRow: a row that folded at a space is shorter than
+// the one under it; moving up from far right stops on its last character,
+// not on the first of the row it was on.
+func TestTextareaUpToShorterRow(t *testing.T) {
+	ta := newTestApp(t)
+	ta.resize(40, 20)
+	ta.Textarea(Textarea{Title: "Comment", Old: "ab " + strings.Repeat("c", 29) + "\nnext"})
+	ta.settle()
+	tv := ta.topView().(*textareaView)
+	ta.press("Esc", "gg", "j", "$", "k")
+	if tv.line != 0 || tv.col != 2 {
+		t.Errorf("k from the end of the second row: col %d, want 2\n%s", tv.col, ta.screenText())
 	}
 }
 
@@ -827,7 +847,7 @@ func TestColorPickerEnterChannel(t *testing.T) {
 	if cv.focus != 0 {
 		t.Errorf("the focus stays on R, not %d", cv.focus)
 	}
-	ta.press("h") // R wraps back to Choose (new takes no focus)
+	ta.press("Tab") // only Tab reaches Choose (new takes no focus)
 	if cv.focus != colorChoose {
 		t.Fatalf("focus %d, want Choose", cv.focus)
 	}

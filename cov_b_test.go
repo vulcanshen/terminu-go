@@ -665,7 +665,7 @@ func TestM7PanelEntriesRespond(t *testing.T) {
 func TestM8GroupedMenuOrder(t *testing.T) {
 	ta := newTestApp(t)
 	ta.Menu("Open with",
-		MenuSection{Actions: []Action{{Label: "Default app", Desc: "for .yaml files"}}},
+		MenuSection{Title: "default", Actions: []Action{{Label: "Default app", Desc: "for .yaml files"}}},
 		MenuSection{Title: "editors", Actions: []Action{{Label: "vim", Desc: "in a terminal"}, {Label: "code", Desc: "an editor"}}},
 		MenuSection{Title: "viewers", Actions: []Action{{Label: "less", Desc: "page through it"}}})
 	ta.settle()
@@ -673,8 +673,9 @@ func TestM8GroupedMenuOrder(t *testing.T) {
 	if m.rows[m.cursor].label != "Default app" {
 		t.Errorf("the cursor starts in the first group: %q", m.rows[m.cursor].label)
 	}
+	// Every group has its title, the first too.
 	text := ta.screenText()
-	order := []string{"Default app", "╌", glyphHexagon + " EDITORS", "vim", "code", glyphHexagon + " VIEWERS", "less"}
+	order := []string{glyphHexagon + " DEFAULT", "Default app", "╌", glyphHexagon + " EDITORS", "vim", "code", glyphHexagon + " VIEWERS", "less"}
 	at := -1
 	for _, s := range order {
 		i := strings.Index(text, s)

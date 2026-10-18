@@ -328,15 +328,17 @@ func (l *List) Draw(w, h int, focused bool) []string {
 		return append(out, rest...)
 	}
 	arrow := Width(glyphHard)
-	indent := ""
-	if l.groups {
-		indent = "  " // items two cells further in than their group's title (layout/panel, groups)
-	}
-	textW := w - 1 - arrow - len(indent) // one cell of padding on the left, the arrow's on the right (layout/panel)
 	markW := 0
 	if l.Marks || l.Draggable {
 		markW = IconWidth() + 1
 	}
+	indent := ""
+	if l.groups && markW == 0 {
+		// Items two cells further in than their group's title; a mark column
+		// goes in those two cells (layout/panel, groups).
+		indent = "  "
+	}
+	textW := w - 1 - arrow - len(indent) // one cell of padding on the left, the arrow's on the right (layout/panel)
 	widths := l.widths(textW - markW)
 	if len(l.Columns) > 0 {
 		// The header goes in with the items, so the columns line up.

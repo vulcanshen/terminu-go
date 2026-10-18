@@ -156,18 +156,20 @@ func (v *Viewer) numWidth() int {
 func (v *Viewer) textWidth(inner int) int { return max(inner-3-v.numWidth(), 1) }
 
 // wrap is where line i's rows start, in cells: a line too long for a row
-// folds onto the rows under it, a character never cut in half.
+// folds onto the rows under it at a space, as components' wrapping says.
 func (v *Viewer) wrap(i int) []int {
-	starts := []int{0}
-	used, cell := 0, 0
-	for _, c := range v.plain[i] {
-		cw := Width(drawn(c, v.tabW))
-		if used+cw > v.textW && used > 0 {
-			starts = append(starts, cell)
-			used = 0
+	line := v.plain[i]
+	cells, space := make([]int, len(line)), make([]bool, len(line))
+	for k, c := range line {
+		cells[k], space[k] = Width(drawn(c, v.tabW)), c == " " || c == "\t"
+	}
+	starts := foldAt(cells, space, v.textW)
+	cell, k := 0, 0
+	for r, s := range starts {
+		for ; k < s; k++ {
+			cell += cells[k]
 		}
-		used += cw
-		cell += cw
+		starts[r] = cell
 	}
 	return starts
 }

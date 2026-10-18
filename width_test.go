@@ -100,6 +100,70 @@ func TestWrap(t *testing.T) {
 			t.Errorf("long word line %q wider than 5", l)
 		}
 	}
+	// Components, wrapping: a wide character breaks on either side, a line
+	// fills up first; a word is cut only when longer than a line; a wide
+	// character is never cut in half.
+	for _, c := range []struct {
+		s    string
+		w    int
+		want string
+	}{
+		{"\U00009019\U0000662F\U00004E00\U00006BB5\U00004E2D\U00006587\U00007684\U000053E5\U00005B50", 7,
+			"\U00009019\U0000662F\U00004E00|\U00006BB5\U00004E2D\U00006587|\U00007684\U000053E5\U00005B50"},
+		{"see \U00004E2D\U00006587\U00005B57 ok", 8, "see \U00004E2D\U00006587|\U00005B57 ok"},
+		{"abc\U00004E2D", 4, "abc|\U00004E2D"},
+		{"ab\U00004E2D\U00006587", 3, "ab|\U00004E2D|\U00006587"},
+		{"ab abcdefghij", 5, "ab|abcde|fghij"},
+	} {
+		if got := strings.Join(Wrap(c.s, c.w), "|"); got != c.want {
+			t.Errorf("Wrap(%q, %d) = %q, want %q", c.s, c.w, got, c.want)
+		}
+	}
+}
+
+// TestFoldAt: the textarea and the viewer keep every character when a line
+// folds; it breaks after a space or on either side of a wide character, and
+// inside a word only when the word is longer than a row (components,
+// wrapping).
+func TestFoldAt(t *testing.T) {
+	withWidths(t, 1, 1)
+	fold := func(s string, w int) string {
+		var chars []string
+		for _, r := range s {
+			chars = append(chars, string(r))
+		}
+		cells, space := make([]int, len(chars)), make([]bool, len(chars))
+		for i, c := range chars {
+			cells[i], space[i] = Width(c), c == " " || c == "\t"
+			if c == "\t" {
+				cells[i] = 4
+			}
+		}
+		starts := append(foldAt(cells, space, w), len(chars))
+		var rows []string
+		for k := range starts[:len(starts)-1] {
+			rows = append(rows, strings.Join(chars[starts[k]:starts[k+1]], ""))
+		}
+		return strings.Join(rows, "|")
+	}
+	for _, c := range []struct {
+		s    string
+		w    int
+		want string
+	}{
+		{"hello world", 8, "hello |world"},
+		{"hello world", 11, "hello world"},
+		{"\U00004E2D\U00006587\U00005B57", 5, "\U00004E2D\U00006587|\U00005B57"},
+		{"see \U00004E2D\U00006587", 6, "see \U00004E2D|\U00006587"},
+		{"ab abcdefgh", 4, "ab |abcd|efgh"},
+		{"ab\tcd", 6, "ab\t|cd"},
+		// TODO(tdp G94): the space that does not fit starts the next row.
+		{"hello world", 5, "hello| |world"},
+	} {
+		if got := fold(c.s, c.w); got != c.want {
+			t.Errorf("fold(%q, %d) = %q, want %q", c.s, c.w, got, c.want)
+		}
+	}
 }
 
 func TestE2EnvNames(t *testing.T) {

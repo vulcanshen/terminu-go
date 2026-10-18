@@ -346,20 +346,56 @@ func TestPopupWidthCountsScroll(t *testing.T) {
 		"Enter:apply Space:toggle Tab|/:filter Esc:cancel", "18 of 18")
 }
 
-// TestFinderHintNoResults: on a list a filter left empty, the hint keeps the
-// finder's word, so it fits the width taken when the popup opened
-// (components/layout/popup: the hint is always whole).
+// TestFinderHintNoResults: with no results Enter does nothing on either row
+// and the hint leaves it out, back once there are results; a checkbox
+// popup's list still applies its checks and leaves out only Space; the hint
+// is whole (components/input/finder, components/input/checkbox; G93).
 func TestFinderHintNoResults(t *testing.T) {
 	ta := newTestApp(t)
 	ta.resize(120, 30)
-	ta.Checks(Checks{Title: "Pick", Options: []string{"alpha", "beta"}})
+	bottom := func() string { return covDTop(ta)[ta.top().h-1] }
+	has := func(what, hint string) {
+		t.Helper()
+		if b := bottom(); !strings.Contains(b, "━ "+hint+" ━") {
+			t.Errorf("%s: want %q: %q", what, hint, b)
+		}
+	}
+	var got []bool
+	ta.Checks(Checks{Title: "Pick", Options: []string{"alpha", "beta"}, Done: func(c []bool) tea.Cmd { got = c; return nil }})
+	ta.settle()
+	ta.press("Space", "Tab", "z", "z")
+	has("checks, typing", "Tab:list Esc:cancel")
+	ta.press("Enter")
+	if !ta.topView().(*finderView).typing() {
+		t.Error("Enter on the typing row with no results went to the list")
+	}
+	ta.press("Tab")
+	has("checks, list", "Enter:apply Tab|/:filter Esc:cancel")
+	ta.press("Space", "Enter")
+	if fmt.Sprint(got) != "[true false]" || ta.top() != nil {
+		t.Errorf("Enter on an empty list applies the checks: %v", got)
+	}
+
+	ta.Select(Select{Title: "Pick", Options: []string{"alpha", "beta"}})
 	ta.settle()
 	ta.press("Tab", "z", "z", "Tab")
-	l := ta.top()
-	bottom := covDTop(ta)[l.h-1]
-	if hint := "Enter:apply Space:toggle Tab|/:filter Esc:cancel"; !strings.Contains(bottom, " "+hint+" ") {
-		t.Errorf("the hint is not whole: %q", bottom)
+	has("select, list", "Tab|/:filter Esc:cancel")
+	ta.press("Enter")
+	if ta.top() == nil {
+		t.Error("Enter on an empty select list closed it")
 	}
+	ta.press("Tab", "Backspace", "Backspace", "Tab")
+	has("select, results back", "Enter:choose Tab|/:filter Esc:cancel")
+	ta.press("Esc")
+
+	// Listed as found: no results while nothing has come yet.
+	f := &Finder{Title: "Go", Loading: true}
+	ta.Find(f)
+	ta.settle()
+	has("finder, nothing yet", "Tab:list Esc:cancel")
+	f.Items = []FinderItem{{Text: "alpha"}}
+	ta.settle()
+	has("finder, a result", "Enter|Tab:list Esc:cancel")
 }
 
 func TestPopupFrameTextSpacing(t *testing.T) {

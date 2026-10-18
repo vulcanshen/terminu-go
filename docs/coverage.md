@@ -1,13 +1,13 @@
-# tdp v0.7.0 coverage
+# tdp v0.7.1 coverage
 
-tdp v0.7.0 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
+tdp v0.7.1 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
 （[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
 - 出處寫法：`K4` 是 `principle/rules-zh_TW.md` 的規則；`P3` 是 `principle/README-zh_TW.md`；`popup §外框` 是
   `components/layout/popup-zh_TW.md` 的那一節，其他元件照檔名（`form`、`finder`…）；`components §大寫` 是 `components/README-zh_TW.md`。
 - `G<n>` 是規範盲點紀錄裡還沒定案的編號（`~/Documents/sideproj/terminu/.local/family-fix/terminu-go/README.md`），定案前照紀錄的
-  「暫時」做。G1–G22 已經補進 tdp v0.4.0、G23–G29 補進 v0.5.1、G30–G46 補進 v0.5.2（G43 不改規範）、G47 補進 v0.5.3、G48–G66 補進 v0.5.4、G67–G77 補進 v0.5.5、G78–G82 補進 v0.5.6、G83 補進 v0.5.7、G84 補進 v0.5.8、G85 補進 v0.5.9、G86 補進 v0.6.1，這裡直接寫規範的條文。G87（有表頭的清單分組時表頭縮不縮）已定、不改規範：分組只用在單欄、沒有表頭的清單。v0.6.0 只刪了 S5 講畫 mark 的工具的一句，這份清單不受影響。
+  「暫時」做。G1–G22 已經補進 tdp v0.4.0、G23–G29 補進 v0.5.1、G30–G46 補進 v0.5.2（G43 不改規範）、G47 補進 v0.5.3、G48–G66 補進 v0.5.4、G67–G77 補進 v0.5.5、G78–G82 補進 v0.5.6、G83 補進 v0.5.7、G84 補進 v0.5.8、G85 補進 v0.5.9、G86 補進 v0.6.1，這裡直接寫規範的條文。G87（有表頭的清單分組時表頭縮不縮）已定、不改規範：分組只用在單欄、沒有表頭的清單。v0.6.0 只刪了 S5 講畫 mark 的工具的一句，這份清單不受影響。G93 補進 v0.7.1。
 - 「lib」表示由 lib 的登記或 API 保證，不需要展示場的某一個畫面；測試照樣要有。
 
 ## 展示場
@@ -128,7 +128,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | M6 | key reference 照同一套（停用的鍵照列、停用色）；hint 與 footer 只列現在按得了的也可以（app 決定） | `Disable` 之後按 `?`；hint：P `[1] PODS` 的 `m:mark` 變停用色，I `[2] FILES`（`HintPressableOnly`）的 `V:view` 不列 | `TestM6KeyReferenceDisabled`、`TestM6HintListsDisabled` |
 | M6 | key reference 裡講別的 surface 的段落照常顯示，排在最後（`app-wide` 之後） | T `[1] SHELL` 的 `?` 最後一段 `TERMINAL` | `TestM6OtherSurfaceSection` |
 | M7 | focus 在 panel 上時 `Space`、`?` 一定有反應；popup 上一定有反應的是 `?` | P `[2] LOG`（沒有 item）按 `Space` | `TestM7PanelEntriesRespond` |
-| M8 | 其他 menu 要分組時第一組是 cursor 相關、之後每組加標題 | D「Menu: Open with」 | `TestM8GroupedMenuOrder` |
+| M8 | 其他 menu 要分組時第一組是 cursor 相關；每一組都加標題，第一組也是（lib：`MenuSection.Title`） | D「Menu: Open with」 | `TestM8GroupedMenuOrder` |
 | M9 | 同鍵兩處指示同時看得到時，會觸發的亮、不會的暗 | P：`[1] PODS`、`[2] LOG`、`[3] SETTINGS` 的下框 hint 都有 `Enter` | `TestM9ActiveHintBright` |
 
 ## Rules — L 版面
@@ -188,7 +188,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | S3 | 任意鍵只關掉 splash（含 `q`、`Ctrl-C`、`Esc`、`Space`、`?`） | splash 上按 `Ctrl-C` | `TestS3AnyKeyClosesOnly` |
 | S4 | 啟動不播；popup 開著、輸入態、PTY 裡按 `V` 不叫出 | 開著 popup、在 filter 打字、在 Shell 裡按 `V` | `TestS4SplashOnlyOnPanel` |
 | S5 | 畫 icon 一格對一格：25 × 19 格加上下各一列底共 21 列，一格一個 `nf-fa-square` 佔兩欄（icon 佔一格時補空白），底 Surface0、U 框 `#205090`、字 `#f2b753`；下面空一列接六列字（名稱 Blue 粗體、版本 Blue、介紹 Text、`developed by` Overlay0、信箱金色、`Press any key to close` Overlay0），在 mark 的寬度裡置中、每列不超過 50 欄（超過時建立 splash 回錯誤）；整塊上下左右置中；E8：展示場畫 tdp 的 `principle/icon.svg`（複本在 `examples/showcase/icon.svg`） | P `[1] PODS` 按 `V` | `TestS5SplashMatchesIcon`、`TestS5SplashRefusesBadIcon`、`TestS5SplashRefusesWideText` |
-| S5 | 放不下整塊（不到 50 欄或 30 列）時不畫 mark、只畫字，置中、照樣分兩批；太窄照字詞折行；一個字比終端機寬就照格子切開、每段置中；還是太矮從下面往上截（提示 → 作者兩列 → 介紹，連同上面的空白列），名稱與版本一定出現 | 把視窗縮到 49 欄或 29 列以下按 `V` | `TestS5SplashTooSmall` |
+| S5 | 放不下整塊（不到 50 欄或 30 列）時不畫 mark、只畫字，置中、照樣分兩批；太窄照 components 的「折行」；一個字比終端機寬就照格子切開、每段置中；還是太矮從下面往上截（提示 → 作者兩列 → 介紹，連同上面的空白列），名稱與版本一定出現 | 把視窗縮到 49 欄或 29 列以下按 `V` | `TestS5SplashTooSmall` |
 | S5 | 揭露動畫：tick 10ms、段間停 250ms；底一個 tick 一列由上往下 → 金色的字照 svg 裡註解的順序一個字一段（一個註解開始一個字，第一個是 `<!-- U -->`）、一個 tick 2 格打散 → U 框由下往上一列一列、同一列從中間往兩端，一個 tick 一對（中線那格自己一個 tick） → mark 畫完 400ms 後名稱、版本、介紹，再 500ms 後作者兩列與提示 | 同上 | `TestS5SplashReveal` |
 
 ## Rules — E App 與環境（分工照 E8）
@@ -223,12 +223,13 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | color §淡化 | `dim(c) = c × 0.45 + base × 0.55`，每個通道四捨五入，前景背景都算；256 色的 16–255 照標準值；0–15 用終端機的調色盤（啟動時 OSC 4 問，問不到用 xterm 的值） | F8、T2 的畫面；在 tmux 裡改調色盤看 | `TestDimFormula`、`TestDimPaletteFromOSC4`、`TestDimPaletteFallbackXterm` |
 | color §淡化 | 絕不變亮（每通道取小）；一律輸出 24-bit；沒指定前景給 `dim(Text)`；bold、reverse、游標移動、文字不動 | 同上 | `TestDimNeverBrighter`、`TestDimTruecolorOut`、`TestDimDefaultFg` |
 
-## components §圖與間距、§大寫
+## components §圖與間距、§折行、§大寫
 
 | 出處 | 規定 | 展示場 | 測試 |
 |---|---|---|---|
 | §圖與間距 | 圖的結構是規定（框、glyph 位置、間距、對齊、標的顏色）；「縮 N 格」是離框 N 格 | 每個畫面對照規範的圖 | 各元件的版面測試 |
 | §圖與間距 | 欄與欄之間兩格；glyph 與它後面的字之間一格 | 表頭、表單、menu、radio、checkbox、file-picker | `TestTwoCellColumnGap`、`TestGlyphOneCellGap` |
+| §折行 | textarea、viewer、confirm、toast、error popup、splash 太窄時都照同一套：在空白處斷，下一個字放不下就整個接到下一列；寬字每個字之間都可以斷，一列填滿再換列；一個字比一列還長才照格子切；寬字不切成兩半。lib：textarea 與 viewer 保留每個字元，放不下的空白接到下一列開頭（G94，暫時） | I 的 `Comment`；D「Note viewer」把視窗縮窄、「Confirm: long」、「Error popup: long」；P 的 `Toast long`；把視窗縮窄按 `V` | `TestWrap`、`TestFoldAt`、`TestTextareaWrapAndNumbers`、`TestViewerFoldsAtSpaces`、`TestTextareaUpToShorterRow` |
 | §大寫 | 要大寫：panel 膠囊與 tab、畫面 chip、popup 標題、表頭、清單的分組標題、一列一個值的 label、menu 與 key reference 的區塊標題；熱鍵標記裡的字母照原樣；名稱、路徑在標題與 hint 裡都照原樣（表單按鈕的 hint 只有動詞小寫：`Enter:export hosts.yaml`） | 每個畫面；畫面 chip `[t]ERMINAL`（小寫的熱鍵照原樣）；T terminal popup 的標題 `SESSION: shell`；D「Form: long」的 `EDIT: prod-db-01`；D「Form: with actions」的 `Export hosts.yaml` | `TestUppercaseWhereRequired`、`TestUppercaseKeepsHotkeyAndNames`、`TestPopupTitleSubject`、`TestFormButtonSubject` |
 | §大寫 | 不改：值、menu 的 label 與說明、hint 與 footer 的說明、按鍵名、模式名、app 的內容 | 同上 | `TestUppercaseLeavesContent` |
 
@@ -266,6 +267,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | panel §一般清單 | 截斷從尾端加 `…`；路徑、檔名可以從前面截 | P `[1] PODS` 的長名字；I `[2] FILES` 的路徑 | `TestListTruncate` |
 | panel §一般清單 | 空的照空狀態 | `Empty` | `TestEmptyState` |
 | panel §分組 | 分組標題 Blue、大寫、不加粗、沒有 glyph、離框一格；項目多縮兩格；組與組之間不空列、不畫分隔線；失焦跟著淡化 | K `[1] KINDS` | `TestPanelListGroups`、`TestPanelDetailsFollowCursor`（失焦） |
+| panel §分組 | 有標記欄時，標記畫在多縮的那兩格裡：標記離框一格、空一格，字離框三格；分組標題那一列不留標記欄 | 展示場的分組清單沒有標記（看得到的是 P `[1] PODS` 的一般清單） | `TestPanelListGroupsMarks` |
 | panel §分組 | cursor 跳過分組標題：`j\|k` 越過它、`gg\|G` 到第一個與最後一個項目、`N of M` 只算項目；捲到一組的第一個項目時，這組的標題也留在畫面裡 | K `[1] KINDS`（把終端機拉矮再捲） | `TestPanelListGroupsCursor` |
 | panel §分組 | 沒有項目的組不畫標題（panel filter 篩掉的組、app 給的空組） | K `[1] KINDS` 按 `/` 打 `sec` | `TestPanelListGroupsFilter` |
 | panel §loading 與錯誤 | loading：icon 在整串膠囊後、用框線色（focus Blue、失焦 Surface2）；沒內容時中間寫一句（`󰪞 loading pods…`）；重新載入舊內容留著 | `Loading`（空的時候與有內容時各一次） | `TestPanelLoading`、`TestPanelLoadingIconAfterChain`（顏色） |
@@ -275,7 +277,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | panel §明細 | 另一個 panel 的 cursor 一移動，明細立刻換成那一筆，label 寫那一筆的名字時一起換；不用 `Enter`，cursor 移動時 focus 不動；app 也可以讓清單上的 `Enter` 把 focus 送到明細（K3） | K `[1] KINDS` 上 `j\|k`，看 `[2]`；`Enter` 進 `[2]` | `TestPanelDetailsFollowCursor`、`TestValuesOnMove` |
 | panel §一列一個值 | focus 色塊 Subtext1 底 Base 粗體、最右邊一格是箭頭，從項目開頭到 panel 內右緣；label 大寫，一般 Blue、停用 Surface2、出錯 Red；label 欄寬取最長的 label、與值之間兩格 | `[3] SETTINGS` 的 `Disable`（`Remote` 停用）、`Fail`（`Timeout` 的 label 變 Red） | `TestValuePanelFocusBlock`、`TestValuePanelLabels` |
 | panel §一列一個值 | 表頭（`PROPERTY  VALUE`）Overlay0，不用 label 的 Blue；panel 失焦時跟著淡化（T2）；一般清單的表頭照舊 Blue | P `[3] SETTINGS` 的 `PROPERTY  VALUE`；I `[1] INPUTS` 的 `INPUT  VALUE` | `TestValuePanelHeader` |
-| panel §panel filter | `/` 在最上面出現打字列、即時篩選、不開 popup；最前面 U+F105 跟清單的字對齊（離框一格）、空一格才接打的字，打字時框線色（Blue）、在清單時 Overlay0；右邊 `符合/總數`，Overlay0；打字列按鍵與比對同 finder；篩選後保持 panel 的排序 | P `[1] PODS` 按 `/` | `TestPanelFilter` |
+| panel §panel filter | `/` 在最上面出現打字列（清單有表頭時在表頭上面）、即時篩選、不開 popup；最前面 U+F105 離框一格（跟 finder 的打字列一樣）、空一格才接打的字，打字時框線色（Blue）、在清單時 Overlay0；右邊 `符合/總數`，Overlay0；打字列按鍵與比對同 finder；篩選後保持 panel 的排序 | P `[1] PODS` 按 `/` | `TestPanelFilter` |
 | panel §panel filter | 清單上 `Tab` 下一個 panel；清單上 `Esc` 清掉篩選；選了之後清單留著篩選、打字列變灰；清單上 `/` 回打字列接著打 | 同上 | `TestPanelFilterListKeys` |
 | panel §panel filter | focus 離開篩選留著；回來時直接在打字列上（`Tab` 經過停兩下） | 同上 + `Tab` 繞一圈 | `TestPanelFilterFocusReturn` |
 
@@ -292,7 +294,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | popup §外框 | 內容上下各留一列、左右離框一格（terminal 上下左右都不留） | D「Menu: long」 | `TestPopupMargins` |
 | popup §外框 | 清單的 cursor 從框貼到框、字照樣離框一格；表單的 focus 色塊從值到框；右邊的留白是 U+E0B0、色塊的顏色，跟箭頭一樣寬；只有整列的 cursor 有箭頭 | Space menu；D「Form: New host」 | `TestPopupCursorCoversPadding`、`TestCursorArrow` |
 | popup §外框 | 分隔線不接框：橫的左右各留一格、直的不畫進上下留白；Overlay0 | Space menu（區塊之間）；D「Menu: Open with」；I 的 `Meeting` | `TestPopupSeparator` |
-| popup §寬度 | 兩種寬度（見 F7）；「確定」= 打開那一刻就知道最寬（PIN 一開就 43 格：hint 37 + 6）；要捲的也放得下捲動位置（hint + 捲動位置最寬時 + 9，`20 of 20`、`T-T of T`），捲的時候框不變寬窄；select、checkbox popup 也是（demou 的 DM3）；篩到沒有結果、focus 在清單時，hint 照樣是打開時那個動詞 | I 的 `PIN`；D「Menu: long」、「Confirm: long」在矮的 terminal | `TestF7WidthKnown`、`TestPopupWidthCountsScroll`、`TestFinderHintNoResults` |
+| popup §寬度 | 兩種寬度（見 F7）；「確定」= 打開那一刻就知道最寬（PIN 一開就 43 格：hint 37 + 6）；要捲的也放得下捲動位置（hint + 捲動位置最寬時 + 9，`20 of 20`、`T-T of T`），捲的時候框不變寬窄；select、checkbox popup 也是（demou 的 DM3）；篩到沒有結果時 hint 變短，寬度照樣是打開時的 | I 的 `PIN`；D「Menu: long」、「Confirm: long」在矮的 terminal | `TestF7WidthKnown`、`TestPopupWidthCountsScroll`、`TestFinderHintNoResults` |
 | popup §寬度 | 窄的內容靠左離框一格；toast 文字與 password 解鎖遮罩置中 | D「Confirm」、「Toast」；I 的 `PIN` | `TestPopupNarrowContentAlign` |
 | popup §開關動畫 | 拉線 4 格（正中間那一列的層色 `━` 從中間往左右拉到 popup 寬）→ 停 1 格 → 展開 4 格（從中間往上下露出）；收起倒著播；每格 32ms | 每種 popup，含 toast 與 terminal | `TestF2AnimationFrames` |
 | popup §開關動畫 | 打開的第一格起底下就淡化；開始收起時底下立刻亮回來；打開的動畫播完前與收起時不收鍵 | 同上 | `TestF2DimFromFirstFrame`、`TestF2NoKeysWhileOpening` |
@@ -419,7 +421,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | password §按鍵 | 貼上照 README（照遮）；`Backspace` 一次清全部（打的 → 回到灰點；空的 → 清掉舊密碼、`Enter` 存成沒有）；hint 加 `Backspace:clear`；只接在尾端，`←→` `Home` `End` `Delete` 沒作用 | 同上 | `TestPasswordBackspaceClears`、`TestPasswordAppendOnly` |
 | password §值 | 不去空白字元；表單與 panel 上設了是 8 個 `•`（Text）、沒設照空值 | I `[1] INPUTS` 的兩列 | `TestPasswordDisplay` |
 | number | 說明列寫範圍；範圍已知寬度確定；打字只收可能的字（負數 `-`、小數 `.`）、貼上只留會收的；不做 `↑↓` 加減；範圍在 `Enter` 檢查 | I 的 `Port`（1-65535）、`Ratio`（小數、可負） | `TestNumberFilter`、`TestNumberRange` |
-| textarea §長相 | 太長自動折行、不左右捲；行號每行第一列、靠右、寬度 max(2, 最大行號位數)、後空一格、折下來的空白；行號 Overlay0、游標那行 Text；寬度與高度都用上限、內容在框裡捲，放不下時捲動位置寫游標的行 `N of M`；值裡的 `\t` 畫成 `input_tab_width` 格 | I 的 `Comment` | `TestTextareaWrapAndNumbers`、`TestTextareaGutterTwoDigits` |
+| textarea §長相 | 太長自動折行（在空白處斷，見 components §折行）、不左右捲；行號每行第一列、靠右、寬度 max(2, 最大行號位數)、後空一格、折下來的空白；行號 Overlay0、游標那行 Text；寬度與高度都用上限、內容在框裡捲，放不下時捲動位置寫游標的行 `N of M`；值裡的 `\t` 畫成 `input_tab_width` 格 | I 的 `Comment` | `TestTextareaWrapAndNumbers`、`TestTextareaGutterTwoDigits` |
 | textarea §按鍵 | 寫（輸入態、`Enter` 換行、`Tab` 插 `input_tab_width` 個空白（設定、預設 4）、hint `Esc:move`、游標 Lavender 一格）／移（游標層色一格；`Esc` 進來、`i` `a` `o` 回寫、`Enter` 確定、hint `Enter:save i:write Esc:cancel`）；移裡 `Esc` 關（改過先 confirm）；打開在「寫」、舊值帶入、游標在最後、沒有灰字提議 | 同上（有舊值） | `TestTextarea` |
 | textarea §按鍵 | 寫的編輯鍵加 `↑↓`（照畫出的列）、`←→` 跨行、行首 `Backspace` 合併、`Home\|End` 到整篇的頭尾；移的鍵 `hjkl` `w\|b\|e` `0\|$` `u\|d` `gg\|G`；移不是模式也不是輸入態（`?` 開 key reference） | 同上 | `TestTextareaWriteKeys`、`TestTextareaMoveKeys`、`TestTextareaHomeEnd` |
 | textarea §按鍵 | 貼上的換行（`\n`、`\r\n`、單獨的 `\r`）是真的換行；其他控制字元留在值裡畫紅字、`Backspace` 整個刪；有控制字元時「移」裡的 `Enter` 擋下，錯誤列點名值（`Notes can't have control characters`），換行與 `\t` 不算 | I 的 `Comment` 貼上帶顏色的字 | `TestTextareaPasteControlChars` |
@@ -428,13 +430,14 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | finder §長相 | 邊找邊列：標題後 loading icon、一筆都沒到寫 `(indexing…)`；高度打開時定、寬度用上限 | I `[2] FILES` 的 `[S]low index` | `TestFinderStreaming` |
 | finder §清單的標記 | select 前面 radio glyph、checkbox popup 前面 checkbox glyph；目前的值字 Green；cursor 在目前的值上照 cursor | I 的 `Profile`、`Namespaces` | `TestFinderMarkers` |
 | finder §狀態 | 只有 focus 那塊亮：focus 在打字列時清單 cursor 是層色 cursor 再淡化；focus 在清單時打字列整列灰、沒游標 | I `[/] Find` 按 `Tab` 來回 | `TestFinderFocusBrightness` |
-| finder §按鍵 | 打字列：字元篩選、`↑↓` 移 cursor（繞回）、`Enter` 到 cursor 那項（沒結果不作用）、`Tab` 到清單、`Esc` 關整個（filter 是清掉）；清單：移動（繞回）、`Enter` 去那裡、`Tab\|/` 回打字列接著舊的字打、`Esc` 關整個 | 同上 | `TestFinderTypingKeys`、`TestFinderListKeys` |
+| finder §按鍵 | 打字列：字元篩選、`↑↓` 移 cursor（繞回）、`Enter` 到 cursor 那項（沒結果不作用）、`Tab` 到清單、`Esc` 關整個（filter 是清掉）；清單：移動（繞回）、`Enter` 去那裡（沒有結果不作用，checkbox popup 例外）、`Tab\|/` 回打字列接著舊的字打、`Esc` 關整個 | 同上 | `TestFinderTypingKeys`、`TestFinderListKeys` |
 | finder §比對 | 包含、不分大小寫、字要連續出現；空白分開的每個詞都要出現、順序不拘；結果保持清單本來的順序（數字照數值、文字照文字）；用在 finder、select、checkbox popup、file-picker 的一般字、panel filter | I `[/] Find` 打 `read`、`READ me`；P filter 打 `run 3d` | `TestMatchContains`、`TestMatchWords`、`TestMatchKeepsOrder` |
 | finder §hint | 打字列 `Enter\|Tab:list Esc:cancel`；清單 `Enter:<動詞> Tab\|/:filter Esc:cancel` | 同上 | `TestFinderHint` |
+| finder §hint | 沒有結果時（邊找邊列、一筆都還沒到也是）兩處的 `Enter` 都不作用，hint 拿掉 `Enter`：打字列 `Tab:list Esc:cancel`、清單 `Tab\|/:filter Esc:cancel`；有結果時放回來；select、file-picker 也一樣（G93） | I `[/] Find` 打 `zz`；I 的 `Profile`（select）篩到沒有 | `TestFinderHintNoResults` |
 | select | finder 骨架沒預覽、打字列一直顯示；radio glyph、目前的值 Green；選項可有熱鍵（app）；寬度照選項；打開 focus 在清單、cursor 在目前的值；`Enter` 選定寫回關掉（從表單開的 focus 留原欄）；hint 清單 `Enter:choose Tab\|/:filter Esc:cancel`、打字列 `Enter\|Tab:list Esc:cancel` | I 的 `Profile`（帶數字熱鍵） | `TestSelect` |
 | radio | 五個以內畫在表單或 panel；U+F043E／U+F043D；選中 Green 其他 Text；一律直排、一個選項一列；每個選項一個項目；`Enter` 選、focus 不動、馬上生效 | I 的 `Layout`、`Order` | `TestRadio` |
 | checkbox §長相 | U+F0132（勾）／U+F0131；勾的字 Green；popup 是 finder 骨架沒預覽、checkbox glyph、寬度照選項 | I 的 `Notify`（開關）、`Agent`（一組）、`Namespaces`（popup） | `TestCheckbox` |
-| checkbox §按鍵 | 表單或 panel 上 `Enter` 原地翻；popup：打開在清單、`Space` 只改畫面、`Enter` 整組寫回才生效（從表單：寫回並標改過；單獨：這時才套用；沒改就關）、`Esc` 取消不問；勾的字跟著畫面上的勾變 Green；hint `Enter:apply Space:toggle Tab\|/:filter Esc:cancel` | I 的 `Namespaces`；D「Form: New host」的 `Namespaces` | `TestCheckboxPopup` |
+| checkbox §按鍵 | 表單或 panel 上 `Enter` 原地翻；popup：打開在清單、`Space` 只改畫面、`Enter` 整組寫回才生效（從表單：寫回並標改過；單獨：這時才套用；沒改就關）、`Esc` 取消不問；勾的字跟著畫面上的勾變 Green；hint `Enter:apply Space:toggle Tab\|/:filter Esc:cancel`；篩到沒有結果時清單上的 `Enter` 照樣寫回整組（被篩掉的勾也算），hint 拿掉 `Space`：`Enter:apply Tab\|/:filter Esc:cancel`，打字列照 finder `Tab:list Esc:cancel` | I 的 `Namespaces`；D「Form: New host」的 `Namespaces` | `TestCheckboxPopup` |
 | checkbox §按鍵 | 打開時 cursor 停在 app 指定的那一項，沒指定是第一項（ccdrawu 的 CD8）。lib：`Checks.Cursor`，捲到看得見 | 展示場都從第一列開（預設） | `TestCheckboxPopupCursor` |
 | checkbox §長相、§按鍵 | 不可用的選項（not available）照樣畫在原位，整列 Surface2、勾也是；cursor 停在上面照 cursor 色塊畫；操作跟其他選項一樣（cursor 照樣停、`Space`／`Enter` 照樣翻、popup 的 `Enter` 照畫面上的勾寫回）；篩選照樣列出；代表什麼由 app 決定。不是停用：表單的停用選項照舊跳過。lib：`Checks.Unavailable`、`FormField.OptionUnavailable`、`Field.OptionUnavailable` | I 的 `Namespaces`：`kube-system`（勾著）與 `vault`，打 `vau`；I 的 `Agent` 與 D「Form: New host」的 `Agent`：`X11` | `TestCheckboxPopupUnavailable`、`TestCheckboxUnavailableInPlace` |
 | slider | 表單與 panel 上軌道 `━` + `●` + 數字（寬度與顏色 app 定）；`Enter` 開 select（bottom 到 top、每 step 一個，cursor 在目前值，打數字篩選）；沒有自己的鍵；bottom、top、step 必有，step 預設 `(top − bottom) / 10`、可以是小數 | I 的 `Brightness`（0–100）、`Opacity`（0–1，step 0.05） | `TestSlider` |
@@ -443,8 +446,8 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | datetime §按鍵 | `Tab`：月 → 年 → 日曆 → 時間 → 月，打開在日曆；月年 `h\|l` 換、日曆跟翻（沒那天停最後一天）；日曆 `h\|l` 一天 `j\|k` 一週、跨月、跳過範圍外、不繞；時間 `j\|k` 欄內（繞回，各欄自己繞）、`h\|l` 換欄；`Enter` 各塊；`t` 今天（時間到現在、往前取 5 分）；`Esc` 不改；hint 五種 | 同上 | `TestDatetimePicker`、`TestDatetimeTimeWraps`、`TestDatetimeEnter`、`TestDatetimeHint` |
 | datetime §值 | 可設最早最晚；表單與 panel 上格式 app 定，空照空值 | I `[1] INPUTS` | `TestDatePickerRange` |
 | color-picker §長相 | 一列：old、new、R、G、B，五個項目之間兩格；old／new 色塊 8×2 + 名字 + hex；R、G、B 色塊 3×1（畫該色版自己的顏色）+ hex；下面分隔線與 `Choose` 按鈕（照表單的按鈕）、沒有錯誤列；寬度確定，照最寬的 hint 是 40 格 | I 的 `Background` | `TestColorPickerLayout` |
-| color-picker §按鍵 | 可 focus：R、G、B、`Choose`（`h\|l`、`j\|k` 前後、到頭尾繞回；old、new 不拿 focus）；打開在 R；focus 的色版下面兩列（名字與 hex）照 cursor、跟色塊一樣寬；R/G/B `Enter` 開 select 00–FF（`2A (42)`、hex 十進位都能篩），回來 new 跟著變、focus 留著；`Choose` 上 `Enter` 確定；`Esc` 不改；`Tab\|Shift-Tab` 在色版與 `Choose` 之間來回、回來停在離開前的色版；hint 兩種（`Enter:edit Tab:actions Esc:cancel`、`Enter:choose Tab:fields Esc:cancel`） | 同上 | `TestColorPickerKeys`、`TestColorPickerTab`、`TestColorPickerChannelSelect` |
-| color-picker §值 | 表單與 panel 上一小格色塊 + hex；cursor 在這一欄時色塊保留自己的顏色、hex 換成 Base | I `[1] INPUTS` 的 `Background` | `TestValueDisplay`、`TestSwatchOnCursor` |
+| color-picker §按鍵 | 可 focus：R、G、B、`Choose`；hjkl 只在 R、G、B 之間（`h\|l`、`j\|k` 前後、到頭尾繞回），`Choose` 只用 `Tab` 到；old、new 不拿 focus；打開在 R；focus 的色版下面兩列（名字與 hex）照 cursor、跟色塊一樣寬；R/G/B `Enter` 開 select 00–FF（`2A (42)`、hex 十進位都能篩），回來 new 跟著變、focus 留著；`Choose` 上 `Enter` 確定；`Esc` 不改；`Tab\|Shift-Tab` 在色版與 `Choose` 之間來回、回來停在離開前的色版；hint 兩種（`Enter:edit Tab:actions Esc:cancel`、`Enter:choose Tab:fields Esc:cancel`） | 同上 | `TestColorPickerKeys`、`TestColorPickerTab`、`TestColorPickerChannelSelect` |
+| color-picker §值 | 表單與 panel 上 3 格的色塊、空一格、hex；cursor 在這一欄時色塊保留自己的顏色、hex 換成 Base | I `[1] INPUTS` 的 `Background` | `TestValueDisplay`、`TestSwatchOnCursor` |
 | file-picker §長相 | 根目錄 app 給、只是起點，最上面 `..`（`/` 沒有）；目前的目錄寫在標題（欄位名後，太長從前截）；打字列打開是空的；每列前目錄／檔案 icon（顏色 app 定）；原本的值 cursor 停在它、字 Green；`..` → 目錄 → 檔案、照名字不分大小寫，隱藏檔只在篩選字 `.` 開頭時列（`*` 不比對隱藏檔、`**` 不走進隱藏目錄）；打字列前面 U+F105；四塊：打字列、清單、預覽、metadata；預覽最多讀 64 KB：目錄與壓縮檔是三層的樹（`├─` `└─` `│` Overlay0、隱藏檔不列、滿了最後一列 `…`、`(empty)`、`(permission denied)`）、圖片第一列灰字 `data:image/png · 12.4 KB` 空一列接 data URI（超過 1 MB 只寫一句）、PDF 第一列灰字頁數空一列接前 20 頁的文字（最多 128 KB，沒有文字寫 `(no extractable text)`）、文字檔上色加行號、其他是十六進位一律一列 8 bytes 接 ASCII（33 格，並排、上下疊都一樣）、讀不到 `(unreadable)`；metadata 四列 `TYPE`（`text` `private key` `image` `PDF` `archive` `binary`、`link → <目標>`、`directory`）`SIZE`（1024 進位一位小數、目錄寫 `N items` 不算隱藏檔）`MODIFIED`（本地時間到分）`MODE`（`ls -l` 的寫法），symlink 三列寫目標的，拿不到的寫 `—`（讀不到的目錄的 `SIZE`、斷掉的 link 的三列），label 層色、值 Text；設定 `hide_secrets_in_preview`（預設關）打開時私鑰露第一行接灰字、其他只有擁有者能讀的檔一行都不露（目錄不算），metadata 照常 | I 的 `Identity file`（假的 `.ssh`，打 `/tmp/terminu-showcase/project/` 走到假的專案：`empty` 是 `(empty)`、`locked` 是 `(permission denied)`）；I `[2] FILES` 的 `[/] Find`（假的專案，每一種檔各一個：`latest.pdf` 是 link、`broken.pdf` 是斷掉的 link、`docs/scan.pdf` 沒有文字、`assets/photo-large.png` 超過 1 MB、`secret.bin` 讀不到）；global 的 `Hide secrets in preview` | `TestFilePickerLayout`、`TestFilePickerHiddenAndOrder`、`TestFilePreviewKinds`、`TestFilePreviewHidesSecrets`、`TestFileInfo`、`TestFilePickerMetaDash` |
 | file-picker §按鍵 | 清單 `Enter`：目錄進去（清篩選、cursor 在 `..` 下第一項）、檔案選中寫回關掉；選檔時目錄永遠不會被選中 | 同上 | `TestFilePicker` |
 | file-picker §選目錄 | 清單只列目錄，`.` → `..` → 目錄；最上面 `. (this directory)`、icon U+F0252；在 `.` 上 `Enter` 選目前的目錄（`Enter:choose`），在目錄上 `Enter` 走進去（`Enter:into`）；打字列有篩選字或 wildcard 時沒有 `.`、wildcard 結果只列目錄；其他照 file-picker | I 的 `Path`、`Download to`（**`Download to` 打開的是真的 `~/Downloads`**） | `TestFilePickerDirMode` |

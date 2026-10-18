@@ -302,27 +302,37 @@ func (f *finderView) mark(i int, r finderRow) string {
 
 func (f *finderView) rowLabel(r finderRow) string { return cmpOr(r.label, r.text) }
 
-func (f *finderView) listHint() []KeyHint {
+// listHint is the list's hint. With no results Enter does nothing and is
+// left out; a checkbox popup's Enter still applies the checks, so only Space
+// goes (components/input/finder, components/input/checkbox).
+func (f *finderView) listHint(results bool) []KeyHint {
 	// With no results the finder's own word, not another: the width was
 	// taken from it when the popup opened.
 	_, r, _ := f.at()
-	verb := f.verb(r)
-	h := []KeyHint{{"Enter", verb}}
-	if f.kind == findChecks {
+	var h []KeyHint
+	if results || f.kind == findChecks {
+		h = append(h, KeyHint{"Enter", f.verb(r)})
+	}
+	if results && f.kind == findChecks {
 		h = append(h, KeyHint{"Space", "toggle"})
 	}
 	return append(h, KeyHint{"Tab|/", "filter"}, KeyHint{"Esc", "cancel"})
 }
 
-func (f *finderView) typingHint() []KeyHint {
+// typingHint is the typing row's hint: with no results its Enter does
+// nothing and is left out (components/input/finder).
+func (f *finderView) typingHint(results bool) []KeyHint {
+	if !results {
+		return []KeyHint{{"Tab", "list"}, {"Esc", "cancel"}}
+	}
 	return []KeyHint{{"Enter|Tab", "list"}, {"Esc", "cancel"}}
 }
 
 func (f *finderView) hint() []KeyHint {
 	if f.onList {
-		return f.listHint()
+		return f.listHint(len(f.shown) > 0)
 	}
-	return f.typingHint()
+	return f.typingHint(len(f.shown) > 0)
 }
 
 func (f *finderView) measure(sw, sh int) (int, int) {
@@ -340,13 +350,13 @@ func (f *finderView) measure(sw, sh int) (int, int) {
 	count := len(strconv.Itoa(len(rows)))*2 + 1
 	content = max(content+Width(glyphHard), Width(glyphTyping)+1+8+2+count) // the typing row: the angle, eight cells, the count
 	w := max(content+3, Width(titleCapsule(f.glyph, f.title(1<<20), Base, 1<<20))+4,
-		hintWidth(f.listHint())+6, hintWidth(f.typingHint())+6)
+		hintWidth(f.listHint(true))+6, hintWidth(f.typingHint(true))+6)
 	h := min(len(rows)+6, max(sh-2, 3))
 	if len(rows) > h-6 {
 		// Room for the scroll position at its widest too, so the hint stays
 		// whole (components/layout/popup, width).
 		widest := scrollText(true, len(rows), 0, len(rows))
-		w = max(w, scrollRoom(f.listHint(), widest), scrollRoom(f.typingHint(), widest))
+		w = max(w, scrollRoom(f.listHint(true), widest), scrollRoom(f.typingHint(true), widest))
 	}
 	return min(w, most), h
 }
@@ -559,7 +569,9 @@ func (f *finderView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 	case "Tab", "/":
 		f.onList = false
 	case "Enter":
-		if i, r, ok := f.at(); ok {
+		// A checkbox popup applies its checks with no results too: the filter
+		// does not change what is checked (components/input/checkbox).
+		if i, r, ok := f.at(); ok || f.kind == findChecks {
 			return true, f.enter(a, i, r)
 		}
 	case "Space":

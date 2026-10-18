@@ -225,8 +225,10 @@ func Composite(base, top []string, x, y, width int) []string {
 // Repeat is strings.Repeat that takes a negative count as zero.
 func Repeat(s string, n int) string { return strings.Repeat(s, max(n, 0)) }
 
-// Wrap breaks plain text into lines of at most w cells, at spaces where it
-// can and inside a word that is longer than a line. Line breaks in s are kept.
+// Wrap breaks plain text into lines of at most w cells (components,
+// wrapping): at spaces and on either side of a wide character; inside a word
+// only when it is longer than a line, cut by cells, a wide character never
+// cut in half. Line breaks in s are kept.
 func Wrap(s string, w int) []string {
 	if w <= 0 {
 		return nil
@@ -239,37 +241,87 @@ func Wrap(s string, w int) []string {
 			line, lineW = "", 0
 		}
 		for _, word := range strings.Fields(para) {
-			ww := Width(word)
-			if lineW > 0 && lineW+1+ww > w {
-				flush()
-			}
-			if ww > w {
-				// A word longer than a line: on lines of its own, cut by cells.
-				if lineW > 0 {
-					flush()
+			for k, piece := range pieces(word) {
+				gap := 0
+				if k == 0 && lineW > 0 {
+					gap = 1 // the space between two words
 				}
-				for ww > w {
-					head := strings.TrimSuffix(Cut(word, 0, w), ansi.ResetStyle)
+				pw := Width(piece)
+				if lineW > 0 && lineW+gap+pw > w {
+					flush()
+					gap = 0
+				}
+				// Longer than a line: on lines of its own, cut by cells.
+				for pw > w {
+					head := strings.TrimSuffix(Cut(piece, 0, w), ansi.ResetStyle)
 					hw := max(Width(head), 1)
 					line, lineW = head, hw
 					flush()
-					word = strings.TrimSuffix(Cut(word, hw, ww), ansi.ResetStyle)
-					ww = Width(word)
+					piece = strings.TrimSuffix(Cut(piece, hw, pw), ansi.ResetStyle)
+					pw = Width(piece)
 				}
+				if pw == 0 {
+					continue
+				}
+				line += Repeat(" ", gap) + piece
+				lineW += gap + pw
 			}
-			if ww == 0 {
-				continue
-			}
-			if lineW > 0 {
-				line += " "
-				lineW++
-			}
-			line += word
-			lineW += ww
 		}
 		flush()
 	}
 	return out
+}
+
+// pieces splits a word where a line may break inside it: on either side of
+// a wide character (components, wrapping).
+func pieces(word string) []string {
+	var out []string
+	run := ""
+	walk(word, func(seq string, cells int) {
+		if cells > 1 {
+			if run != "" {
+				out = append(out, run)
+			}
+			out, run = append(out, seq), ""
+			return
+		}
+		run += seq
+	})
+	if run != "" {
+		out = append(out, run)
+	}
+	return out
+}
+
+// foldAt is where the rows of one line start, as indices into cells, when it
+// folds at w cells keeping every character (the textarea and the viewer;
+// components, wrapping): after a space or on either side of a wide
+// character; inside a word only when it is longer than a row, a wide
+// character never cut in half. cells is each character's width, space whether
+// it is a space or a tab. TODO(tdp G94): a space that does not fit starts the
+// next row.
+func foldAt(cells []int, space []bool, w int) []int {
+	wide := func(i int) bool { return cells[i] > 1 && !space[i] }
+	starts := []int{0}
+	start, used, brk := 0, 0, 0
+	for i, cw := range cells {
+		if i > start && (space[i-1] && !space[i] || wide(i) || wide(i-1)) {
+			brk = i // a row may start here
+		}
+		if used+cw > w && i > start {
+			next := i
+			if !space[i] && brk > start {
+				next = brk // the word goes to the next row whole
+			}
+			used = 0
+			for _, c := range cells[next:i] {
+				used += c
+			}
+			starts, start = append(starts, next), next
+		}
+		used += cw
+	}
+	return starts
 }
 
 // StripStyles drops the escape sequences of s.

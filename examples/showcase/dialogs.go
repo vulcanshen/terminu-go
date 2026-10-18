@@ -151,7 +151,7 @@ func (ds *dialogsScreen) openWith() tea.Cmd {
 	open := func(with string) func() tea.Cmd {
 		return func() tea.Cmd { return a.Toast(terminu.Info, "Opened README.md with "+with) }
 	}
-	return a.Menu("Open with", terminu.MenuSection{Actions: []terminu.Action{
+	return a.Menu("Open with", terminu.MenuSection{Title: "Default", Actions: []terminu.Action{
 		{Key: "Enter", Label: "Open", Desc: "with the default app", Do: open("the default app")},
 		{Key: "t", Label: "Open in a new tab", Desc: "keep this one", Do: open("a new tab")},
 	}}, terminu.MenuSection{Title: "Editors", Actions: []terminu.Action{

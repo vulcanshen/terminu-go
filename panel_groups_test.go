@@ -61,6 +61,22 @@ func TestPanelListGroups(t *testing.T) {
 	}
 }
 
+// TestPanelListGroupsMarks: with a mark column, the marks go in the two cells
+// the items are further in: the mark one cell from the frame, a space, the
+// text three cells in as with no marks; a group title keeps no mark column
+// (components/layout/panel, groups).
+func TestPanelListGroupsMarks(t *testing.T) {
+	withWidths(t, 1, 1)
+	l := groupList()
+	l.Marks = true
+	l.ToggleMark() // pods, under the cursor
+	got := plainLines(l.Draw(24, 10, true))[:3]
+	want := []string{" WORKLOADS", " " + glyphMarked + " pods" + strings.Repeat(" ", 24-7-Width(glyphHard)) + glyphHard, "   deployments"}
+	if !slices.Equal(got, want) {
+		t.Errorf("rows:\n%q\nwant\n%q", got, want)
+	}
+}
+
 // TestPanelListGroupsCursor: the cursor skips group titles: j|k step over
 // them, gg|G go to the first and last item, N of M counts items; scrolled to a
 // group's first item, its title stays on screen (components/layout/panel,

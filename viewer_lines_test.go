@@ -205,7 +205,7 @@ func TestViewerFoldedScroll(t *testing.T) {
 	ta.resize(80, 14) // 8 rows of text
 	var lines []string
 	for i := range 10 {
-		lines = append(lines, fmt.Sprintf("%02d ", i+1)+strings.Repeat("x", 97)) // 100 cells: two rows each
+		lines = append(lines, fmt.Sprintf("%02d", i+1)+strings.Repeat("x", 98)) // one word of 100 cells: two rows each
 	}
 	v := &Viewer{Title: "Log", Lines: lines, Select: &Selection{Key: "v", Name: "Visual"}}
 	ta.Viewer(v)
@@ -220,6 +220,20 @@ func TestViewerFoldedScroll(t *testing.T) {
 	ta.press("gg", "v", "j", "j", "j", "j")
 	if v.line != 4 || v.Top() != 1 || !strings.Contains(ta.screenText(), " 5 of 10 ") {
 		t.Errorf("the view follows the cursor a line at a time: line %d, top %d\n%s", v.line, v.Top(), ta.screenText())
+	}
+}
+
+// TestViewerFoldsAtSpaces: a line longer than a row folds at a space, a
+// word going to the next row whole (components, wrapping).
+func TestViewerFoldsAtSpaces(t *testing.T) {
+	ta := newTestApp(t)
+	ta.resize(80, 14)
+	// 70 cells a row: cut by cells, the second row would start "s words".
+	ta.Viewer(&Viewer{Title: "Log", Lines: []string{strings.Repeat("words ", 25)}})
+	ta.settle()
+	text := ta.screenText()
+	if !strings.Contains(text, "┃   1 words") || !strings.Contains(text, "┃     words words") {
+		t.Errorf("the line does not fold at a space:\n%s", text)
 	}
 }
 

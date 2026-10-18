@@ -126,10 +126,16 @@ func (cv *colorView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {
 		}
 	}()
 	switch key {
+	// hjkl move inside an area, as on a form: among R, G and B, round at the
+	// ends (Rules K12); only Tab reaches Choose.
 	case "h", "k", "←", "↑":
-		cv.focus = (cv.focus + 3) % 4
+		if cv.focus != colorChoose {
+			cv.focus = (cv.focus + 2) % 3
+		}
 	case "l", "j", "→", "↓":
-		cv.focus = (cv.focus + 1) % 4
+		if cv.focus != colorChoose {
+			cv.focus = (cv.focus + 1) % 3
+		}
 	case "Tab", "Shift-Tab":
 		// The channels and the action area, as a form's two areas (Rules K2):
 		// either way is the other one.
@@ -168,7 +174,7 @@ func (cv *colorView) keyRef() []refSection {
 		{Key: "Enter", Desc: "on R, G or B choose its value; on Choose, choose the colour"},
 		{Key: "Tab|Shift-Tab", Desc: "between R, G, B and Choose, back to the channel left"},
 		{Key: "Esc", Desc: "cancel"},
-	}}, {title: "move", rows: []KeyRow{{Key: "h|l", Desc: "R, G, B, Choose"}}}}
+	}}, {title: "move", rows: []KeyRow{{Key: "h|l", Desc: "R, G, B"}}}}
 }
 
 func (cv *colorView) typing() bool { return false }

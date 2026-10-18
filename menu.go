@@ -40,7 +40,9 @@ type menuView struct {
 	name  string
 }
 
-// MenuSection is a group of a menu's rows under an optional title (Rules M8).
+// MenuSection is a group of a menu's rows under a title. A menu of one group
+// needs none; in a menu of more, every group has one, the first too (Rules
+// M8).
 type MenuSection struct {
 	Title   string
 	Actions []Action
