@@ -2,6 +2,12 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.7.3
+
+- tdp v0.7.3 writes down that text which is only shown (a confirm, a toast, an error popup, the splash) does not
+  draw the space it breaks at, as the library already did (G95); the checklist now counts genes, which the library
+  does not apply
+
 ## v0.1.13 — tdp v0.7.2
 
 - tdp v0.7.0 adds the project spec: how a family app's repo is laid out, versioned and released (Rules E6). The

@@ -228,8 +228,8 @@ func Repeat(s string, n int) string { return strings.Repeat(s, max(n, 0)) }
 // Wrap breaks plain text into lines of at most w cells (components,
 // wrapping): at spaces and on either side of a wide character; inside a word
 // only when it is longer than a line, cut by cells, a wide character never
-// cut in half. Line breaks in s are kept. TODO(tdp G95): a space that does
-// not fit is dropped, not drawn at the start of the next line.
+// cut in half. Line breaks in s are kept. The text is only shown, so the
+// space it breaks at is not drawn (the textarea and the viewer use foldAt).
 func Wrap(s string, w int) []string {
 	if w <= 0 {
 		return nil

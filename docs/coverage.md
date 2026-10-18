@@ -1,13 +1,13 @@
-# tdp v0.7.2 coverage
+# tdp v0.7.3 coverage
 
-tdp v0.7.2 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
+tdp v0.7.3 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
 （[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
 - 出處寫法：`K4` 是 `principle/rules-zh_TW.md` 的規則；`P3` 是 `principle/README-zh_TW.md`；`popup §外框` 是
   `components/layout/popup-zh_TW.md` 的那一節，其他元件照檔名（`form`、`finder`…）；`components §大寫` 是 `components/README-zh_TW.md`。
 - `G<n>` 是規範盲點紀錄裡還沒定案的編號（`~/Documents/sideproj/terminu/.local/family-fix/terminu-go/README.md`），定案前照紀錄的
-  「暫時」做。G1–G22 已經補進 tdp v0.4.0、G23–G29 補進 v0.5.1、G30–G46 補進 v0.5.2（G43 不改規範）、G47 補進 v0.5.3、G48–G66 補進 v0.5.4、G67–G77 補進 v0.5.5、G78–G82 補進 v0.5.6、G83 補進 v0.5.7、G84 補進 v0.5.8、G85 補進 v0.5.9、G86 補進 v0.6.1，這裡直接寫規範的條文。G87（有表頭的清單分組時表頭縮不縮）已定、不改規範：分組只用在單欄、沒有表頭的清單。v0.6.0 只刪了 S5 講畫 mark 的工具的一句，這份清單不受影響。G93 補進 v0.7.1，G94 補進 v0.7.2。
+  「暫時」做。G1–G22 已經補進 tdp v0.4.0、G23–G29 補進 v0.5.1、G30–G46 補進 v0.5.2（G43 不改規範）、G47 補進 v0.5.3、G48–G66 補進 v0.5.4、G67–G77 補進 v0.5.5、G78–G82 補進 v0.5.6、G83 補進 v0.5.7、G84 補進 v0.5.8、G85 補進 v0.5.9、G86 補進 v0.6.1，這裡直接寫規範的條文。G87（有表頭的清單分組時表頭縮不縮）已定、不改規範：分組只用在單欄、沒有表頭的清單。v0.6.0 只刪了 S5 講畫 mark 的工具的一句，這份清單不受影響。G93 補進 v0.7.1，G94 補進 v0.7.2，G95 補進 v0.7.3。
 - 「lib」表示由 lib 的登記或 API 保證，不需要展示場的某一個畫面；測試照樣要有。
 
 ## 展示場
@@ -229,7 +229,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 |---|---|---|---|
 | §圖與間距 | 圖的結構是規定（框、glyph 位置、間距、對齊、標的顏色）；「縮 N 格」是離框 N 格 | 每個畫面對照規範的圖 | 各元件的版面測試 |
 | §圖與間距 | 欄與欄之間兩格；glyph 與它後面的字之間一格 | 表頭、表單、menu、radio、checkbox、file-picker | `TestTwoCellColumnGap`、`TestGlyphOneCellGap` |
-| §折行 | textarea、viewer、confirm、toast、error popup、splash 太窄時都照同一套：在空白處斷，下一個字放不下就整個接到下一列；寬字每個字之間都可以斷，一列填滿再換列；一個字比一列還長才照格子切；寬字不切成兩半；放不下的空白接到下一列開頭（textarea 的游標停在上面也有格子）。lib：textarea 與 viewer 這樣做；confirm、toast、error popup、splash 斷在空白處時那個空白不畫（G95，暫時） | I 的 `Comment`；D「Note viewer」把視窗縮窄、「Confirm: long」、「Error popup: long」；P 的 `Toast long`；把視窗縮窄按 `V` | `TestWrap`、`TestFoldAt`、`TestTextareaWrapAndNumbers`、`TestViewerFoldsAtSpaces`、`TestTextareaUpToShorterRow` |
+| §折行 | textarea、viewer、confirm、toast、error popup、splash 太窄時都照同一套：在空白處斷，下一個字放不下就整個接到下一列；寬字每個字之間都可以斷，一列填滿再換列；一個字比一列還長才照格子切；寬字不切成兩半；斷在空白處時，textarea 與 viewer 的每個字元都要畫出來（一個字剛好填滿一列、後面接著空白，那個空白畫在下一列的第一格），只是顯示的文字（confirm、toast、error popup、splash）不畫那個空白 | I 的 `Comment`；D「Note viewer」把視窗縮窄、「Confirm: long」、「Error popup: long」；P 的 `Toast long`；把視窗縮窄按 `V` | `TestWrap`、`TestFoldAt`、`TestTextareaWrapAndNumbers`、`TestViewerFoldsAtSpaces`、`TestTextareaUpToShorterRow` |
 | §大寫 | 要大寫：panel 膠囊與 tab、畫面 chip、popup 標題、表頭、清單的分組標題、一列一個值的 label、menu 與 key reference 的區塊標題；熱鍵標記裡的字母照原樣；名稱、路徑在標題與 hint 裡都照原樣（表單按鈕的 hint 只有動詞小寫：`Enter:export hosts.yaml`） | 每個畫面；畫面 chip `[t]ERMINAL`（小寫的熱鍵照原樣）；T terminal popup 的標題 `SESSION: shell`；D「Form: long」的 `EDIT: prod-db-01`；D「Form: with actions」的 `Export hosts.yaml` | `TestUppercaseWhereRequired`、`TestUppercaseKeepsHotkeyAndNames`、`TestPopupTitleSubject`、`TestFormButtonSubject` |
 | §大寫 | 不改：值、menu 的 label 與說明、hint 與 footer 的說明、按鍵名、模式名、app 的內容 | 同上 | `TestUppercaseLeavesContent` |
 

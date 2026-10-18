@@ -102,7 +102,7 @@ func TestWrap(t *testing.T) {
 	}
 	// Components, wrapping: a wide character breaks on either side, a line
 	// fills up first; a word is cut only when longer than a line; a wide
-	// character is never cut in half.
+	// character is never cut in half; the space it breaks at is not drawn.
 	for _, c := range []struct {
 		s    string
 		w    int
@@ -114,6 +114,8 @@ func TestWrap(t *testing.T) {
 		{"abc\U00004E2D", 4, "abc|\U00004E2D"},
 		{"ab\U00004E2D\U00006587", 3, "ab|\U00004E2D|\U00006587"},
 		{"ab abcdefghij", 5, "ab|abcde|fghij"},
+		{"Delete the export button?", 10, "Delete the|export|button?"},
+		{"remove secret", 6, "remove|secret"},
 	} {
 		if got := strings.Join(Wrap(c.s, c.w), "|"); got != c.want {
 			t.Errorf("Wrap(%q, %d) = %q, want %q", c.s, c.w, got, c.want)
