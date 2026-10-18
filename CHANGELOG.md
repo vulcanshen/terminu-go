@@ -2,11 +2,12 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.7.3
+## Unreleased — tdp v0.7.4
 
 - tdp v0.7.3 writes down that text which is only shown (a confirm, a toast, an error popup, the splash) does not
   draw the space it breaks at, as the library already did (G95); the checklist now counts genes, which the library
   does not apply
+- tdp v0.7.4 changes only the checklist (an item can be judged "cannot tell"), so nothing changes
 
 ## v0.1.13 — tdp v0.7.2
 
