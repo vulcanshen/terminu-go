@@ -2,7 +2,7 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.7.2
+## v0.1.13 — tdp v0.7.2
 
 - tdp v0.7.0 adds the project spec: how a family app's repo is laid out, versioned and released (Rules E6). The
   library and the showcase follow the Rules E8 table instead, so nothing changes
