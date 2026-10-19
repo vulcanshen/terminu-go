@@ -2,6 +2,7 @@ package terminu
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 	"testing"
@@ -1133,5 +1134,45 @@ func TestToastKeysPassThrough(t *testing.T) {
 	ta.press("j")
 	if m.cursor == before || ta.toast == nil || ta.toast.closing {
 		t.Error("j goes through the toast to the menu")
+	}
+}
+
+// TestFormKeyReferenceFollowsFields: the form's key reference lists Space
+// only when it has checkbox options and e only when a field is wrong, each
+// in the disabled colour where the focus cannot use it (Rules M6).
+func TestFormKeyReferenceFollowsFields(t *testing.T) {
+	ta := newTestApp(t)
+	keys := func() map[string]bool {
+		out := map[string]bool{}
+		for _, r := range ta.topView().(*formView).keyRef()[0].rows {
+			out[r.Key] = r.Disabled
+		}
+		return out
+	}
+	name := ""
+	ta.Form(&Form{Title: "Rename", Button: "Save", Fields: []*FormField{{Label: "Name", Value: func() string { return name },
+		Edit: func() Input { return TextInput{Title: "Name", Done: func(v string) tea.Cmd { name = v; return nil }} }}}})
+	ta.settle()
+	if k := keys(); len(k) != 3 || !slices.Equal(slices.Sorted(maps.Keys(k)), []string{"Enter", "Esc", "Tab|Shift-Tab"}) {
+		t.Errorf("no checkbox, no error: %v", k)
+	}
+	ta.covBCloseAll()
+	ta.Form(testForm(nil))
+	ta.settle()
+	if k := keys(); !k["Space"] {
+		t.Errorf("on Name, Space is not in the disabled colour: %v", k)
+	} else if _, ok := k["e"]; ok {
+		t.Errorf("no field is wrong, e is listed: %v", k)
+	}
+	ta.press("Tab", "Enter") // Name is required: the focus back on Name, wrong
+	if k := keys(); k["e"] || !k["Space"] {
+		t.Errorf("on a wrong Name: %v", k)
+	}
+	ta.press("j", "j", "j", "j", "j") // Port, the three Auth options, Agent: forward
+	if stop := formStop(ta.topView().(*formView)); stop != "Agent:0" {
+		t.Fatalf("the focus is on %s", stop)
+	}
+	if k := keys(); !k["e"] || k["Space"] {
+		t.Errorf("on a checkbox option: %v", k)
 	}
 }

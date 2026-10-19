@@ -3,6 +3,7 @@ package terminu
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -835,15 +836,26 @@ func (fv *formView) submit(a *App, it formItem, do func() (tea.Cmd, error)) tea.
 
 func (fv *formView) surface() string { return fv.f.Title }
 
+// keyRef lists Space only when the form has checkbox options and e only when
+// a field is wrong; either is in the disabled colour when it does nothing
+// where the focus is (Rules M6).
 func (fv *formView) keyRef() []refSection {
+	rows := []KeyRow{{Key: "Enter", Desc: "edit the field, choose or toggle the option, press the button"}}
+	if slices.ContainsFunc(fv.f.Fields, func(f *FormField) bool { return f.Multi && len(f.Options) > 0 }) {
+		it := fv.focus
+		rows = append(rows, KeyRow{Key: "Space", Desc: "toggle the checkbox option",
+			Disabled: it.kind != itemField || !it.field.Multi || it.option < 0})
+	}
+	if len(fv.errs) > 0 {
+		it := fv.focus
+		rows = append(rows, KeyRow{Key: "e", Desc: "between a field that is wrong and the error row",
+			Disabled: it.kind != itemError && (it.kind != itemField || fv.errs[it.field] == "")})
+	}
+	rows = append(rows,
+		KeyRow{Key: "Tab|Shift-Tab", Desc: "between the fields and the buttons, back to the item left"},
+		KeyRow{Key: "Esc", Desc: "cancel (asks first when something changed)"})
 	return []refSection{
-		{rows: []KeyRow{
-			{Key: "Enter", Desc: "edit the field, choose or toggle the option, press the button"},
-			{Key: "Space", Desc: "toggle the checkbox option"},
-			{Key: "e", Desc: "between a field that is wrong and the error row"},
-			{Key: "Tab|Shift-Tab", Desc: "between the fields and the buttons, back to the item left"},
-			{Key: "Esc", Desc: "cancel (asks first when something changed)"},
-		}},
+		{rows: rows},
 		{title: "move", rows: []KeyRow{
 			{Key: "j|k", Desc: "next, previous in this area"},
 			{Key: "u|d", Desc: "half a page up, down"},
