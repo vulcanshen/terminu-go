@@ -360,3 +360,18 @@ func TestAppPopupScroll(t *testing.T) {
 		t.Errorf("everything fits, still a scroll position: %q", bottom)
 	}
 }
+
+// TestCloseAll: the app can close the whole stack, the lib's popups among it
+// (Rules T1; kbu KB10).
+func TestCloseAll(t *testing.T) {
+	ta := newTestApp(t)
+	ta.Viewer(testViewer())
+	ta.Popup(Popup{Title: "Draw", Body: &testBody{w: 10, h: 3}})
+	ta.Text(TextInput{Title: "Name", OnCancel: ta.record("cancel")})
+	ta.settle()
+	ta.CloseAll()
+	ta.settle()
+	if ta.top() != nil || len(ta.stack) != 0 || !slices.Equal(ta.ran, []string{"cancel"}) {
+		t.Errorf("%d popups left, ran %v", len(ta.stack), ta.ran)
+	}
+}
