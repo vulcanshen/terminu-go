@@ -315,21 +315,31 @@ func (p *Panel) takesV() bool {
 }
 
 // openSplash opens the splash: only from a panel, only on V (Rules S4).
-func (a *App) openSplash() tea.Cmd {
-	a.splashOn, a.splashFrame = true, 0
+func (a *App) openSplash() tea.Cmd { return a.PlaySplash(a.Splash) }
+
+// PlaySplash plays s over the whole screen now, from its first frame, as V
+// does with the app's own (Rules S): a splash the app shows of its own
+// accord, a mark being designed, say. Any key closes it.
+func (a *App) PlaySplash(s Splash) tea.Cmd {
+	if s == nil {
+		return nil
+	}
+	a.splashOn, a.splashFrame, a.shown, a.splashStart = true, 0, s, time.Now()
 	a.splashID++
 	return splashTick(a.splashID)
 }
 
-// stepSplash moves the reveal on by one tick until it is over.
+// stepSplash moves the reveal on until it is over. The frame is the time
+// since it opened, a tick each 10ms: ticks that come late do not add up and
+// put the text off (Rules S5).
 func (a *App) stepSplash(msg splashMsg) tea.Cmd {
 	if !a.splashOn || msg.id != a.splashID {
 		return nil
 	}
-	if _, done := a.Splash(a.splashFrame, a.w, a.h); done {
+	if _, done := a.shown(a.splashFrame, a.w, a.h); done {
 		return nil
 	}
-	a.splashFrame++
+	a.splashFrame = max(a.splashFrame+1, int(time.Since(a.splashStart)/splashTickTime))
 	return splashTick(a.splashID)
 }
 

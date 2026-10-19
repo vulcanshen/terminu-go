@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -504,6 +505,55 @@ func TestS5SplashTooSmall(t *testing.T) {
 
 // TestS5SplashRefusesWideText: no row of the text is wider than the mark (50
 // columns); the lib refuses one when it builds the splash (Rules S5, E8).
+// TestPlaySplash: the app can play a splash of its own accord, any splash it
+// has; any key closes it, as the app's own on V (Rules S3; kamonu KM8).
+func TestPlaySplash(t *testing.T) {
+	ta := withSplash(newTestApp(t))
+	played := 0
+	other := Splash(func(f, w, h int) ([]string, bool) {
+		played++
+		return []string{"another mark"}, true
+	})
+	ta.PlaySplash(other)
+	if !ta.splashOn || !strings.Contains(ta.screenText(), "another mark") || played == 0 {
+		t.Fatalf("the splash it plays is drawn: %q", ta.screenText())
+	}
+	ta.press("j")
+	if ta.splashOn || ta.list.cursor != 0 {
+		t.Error("a key closes it, and only that")
+	}
+	ta.press("V")
+	if !ta.splashOn || strings.Contains(ta.screenText(), "another mark") {
+		t.Error("V plays the app's own")
+	}
+}
+
+// TestS5SplashKeepsTime: the reveal goes by the time since it opened, not by
+// counting ticks that come late (hostu HU9).
+func TestS5SplashKeepsTime(t *testing.T) {
+	ta := newTestApp(t)
+	ta.Splash, _ = showcaseSplash(t)
+	ta.press("V")
+	ta.stepSplash(splashMsg{ta.splashID})
+	if ta.splashFrame != 1 {
+		t.Errorf("a tick on time: frame %d", ta.splashFrame)
+	}
+	ta.splashStart = time.Now().Add(-time.Second)
+	ta.stepSplash(splashMsg{ta.splashID})
+	if ta.splashFrame < 99 {
+		t.Errorf("a second in, frame %d", ta.splashFrame)
+	}
+}
+
+// TestS5SplashOneRow: one row: the name only (Rules S5).
+func TestS5SplashOneRow(t *testing.T) {
+	s, _ := showcaseSplash(t)
+	lines, _ := s(10000, 80, 1)
+	if got := Pad2(lines, 80, 1); len(got) != 1 || strings.TrimSpace(StripStyles(got[0])) != "showcase" {
+		t.Errorf("one row: %q", got)
+	}
+}
+
 func TestS5SplashRefusesWideText(t *testing.T) {
 	icon, err := os.ReadFile("examples/showcase/icon.svg")
 	if err != nil {

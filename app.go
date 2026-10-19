@@ -148,6 +148,8 @@ type App struct {
 	splashOn    bool
 	splashFrame int
 	splashID    int
+	shown       Splash    // the splash on the screen: the app's, or one it plays
+	splashStart time.Time // when it opened
 
 	tinyCtrlC bool // Ctrl-C pressed once on a terminal under the least size
 }
@@ -1336,7 +1338,7 @@ func (a *App) Frame() []string {
 	}
 	// The splash takes the whole screen: nothing of the screen is drawn (Rules S).
 	if a.splashOn {
-		lines, _ := a.Splash(a.splashFrame, w, h)
+		lines, _ := a.shown(a.splashFrame, w, h)
 		return Pad2(lines, w, h)
 	}
 	lines := a.base()
