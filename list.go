@@ -137,14 +137,18 @@ func (l *List) Current() (Row, bool) {
 	return l.rows[l.view[l.cursor]], true
 }
 
-// Select puts the cursor on the row with this ID, if it is shown.
-func (l *List) Select(id string) {
+// Select puts the cursor on the row with this ID, the next frame scrolling
+// it into sight, and reports whether it is shown. After the app adds an item
+// (New, Copy, Import), it selects it (Rules K3); a row the panel filter hides
+// is not shown, so the app clears the filter first if it wants it seen.
+func (l *List) Select(id string) bool {
 	for i, r := range l.view {
 		if l.rowID(r) == id {
 			l.cursor = i
-			return
+			return true
 		}
 	}
+	return false
 }
 
 func (l *List) rowID(i int) string {
@@ -185,6 +189,15 @@ func (l *List) Marked() []string {
 
 // ClearMarks unmarks every row.
 func (l *List) ClearMarks() { l.marked = nil }
+
+// SetMarked marks the rows with these IDs and unmarks the others, the rows
+// the panel filter hides too.
+func (l *List) SetMarked(ids []string) {
+	l.marked = map[string]bool{}
+	for _, id := range ids {
+		l.marked[id] = true
+	}
+}
 
 // Hold picks up the row under the cursor in the panel's Drag mode
 // (layout/panel): it is drawn as the cursor in the mode's colour, Yellow,

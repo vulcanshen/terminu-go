@@ -24,6 +24,7 @@ type panelsScreen struct {
 	values   *terminu.Values
 	disabled bool
 	logN     int
+	created  int // pods added with New
 	errors   int // ERROR lines in the log, for the statusbar
 	warnings int // WARN lines
 	dragFrom string
@@ -216,6 +217,18 @@ func (ps *panelsScreen) podActions() []terminu.Action {
 			}},
 		{Key: "D", Label: "Drag", Desc: "this pod to another place in the list", Scope: terminu.ItemScope,
 			Do: ps.startDrag},
+		// After adding an item the cursor goes to it, scrolled into sight
+		// (Rules K3): sorted by name, it lands far from where the cursor was.
+		{Key: "n", Label: "New", Desc: "a pod, the cursor going to it", Scope: terminu.PanelScope,
+			Hidden: func() bool { return ps.pods.Tab != 0 },
+			Do: func() tea.Cmd {
+				ps.created++
+				name := fmt.Sprintf("new-pod-%d", ps.created)
+				podNames = append(podNames, name)
+				ps.podList.SetRows(podRows())
+				ps.podList.Select(name)
+				return a.Toast(terminu.Success, "Created "+name)
+			}},
 		{Key: "s", Label: "Sort by", Desc: "a column, then a direction", Scope: terminu.PanelScope,
 			Do: ps.sortMenu},
 		{Key: "go", Label: "goto", Desc: "the first pod that is not running", Scope: terminu.PanelScope,

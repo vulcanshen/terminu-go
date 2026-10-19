@@ -65,6 +65,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | K3 | `Enter` 做 app 登記的那個動作；同一種項目同一個動作；panel 沒有項目時對整個 panel | P `[1] PODS` `Enter` 開 log；P `[2] LOG` `Enter` 開 viewer（整個 panel 一個動作） | `TestK3EnterRunsRegistered`、`TestK3EnterOnContentPanel` |
 | K3 | `Enter` 不移動 focus（表單送出失敗跳到第一個問題欄位是寫明的例外） | D「Form: New host」；P `[3] SETTINGS` | `TestK3EnterKeepsFocus` |
 | K3 | 唯一可以用 `Enter` 換 panel 的是明細：列出項目的 panel 上，`Enter` 可以把 focus 移到顯示那一項明細的 panel；要不要、在哪些項目上由 app 決定。lib：只有 `Enter`、而且 panel 的 `Details` 是同一個畫面的另一個 panel 才收 | K `[1] KINDS` 在 namespaced 的種類上 `Enter` 進 `[2]`；cluster 層級的（`nodes`、`namespaces`…）不進去 | `TestK3EnterToDetails`、`TestK3ToDetailsOnlyEnter` |
+| K3 | 新增一項之後 cursor 移到新的那一項、捲到看得到（lib：`List.Select`，回報那一列看不看得到） | P `[1] PODS` 的 `[n]ew` | `TestListMarkAndSelectByID` |
 | K3 | input popup：確定寫回並關；不合格不寫回、錯誤列、不關；值沒變不寫回直接關 | I 的 `Port`（打 `0`） | `TestK3InputConfirm`、`TestK3InputInvalidStays`、`TestK3InputUnchangedNoWrite`、`TestTextareaCheck`（textarea 也一樣：`Textarea.Check`） |
 | K3 | 多行文字：寫入狀態 `Enter` 換行，離開寫入後才確定 | I 的 `Comment` | `TestTextarea` |
 | K3 | 打字列的 `Enter` 把 focus 移到清單 cursor 那一項、不執行；沒有結果不作用 | I `[/] Find` | `TestFinderTypingEnter` |
@@ -263,6 +264,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | panel §一般清單 | 表頭 Blue 不加粗、大寫、固定不捲；每欄是數字或文字：數字靠右照數值排、文字靠左照文字排；欄間兩格；排序欄位加 U+F160（升）/ U+F161（降）；多欄排序在箭頭前加順位 `(2)` | P `[1] PODS` 的 `Sort by`（Name 升冪、Age 降冪、兩欄） | `TestListHeader`、`TestListSortGlyphs`、`TestListSortNumbers` |
 | panel §一般清單 | 捲動位置：放不下時 `N of M`（框線色），全放得下不寫；沒有 cursor 的寫 `N-M of T` | P `[1] PODS`（40 列）、`[2] LOG` | `TestPanelScrollPosition` |
 | panel §一般清單 | 標記欄：每列最前一格，標記的畫 Green U+F0132，沒標記的空白，欄寬一直保留 | P `[1] PODS` 的 `[m]ark` | `TestListMarkColumn` |
+| panel §一般清單 | lib：app 照 ID 設標記（`List.SetMarked`），篩選中沒顯示的列也勾得到 | P `[1] PODS` 的 `[m]ark` | `TestListMarkAndSelectByID` |
 | panel §一般清單 | Drag mode 拿著的那一列（進 Drag 的鍵由 app 決定）：照 cursor 畫，Subtext1 換成 Yellow 底、Base 粗體，箭頭也是 Yellow；標記欄畫 U+F04E2，放下後回到原本的標記；有 Drag 的 panel 每一列都保留標記欄；按鍵同 reorder 拿著時（`j\|k` 搬、到頭尾繞回，`Enter` 放下，`Esc` 放回）。lib：`List.Draggable`、`Hold`、`MoveHeld`、`Drop`，Drag mode 與它的鍵由 app 登記 | P `[1] PODS` 的 `[D]rag`（先 `m` 標記一列再拿起它） | `TestPanelDragHeldRow` |
 | panel §一般清單 | 截斷從尾端加 `…`；路徑、檔名可以從前面截；兩端都有意義的從中間截（`demo-app…66-gm72n`），從哪裡截由 app 替每一欄決定（lib：`Column.Path`、`Column.Middle`） | P `[1] PODS` 的長名字（從中間截）；I `[2] FILES` 的路徑 | `TestListTruncate`、`TestTruncateMiddle` |
 | panel §一般清單 | 欄放不下時先整欄收（表頭一起），照 app 標的順序，名稱欄不收；還放不下才照比例縮；變大時照順序回來（lib：`Column.Drop`） | P `[1] PODS` 把視窗縮窄：`AGE`、`RESTARTS`、`READY` 依序收掉 | `TestListColumnsGiveWay` |

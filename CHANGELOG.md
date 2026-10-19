@@ -72,6 +72,9 @@ Each release names the version of terminu design (tdp) it implements.
   directories before files (layout/panel)
 - A sorted list puts the rows its keys cannot tell apart in the order of their IDs, so the same rows always come
   out in the same order (layout/panel)
+- `List.SetMarked` marks rows by ID, rows the panel filter hides too
+- `List.Select` reports whether the row is shown: after adding an item the app selects it, and the next frame
+  scrolls it into sight (Rules K3)
 
 ## v0.1.13 — tdp v0.7.2
 

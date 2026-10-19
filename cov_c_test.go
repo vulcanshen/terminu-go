@@ -1848,6 +1848,42 @@ func TestListFixedOrder(t *testing.T) {
 	}
 }
 
+// TestListMarkAndSelectByID: an app marks rows by ID, hidden ones too, and
+// puts the cursor on an item it has just added, scrolled into sight (Rules
+// K3).
+func TestListMarkAndSelectByID(t *testing.T) {
+	l := &List{Columns: []Column{{Title: "Name"}}, Marks: true, Filterable: true}
+	var rows []Row
+	for i := range 30 {
+		id := fmt.Sprintf("pod-%02d", i)
+		rows = append(rows, Row{ID: id, Cells: []string{id}})
+	}
+	l.SetRows(rows)
+	l.OpenFilter()
+	for _, r := range "pod-0" {
+		l.Key(string(r), tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{r}})
+	}
+	l.SetMarked([]string{"pod-01", "pod-25"})
+	l.ClearFilter()
+	if got := l.Marked(); !slices.Equal(got, []string{"pod-01", "pod-25"}) {
+		t.Errorf("marked by ID, the row the filter hid too: %v", got)
+	}
+	l.SetMarked([]string{"pod-02"})
+	if got := l.Marked(); !slices.Equal(got, []string{"pod-02"}) {
+		t.Errorf("SetMarked replaces the marks: %v", got)
+	}
+	l.SetRows(append(rows, Row{ID: "pod-99", Cells: []string{"pod-99"}}))
+	if !l.Select("pod-99") {
+		t.Fatal("the new row is shown")
+	}
+	if !strings.Contains(StripStyles(strings.Join(l.Draw(20, 8, true), "\n")), "pod-99") {
+		t.Error("the new row is scrolled into sight")
+	}
+	if l.Select("nothing") {
+		t.Error("a row that is not there is not selected")
+	}
+}
+
 func TestPanelLoading(t *testing.T) {
 	ta := newTestApp(t)
 	ta.pods.Loading = true
