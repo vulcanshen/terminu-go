@@ -514,3 +514,38 @@ func TestM6HintListsDisabled(t *testing.T) {
 		t.Error("HintPressableOnly left out an action that can run")
 	}
 }
+
+// TestE3TabsDrawnAsSpaces: a tab in the text of a panel or a popup is drawn as
+// input_tab_width spaces, as in a viewer, and counted so: a row holding one
+// is still exactly as wide as the terminal (Rules E3, L4).
+func TestE3TabsDrawnAsSpaces(t *testing.T) {
+	if got := Width("a\tb"); got != 2+tabCells {
+		t.Errorf("a tab is %d cells", got-2)
+	}
+	for name, got := range map[string]string{
+		"Fit": Fit("a\tb", 8), "Pad": Pad("a\tb", 8), "PadLeft": PadLeft("a\tb", 8), "Center": Center("a\tb", 8),
+		"Cut": Cut("a\tb", 0, 8), "Truncate": Truncate("a\tb", 8),
+	} {
+		if strings.Contains(got, "\t") || Width(got) > 8 || !strings.Contains(got, "a    b") {
+			t.Errorf("%s = %q", name, got)
+		}
+	}
+	ta := newTestApp(t)
+	ta.Screen().Panels[1].Body.(*Pager).SetLines([]string{"\tindented", "a\tb\tc", Fg(Red).Render("x\ty")})
+	ta.list.SetRows([]Row{{ID: "1", Cells: []string{"a\tb", "1\t2"}}})
+	frames := map[string]func(){
+		"panels": func() {},
+		"select": func() { ta.Select(Select{Title: "Pick", Options: []string{"one\ttwo", "three"}, Selected: -1}) },
+		"menu":   func() { ta.Menu("Run", MenuSection{Actions: []Action{{Label: "Tab\tbed", Desc: "a\tb"}}}) },
+	}
+	for name, open := range frames {
+		ta.covBCloseAll()
+		open()
+		ta.settle()
+		for i, l := range ta.Frame() {
+			if Width(l) != 120 || strings.Contains(l, "\t") {
+				t.Errorf("%s: row %d is %d wide or holds a tab: %q", name, i, Width(l), l)
+			}
+		}
+	}
+}

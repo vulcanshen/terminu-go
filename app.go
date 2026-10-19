@@ -61,7 +61,8 @@ type App struct {
 	// may read (components/input/file-picker).
 	HideSecretsInPreview bool
 	// InputTabWidth is the user's setting input_tab_width: how many spaces
-	// Tab puts in a textarea; 4 when unset (components/input/textarea).
+	// Tab puts in a textarea, and the spaces a tab in any text is drawn as;
+	// 4 when unset (components/input/textarea, Rules E3).
 	InputTabWidth int
 	// Progress is a long job's progress, 0 to 1, for the bar under the
 	// screen chips; ok false when there is none.
@@ -183,6 +184,7 @@ func (a *App) Run() error {
 		return err
 	}
 	Probe(a.Name)
+	tabCells = a.inputTabWidth()
 	_, err := tea.NewProgram(a, tea.WithAltScreen(), tea.WithOutput(screenOutput{os.Stdout})).Run()
 	return err
 }

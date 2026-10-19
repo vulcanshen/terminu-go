@@ -17,6 +17,10 @@ import (
 var (
 	iconCells      = 1 // a Nerd Font icon
 	powerlineCells = 1 // a powerline symbol: capsule ends, joins, the cursor arrow (tdp E5)
+	// tabCells is input_tab_width (Rules E3): a tab in text is drawn as that
+	// many spaces, as in a viewer, never sent to the terminal, so a row holding
+	// one keeps its width (Rules L4). App.Run sets it.
+	tabCells = 4
 )
 
 // IconWidth is how many cells a Nerd Font icon takes on this terminal.
@@ -82,7 +86,12 @@ func Width(s string) int {
 	widest := 0
 	for line := range strings.SplitSeq(s, "\n") {
 		w := 0
-		walk(line, func(_ string, cells int) { w += cells })
+		walk(line, func(seq string, cells int) {
+			if seq == "\t" {
+				cells = tabCells
+			}
+			w += cells
+		})
 		widest = max(widest, w)
 	}
 	return widest
@@ -93,6 +102,7 @@ func Width(s string) int {
 // cut in half becomes spaces, so the result is always exactly as wide as the
 // part of [from, to) the line covers.
 func Cut(s string, from, to int) string {
+	s = expandTabs(s)
 	var b strings.Builder
 	col := 0
 	walk(s, func(seq string, cells int) {
@@ -119,6 +129,7 @@ func Pad(s string, w int) string {
 	if w <= 0 {
 		return ""
 	}
+	s = expandTabs(s)
 	if d := Width(s); d < w {
 		return s + strings.Repeat(" ", w-d)
 	} else if d == w {
@@ -132,6 +143,7 @@ func PadLeft(s string, w int) string {
 	if w <= 0 {
 		return ""
 	}
+	s = expandTabs(s)
 	if d := Width(s); d < w {
 		return strings.Repeat(" ", w-d) + s
 	}
@@ -140,6 +152,7 @@ func PadLeft(s string, w int) string {
 
 // Center centres one line in w cells; the smaller half of the gap goes left.
 func Center(s string, w int) string {
+	s = expandTabs(s)
 	d := Width(s)
 	if d >= w {
 		return Pad(s, w)
@@ -155,6 +168,7 @@ func Truncate(s string, w int) string {
 	if w <= 0 {
 		return ""
 	}
+	s = expandTabs(s)
 	if Width(s) <= w {
 		return s
 	}
@@ -212,6 +226,7 @@ func TruncateLeft(s string, w int) string {
 	if w <= 0 {
 		return ""
 	}
+	s = expandTabs(s)
 	d := Width(s)
 	if d <= w {
 		return s
@@ -262,6 +277,14 @@ func Composite(base, top []string, x, y, width int) []string {
 		base[row] = Cut(base[row], 0, x) + mid + Cut(base[row], right, width)
 	}
 	return base
+}
+
+// expandTabs is s with each tab as the spaces it is drawn as (tabCells).
+func expandTabs(s string) string {
+	if !strings.Contains(s, "\t") {
+		return s
+	}
+	return strings.ReplaceAll(s, "\t", strings.Repeat(" ", tabCells))
 }
 
 // Repeat is strings.Repeat that takes a negative count as zero.
