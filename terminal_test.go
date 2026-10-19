@@ -160,6 +160,11 @@ func TestTerminalPopupSize(t *testing.T) {
 	if !strings.Contains(last, "┗━ Alt-Esc:exit") {
 		t.Errorf("the popup covers the footer; the last row is %q", last)
 	}
+	// No footer: the ends of the last row are blank, none of its words show
+	// (components/dialog/terminal).
+	if !strings.HasPrefix(last, " ┗") || !strings.HasSuffix(last, "┛ ") {
+		t.Errorf("the footer shows at the ends of the last row: %q", last)
+	}
 	if !strings.Contains(StripStyles(lines[2]), "ALTERM: myhost") {
 		t.Errorf("title: %q", StripStyles(lines[2]))
 	}

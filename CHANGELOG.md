@@ -115,6 +115,10 @@ Each release names the version of terminu design (tdp) it implements.
 - `Action.Live` gives a menu row's label and description each time it is drawn: a work list follows its work;
   `Action.EnterHint` is the word after `Enter` on that row (`Enter:cancel`) (components/dialog/menu)
 - `LoadingFrame` is the loading icon as it is now, for a row of the app's own; `App.Spinning` keeps it turning
+- The hint of a streaming panel or a panel's PTY without the focus dims as every other panel's does; only its
+  content stays bright (Rules T2)
+- While a terminal popup is open the footer is not drawn: the ends of the last row are blank, no footer words
+  show beside the popup (components/dialog/terminal)
 - `List.Location` is a list's location row, where the user is, in Lavender above its header, cut from the front
   (layout/panel)
 

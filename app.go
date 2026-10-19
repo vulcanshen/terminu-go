@@ -1262,8 +1262,22 @@ func (a *App) base() []string {
 	}
 	areaH := h - len(lines) - 1
 	lines = append(lines, a.panelArea(w, areaH)...)
-	lines = append(lines, Pad(a.footer(w), w))
+	footer := a.footer(w)
+	if a.terminalOpen() {
+		// A terminal popup reaches the last row: no footer, its ends blank
+		// on either side of the frame (components/dialog/terminal).
+		footer = ""
+	}
+	lines = append(lines, Pad(footer, w))
 	return lines[:h]
+}
+
+// terminalOpen reports a terminal popup on the stack.
+func (a *App) terminalOpen() bool {
+	return slices.ContainsFunc(a.stack, func(l *layer) bool {
+		_, ok := l.view.(*termView)
+		return ok && !l.closing
+	})
 }
 
 // chipRow is the screen chips, the statusbar on the right (layout/screen).

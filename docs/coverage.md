@@ -169,7 +169,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | F7 | loading 時標題後一定有輪轉 icon；只看整個 popup 的內容 | D「Loading popup」 | `TestF7LoadingIcon`、`TestF7LoadingGrows`、`TestLoadSelectAndChecks`（lib：`LoadSelect`、`LoadChecks`） |
 | F7 | 垂直置中；toast 的下框在畫面倒數第三列 | 每種 popup；D「Toast」 | `TestF7Position`、`TestToastPosition` |
 | F7 | 值可能不合格的 popup 預留一列錯誤列；動作失敗開 error popup | I 的 `Port`；D「Form: save fails」 | `TestF7ErrorRowReserved` |
-| F7 | terminal：寬 `寬 − 2`；上面留 statusbar 或 chip 列（含分隔線）、下面到最後一列蓋掉 footer；上下左右都不留白 | T `[2] SESSIONS` 的 `[Alt-t]erm` | `TestTerminalPopupSize` |
+| F7 | terminal：寬 `寬 − 2`；上面留 statusbar 或 chip 列（含分隔線）、下面到最後一列，footer 不畫；上下左右都不留白 | T `[2] SESSIONS` 的 `[Alt-t]erm` | `TestTerminalPopupSize` |
 | F8 | 最上層以外全部淡化（底下 popup 與 base 畫面），一直只有最上層亮 | D 的三層疊法 | `TestF8DimAllButTop` |
 | F8 | 在收的 popup 不算一層（color 的層色）：層色只數底下開著的層，表單送出後開的下一個 popup 從第一格就是第 1 層色；壓在最上層底下、還在收的也淡化。表單送出只關表單自己，送出時開的 popup 留著 | 用 lib 的 app：kamonu 的 `NEW KAMON` 按 Create 開 `DRAW`（展示場沒有這種流程） | `TestAppPopupFromFormSubmit` |
 | F8 | 串流內容與警示色一起淡化；淡化照 color 的算法改每一個顏色、形狀不動 | P `[2] LOG` 上開 popup | `TestF8DimStreamToo`、`TestDimEveryColor` |
@@ -184,7 +184,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | T1 | 預設保留 source；照「確定之後的動作」判：打開來看、選值寫回、用編輯器改保留；讓那一項不在、開 shell、換畫面、drill-down 清掉。lib：從 menu 跑的動作，打開了 popup 就把 menu 留在底下（`Action.Clear` 讓它清掉 menu 與底下的 popup），什麼都沒打開就關掉 menu；`Action.Stay` 一律留著 | D 的疊法；P `[1] PODS` 的 Space menu 跑 `[V]iew` 類的動作；`[2] SESSIONS` 的 `[Alt-t]erm` 從 Space menu 打開會清掉 menu | `TestT1KeepOrClear`、`TestT1KeepByDefault`、`TestCloseAll`、`TestInputSteps`（lib：`App.CloseAll`、`App.CloseTop`） |
 | T1 | confirm 只是門：在 confirm 上 `Esc` 一律回到 source；接受之後照它後面的動作判；menu 的動作失敗開的 error popup 關掉回到 menu | P `[1] PODS` 的 Space menu 跑 `[x] Delete` 再 `Esc` | `TestT1KeepByDefault` |
 | T1 | 清掉 source 時，target 打開的同時 source 收起，兩段動畫一起播、不等 source 收完；在收的 source 不算一層，target 從第一格就是自己那一層的層色，source 收完時不跳色（layout/popup 的開關動畫、color 的層色） | `[2] SESSIONS` 的 `[Alt-t]erm` 從 Space menu 打開，看 terminal 的框一路都是第 1 層色 | `TestT1SourceClosesWhileTargetOpens`、`TestAppPopupFromFormSubmit` |
-| T2 | 失焦 panel 用 F8 的淡化變暗；串流內容失焦不變暗；popup 蓋上時一律淡化 | P：focus 在 `[1]`，`[2] LOG` 不暗、`[3]` 暗 | `TestT2UnfocusedDim`、`TestT2StreamNotDimmed` |
+| T2 | 失焦 panel 用 F8 的淡化變暗；串流內容失焦不變暗，但串流 panel（含 PTY）下框的 hint 照樣變暗；popup 蓋上時一律淡化 | P：focus 在 `[1]`，`[2] LOG` 內容不暗、hint 暗，`[3]` 暗 | `TestT2UnfocusedDim`、`TestT2StreamNotDimmed` |
 | S 開頭 | splash 佔滿整個畫面，原本的畫面都不畫 | P `[1] PODS` 按 `V` | `TestS1SplashOnV`、`TestS5SplashFillsScreen` |
 | S1 | 在 panel 上按 `V` 開 splash；某 panel 可把 `V` 給自己用，至少一個 panel 仍是 splash | P `[1] PODS` 按 `V`；I `[2] FILES` 的 `V` 給 `[V]iew` | `TestS1SplashOnV`、`TestS1EveryAppHasSplash` |
 | S2 | 不出現在 Space menu、global operation popup、key reference、footer、hint、README | lib：splash 沒有登記項 | `TestS2SplashNotDisclosed` |
@@ -243,7 +243,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | screen §由上往下 | 最上面一列（多畫面：chip 列 + 全寬分隔線；單畫面：可有 statusbar）、panel 區、最下面一列 footer；每個畫面的 panel 從 `[1]` 編號 | 每個畫面；lib 的單畫面版本由測試畫 | `TestScreenRows` |
 | screen §footer | 一列、M5 寫法、鍵 Blue 冒號說明 Overlay0；放不下從尾端整組捨 | 縮到 40 欄 | `TestFooterDropsWholePairs` |
 | screen §footer | 一般 `Space:menu ?:help Tab\|1–N:panels q:quit`；單 panel `Space:menu ?:help q:quit`；模式 `?:help` + 模式的鍵 + `Esc:<動詞>`；filter 打字中 `Enter\|Tab:list Esc:clear`，沒有結果時 `Tab:list Esc:clear`；PTY 在 panel 裡：出口鍵 + 保留鍵；popup 開著時照底下畫面的寫、跟著淡化 | P 一般與 Drag；P filter（打 `zz` 沒有結果）；T `[1] SHELL`；任一 popup；lib 的單 panel 版本 | `TestFooterVariants`、`TestFooterUnderPopupDimmed` |
-| screen §footer | terminal popup 開著時被它蓋掉 | T 的 terminal popup | `TestTerminalPopupSize` |
+| screen §footer | terminal popup 開著時 footer 整列不畫：最後一列兩端是空白，不露出 footer 的字 | T 的 terminal popup | `TestTerminalPopupSize` |
 | screen §畫面 chip 列 | 每個畫面一個膠囊、串的顏色 Blue（選中填 Blue 字 Base 粗體、沒選中字 Blue）；放不下先縮 `[P] [I] [D] [T]` 再收掉沒選中的 | 每個畫面；縮窄 | `TestScreenChips`、`TestScreenChipsShrink` |
 | screen §畫面 chip 列 | 右邊放 statusbar；下面全寬粗線 `━` Overlay0；長工作時從左填 Green 進度條、狀態文字 Green；terminal popup 開著時 chip 列與分隔線留著 | `Start task`；開 terminal popup 時再看一次 | `TestChipRowProgress` |
 | screen §statusbar | 不是 surface；label 有熱鍵就標；一般 Overlay0、你在哪 Lavender、進行中 Green、錯誤警告數 Red / Peach；寬度固定、截斷不折行 | statusbar：`[N]arrow: off`（有熱鍵、值 Lavender）、`icon` 與 `powerline` 的格數、錯誤數 Red、警告數 Peach、`[S]tart task` 進行中 Green | `TestStatusbar` |

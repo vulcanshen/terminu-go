@@ -281,6 +281,10 @@ func (p *Panel) draw(n, w, h int, focused bool) []string {
 	_, pty := p.Body.(*Terminal)
 	if !focused && !p.Stream && !pty { // a program's screen is live, like a stream (Rules T2)
 		b.body = DimLines(b.body)
+	}
+	if !focused {
+		// The hint dims on every panel without the focus, a stream's too: it
+		// is not what streams (Rules T2).
 		b.hintKey = Fg(DimColor(Blue))
 		b.hintWords = DimColor(Overlay0)
 	}

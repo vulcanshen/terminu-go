@@ -1537,6 +1537,13 @@ func TestT2StreamNotDimmed(t *testing.T) {
 	if got := covBAt(tb.rowWith("live"), 60, 120, "live").fg; got != "1;2;3" {
 		t.Errorf("an unfocused PTY is dimmed: %s", got)
 	}
+	// The hint of a stream without the focus dims all the same: it is not
+	// what streams (Rules T2).
+	log.Stream = true
+	log.Actions = []Action{{Key: "Enter", Label: "View", Desc: "the log", Scope: PanelScope, Hint: "view", Do: func() tea.Cmd { return nil }}}
+	if got := covBAt(ta.rowWith("Enter:view"), 40, 80, "Enter").fg; got != covBDim(Blue) {
+		t.Errorf("an unfocused stream's hint is not dimmed: %s", got)
+	}
 }
 
 // A menu that clears itself for the popup it opens (Rules T1, a drill-down):
