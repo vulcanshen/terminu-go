@@ -2,7 +2,7 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.8.1
+## v0.2.0 — tdp v0.8.1
 
 - tdp v0.8.1 writes down G98 and G99 as the library does them (a list's location row stays when it is empty; an
   unwrapped viewer scrolls across under the selection cursor); its Windows cache folder and item-by-item moves are
