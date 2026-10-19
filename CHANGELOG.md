@@ -8,6 +8,26 @@ Each release names the version of terminu design (tdp) it implements.
   draw the space it breaks at, as the library already did (G95); the checklist now counts genes, which the library
   does not apply
 - tdp v0.7.4 changes only the checklist (an item can be judged "cannot tell"), so nothing changes
+- A popup on a terminal shorter than its frame (5 rows and under, 1×1) is cut off instead of panicking; on a short
+  screen a popup is never taller than its height, the blank rows inside its frame giving way first, so a form on a
+  10-row screen no longer covers the footer (Rules F7)
+- An input too short for its prompt keeps its typing row and its error row in sight
+- An input closes without calling `Done` when its value is the one it opened with: typed and deleted back to
+  empty, or its suggestion thrown away and typed again (Rules K3). An input that opened empty closes on `Enter`
+  without running its check
+- `ErrEmpty` in an error row names the value: `Name can't be empty`
+- A truncated styled line draws its `…` in the style of the text it stands for, not the terminal's default colour;
+  `TruncateLeft` too, and plain text gets no reset
+- A tab in the text of a panel or a popup (a pager, a list, values, a menu, a select…) is drawn as `InputTabWidth`
+  spaces, as in the viewer, and `Width` counts it so; it was sent to the terminal and pushed the row past the frame
+- A terminal resized while its program ends no longer races the reader closing its PTY (`go test -race`)
+- A file preview's tree draws its second level two cells in, under the first level's name
+- A viewer's key reference keeps the name of what it shows as it is: `FIRST PAGE — Pride and Prejudice KEYS`
+- A form's key reference lists `Space` only when the form has checkbox options and `e` only when a field is wrong,
+  either in the disabled colour where the focus cannot use it (Rules M6)
+- A form's focused field no longer gets a `…` after a value that fits when the arrow is two cells wide
+- With `App.ShiftTab` a panel's key reference writes `Tab|Shift-Tab`; its app-wide section leaves out hidden
+  global actions
 
 ## v0.1.13 — tdp v0.7.2
 
