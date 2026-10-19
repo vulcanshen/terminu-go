@@ -194,6 +194,62 @@ func visibleText(s string, tabW int) string {
 	return b.String()
 }
 
+// fileText is a line of a file as drawn: every control character by its name,
+// ESC too, so an escape sequence written in the file is shown, not obeyed,
+// and nothing of it is lost (components/input/file-picker).
+func fileText(s string, tabW int) string {
+	var b strings.Builder
+	for _, c := range graphemes(s) {
+		b.WriteString(drawn(c, tabW))
+	}
+	return b.String()
+}
+
+// lsMode is a mode as ls -l writes it: the kind (- d l c b p s), then rwx
+// three times, s, S, t, T where setuid, setgid and sticky are
+// (components/input/file-picker).
+func lsMode(m fs.FileMode) string {
+	kind := byte('-')
+	switch {
+	case m&fs.ModeDir != 0:
+		kind = 'd'
+	case m&fs.ModeSymlink != 0:
+		kind = 'l'
+	case m&fs.ModeCharDevice != 0:
+		kind = 'c'
+	case m&fs.ModeDevice != 0:
+		kind = 'b'
+	case m&fs.ModeNamedPipe != 0:
+		kind = 'p'
+	case m&fs.ModeSocket != 0:
+		kind = 's'
+	}
+	b := []byte{kind}
+	for i, who := range []fs.FileMode{0o700, 0o070, 0o007} {
+		p := m.Perm() & who
+		shift := uint(6 - 3*i)
+		r, w, x := p>>shift&4 != 0, p>>shift&2 != 0, p>>shift&1 != 0
+		b = append(b, "-r"[btoi(r)], "-w"[btoi(w)])
+		special := i == 0 && m&fs.ModeSetuid != 0 || i == 1 && m&fs.ModeSetgid != 0 || i == 2 && m&fs.ModeSticky != 0
+		switch {
+		case special && i < 2:
+			b = append(b, "Ss"[btoi(x)])
+		case special:
+			b = append(b, "Tt"[btoi(x)])
+		default:
+			b = append(b, "-x"[btoi(x)])
+		}
+	}
+	return string(b)
+}
+
+func btoi(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
+}
+
 // redNames is line, chars drawn as visibleText draws them and coloured, with
 // the names of the control characters in Red (components/dialog/note).
 func redNames(line string, chars []string, tabW int) string {
@@ -249,7 +305,7 @@ func highlight(p, text string, h, tabW, first int) []string {
 	lines := make([]string, len(raw))
 	for i := range raw {
 		raw[i], _ = crlf(raw[i])
-		lines[i] = visibleText(raw[i], tabW)
+		lines[i] = fileText(raw[i], tabW)
 	}
 	lexer := lexers.Match(filepath.Base(p))
 	if lexer == nil {
@@ -596,7 +652,7 @@ func fileInfoIn(fsys PreviewFS, p string, w int, layer Color) []string {
 			rows[1][1] = size(st.Size())
 		}
 		rows[2][1] = st.ModTime().Format("2006-01-02 15:04")
-		rows[3][1] = st.Mode().String()
+		rows[3][1] = lsMode(st.Mode())
 	} else {
 		// Gone since it was listed (deleted, moved): nothing to tell of.
 		rows[0][1], rows[1][1], rows[2][1], rows[3][1] = "—", "—", "—", "—"

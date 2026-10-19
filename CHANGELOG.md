@@ -146,6 +146,11 @@ Each release names the version of terminu design (tdp) it implements.
 - `Viewer.Hits` and `Current` draw a search the app runs: every hit underlined in its own colours, the current
   one as the cursor block; `FindText` finds them (components/dialog/note)
 - A viewer's key reference lists its scroll keys only when its lines do not all fit
+- An error popup opened before the terminal's size is known (in `App.Start`) folds at the real width once it is,
+  not a character a row
+- A file preview shows an escape sequence written in the file instead of obeying it: ESC by its red name, the rest
+  as text, nothing lost; its metadata writes `MODE` as `ls -l` does (`drwxrwxrwt`, `-rwsr-xr-x`)
+  (components/input/file-picker)
 - `List.Location` is a list's location row, where the user is, in Lavender above its header, cut from the front
   (layout/panel)
 

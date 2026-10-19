@@ -28,6 +28,55 @@ func writeFile(t *testing.T, p string, data []byte, mode os.FileMode) {
 	}
 }
 
+// TestFilePreviewEscapes: an escape sequence written in a file is shown, not
+// obeyed: ESC by its red name, the rest of it as text, nothing lost
+// (components/input/file-picker; sshu SS38).
+func TestFilePreviewEscapes(t *testing.T) {
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, "log.txt"), []byte("ok \x1b[31mred\x1b[0m done\n"), 0o600)
+	lines := filePreview(filepath.Join(dir, "log.txt"), 60, 5, false, nil, 4)
+	text := StripStyles(strings.Join(lines, "\n"))
+	if !strings.Contains(text, `ok \x1b[31mred\x1b[0m done`) {
+		t.Errorf("every character shown: %q", text)
+	}
+	if !strings.Contains(strings.Join(lines, ""), Fg(Red).Render(`\x1b`)) {
+		t.Errorf("ESC by its red name: %q", lines)
+	}
+}
+
+// TestLsMode: a mode as ls -l writes it (components/input/file-picker).
+func TestLsMode(t *testing.T) {
+	for _, c := range []struct {
+		m    fs.FileMode
+		want string
+	}{
+		{0o600, "-rw-------"},
+		{fs.ModeDir | 0o700, "drwx------"},
+		{fs.ModeDir | fs.ModeSticky | 0o777, "drwxrwxrwt"},
+		{fs.ModeSetuid | 0o755, "-rwsr-xr-x"},
+		{fs.ModeSetgid | 0o640, "-rw-r-S---"},
+		{fs.ModeSymlink | 0o777, "lrwxrwxrwx"},
+		{fs.ModeDevice | fs.ModeCharDevice | 0o666, "crw-rw-rw-"},
+		{fs.ModeDevice | 0o660, "brw-rw----"},
+		{fs.ModeNamedPipe | 0o644, "prw-r--r--"},
+		{fs.ModeSocket | 0o755, "srwxr-xr-x"},
+	} {
+		if got := lsMode(c.m); got != c.want {
+			t.Errorf("lsMode(%v) = %q, want %q", c.m, got, c.want)
+		}
+	}
+	shared := filepath.Join(t.TempDir(), "shared")
+	if err := os.Mkdir(shared, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(shared, 0o777|os.ModeSticky); err != nil {
+		t.Fatal(err)
+	}
+	if l := previewText(fileInfo(shared, 40, Blue)); !strings.Contains(l, "MODE      drwxrwxrwt") {
+		t.Errorf("the metadata writes it as ls -l does:\n%s", l)
+	}
+}
+
 func TestFilePreviewKinds(t *testing.T) {
 	dir := t.TempDir()
 	writeFile(t, filepath.Join(dir, "main.go"), []byte("package main\n\nfunc main() {}\n"), 0o644)

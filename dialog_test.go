@@ -128,6 +128,20 @@ func TestViewerSearchHits(t *testing.T) {
 	}
 }
 
+// TestErrorPopupBeforeTheSize: an error popup opened before the terminal's
+// size is known (App.Start) folds at the width it gets once it is: not a
+// character a row (sshu SS37).
+func TestErrorPopupBeforeTheSize(t *testing.T) {
+	ta := &testApp{App: anySize(New("t"))}
+	ta.AddScreen(&Screen{Name: "S", Panels: []*Panel{{Label: "P", Body: &Pager{}}}})
+	ta.Error("Connect", "ssh: connect to host web-01 port 22: Connection refused")
+	ta.resize(100, 30)
+	n := ta.topView().(*noteView)
+	if len(n.lines) != 1 || !strings.Contains(StripStyles(n.lines[0]), "Connection refused") {
+		t.Errorf("folded at the real width: %q", n.lines)
+	}
+}
+
 // rowWith is the styled screen row whose text holds s.
 func (ta *testApp) rowWith(s string) string {
 	for _, l := range ta.Frame() {
