@@ -77,6 +77,9 @@ type App struct {
 	// ToastLines caps how many lines a toast has, the last one kept ending in
 	// "…"; 0 for no cap (components/dialog/toast: the app's choice).
 	ToastLines int
+	// Spinning reports that a loading icon of the app's own is on the screen
+	// (LoadingFrame in a row), so the lib keeps drawing it turning.
+	Spinning func() bool
 	// Progress is a long job's progress, 0 to 1, for the bar under the
 	// screen chips; ok false when there is none.
 	Progress func() (frac float64, ok bool)
@@ -295,6 +298,9 @@ func (a *App) growLoading() {
 
 // loading reports whether a loading icon is on screen, so it keeps turning.
 func (a *App) loading() bool {
+	if a.Spinning != nil && a.Spinning() {
+		return true
+	}
 	if s := a.Screen(); s != nil {
 		for _, p := range s.Panels {
 			if p.Loading {
@@ -386,6 +392,20 @@ func (a *App) closeTop() tea.Cmd {
 	return a.closeLayer(l)
 }
 
+// layerOf is l's layer: the open popups under it, and itself (components/color).
+func (a *App) layerOf(l *layer) int {
+	n := 1
+	for _, below := range a.stack {
+		if below == l {
+			break
+		}
+		if !below.closing {
+			n++
+		}
+	}
+	return n
+}
+
 // closeOnly starts closing v's popup alone: a popup opened over it stays (a
 // form's submit that opens the next popup).
 func (a *App) closeOnly(v popupView) tea.Cmd {
@@ -400,6 +420,10 @@ func (a *App) closeOnly(v popupView) tea.Cmd {
 func (a *App) closeLayer(l *layer) tea.Cmd {
 	if a.isQuitConfirm(l) {
 		a.quitting = false
+	}
+	// It closes in the colour of the layer it was (Rules F2).
+	if !l.shade.Set {
+		l.shade = LayerColor(a.layerOf(l))
 	}
 	l.closing = true
 	if l.frame > openFrames {
@@ -453,48 +477,52 @@ func (a *App) answer() tea.Cmd {
 	return a.closeTop()
 }
 
-// closeView closes v's popup and every one above it, those at once, as
+// closeView closes v's popup and every one above it, all together, as
 // closeAll does with the whole stack.
 func (a *App) closeView(v popupView) tea.Cmd {
 	i := slices.IndexFunc(a.stack, func(l *layer) bool { return l.view == v && !l.closing })
 	if i < 0 {
 		return nil
 	}
-	kept := a.stack[:i+1]
-	var cmds []tea.Cmd
-	for _, l := range a.stack[i+1:] {
-		if l.closing {
-			kept = append(kept, l)
-		} else {
-			if a.isQuitConfirm(l) {
-				a.quitting = false
-			}
-			cmds = append(cmds, gone(l))
-		}
-	}
-	a.stack = kept
-	return tea.Batch(append(cmds, a.closeTop())...)
+	return a.closeLayers(a.stack[i:])
 }
 
-// closeAll closes every popup: the top one animates, the rest go at once
-// (Rules T1, when what was done ends the whole stack).
+// closeAll closes every popup (Rules T1, when what was done ends the whole
+// stack): each plays its own closing at the same time, at its own size and
+// in its own layer's colour, about 288ms in all (Rules F2).
 func (a *App) closeAll() tea.Cmd {
-	t := a.top()
-	if t == nil {
+	a.quitting = false
+	return a.closeLayers(a.stack)
+}
+
+// closeUnder closes every popup under top as top opens: the sources it
+// clears, all together (Rules T1, F2).
+func (a *App) closeUnder(top *layer) tea.Cmd {
+	i := slices.Index(a.stack, top)
+	if i < 0 {
 		return nil
 	}
-	kept := a.stack[:0]
-	var cmds []tea.Cmd
-	for _, l := range a.stack {
-		if l == t || l.closing {
-			kept = append(kept, l)
-		} else {
-			cmds = append(cmds, gone(l))
+	return a.closeLayers(a.stack[:i])
+}
+
+// closeLayers starts closing the layers of ls that are not closing yet.
+func (a *App) closeLayers(ls []*layer) tea.Cmd {
+	var open []*layer
+	for _, l := range ls {
+		if !l.closing {
+			open = append(open, l)
 		}
 	}
-	a.stack = kept
-	a.quitting = false
-	return tea.Batch(append(cmds, a.closeTop())...)
+	// Each keeps the colour of the layer it was, the ones under it closing
+	// too (Rules F2).
+	for _, l := range open {
+		l.shade = LayerColor(a.layerOf(l))
+	}
+	var cmds []tea.Cmd
+	for _, l := range open {
+		cmds = append(cmds, a.closeLayer(l))
+	}
+	return tea.Batch(cmds...)
 }
 
 func (a *App) relayout() {
@@ -600,19 +628,35 @@ func (a *App) runAction(act Action, fromMenu bool) tea.Cmd {
 		}
 		return cmd
 	}
+	// then does it where it was asked for: from a menu, what it opens keeps
+	// the menu under it unless it clears it; if it opens nothing the menu's
+	// work is done (Rules T1).
+	then := func() tea.Cmd {
+		if !fromMenu || act.Stay || act.Detail {
+			return do()
+		}
+		before := a.top()
+		cmd := do()
+		switch top := a.top(); {
+		case top == nil || top == before:
+			return tea.Batch(a.closeAll(), cmd)
+		case act.Clear:
+			return tea.Batch(a.closeUnder(top), cmd)
+		}
+		return cmd
+	}
 	ask := act.Ask
 	if act.AskFor != nil {
 		ask = act.AskFor()
 	}
 	if ask != nil {
 		c := newConfirm(*ask, nil)
-		c.accept = func() tea.Cmd { return tea.Batch(a.closeAll(), do()) }
+		// The confirm is only a door: accepted, it goes, and what the action
+		// does decides about the menu (Rules T1).
+		c.accept = func() tea.Cmd { return tea.Batch(a.answer(), then()) }
 		return a.open(c)
 	}
-	if fromMenu && !act.Stay && !act.Detail {
-		return tea.Batch(a.closeAll(), do())
-	}
-	return do()
+	return then()
 }
 
 // --- quitting ----------------------------------------------------------------
@@ -1181,6 +1225,8 @@ func (a *App) Frame() []string {
 		color := LayerColor(open + 1)
 		if !l.closing {
 			open++
+		} else if l.shade.Set {
+			color = l.shade
 		}
 		full := fitRows(l.view.draw(l.w, l.h, color), l.h)
 		if i < under {

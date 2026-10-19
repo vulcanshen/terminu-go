@@ -284,6 +284,40 @@ func TestPopupHintOrder(t *testing.T) {
 	}
 }
 
+// TestMenuLiveRows: a work list's rows follow their work while the menu is
+// open; Enter's word follows the row under the cursor (components/dialog/menu,
+// work lists).
+func TestMenuLiveRows(t *testing.T) {
+	ta := newTestApp(t)
+	done := 3
+	ta.Menu("Jobs", MenuSection{Actions: []Action{
+		{Label: "upload.tar", Desc: "3/10", EnterHint: "cancel",
+			Live: func() (string, string) { return "upload.tar", fmt.Sprintf("%d/10", done) },
+			Ask:  &Ask{Title: "Cancel", Details: []string{"upload.tar to web-01"}, Question: "Cancel the transfer?", Verb: "cancel"}},
+		{Label: "backup.zip", Desc: "done", Detail: true, Do: func() tea.Cmd { return nil }},
+	}})
+	ta.settle()
+	if !strings.Contains(ta.screenText(), "3/10") {
+		t.Error("the progress")
+	}
+	done = 7
+	if text := ta.screenText(); !strings.Contains(text, "7/10") || strings.Contains(text, "3/10") {
+		t.Error("the row follows its work without closing the menu")
+	}
+	if keys := covDHintKeys(ta, ta.top()); fmt.Sprint(keys) != "[Enter Esc]" || !strings.Contains(covDTop(ta)[ta.top().h-1], "Enter:cancel") {
+		t.Errorf("Enter:cancel on a row that cancels: %q", covDTop(ta)[ta.top().h-1])
+	}
+	ta.press("j")
+	if !strings.Contains(covDTop(ta)[ta.top().h-1], "Enter:detail") {
+		t.Errorf("Enter:detail on one with nothing to do: %q", covDTop(ta)[ta.top().h-1])
+	}
+	ta.press("k", "Enter")
+	ta.settle()
+	if c, ok := ta.topView().(*confirmView); !ok || !strings.Contains(StripStyles(strings.Join(ta.Frame(), "")), "upload.tar to web-01") {
+		t.Errorf("Enter asks, with the row's full text: %T %v", ta.topView(), c)
+	}
+}
+
 func TestPopupHintDrop(t *testing.T) {
 	ta := newTestApp(t)
 	ta.resize(26, 12) // the Space menu is 24 wide and scrolls: 1 of 7

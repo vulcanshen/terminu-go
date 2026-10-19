@@ -157,6 +157,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | F1 | 多步驟流程每一步是自己的 popup | D「Menu: Sort by」（欄位 → 方向） | `TestMultiStepStacks` |
 | F1 | 七類以外的 popup 是 app 自己的一類，app 記成偏離（例：kamonu 畫格子的 popup）。lib 給入口 `App.Popup`：框裡的內容與按鍵歸 app；框、標題（`DRAW: icon`）、hint、層色、開關動畫、淡化、F7 的大小歸 lib；app 沒收的 `Esc` 關這一層、`?` 開它的 key reference（只列它自己的鍵）、`q` 進離開流程，`Ctrl-C` 不經過它；lib 的 confirm、input、error popup 疊在它上面，`ClosePopup` 連同上面的一起關 | D「Popup: the app’s own」：`hjkl` 移、`Enter` 畫、`Tab` 到 Save、改過再 `Esc` 先問、`q` 不作用 | `TestAppPopupFrame`、`TestAppPopupSize`、`TestAppPopupKeys`、`TestAppPopupStack`、`TestAppPopupComparable` |
 | F2 | 開關都有動畫，全家族同一種：中間拉一條線、再上下展開，收起倒著播；每格 32ms、各 9 格；打開的動畫播完前不收鍵 | 每種 popup | `TestF2AnimationFrames`、`TestF2NoKeysWhileOpening` |
+| F2 | 好幾層一起收起時（一個動作關掉整疊、T1 清掉兩層以上的 source）每一層同時收、各自照自己的大小與層色，總共還是 9 格 | D：Space menu → Global → `?` 再跑會關掉整疊的動作 | `TestF2LayersCloseTogether` |
 | F3 | `Esc` 立刻開始關閉任何 popup（含 toast）；關閉照常有動畫；在關的 popup 不再理會 `Esc` 與其他鍵 | 連按兩下 `Esc` 關兩層 | `TestF3EscImmediate`、`TestF3ClosingIgnoresKeys` |
 | F3 | 例外：PTY（toast 只能等時間到）、textarea 寫入狀態、改過的表單、textarea 與 reorder 先 confirm | T；I 的 `Comment`；D「Form: New host」改過再 `Esc`；I 的 `Segments` 搬過再 `Esc` | `TestF3Exceptions`、`TestReorderEsc` |
 | F4 | 從 A 開 B，A 留著；取消 B 回 A；多層一樣 | D 的疊法情境 | `TestF4KeepSource`、`TestInputSteps`（多步驟的 input：`Stay`，`Esc` 退一步、值都在） |
@@ -180,7 +181,8 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 |---|---|---|---|
 | X1 | 沒有 mouse 也能完整操作 | 全部用鍵盤走過 | 整份清單的按鍵測試 |
 | X2 | 有 mouse 時每個動作對應一個鍵盤動作 | lib 先不做 mouse；做的時候補 | （做 mouse 時補） |
-| T1 | 預設保留 source；短 confirm、選值保留；長 session、大幅切換 context 清掉 | D 的疊法；`[2] SESSIONS` 的 `[Alt-t]erm` 從 Space menu 打開會清掉 menu | `TestT1KeepOrClear`、`TestCloseAll`、`TestInputSteps`（lib：`App.CloseAll`、`App.CloseTop`） |
+| T1 | 預設保留 source；照「確定之後的動作」判：打開來看、選值寫回、用編輯器改保留；讓那一項不在、開 shell、換畫面、drill-down 清掉。lib：從 menu 跑的動作，打開了 popup 就把 menu 留在底下（`Action.Clear` 讓它清掉 menu 與底下的 popup），什麼都沒打開就關掉 menu；`Action.Stay` 一律留著 | D 的疊法；P `[1] PODS` 的 Space menu 跑 `[V]iew` 類的動作；`[2] SESSIONS` 的 `[Alt-t]erm` 從 Space menu 打開會清掉 menu | `TestT1KeepOrClear`、`TestT1KeepByDefault`、`TestCloseAll`、`TestInputSteps`（lib：`App.CloseAll`、`App.CloseTop`） |
+| T1 | confirm 只是門：在 confirm 上 `Esc` 一律回到 source；接受之後照它後面的動作判；menu 的動作失敗開的 error popup 關掉回到 menu | P `[1] PODS` 的 Space menu 跑 `[x] Delete` 再 `Esc` | `TestT1KeepByDefault` |
 | T1 | 清掉 source 時，target 打開的同時 source 收起，兩段動畫一起播、不等 source 收完；在收的 source 不算一層，target 從第一格就是自己那一層的層色，source 收完時不跳色（layout/popup 的開關動畫、color 的層色） | `[2] SESSIONS` 的 `[Alt-t]erm` 從 Space menu 打開，看 terminal 的框一路都是第 1 層色 | `TestT1SourceClosesWhileTargetOpens`、`TestAppPopupFromFormSubmit` |
 | T2 | 失焦 panel 用 F8 的淡化變暗；串流內容失焦不變暗；popup 蓋上時一律淡化 | P：focus 在 `[1]`，`[2] LOG` 不暗、`[3]` 暗 | `TestT2UnfocusedDim`、`TestT2StreamNotDimmed` |
 | S 開頭 | splash 佔滿整個畫面，原本的畫面都不畫 | P `[1] PODS` 按 `V` | `TestS1SplashOnV`、`TestS5SplashFillsScreen` |
@@ -357,6 +359,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | menu §長相 | 區塊標題：U+F02D8（六角形）+ 一格 + 大寫標題，Overlay0、離框一格、不加粗、cursor 跳過；區塊之間的分隔線 `╌`（U+254C）、不接框、Overlay0、cursor 跳過 | Space menu | `TestMenuHeadings`、`TestMenuSeparator` |
 | menu §長相 | cursor 層色底、Base 粗體，從框貼到框、字離框一格、最右邊一格是箭頭；停用的列整列 Surface2、cursor 跳過、熱鍵不作用 | `Disable` 之後的 Space menu | `TestMenuCursor`、`TestM6DisabledRow` |
 | menu §長相 | 標題 U+F0C9 + 文字（標題膠囊）：Space menu 寫 focus panel 的 `[N] label`、其他寫它做什麼（`GLOBAL OPERATION`、`SORT BY`）；`Global operation` 列說明一律 `actions for the whole app`；寬度照「內容確定」 | Space menu、Global operation、Sort by | `TestMenuTitle`、`TestMenuGlobalRow` |
+| menu §工作清單 | 列跟著工作更新（menu 開著時進度、狀態一變那一列就變；lib：`Action.Live`，列裡的 loading 圖示 `LoadingFrame`、`App.Spinning`）；能對那一列做事的 `Enter` 開帶全文的 confirm、hint 寫那個動作 `Enter:cancel`（lib：`Action.EnterHint`）；沒有動作的 `Enter:detail`；hint 跟著 cursor 那一列換 | D「Menu: Worklist」的 `upload.tar` | `TestMenuLiveRows`、`TestSpinning` |
 | menu §按鍵 | `j\|k` 到頭尾繞回；`u\|d`（到頭尾停住）、`gg\|G`；`Enter` 執行、熱鍵直接執行；`Esc` 關（global 回 Space menu）；Space menu 再按 `Space` 關；hint `Enter:run Esc:close`；打開那一列全文的 menu（工作清單）寫 `Enter:detail Esc:close` | 同上 | `TestMenuKeys`、`TestMenuWraps`、`TestMenuEnterOpensFullText` |
 
 ## dialog/confirm

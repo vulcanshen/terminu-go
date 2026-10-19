@@ -42,12 +42,31 @@ type Action struct {
 	// Disabled reports that it cannot run now: the row is shown in the
 	// disabled colour, the cursor skips it and its hotkey does nothing.
 	Disabled func() bool
-	// Stay keeps the menu it runs from open (a step of its own over it).
+	// Run from a menu, an action that opens a popup keeps the menu under it,
+	// to come back to (Rules T1, F4); one that opens nothing has done the
+	// menu's work, and the menu closes. A confirm before it is only a door:
+	// Esc on it goes back to the menu, and once it is accepted what the action
+	// does decides.
+	//
+	// Clear makes what it opens clear the menu, and the popups under it, as
+	// it opens (T1: the item is gone, a shell, another screen, a drill-down).
+	Clear bool
+	// Stay keeps the menu it runs from open even when it opens nothing.
 	Stay bool
 	// Detail marks a row whose Enter opens its full text over the menu (a
 	// worklist, Rules F1): the menu stays and its hint is Enter:detail
 	// (components/dialog/menu).
 	Detail bool
+	// EnterHint is the word after Enter in a menu's hint while the cursor is
+	// on this row ("cancel" on a work list's transfer, which asks first with
+	// the row's full text); "" is run, or detail with Detail
+	// (components/dialog/menu, work lists).
+	EnterHint string
+	// Live, when set, gives the row's label and description each time the
+	// menu is drawn: a work list's progress and state change while it is open
+	// (components/dialog/menu). The row keeps the width it had when the menu
+	// opened.
+	Live func() (label, desc string)
 	// ToDetails, on a panel's "Enter" action only, says whether Enter on the
 	// item under the cursor also sends the focus to the panel's Details: the
 	// one place Enter changes panels, whether and on which items being the

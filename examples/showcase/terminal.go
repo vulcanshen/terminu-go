@@ -67,8 +67,9 @@ func newTerminalScreen(s *showcase) *terminalScreen {
 		return a.OpenTerminal(ts.session(r.ID))
 	}
 	list := &terminu.Panel{Label: "Sessions", Body: ts.list, Actions: []terminu.Action{
-		{Key: "Enter", Label: "Open", Desc: "the session in a terminal popup", Scope: terminu.ItemScope, Hint: "open", Do: open},
-		{Key: "Alt-t", Label: "term", Desc: "the same, from anywhere in the list", Scope: terminu.ItemScope, Hint: "term", Do: open},
+		// A session clears the Space menu it is opened from (Rules T1).
+		{Key: "Enter", Label: "Open", Desc: "the session in a terminal popup", Scope: terminu.ItemScope, Hint: "open", Do: open, Clear: true},
+		{Key: "Alt-t", Label: "term", Desc: "the same, from anywhere in the list", Scope: terminu.ItemScope, Hint: "term", Do: open, Clear: true},
 	}}
 	// A lowercase screen key in a lowercase name: the chip keeps the marked
 	// letter as it is, [t]ERMINAL (Rules M5, panel: capitals).

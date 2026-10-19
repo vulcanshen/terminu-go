@@ -2,6 +2,7 @@ package terminu
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
 
@@ -579,6 +580,27 @@ func TestValueControlChars(t *testing.T) {
 	// Text that is only read keeps its tab as spaces (Rules E3).
 	if got := Pad("make\tcheck", 20); !strings.Contains(got, "make    check") {
 		t.Errorf("text on the screen: %q", got)
+	}
+}
+
+// TestSpinning: an app's own loading icon in a row turns with the lib's
+// (LoadingFrame, App.Spinning).
+func TestSpinning(t *testing.T) {
+	ta := newTestApp(t)
+	if !slices.Contains(loadingFrames[:], LoadingFrame()) {
+		t.Errorf("not a loading frame: %q", LoadingFrame())
+	}
+	busy := true
+	ta.Spinning = func() bool { return busy }
+	ta.spin = false
+	if _, cmd := ta.Update(struct{}{}); cmd == nil || !ta.spin {
+		t.Error("the app's spinner keeps the ticks coming")
+	}
+	busy = false
+	ta.spin = false
+	ta.Update(struct{}{})
+	if ta.spin {
+		t.Error("nothing turning: no ticks")
 	}
 }
 

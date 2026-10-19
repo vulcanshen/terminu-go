@@ -46,8 +46,9 @@ type layer struct {
 	frame    int // 1–9 while opening, 9 when open, counting down while closing
 	closing  bool
 	toast    bool
-	loading  bool // it was loading at the last update
-	answered bool // closed on its answer: not cancelled (OnCancel)
+	loading  bool  // it was loading at the last update
+	answered bool  // closed on its answer: not cancelled (OnCancel)
+	shade    Color // the layer colour it closes in: the one it had open
 	// below runs when the layer is gone, the one under it on top again.
 	below func() tea.Cmd
 }
@@ -176,6 +177,11 @@ func cursorRow(plain string, inner int, block Style) string {
 func loadingFrame() string {
 	return loadingFrames[(time.Now().UnixMilli()/90)%8]
 }
+
+// LoadingFrame is the loading icon as it is now, for a row of the app's own
+// that is loading (a transfer in a work list): the same icon, turning with
+// the lib's. App.Spinning keeps it turning (components/layout/popup).
+func LoadingFrame() string { return loadingFrame() }
 
 type spinMsg struct{}
 

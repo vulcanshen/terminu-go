@@ -1488,9 +1488,9 @@ func TestT1KeepOrClear(t *testing.T) {
 		t.Errorf("after switching screens: screen %d, top %T", ta.cur, ta.topView())
 	}
 	ta.press("P")
-	// A long session opened from the Space menu clears the menu.
+	// A shell opened from the Space menu clears the menu (Action.Clear).
 	term := &Terminal{Title: "Shell", in: &strings.Builder{}, started: true}
-	ta.pods.Actions = append(ta.pods.Actions, Action{Key: "Alt-t", Label: "term", Desc: "a shell", Scope: PanelScope,
+	ta.pods.Actions = append(ta.pods.Actions, Action{Key: "Alt-t", Label: "term", Desc: "a shell", Scope: PanelScope, Clear: true,
 		Do: func() tea.Cmd { return ta.open(&termView{t: term, a: ta.App}) }})
 	ta.press("Space", "Alt-t")
 	if _, ok := ta.topView().(*termView); !ok || len(ta.stack) != 1 {
@@ -1539,12 +1539,13 @@ func TestT2StreamNotDimmed(t *testing.T) {
 	}
 }
 
-// A menu that clears itself for the popup it opens (Rules T1): both
-// animations play at once, and the closing menu is not a layer, so the new
-// popup has the first layer's colour from its first frame (components/color).
+// A menu that clears itself for the popup it opens (Rules T1, a drill-down):
+// both animations play at once, and the closing menu is not a layer, so the
+// new popup has the first layer's colour from its first frame
+// (components/color).
 func TestT1SourceClosesWhileTargetOpens(t *testing.T) {
 	ta := newTestApp(t)
-	ta.Menu("Open", MenuSection{Actions: []Action{{Key: "o", Label: "Open", Desc: "the YAML",
+	ta.Menu("Open", MenuSection{Actions: []Action{{Key: "o", Label: "Open", Desc: "the YAML", Clear: true,
 		Do: func() tea.Cmd { return ta.Viewer(testViewer()) }}}})
 	ta.settle()
 	ta.Update(keyMsg("o"))
@@ -1563,6 +1564,108 @@ func TestT1SourceClosesWhileTargetOpens(t *testing.T) {
 	ta.Update(animMsg{})
 	if len(ta.stack) != 1 {
 		t.Errorf("%d layers once the menu has closed", len(ta.stack))
+	}
+}
+
+// TestT1KeepByDefault: run from a menu, what an action opens keeps the menu
+// under it, to come back to; an action that opens nothing closes it. A
+// confirm before it is only a door (Rules T1, F4; components/dialog/menu).
+func TestT1KeepByDefault(t *testing.T) {
+	ta := newTestApp(t)
+	opens := Action{Key: "y", Label: "YAML", Desc: "look at it", Do: func() tea.Cmd { return ta.Viewer(testViewer()) }}
+	nothing := Action{Key: "r", Label: "Refresh", Desc: "again", Do: ta.record("refresh")}
+	fails := Action{Key: "f", Label: "Fetch", Desc: "fails", Do: func() tea.Cmd { return ta.Error("Fetch", "connection refused") }}
+	asks := Action{Key: "x", Label: "Delete", Desc: "it", Ask: &Ask{Title: "Delete", Question: "Delete it?", Verb: "delete"}, Do: ta.record("delete")}
+	asksThenOpens := Action{Key: "e", Label: "Edit", Desc: "it", Ask: &Ask{Title: "Edit", Question: "Edit it?", Verb: "edit"},
+		Do: func() tea.Cmd { return ta.Viewer(testViewer()) }}
+	open := func() popupView {
+		ta.covBCloseAll()
+		ta.Menu("Pod", MenuSection{Actions: []Action{opens, nothing, fails, asks, asksThenOpens}})
+		ta.settle()
+		return ta.topView()
+	}
+	menu := open()
+	ta.press("y")
+	ta.settle()
+	if _, ok := ta.topView().(*viewerView); !ok || len(ta.stack) != 2 {
+		t.Fatalf("a viewer over the menu: %T, %d layers", ta.topView(), len(ta.stack))
+	}
+	ta.press("Esc")
+	ta.settle()
+	if ta.topView() != menu {
+		t.Errorf("Esc goes back to the menu: %T", ta.topView())
+	}
+	ta.press("r")
+	ta.settle()
+	if ta.top() != nil || strings.Join(ta.ran, ",") != "refresh" {
+		t.Errorf("opening nothing, the menu closes: %T, ran %v", ta.topView(), ta.ran)
+	}
+	menu = open()
+	ta.press("f")
+	ta.settle()
+	ta.press("Enter")
+	ta.settle()
+	if ta.topView() != menu {
+		t.Errorf("the error popup of a menu's action closes back to the menu: %T", ta.topView())
+	}
+	menu = open()
+	ta.press("x")
+	ta.settle()
+	ta.press("Esc")
+	ta.settle()
+	if ta.topView() != menu {
+		t.Errorf("Esc on its confirm goes back to the menu: %T", ta.topView())
+	}
+	ta.press("x")
+	ta.settle()
+	ta.press("Enter")
+	ta.settle()
+	if ta.top() != nil || !strings.Contains(strings.Join(ta.ran, ","), "delete") {
+		t.Errorf("accepted, it opens nothing: everything closes: %T", ta.topView())
+	}
+	menu = open()
+	ta.press("e")
+	ta.settle()
+	ta.press("Enter")
+	ta.settle()
+	if _, ok := ta.topView().(*viewerView); !ok || len(ta.stack) != 2 || ta.stack[0].view != menu {
+		t.Errorf("accepted, the confirm goes and the menu stays under what it opens: %T, %d layers", ta.topView(), len(ta.stack))
+	}
+}
+
+// TestF2LayersCloseTogether: several popups closing at once each play their
+// own closing, at their own size and in their own layer's colour, all in the
+// same nine frames (Rules F2; components/layout/popup).
+func TestF2LayersCloseTogether(t *testing.T) {
+	ta := newTestApp(t)
+	ta.press("Space", "G", "Enter")
+	ta.settle()
+	ta.press("?")
+	ta.settle()
+	if len(ta.stack) != 3 {
+		t.Fatalf("three layers: %d", len(ta.stack))
+	}
+	colors := []Color{LayerColor(1), LayerColor(2), LayerColor(3)}
+	ta.CloseAll()
+	for i, l := range ta.stack {
+		if !l.closing || l.frame != openFrames || l.shade != colors[i] {
+			t.Errorf("layer %d: closing %v at frame %d in %v, want its own colour %v", i+1, l.closing, l.frame, l.shade, colors[i])
+		}
+	}
+	ta.Update(animMsg{})
+	for i, l := range ta.stack {
+		if l.frame != openFrames-1 {
+			t.Errorf("layer %d at frame %d: not all together", i+1, l.frame)
+		}
+	}
+	if frame := strings.Join(ta.Frame(), ""); !strings.Contains(frame, "38;2;"+covBRGB(colors[2])+"m") {
+		t.Error("the third layer is not drawn in its own colour as it closes")
+	}
+	for range openFrames - 1 {
+		ta.Update(animMsg{})
+	}
+	if len(ta.stack) != 0 {
+		t.Errorf("%d layers after nine frames", len(ta.stack))
 	}
 }
 

@@ -189,9 +189,32 @@ var tasks = []string{
 	"Clean up the stale namespaces left by the preview environments of merged pull requests.",
 }
 
+// transferring reports the work list's transfer running: its loading icon
+// keeps turning (App.Spinning).
+var transferring = func() bool { return false }
+
 func (ds *dialogsScreen) worklist() tea.Cmd {
 	a := ds.s.app
-	var rows []terminu.Action
+	// A transfer that runs while the list is open: its row follows it, the
+	// loading icon turning; Enter asks to cancel it, with the row's full
+	// text (components/dialog/menu, work lists).
+	start, cancelled := time.Now(), false
+	progress := func() int { return min(int(time.Since(start)/(600*time.Millisecond)), 10) }
+	transferring = func() bool { return !cancelled && progress() < 10 }
+	rows := []terminu.Action{{Label: "upload.tar", EnterHint: "cancel", Stay: true,
+		Live: func() (string, string) {
+			switch {
+			case cancelled:
+				return "upload.tar", "cancelled"
+			case progress() < 10:
+				return terminu.LoadingFrame() + " upload.tar", fmt.Sprintf("%d/10", progress())
+			}
+			return "upload.tar", "done"
+		},
+		Disabled: func() bool { return !transferring() },
+		Ask: &terminu.Ask{Title: "Cancel", Subject: "upload.tar", Verb: "cancel", Question: "Cancel the transfer?",
+			Details: []string{"upload.tar to web-01:/srv/releases, 10 parts of 64 MB"}},
+		Do: func() tea.Cmd { cancelled = true; return a.Toast(terminu.Info, "Cancelled upload.tar") }}}
 	for i, t := range tasks {
 		t := t
 		first, _, _ := strings.Cut(t, ";")

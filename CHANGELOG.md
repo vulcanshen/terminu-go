@@ -106,6 +106,15 @@ Each release names the version of terminu design (tdp) it implements.
   symbol takes two (components/dialog/form)
 - `FormButton.Open` opens a popup over the form, a terminal popup say, and `Back` reads what was done there into
   the form as it closes (components/dialog/form)
+- Run from a menu, an action that opens a popup now keeps the menu under it, to come back to, as Rules T1 keeps the
+  source by default; `Action.Clear` clears the menu as it opens (the item gone, a shell, another screen, a
+  drill-down). One that opens nothing still closes the menu. A confirm before it is only a door: `Esc` goes
+  back to the menu, and an error popup an action opens closes back to it
+- Several popups closing together (`CloseAll`, `CloseTop`, a source cleared) each play their own closing at the
+  same time, in their own layer's colour, instead of only the top one (Rules F2)
+- `Action.Live` gives a menu row's label and description each time it is drawn: a work list follows its work;
+  `Action.EnterHint` is the word after `Enter` on that row (`Enter:cancel`) (components/dialog/menu)
+- `LoadingFrame` is the loading icon as it is now, for a row of the app's own; `App.Spinning` keeps it turning
 - `List.Location` is a list's location row, where the user is, in Lavender above its header, cut from the front
   (layout/panel)
 

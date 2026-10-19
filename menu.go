@@ -116,8 +116,13 @@ func (m *menuView) rowWidth(r menuRow) int {
 // (components/dialog/menu: what Enter does there).
 func (m *menuView) hint() []KeyHint {
 	verb := "run"
-	if m.cursor < len(m.rows) && m.rows[m.cursor].kind == menuItem && m.rows[m.cursor].action.Detail {
-		verb = "detail"
+	if m.cursor < len(m.rows) && m.rows[m.cursor].kind == menuItem {
+		switch act := m.rows[m.cursor].action; {
+		case act.EnterHint != "":
+			verb = act.EnterHint
+		case act.Detail:
+			verb = "detail"
+		}
 	}
 	return []KeyHint{{"Enter", verb}, {"Esc", "close"}}
 }
@@ -182,6 +187,11 @@ func (m *menuView) draw(w, h int, color Color) []string {
 	text := inner - 1 - arrow
 	for i := m.top; i < m.top+n && i < len(m.rows); i++ {
 		r := m.rows[i]
+		if r.kind == menuItem && r.action.Live != nil {
+			// Asked again at every draw: a work list's progress (components/dialog/menu).
+			label, desc := r.action.Live()
+			r.label, r.desc = MarkLabel(r.action.Key, label), desc
+		}
 		switch r.kind {
 		case menuTitle:
 			body = append(body, " "+Fit(Fg(Overlay0).Render(glyphHexagon+" "+Upper(r.label)), text)+Repeat(" ", arrow))

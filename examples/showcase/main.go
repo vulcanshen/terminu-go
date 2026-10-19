@@ -78,6 +78,7 @@ func newShowcase() *showcase {
 		return a.Viewer(&terminu.Viewer{Title: "App log", Glyph: glyphYaml, Lines: s.appLog()})
 	}}}
 	a.Progress = func() (float64, bool) { return s.task, s.taskOn }
+	a.Spinning = func() bool { return transferring() }
 	s.app = a
 	s.panels = newPanelsScreen(s)
 	a.AddScreen(s.panels.screen)
