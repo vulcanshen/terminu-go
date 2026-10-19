@@ -3,6 +3,7 @@ package terminu
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -1068,5 +1069,39 @@ func TestConfirmHint(t *testing.T) {
 	ta.press("Esc", "q")
 	if bottom := covDTop(ta)[ta.top().h-1]; !strings.HasPrefix(bottom, "┗━ Enter:quit Esc:cancel ━") {
 		t.Errorf("Enter:<verb> Esc:cancel: %q", bottom)
+	}
+}
+
+// TestLoadSelectAndChecks: a select or checkbox popup can open before its
+// options are there, loading in its title, as wide as it can be, and fill
+// as they come (Rules F7; kbu KB8).
+func TestLoadSelectAndChecks(t *testing.T) {
+	ta := newTestApp(t)
+	chose := -1
+	s := &Select{Title: "Namespace", Selected: -1, Loading: true, Done: func(i int) tea.Cmd { chose = i; return nil }}
+	ta.LoadSelect(s)
+	ta.settle()
+	l := ta.top()
+	if !l.view.(interface{ isLoading() bool }).isLoading() || l.w != 118 {
+		t.Errorf("loading %v, %d wide", l.view.(interface{ isLoading() bool }).isLoading(), l.w)
+	}
+	s.Options = append(s.Options, "default", "kube-system")
+	s.Loading = false
+	if text := ta.screenText(); !strings.Contains(text, "kube-system") {
+		t.Fatalf("the options did not arrive:\n%s", text)
+	}
+	ta.press("j", "Enter")
+	if chose != 1 || ta.top() != nil {
+		t.Errorf("chose %d", chose)
+	}
+	var got []bool
+	c := &Checks{Title: "Namespaces", Loading: true, Checked: []bool{true}, Done: func(v []bool) tea.Cmd { got = v; return nil }}
+	ta.LoadChecks(c)
+	ta.settle()
+	c.Options = append(c.Options, "default", "kube-system")
+	c.Loading = false
+	ta.press("j", "Space", "Enter")
+	if !slices.Equal(got, []bool{true, true}) || ta.top() != nil {
+		t.Errorf("applied %v", got)
 	}
 }

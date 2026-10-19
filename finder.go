@@ -52,6 +52,9 @@ type Select struct {
 	Keys []string
 	// Selected is the value now; -1 for none.
 	Selected int
+	// Loading, for a select opened with LoadSelect, is true while Options
+	// are still coming.
+	Loading bool
 	// Done gets the chosen option. It is not called when the value did not
 	// change.
 	Done func(int) tea.Cmd
@@ -73,6 +76,9 @@ type Checks struct {
 	// Surface2, the tick too, but the cursor stops on it and Space flips it
 	// like any other; what it means is the app's (components/input/checkbox).
 	Unavailable func(i int) bool
+	// Loading, for a checkbox popup opened with LoadChecks, is true while
+	// Options are still coming; Checked may be shorter than Options.
+	Loading bool
 	// Done gets the new set. It is not called when nothing changed.
 	Done func([]bool) tea.Cmd
 }
@@ -173,18 +179,32 @@ func (a *App) Find(f *Finder) tea.Cmd {
 	return a.open(fv)
 }
 
-func (s Select) open(a *App, written func()) tea.Cmd {
-	rows := make([]finderRow, len(s.Options))
-	for i, o := range s.Options {
-		rows[i] = finderRow{text: o}
-		if i < len(s.Keys) && s.Keys[i] != "" {
-			rows[i].key, rows[i].label = s.Keys[i], MarkLabel(s.Keys[i], o)
+func (s Select) open(a *App, written func()) tea.Cmd { return a.open(s.view(written, false)) }
+
+// LoadSelect opens a select whose options are still coming: keep the
+// pointer and append to Options while Loading is true. Meanwhile the title
+// has the loading icon and the popup is as wide as it can be, its width not
+// known when it opens (Rules F7).
+func (a *App) LoadSelect(s *Select) tea.Cmd { return a.open(s.view(nil, true)) }
+
+// view is the select's popup; live, it reads Options again as they come.
+func (s *Select) view(written func(), live bool) *finderView {
+	var rows []finderRow
+	listRows := func() []finderRow {
+		for i := len(rows); i < len(s.Options); i++ {
+			r := finderRow{text: s.Options[i]}
+			if i < len(s.Keys) && s.Keys[i] != "" {
+				r.key, r.label = s.Keys[i], MarkLabel(s.Keys[i], s.Options[i])
+			}
+			rows = append(rows, r)
 		}
+		return rows
 	}
 	fv := &finderView{
-		kind: findSelect, glyph: s.Glyph, name: s.Title, ed: newEditor(""), known: true, onList: true,
+		kind: findSelect, glyph: s.Glyph, name: s.Title, ed: newEditor(""), known: !live, onList: true,
 		title:   func(int) string { return popupTitle(s.Title, s.Subject) },
-		rows:    func() []finderRow { return rows },
+		rows:    listRows,
+		loading: func() bool { return live && s.Loading },
 		green:   func(i int, _ finderRow) bool { return i == s.Selected },
 		verb:    func(finderRow) string { return "choose" },
 		written: written,
@@ -200,7 +220,7 @@ func (s Select) open(a *App, written func()) tea.Cmd {
 	if k := slices.Index(fv.shown, s.Selected); k >= 0 {
 		fv.cursor = k
 	}
-	return a.open(fv)
+	return fv
 }
 
 func (s Select) typed() bool { return false }
@@ -208,24 +228,35 @@ func (s Select) typed() bool { return false }
 // Select opens a select popup.
 func (a *App) Select(s Select) tea.Cmd { return s.open(a, nil) }
 
-func (c Checks) open(a *App, written func()) tea.Cmd {
-	rows := make([]finderRow, len(c.Options))
-	for i, o := range c.Options {
-		rows[i] = finderRow{text: o, unavailable: c.Unavailable != nil && c.Unavailable(i)}
-	}
+func (c Checks) open(a *App, written func()) tea.Cmd { return a.open(c.view(written, false)) }
+
+// LoadChecks opens a checkbox popup whose options are still coming, as
+// LoadSelect does: keep the pointer and append to Options (and Checked)
+// while Loading is true.
+func (a *App) LoadChecks(c *Checks) tea.Cmd { return a.open(c.view(nil, true)) }
+
+// view is the checkbox popup; live, it reads Options again as they come.
+func (c *Checks) view(written func(), live bool) *finderView {
+	var rows []finderRow
 	fv := &finderView{
-		kind: findChecks, glyph: c.Glyph, name: c.Title, ed: newEditor(""), known: true, onList: true,
+		kind: findChecks, glyph: c.Glyph, name: c.Title, ed: newEditor(""), known: !live, onList: true,
 		title:   func(int) string { return popupTitle(c.Title, c.Subject) },
-		rows:    func() []finderRow { return rows },
 		verb:    func(finderRow) string { return "apply" },
-		checked: make([]bool, len(c.Options)),
+		loading: func() bool { return live && c.Loading },
 		written: written,
 	}
-	copy(fv.checked, c.Checked)
+	fv.rows = func() []finderRow {
+		for i := len(rows); i < len(c.Options); i++ {
+			rows = append(rows, finderRow{text: c.Options[i], unavailable: c.Unavailable != nil && c.Unavailable(i)})
+			fv.checked = append(fv.checked, i < len(c.Checked) && c.Checked[i])
+		}
+		return rows
+	}
+	fv.rows()
 	// A row checked on screen is Green before Enter applies it (components/input/checkbox).
 	fv.green = func(i int, _ finderRow) bool { return fv.checked[i] }
 	fv.enter = func(a *App, _ int, _ finderRow) tea.Cmd {
-		was := make([]bool, len(c.Options))
+		was := make([]bool, len(fv.checked))
 		copy(was, c.Checked)
 		if slices.Equal(was, fv.checked) || c.Done == nil {
 			return a.closeTop()
@@ -237,7 +268,7 @@ func (c Checks) open(a *App, written func()) tea.Cmd {
 	if k := slices.Index(fv.shown, c.Cursor); k >= 0 {
 		fv.cursor = k
 	}
-	return a.open(fv)
+	return fv
 }
 
 func (c Checks) typed() bool { return false }
