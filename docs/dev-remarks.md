@@ -1,7 +1,7 @@
 # terminu-go 開發者備忘
 
 terminu-go 是 terminu design principle（tdp）的 Go 實作：給 app 呼叫的 lib，加上展示場 `examples/showcase`。遵循 terminu design
-principle，目前對應 tdp v0.8.1。這個 repo 的任務與規範的讀法見 [`CLAUDE.md`](../CLAUDE.md)。
+principle，目前對應 tdp v0.8.2。這個 repo 的任務與規範的讀法見 [`CLAUDE.md`](../CLAUDE.md)。
 
 ## 運作方式
 
@@ -69,6 +69,9 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
 - **從 menu 跑的動作預設保留 menu**（tdp v0.8.0 的 T1）：lib 分不出動作是哪一種，只看它有沒有打開 popup —— 打開了就把 menu
   留在底下（T1 的預設），什麼都沒打開就關掉 menu（它的事做完了）；清掉 source 要 app 標 `Action.Clear`。confirm 只是門，接受之後
   照它後面的動作判。v0.1.13 以前預設是清掉，改用 lib 的 app 要替開 shell、換畫面、drill-down 的動作補 `Clear`。
+- **檔案預覽在背景讀**（tdp v0.8.2）：finder 與 file-picker 的預覽、metadata 在畫的時候只登記要讀什麼（照路徑與框的大小），
+  下一次 update 才用 tea.Cmd 在背景讀，讀到了存起來；讀的時候 loading icon 一直轉，frame 會一直來，登記的東西不會等到下一個按鍵。
+  panel 的 `FilePreview` 還是畫的時候讀。
 - **剪貼簿走終端機**（OSC 52）：viewer 預設的複製把字交給 `Clipboard`，跟著下一個畫面在同一次 write 送出（`screenOutput`），
   不會插在畫面的 escape 序列中間；不呼叫系統的剪貼簿程式，隔著 ssh 也複製得到本機。
 - **viewer 的搜尋由 app 做**：terminu 給的兩條路（lib 自己做 `/`，或 app 標範圍、lib 照 S25 畫）選了後者。規範沒寫 viewer 搜尋的

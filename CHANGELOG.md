@@ -4,6 +4,9 @@ Each release names the version of terminu design (tdp) it implements.
 
 ## Unreleased — tdp v0.8.2
 
+- tdp v0.8.2 rewrites how a list's columns give way, reads file previews in the background and folds the "what each
+  row is" section of a key reference; the library follows it below, with what the family found upgrading to v0.2.0
+
 - `TextInput.Unchanged`, `PasswordInput.Unchanged` and `NumberInput.Unchanged` run when `Enter` takes the value the
   input opened with: nothing is written back and `Done` is not called, but a flow can end (`CloseTop`) and a page
   waiting for an answer gets the value it offered (Rules K3, F6)
