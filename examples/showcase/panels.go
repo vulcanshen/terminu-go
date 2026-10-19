@@ -86,7 +86,7 @@ func newPanelsScreen(s *showcase) *panelsScreen {
 				},
 				Done: func(v string) tea.Cmd { name = v; return nil }})
 		}},
-		{Label: "PIN", Desc: "asked for before the showcase quits", Value: func() string {
+		{Label: "PIN", Desc: "a PIN, kept as a lock screen keeps one", Value: func() string {
 			if pin == "" {
 				return ""
 			}

@@ -66,6 +66,11 @@ type App struct {
 	Quit *Ask
 	// QuitDesc is the Quit row's description in the global operation popup.
 	QuitDesc string
+	// QuitFlow, when set, is the quit flow itself, in place of Quit (Rules
+	// K9: the app's): q and Ctrl-C run it, a menu of the app's own to choose
+	// how to leave, say. While the popup it opens is open, a second Ctrl-C
+	// leaves at once, as in any quit flow.
+	QuitFlow func() tea.Cmd
 	// Global are the global operations besides switching screens and
 	// quitting (Principle P3); their hotkeys work on panels too (Rules M4).
 	Global []Action
@@ -128,8 +133,9 @@ type App struct {
 	w, h     int
 	pending  string // "g" waiting for its second key
 	quitting bool
-	// quitConfirm is the quit flow's confirm while quitting.
-	quitConfirm *confirmView
+	// quitConfirm is the quit flow's popup while quitting: its confirm, or
+	// what the app's QuitFlow opened.
+	quitConfirm popupView
 	anim        bool
 	spin        bool
 
@@ -688,6 +694,18 @@ func (a *App) quitAction() Action {
 // startQuit is the quit flow (Rules K9). What a popup of the app's own would
 // lose goes last in the confirm, in Peach; it asks then even when Quit is nil.
 func (a *App) startQuit() tea.Cmd {
+	if a.QuitFlow != nil {
+		if a.quitting {
+			return nil
+		}
+		before := a.top()
+		cmd := a.QuitFlow()
+		if top := a.top(); top != nil && top != before {
+			// The flow is on until what it opened closes.
+			a.quitting, a.quitConfirm = true, top.view
+		}
+		return cmd
+	}
 	notes := a.quitNotes()
 	if a.Quit == nil && len(notes) == 0 {
 		return tea.Quit

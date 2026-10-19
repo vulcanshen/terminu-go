@@ -640,6 +640,41 @@ func TestAppMovesFocus(t *testing.T) {
 	}
 }
 
+// TestQuitFlowOfTheApp: the quit flow can be the app's own action, a menu of
+// ways to leave; a second Ctrl-C during it still leaves at once (Rules K9).
+func TestQuitFlowOfTheApp(t *testing.T) {
+	ta := newTestApp(t)
+	ta.QuitFlow = func() tea.Cmd {
+		return ta.Menu("Quit", MenuSection{Actions: []Action{
+			{Key: "s", Label: "Stay in the last directory", Desc: "the shell goes there", Do: func() tea.Cmd { return tea.Quit }},
+		}})
+	}
+	ta.press("q")
+	ta.settle()
+	m, ok := ta.topView().(*menuView)
+	if !ok || !ta.quitting {
+		t.Fatalf("q runs the app's flow: %T, quitting %v", ta.topView(), ta.quitting)
+	}
+	ta.press("q")
+	ta.settle()
+	if len(ta.stack) != 1 {
+		t.Errorf("q again during the flow starts no second one: %d layers", len(ta.stack))
+	}
+	ta.press("Esc")
+	ta.settle()
+	if ta.quitting || ta.top() != nil {
+		t.Error("the flow ends with its popup")
+	}
+	ta.press("Ctrl-C")
+	ta.settle()
+	if ta.topView() == m || !ta.quitting {
+		t.Error("Ctrl-C runs it too, a new one")
+	}
+	if cmd := ta.handleKey(keyMsg("Ctrl-C")); cmd == nil || fmt.Sprint(cmd()) != fmt.Sprint(tea.Quit()) {
+		t.Error("a second Ctrl-C leaves at once")
+	}
+}
+
 // TestOnResize: the app hears of a new terminal size after the lib has laid
 // the screen out again (Rules L1; kbu KB20).
 func TestOnResize(t *testing.T) {

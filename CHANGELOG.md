@@ -131,6 +131,8 @@ Each release names the version of terminu design (tdp) it implements.
 - `App.Focus` moves the focus to a panel, switching to its screen, and `App.ShowScreen` switches screens, for an
   action the user expects to move them (Rules K3). The focus stays on its panel when the app adds or takes away
   panels, and a screen whose panels got fewer no longer panics
+- `App.QuitFlow` makes the quit flow an action of the app's own, a menu of ways to leave; a second `Ctrl-C`
+  during it still leaves at once (Rules K9)
 - `List.Location` is a list's location row, where the user is, in Lavender above its header, cut from the front
   (layout/panel)
 

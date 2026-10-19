@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -125,6 +126,7 @@ func (ds *dialogsScreen) scenarios() []scenario {
 			return a.Error("Deploy failed", msg)
 		}},
 		{"Popup: the app’s own", "app’s own", "the app draws the inside, the lib the frame: draw on the grid, [Tab] to Save; Esc and Ctrl-C say when changed", ds.draw},
+		{"Quit: the app’s own flow", "menu", "the next [q] opens a menu of ways to leave; Ctrl-C again leaves at once", ds.quitFlow},
 		{"Toast", "toast", "a short message on the third row from the bottom", toast("Copied 3 paths")},
 		{"Toast over a popup", "toast", "a popup, then a toast: Esc takes the toast first", func() tea.Cmd {
 			return tea.Batch(ds.yaml(), tea.Tick(600*time.Millisecond, func(time.Time) tea.Msg {
@@ -192,6 +194,21 @@ var tasks = []string{
 // transferring reports the work list's transfer running: its loading icon
 // keeps turning (App.Spinning).
 var transferring = func() bool { return false }
+
+// quitFlow makes the next quit the app's own flow, a menu of ways to leave
+// (App.QuitFlow; Rules K9); after it the confirm comes back.
+func (ds *dialogsScreen) quitFlow() tea.Cmd {
+	a := ds.s.app
+	a.QuitFlow = func() tea.Cmd {
+		a.QuitFlow = nil
+		return a.Menu("Quit", terminu.MenuSection{Actions: []terminu.Action{
+			{Key: "q", Label: "Quit", Desc: "leave the showcase", Do: func() tea.Cmd { return tea.Quit }},
+			{Key: "c", Label: "Quit and clean up", Desc: "leave, the pretend files in " + projectDir + " taken away",
+				Do: func() tea.Cmd { os.RemoveAll(projectDir); return tea.Quit }},
+		}})
+	}
+	return a.Toast(terminu.Info, "The next q opens the showcase’s own way to quit")
+}
 
 func (ds *dialogsScreen) worklist() tea.Cmd {
 	a := ds.s.app

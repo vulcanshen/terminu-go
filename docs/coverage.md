@@ -84,7 +84,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | K8 | 輸入態：letter hotkey、`Space`、`?`、`q` 是字元；`Esc` 取消；`Tab` 照 K2；`Ctrl-C` 進離開流程；離開輸入面立刻恢復 | I 的 `Name` 打 `q ?`；P filter 打 `q` | `TestK8InputState`、`TestK8CtrlCInInput` |
 | K8 | textarea 寫入狀態 `Tab` 插入 `input_tab_width` 個空白（E3 的設定，預設 4），不插 `\t` | I 的 `Comment` | `TestTextarea` |
 | K9 | `q` 與 `Ctrl-C` 同一個離開流程；`q` 在輸入態是字元、在表單上不作用；`Ctrl-C` 在輸入態與表單上有效；PTY 裡兩個都屬於子程序 | 任一 panel；D「Form: New host」上按 `q` | `TestK9QuitSameFlow`、`TestK9QNoopOnForm` |
-| K9 | 離開流程由 app 決定（直接 / 先確認 / 選擇）；進行中再按 `Ctrl-C` 立刻離開；離開列在 global operation popup | 展示場：先 confirm（`Quit showcase?`） | `TestK9SecondCtrlCQuits`、`TestK9QuitInGlobalPopup` |
+| K9 | 離開流程由 app 決定（直接 / 先確認 / 選擇）；進行中再按 `Ctrl-C` 立刻離開；離開列在 global operation popup。lib：`App.Quit`（confirm）或 `App.QuitFlow`（app 自己的動作，例：開一個 menu 選離開的方式） | 展示場：先 confirm（`Quit showcase?`）；D「Quit: the app’s own flow」之後按 `q` 是 menu | `TestK9SecondCtrlCQuits`、`TestK9QuitInGlobalPopup`、`TestQuitFlowOfTheApp` |
 | K9 | app 自己的 popup 有東西沒存時（`QuitNote`），離開的 confirm 最後加一句 Peach，`App.Quit` 是 nil 也先問；離開的 confirm 被底下的 popup 帶著關掉時，離開流程結束、下一次 `Ctrl-C` 再問 | D「Popup: the app’s own」畫一格再 `Ctrl-C`（`Changes to icon are not saved.`） | `TestAppPopupQuitNote`、`TestK9QuitConfirmClosedUnder` |
 | K10 | PTY 裡按鍵都給子程序；core key 與熱鍵失效 | T `[1] SHELL` 裡按 `Space ? q Tab Esc 1` | `TestK10KeysToChild` |
 | K10 | 至少一個出口鍵（`Alt-Esc`），focus 在 PTY 時常駐揭露 | T：footer `Alt-Esc:leave …`；terminal popup 下框 | `TestK10ExitKeyShown` |
