@@ -436,7 +436,8 @@ func (fv *formView) draw(w, h int, layer Color) []string {
 				}
 			}
 			if fv.focus == (formItem{itemField, f, -1}) {
-				rows = append(rows, " "+lead(true)+fv.block(fit(value, room), room+1, layer))
+				// Fitted to the block, the arrow taken off: a value that fits gets no ….
+				rows = append(rows, " "+lead(true)+fv.block(fit(value, room+1-Width(glyphHard)), room+1, layer))
 				continue
 			}
 			rows = append(rows, " "+lead(true)+fit(value, room)+" ")

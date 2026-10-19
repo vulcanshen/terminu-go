@@ -431,3 +431,24 @@ func TestFormButtonSubject(t *testing.T) {
 		t.Errorf("the failure keeps the name as it is: %T\n%s", ta.topView(), ta.screenText())
 	}
 }
+
+// TestFormFocusWideArrow: with the powerline arrow two cells wide, the
+// focused field still shows its whole value, no "…" (components/input, a value
+// is cut only when too long; demou DM14).
+func TestFormFocusWideArrow(t *testing.T) {
+	for _, pw := range []int{1, 2} {
+		withWidths(t, 1, pw)
+		ta := newTestApp(t)
+		ta.Form(testForm(nil))
+		ta.settle()
+		row := ""
+		for _, l := range ta.Frame() {
+			if strings.Contains(StripStyles(l), "Name") {
+				row = StripStyles(l)
+			}
+		}
+		if !strings.Contains(row, "required") || strings.Contains(row, "…") {
+			t.Errorf("arrow %d cells: the focused field is %q", pw, row)
+		}
+	}
+}
