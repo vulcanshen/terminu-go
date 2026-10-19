@@ -1795,6 +1795,59 @@ func TestTruncateMiddle(t *testing.T) {
 	}
 }
 
+// TestListSortGroups: sorting keeps the app's groups apart, the lower first,
+// and sorts within each, either way; no title between them (layout/panel).
+func TestListSortGroups(t *testing.T) {
+	l := &List{Columns: []Column{{Title: "Name"}}}
+	l.SetRows([]Row{
+		{ID: "b.txt", Cells: []string{"b.txt"}, SortGroup: 1}, {ID: "src", Cells: []string{"src"}},
+		{ID: "a.txt", Cells: []string{"a.txt"}, SortGroup: 1}, {ID: "docs", Cells: []string{"docs"}},
+	})
+	order := func() string {
+		var out []string
+		for _, r := range l.view {
+			out = append(out, l.rows[r].ID)
+		}
+		return strings.Join(out, " ")
+	}
+	if got := order(); got != "src docs b.txt a.txt" {
+		t.Errorf("not sorted: the groups apart, each in its order: %q", got)
+	}
+	l.SortBy(SortKey{Col: 0})
+	if got := order(); got != "docs src a.txt b.txt" {
+		t.Errorf("by name: %q", got)
+	}
+	l.SortBy(SortKey{Col: 0, Desc: true})
+	if got := order(); got != "src docs b.txt a.txt" {
+		t.Errorf("by name, descending: the directories still first: %q", got)
+	}
+	if strings.Contains(StripStyles(strings.Join(l.Draw(20, 6, false), "\n")), "  src") {
+		t.Error("no title, no indent between the groups")
+	}
+}
+
+// TestListFixedOrder: the same rows, set in another order, come out in the
+// same order (layout/panel): ties go by ID.
+func TestListFixedOrder(t *testing.T) {
+	rows := []Row{{ID: "ctx-b", Cells: []string{"prod"}}, {ID: "ctx-a", Cells: []string{"prod"}}, {ID: "ctx-c", Cells: []string{"dev"}}}
+	l := &List{Columns: []Column{{Title: "Context"}}}
+	l.SortBy(SortKey{Col: 0})
+	l.SetRows(rows)
+	first := slices.Clone(l.view)
+	var ids []string
+	for _, r := range first {
+		ids = append(ids, l.rows[r].ID)
+	}
+	l.SetRows([]Row{rows[2], rows[0], rows[1]})
+	var again []string
+	for _, r := range l.view {
+		again = append(again, l.rows[r].ID)
+	}
+	if !slices.Equal(ids, again) || strings.Join(ids, " ") != "ctx-c ctx-a ctx-b" {
+		t.Errorf("one order every time: %v, then %v", ids, again)
+	}
+}
+
 func TestPanelLoading(t *testing.T) {
 	ta := newTestApp(t)
 	ta.pods.Loading = true

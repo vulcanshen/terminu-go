@@ -42,6 +42,11 @@ type Row struct {
 	// Sort, when set, are the values sorted by instead of the cells (an age
 	// shown as "3d" sorted by seconds).
 	Sort []string
+	// SortGroup keeps rows apart when the list is sorted: the lower group
+	// first, sorting only within each (a file manager's directories before its
+	// files); no title is drawn between them (layout/panel). The rows of one
+	// group keep their order when the list is not sorted.
+	SortGroup int
 	// Group is the title of the group the row is in (layout/panel, groups).
 	// A group's rows stay together, the groups in the order they first
 	// appear, sorted within; the rows are drawn two cells further in, under
@@ -106,7 +111,12 @@ func (l *List) SetRows(rows []Row) {
 // Rows are all the rows, as set.
 func (l *List) Rows() []Row { return l.rows }
 
-// SortBy sorts the list by keys, first key first; nil keeps the rows' order.
+// SortBy sorts the list by keys, first key first: numbers by value, text as
+// text (layout/panel). nil keeps the rows' order. Rows the keys cannot tell
+// apart go by their IDs, so the same rows come out in the same order however
+// they were set: a list must keep one order every time it is opened or
+// fetched again, and data with no order of its own (a kubeconfig's contexts)
+// is sorted by name.
 func (l *List) SortBy(keys ...SortKey) {
 	cur, ok := l.Current()
 	l.sort = keys
@@ -254,8 +264,12 @@ func (l *List) rebuild() {
 	for i := range idx {
 		idx[i] = i
 	}
-	if len(l.sort) > 0 {
+	sortGroups := slices.ContainsFunc(l.rows, func(r Row) bool { return r.SortGroup != 0 })
+	if len(l.sort) > 0 || sortGroups {
 		slices.SortStableFunc(idx, func(a, b int) int {
+			if c := cmp.Compare(l.rows[a].SortGroup, l.rows[b].SortGroup); c != 0 {
+				return c
+			}
 			for _, k := range l.sort {
 				c := l.compare(k.Col, a, b)
 				if k.Desc {
@@ -264,6 +278,9 @@ func (l *List) rebuild() {
 				if c != 0 {
 					return c
 				}
+			}
+			if len(l.sort) > 0 {
+				return cmp.Compare(l.rows[a].ID, l.rows[b].ID)
 			}
 			return 0
 		})

@@ -68,6 +68,10 @@ Each release names the version of terminu design (tdp) it implements.
   now (layout/panel)
 - `Column.Middle` cuts a value in the middle, `demo-app…66-gm72n`; `TruncateMiddle` does it to any line
 - A list of one column with no `Title` draws no header
+- `Row.SortGroup` keeps a list's rows apart when it is sorted, the lower group first and sorted within each:
+  directories before files (layout/panel)
+- A sorted list puts the rows its keys cannot tell apart in the order of their IDs, so the same rows always come
+  out in the same order (layout/panel)
 
 ## v0.1.13 — tdp v0.7.2
 

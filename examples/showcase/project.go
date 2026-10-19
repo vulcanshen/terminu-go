@@ -141,8 +141,14 @@ func fileRows() []terminu.Row {
 			continue
 		}
 		age := time.Since(st.ModTime()).Round(time.Minute)
+		// The files in a folder first, the ones at the top after, however the
+		// list is sorted: as a file manager keeps its directories first.
+		group := 1
+		if strings.Contains(rel, "/") {
+			group = 0
+		}
 		rows = append(rows, terminu.Row{ID: p, Cells: []string{rel, humanSize(int(st.Size())), shortAge(age)},
-			Sort: []string{rel, fmt.Sprint(st.Size()), fmt.Sprint(st.ModTime().Unix())}})
+			Sort: []string{rel, fmt.Sprint(st.Size()), fmt.Sprint(st.ModTime().Unix())}, SortGroup: group})
 	}
 	return rows
 }

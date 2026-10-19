@@ -182,6 +182,7 @@ func newInputsScreen(s *showcase) *inputsScreen {
 		EmptyHint: "Press [Space] to see what you can do here",
 	}
 	is.fileList.SetRows(fileRows())
+	is.fileList.SortBy(terminu.SortKey{Col: 0})
 	// This panel's hint lists only what can be pressed now (Rules M6: the
 	// app's choice): View, disabled, leaves it.
 	is.files = &terminu.Panel{Label: "Files", Body: is.fileList, HintPressableOnly: true}
