@@ -31,8 +31,26 @@ type Terminal struct {
 	Ends bool
 	// Keys are the app's own keys in the PTY, shown after the exit key.
 	Keys []TerminalKey
-	// History lets PgUp and PgDn scroll back through what went off the top.
+	// History lets PgUp go into the History mode (Rules K11): j|k, u|d, gg|G,
+	// PgUp|PgDn scroll back through what went off the top, Esc goes back to
+	// the live screen, and any other key leaves the mode and goes to the
+	// program (components/dialog/terminal).
 	History bool
+	// ExitKey is the key that takes the focus out (Rules K10), Alt-Esc when
+	// unset; the app may change it while the program runs, and the hint and
+	// the footer show it as it is. Alt-Esc always asks first; another asks
+	// when ExitAsks.
+	ExitKey  string
+	ExitAsks bool
+	// SelectKey, when set, is a key of the app's own (Alt-v) that puts the
+	// terminal in the selection mode, a viewer's (components/dialog/note):
+	// the screen holds still, what the program prints meanwhile waiting; the
+	// cursor starts at the first line in sight and goes up into the history
+	// too; v starts selecting, y copies, Esc leaves. Copy takes the text; unset,
+	// it goes on the terminal's clipboard with a Success toast
+	// (components/dialog/terminal).
+	SelectKey string
+	Copy      func(text string) tea.Cmd
 	// NotReady, while it reports true, keeps the ordinary keys from the
 	// program (it is still connecting); Ctrl-C and the exit key still work.
 	NotReady func() bool
@@ -55,6 +73,14 @@ type Terminal struct {
 	back    int  // lines scrolled back into the history
 	inside  bool // a terminal in a panel: the focus is in it
 	w, h    int
+	// cursorColour is the selection's cursor: the popup's layer colour, or a
+	// panel's cursor colour.
+	cursorColour Color
+	// mode is the mode it is in: "", History or the selection's Visual;
+	// sel is the screen held still for the selection, as a viewer's lines.
+	mode     string
+	sel      *Viewer
+	pendingG bool // g pressed in a mode, waiting for gg
 }
 
 // TerminalKey is one of the app's own keys in a PTY (Rules K10).
@@ -84,6 +110,18 @@ type termOutput struct{ t *Terminal }
 type termExited struct{ t *Terminal }
 
 const exitKey = "Alt-Esc"
+
+// exit is the exit key now.
+func (t *Terminal) exit() string { return cmpOr(t.ExitKey, exitKey) }
+
+// The modes a terminal has (Rules K11; components/dialog/terminal).
+const (
+	historyMode = "History"
+	visualMode  = "Visual"
+)
+
+// Mode is the mode the terminal is in, "" for none.
+func (t *Terminal) Mode() string { return t.mode }
 
 func (t *Terminal) vt() *vt {
 	if t.screen == nil {
@@ -200,11 +238,23 @@ func (t *Terminal) exitVerb() string {
 	return "leave"
 }
 
-// hint is the exit key first, then the app's own keys (components/dialog/terminal).
+// hint is the exit key first, then the app's own keys
+// (components/dialog/terminal); in a mode, the mode's keys (Rules K11).
 func (t *Terminal) hint() []KeyHint {
-	h := []KeyHint{{exitKey, t.exitVerb()}}
+	switch {
+	case t.mode == historyMode:
+		return []KeyHint{{"?", "help"}, {"j|k", "scroll"}, {"Esc", "live"}}
+	case t.mode == visualMode && t.sel.selecting:
+		return []KeyHint{{"y", "copy"}, {"Esc", "cancel"}}
+	case t.mode == visualMode:
+		return []KeyHint{{"v", "select"}, {"Esc", "cancel"}}
+	}
+	h := []KeyHint{{t.exit(), t.exitVerb()}}
 	for _, k := range t.Keys {
 		h = append(h, KeyHint{k.Key, k.Desc})
+	}
+	if t.SelectKey != "" {
+		h = append(h, KeyHint{t.SelectKey, "select"})
 	}
 	if t.History {
 		h = append(h, KeyHint{"PgUp", "history"})
@@ -230,13 +280,137 @@ func (t *Terminal) resize(w, h int) {
 // in Text with Base on it whatever shape it asks for (components/dialog/terminal).
 func (t *Terminal) lines(w, h int, cursor bool) []string {
 	t.resize(w, h)
+	if t.mode == visualMode {
+		return t.held(w, h)
+	}
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	return t.vt().render(t.back, cursor && !t.exited, Style{Fg: Base, Bg: Text})
 }
 
+// held is the screen held still for the selection, in w × h: the history
+// and the screen as they were, scrolled to follow the cursor, the cursor and
+// the selection drawn as a viewer's (components/dialog/note).
+func (t *Terminal) held(w, h int) []string {
+	v := t.sel
+	v.visible, v.textW = max(h, 1), w
+	v.readLines()
+	v.line = min(max(v.line, 0), max(len(v.Lines)-1, 0))
+	v.follow(v.line)
+	v.clampTop()
+	vv := &viewerView{v: v}
+	out := make([]string, 0, h)
+	for i := v.top; i < len(v.Lines) && len(out) < h; i++ {
+		out = append(out, Fit(vv.lineView(i, t.cursorColour), w))
+	}
+	return Pad2(out, w, h)
+}
+
+// selectMode holds the screen still and brings the selection's cursor out at
+// the start of the first line in sight (components/dialog/terminal).
+func (t *Terminal) selectMode(a *App, layer Color) {
+	t.mu.Lock()
+	var lines []string
+	vt := t.vt()
+	for _, l := range vt.history {
+		lines = append(lines, renderCells(l, vt.w, -1, Style{}))
+	}
+	for _, l := range vt.cells {
+		lines = append(lines, renderCells(l, vt.w, -1, Style{}))
+	}
+	first := len(vt.history) - min(t.back, len(vt.history))
+	t.mu.Unlock()
+	copyText := t.Copy
+	if copyText == nil {
+		copyText = func(text string) tea.Cmd {
+			Clipboard(text)
+			return a.Toast(Success, "Copied")
+		}
+	}
+	t.sel = &Viewer{Lines: lines, NoWrap: true, NoNumbers: true, tabW: a.inputTabWidth(),
+		Select: &Selection{Key: "v", Name: visualMode, Copy: copyText}}
+	t.sel.inMode, t.sel.line, t.sel.col, t.sel.top = true, first, 0, first
+	t.mode, t.back, t.cursorColour = visualMode, 0, layer
+}
+
+// leaveMode goes back to the live screen.
+func (t *Terminal) leaveMode() {
+	t.mode, t.sel, t.back, t.pendingG = "", nil, 0, false
+}
+
+// modeKey is a key in one of the terminal's modes; ok is false for a key the
+// mode does not take, which leaves the mode and goes to the program (Rules
+// K11).
+func (t *Terminal) modeKey(a *App, key string) (cmd tea.Cmd, ok bool) {
+	if t.pendingG {
+		t.pendingG = false
+		if key == "g" {
+			key = "gg"
+		}
+	} else if key == "g" {
+		t.pendingG = true
+		return nil, true
+	}
+	if key == "?" {
+		return a.open(t.modeRef()), true
+	}
+	if key == "Esc" {
+		t.leaveMode()
+		return nil, true
+	}
+	if t.mode == historyMode {
+		t.mu.Lock()
+		defer t.mu.Unlock()
+		half, most := max(t.vt().h/2, 1), len(t.vt().history)
+		switch key {
+		case "j":
+			t.back--
+		case "k":
+			t.back++
+		case "d", "PgDn":
+			t.back -= half
+		case "u", "PgUp":
+			t.back += half
+		case "gg":
+			t.back = most
+		case "G":
+			t.back = 0
+		default:
+			return nil, false
+		}
+		t.back = min(max(t.back, 0), most)
+		return nil, true
+	}
+	if key != "v" && key != "y" && !isMoveKey(key) {
+		return nil, false
+	}
+	_, cmd = (&viewerView{v: t.sel}).key(a, key, tea.KeyMsg{})
+	if !t.sel.inMode {
+		t.leaveMode() // copied: back to the live screen
+	}
+	return cmd, true
+}
+
+// modeRef is a mode's key reference (Rules K11).
+func (t *Terminal) modeRef() *noteView {
+	if t.mode == visualMode {
+		return keyReference(Upper(visualMode), (&viewerView{v: t.sel}).keyRef())
+	}
+	return keyReference(Upper(historyMode), []refSection{{title: historyMode, rows: []KeyRow{
+		{Key: "j|k", Desc: "a line down, up"},
+		{Key: "u|d", Desc: "half a page up, down"},
+		{Key: "PgUp|PgDn", Desc: "half a page up, down"},
+		{Key: "gg|G", Desc: "the oldest line, the live screen's last"},
+		{Key: "Esc", Desc: "back to the live screen"},
+	}}, {title: "the program", rows: []KeyRow{{Key: "any other", Desc: "leaves History and goes to the program"}}}})
+}
+
 // scroll is the position in the history, when scrolled back.
 func (t *Terminal) scroll() string {
+	if t.mode == visualMode {
+		// The cursor's line, N of M, as a viewer's selection (components/dialog/note).
+		return scrollText(true, t.sel.line+1, 0, len(t.sel.Lines))
+	}
 	if t.back == 0 || t.screen == nil {
 		return ""
 	}
@@ -247,7 +421,15 @@ func (t *Terminal) scroll() string {
 
 // key is a key while the focus is in the terminal (Rules K10).
 func (t *Terminal) key(a *App, key string, msg tea.KeyMsg) tea.Cmd {
-	if key == exitKey {
+	if t.mode != "" {
+		if cmd, ok := t.modeKey(a, key); ok {
+			return cmd
+		}
+		// Not the mode's: it leaves the mode and goes on as in the live
+		// screen, q and Ctrl-C too (Rules K11).
+		t.leaveMode()
+	}
+	if key == t.exit() && (key == exitKey || t.ExitAsks) {
 		// Alt-Esc and two Escs are the same bytes: it always asks (Rules K10).
 		verb := t.exitVerb()
 		name := cmpOr(t.Subject, t.Title)
@@ -257,6 +439,17 @@ func (t *Terminal) key(a *App, key string, msg tea.KeyMsg) tea.Cmd {
 		}
 		return a.Confirm(Ask{Title: Upper(verb[:1]) + verb[1:], Question: q, Verb: verb}, func() tea.Cmd { return t.leave(a) })
 	}
+	if key == t.exit() {
+		return t.leave(a)
+	}
+	if t.SelectKey != "" && key == t.SelectKey {
+		colour := Subtext1 // a panel's cursor
+		if l := a.top(); l != nil {
+			colour = LayerColor(a.layerOf(l))
+		}
+		t.selectMode(a, colour)
+		return nil
+	}
 	for _, k := range t.Keys {
 		if k.takes(key) {
 			if k.DoKey != nil {
@@ -265,15 +458,12 @@ func (t *Terminal) key(a *App, key string, msg tea.KeyMsg) tea.Cmd {
 			return run(k.Do)
 		}
 	}
-	if t.History && (key == "PgUp" || key == "PgDn") {
+	if t.History && key == "PgUp" {
+		// Back into the history: the History mode (components/dialog/terminal).
 		t.mu.Lock()
-		half := max(t.vt().h/2, 1)
-		if key == "PgUp" {
-			t.back = min(t.back+half, len(t.screen.history))
-		} else {
-			t.back = max(t.back-half, 0)
-		}
+		t.back = min(t.back+max(t.vt().h/2, 1), len(t.vt().history))
 		t.mu.Unlock()
+		t.mode = historyMode
 		return nil
 	}
 	t.back = 0
@@ -451,7 +641,11 @@ func (tv *termView) at(sw, sh int) (int, int) { return 1, tv.a.topRows() }
 
 func (tv *termView) draw(w, h int, layer Color) []string {
 	body := tv.t.lines(w-2, h-2, true)
-	return popupBox{color: layer, glyph: glyphTerminal, title: tv.t.title(), hint: tv.t.hint(), scroll: tv.t.scroll(), bare: true}.draw(w, body)
+	box := popupBox{color: layer, glyph: glyphTerminal, title: tv.t.title(), hint: tv.t.hint(), scroll: tv.t.scroll(), bare: true}
+	if tv.t.mode != "" {
+		box.color, box.mode = Yellow, tv.t.mode // a mode marks its frame (Rules K11)
+	}
+	return box.draw(w, body)
 }
 
 func (tv *termView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {

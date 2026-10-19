@@ -250,6 +250,9 @@ func (p *Panel) draw(n, w, h int, focused bool) []string {
 	if p.mode != nil {
 		color, mode = Yellow, p.mode.Name
 	}
+	if t, ok := p.Body.(*Terminal); ok && t.mode != "" {
+		color, mode = Yellow, t.mode // the PTY's own mode (Rules K11)
+	}
 	b := box{width: w, lines: lines, color: color, hintKey: Fg(Blue)}
 	// A line segment stays before the top-right corner (or the mode's name).
 	b.head = drawChain(p.capsules(n), color, max(w-3-modeRoom(mode), 1))

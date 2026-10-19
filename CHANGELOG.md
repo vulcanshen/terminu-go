@@ -151,6 +151,13 @@ Each release names the version of terminu design (tdp) it implements.
 - A file preview shows an escape sequence written in the file instead of obeying it: ESC by its red name, the rest
   as text, nothing lost; its metadata writes `MODE` as `ls -l` does (`drwxrwxrwt`, `-rwsr-xr-x`)
   (components/input/file-picker)
+- A terminal's exit key is the app's (`Terminal.ExitKey`, Alt-Esc when unset; another asks first with
+  `ExitAsks`), shown as it is now; its reserved keys may change while it runs (Rules K10)
+- PgUp puts a terminal in the History mode: `j|k`, `u|d`, `gg|G`, `PgUp|PgDn` scroll back, `Esc` goes back to the
+  live screen, any other key leaves the mode and goes to the program; the mode is on its frame (Rules K11)
+- `Terminal.SelectKey` puts a terminal in the selection mode, a viewer's: the screen holds still, the cursor goes
+  up into the history, `v` selects, `y` copies (`Terminal.Copy`, or the clipboard with a Success toast)
+  (components/dialog/terminal)
 - `List.Location` is a list's location row, where the user is, in Lavender above its header, cut from the front
   (layout/panel)
 

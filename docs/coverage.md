@@ -405,6 +405,9 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 |---|---|---|---|
 | terminal §用途 | PTY 在 panel 裡時不是 popup：panel 的框、鍵寫在 footer；focus 在 PTY 裡時 panel 下框不寫 hint | T `[1] SHELL` | `TestK10KeysToChild`、`TestK10ExitKeyShown` |
 | terminal §長相 | 大小照 F7 的例外（chip 列與分隔線留著）；沒有 statusbar 的 app 從第一列開始；上下左右都不留白；標題 U+F018D + 跑的是什麼；子程序的游標畫成一格 Text 底、Base 字的方塊，DECSCUSR 要的形狀不理（panel 裡也一樣） | T `[2] SESSIONS` 的 `[Alt-t]erm` | `TestTerminalPopupSize`、`TestTerminalCursorBlock` |
+| terminal §按鍵 | 出口鍵可以設定（預設 `Alt-Esc`，`Alt-Esc` 一律先問、其他由 app 決定要不要問；lib：`Terminal.ExitKey`、`ExitAsks`）；保留鍵執行中能換；hint 與 footer 照當下的設定 | 測試驗 | `TestTerminalExitKey` |
+| terminal §歷史模式 | `PgUp` 進入 History 模式（框與模式名 Yellow、`┫History┣`）；`j\|k`、`u\|d`、`gg\|G`、`PgUp\|PgDn` 捲歷史、不送給子程序；`Esc` 回即時畫面；其他鍵（含 `q`、`Ctrl-C`）先離開模式再送給子程序；hint／footer 與 `?` 照 K11 揭露 | T `[1] SHELL` 跑幾行後按 `PgUp` | `TestTerminalHistoryMode` |
+| terminal §選取模式 | app 保留的組合鍵進入（展示場 `Alt-v`，常駐揭露；lib：`Terminal.SelectKey`）；畫面凍住、子程序後來的輸出先不畫，游標可以往上走進歷史；按鍵、顏色、捲動位置、複製後的 Success toast 照 note 的選取模式；離開回到即時畫面，之後按鍵照常送給子程序 | T `[1] SHELL` 按 `Alt-v`、`v`、移動、`y` | `TestTerminalSelectMode` |
 | terminal §按鍵 | 按鍵都給子程序；hint 出口鍵第一、最後才捨；`Alt-Esc:exit`（結束）／`Alt-Esc:leave`（留著），不寫 `close`；後面跟保留鍵；`Alt-Esc` 先 confirm | 同上 | `TestK10ExitKeyShown`、`TestK10AltEscConfirms`、`TestEncodeKey` |
 
 ## dialog/toast

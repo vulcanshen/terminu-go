@@ -54,7 +54,8 @@ func newTerminalScreen(s *showcase) *terminalScreen {
 	// Inside the shell ? is the shell's own: its keys are told here (Rules M6).
 	ts.shellP.OtherKeys = []terminu.KeySection{{Title: "terminal", Rows: []terminu.KeyRow{
 		{Key: "Alt-Esc", Desc: "leave the shell, asked first"},
-		{Key: "PgUp", Desc: "the history above the screen"},
+		{Key: "PgUp", Desc: "the History mode: j|k, u|d, gg|G scroll back, Esc goes back"},
+		{Key: "Alt-v", Desc: "the selection mode: the screen holds still, v selects, y copies"},
 		{Key: "Ctrl-C", Desc: "to the shell, as every other key"},
 	}}}
 	ts.list = &terminu.List{Columns: []terminu.Column{{Title: "Session"}, {Title: "Status", Drop: 2}, {Title: "What", Drop: 1}}}
@@ -82,7 +83,7 @@ func newTerminalScreen(s *showcase) *terminalScreen {
 }
 
 func (ts *terminalScreen) newShell() *terminu.Terminal {
-	return &terminu.Terminal{Title: "Shell", History: true}
+	return &terminu.Terminal{Title: "Shell", History: true, SelectKey: "Alt-v"}
 }
 
 // slowStart is a shell that takes a while to connect: until then only
@@ -109,7 +110,7 @@ func (ts *terminalScreen) session(name string) *terminu.Terminal {
 		}
 	}
 	a := ts.s.app
-	t := &terminu.Terminal{Title: "Session", Subject: s.name, Command: s.command, Ends: true, History: true}
+	t := &terminu.Terminal{Title: "Session", Subject: s.name, Command: s.command, Ends: true, History: true, SelectKey: "Alt-v"}
 	t.Keys = []terminu.TerminalKey{
 		{Key: "Alt-t", Desc: "hide", Do: func() tea.Cmd { return t.Hide(a) }},
 		{Key: "Alt-b", Desc: "busy", Do: func() tea.Cmd { return func() tea.Msg { return busy{} } }},
