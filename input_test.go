@@ -77,6 +77,44 @@ func testFinder() *Finder {
 	}}
 }
 
+// TestFinderMatchesWhatTheAppSays: what the typed words are matched against
+// is the app's: the items' text, or their other content; or the app runs the
+// search itself and the list is its results, typing never waiting
+// (components/input/finder).
+func TestFinderMatchesWhatTheAppSays(t *testing.T) {
+	ta := newTestApp(t)
+	f := &Finder{Title: "Grep", Items: []FinderItem{
+		{ID: "a", Text: "main.go", Match: "package main\nfunc main()"},
+		{ID: "b", Text: "notes.md", Match: "remember the milk"},
+	}}
+	ta.Find(f)
+	ta.settle()
+	ta.press("m", "i", "l", "k")
+	fv := ta.topView().(*finderView)
+	if len(fv.shown) != 1 || fv.rows()[fv.shown[0]].text != "notes.md" {
+		t.Errorf("matched against the content: %v", fv.shown)
+	}
+	ta.covBCloseAll()
+	var asked []string
+	g := &Finder{Title: "Grep", Loading: true}
+	g.Search = func(typed string) tea.Cmd {
+		asked = append(asked, typed)
+		g.Items = append(g.Items, FinderItem{ID: typed, Text: "hit for " + typed})
+		return nil
+	}
+	ta.Find(g)
+	ta.settle()
+	ta.press("a", "b")
+	ta.Frame() // drawn, as after every update
+	gv := ta.topView().(*finderView)
+	if !slices.Equal(asked, []string{"a", "ab"}) {
+		t.Errorf("the app is asked at every change: %v", asked)
+	}
+	if len(gv.shown) != 2 {
+		t.Errorf("its results as they are, not filtered again: %v", gv.shown)
+	}
+}
+
 type formResult struct {
 	name, port string
 	submitted  int

@@ -24,6 +24,7 @@ type inputsScreen struct {
 	fileList *terminu.List
 	disabled bool
 	index    *terminu.Finder // the slow index, while it fills
+	grepping string          // what Find in files searches for now
 	indexed  int
 }
 
@@ -247,6 +248,7 @@ func newInputsScreen(s *showcase) *inputsScreen {
 	is.files.Actions = append([]terminu.Action{
 		{Key: "/", Label: "Find", Desc: "search the files, with a preview", Scope: terminu.PanelScope, Hint: "find", Do: is.find},
 		{Key: "S", Label: "Slow index", Desc: "a search whose results keep arriving", Scope: terminu.PanelScope, Do: is.slowIndex},
+		{Key: "F", Label: "Find in files", Desc: "search the files' text, the app searching", Scope: terminu.PanelScope, Do: is.grep},
 		{Key: "L", Label: "Copy URL", Desc: "the file's address", Scope: terminu.ItemScope,
 			Do: func() tea.Cmd { return a.Toast(terminu.Info, "Copied the URL") }},
 		// This panel gives V to an action of its own: the splash does not open
@@ -346,6 +348,57 @@ func (is *inputsScreen) view() tea.Cmd {
 func (is *inputsScreen) find() tea.Cmd {
 	return is.s.app.Find(&terminu.Finder{Title: "Search", Glyph: glyphSearch, Verb: "open", Items: fileItems(), Files: true,
 		Done: func(it terminu.FinderItem) tea.Cmd { return is.s.app.Toast(terminu.Info, "Opened "+it.Text) }})
+}
+
+// grepDone is what a search of the files' text found for typed.
+type grepDone struct {
+	f     *terminu.Finder
+	typed string
+	items []terminu.FinderItem
+}
+
+// grep searches the files' text: the app runs the search itself, off the
+// update loop, so typing never waits; each hit a row, its preview from the
+// line found (Finder.Search; components/input/finder).
+func (is *inputsScreen) grep() tea.Cmd {
+	f := &terminu.Finder{Title: "Find in files", Glyph: glyphSearch, Verb: "open", Files: true,
+		Done: func(it terminu.FinderItem) tea.Cmd { return is.s.app.Toast(terminu.Info, "Opened "+it.Text) }}
+	f.Search = func(typed string) tea.Cmd {
+		f.Loading, is.grepping = true, typed
+		return func() tea.Msg { return grepDone{f, typed, grepFiles(typed)} }
+	}
+	return is.s.app.Find(f)
+}
+
+// grepDone puts what a search found in its finder, if it is still what is
+// typed.
+func (is *inputsScreen) grepDone(d grepDone) tea.Cmd {
+	if d.typed == is.grepping {
+		d.f.Items, d.f.Loading = d.items, false
+	}
+	return nil
+}
+
+// grepFiles is every line of the pretend project's files that has q, in
+// either case.
+func grepFiles(q string) []terminu.FinderItem {
+	if q == "" {
+		return nil
+	}
+	var out []terminu.FinderItem
+	for _, p := range projectFiles() {
+		b, err := os.ReadFile(p)
+		if err != nil || bytes.IndexByte(b, 0) >= 0 {
+			continue
+		}
+		rel, _ := filepath.Rel(projectDir, p)
+		for i, l := range strings.Split(string(b), "\n") {
+			if strings.Contains(strings.ToLower(l), strings.ToLower(q)) {
+				out = append(out, terminu.FinderItem{ID: p, Text: fmt.Sprintf("%s:%d  %s", rel, i+1, strings.TrimSpace(l)), Line: i + 1})
+			}
+		}
+	}
+	return out
 }
 
 type indexTick struct{}

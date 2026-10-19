@@ -168,6 +168,8 @@ func (s *showcase) onMsg(msg tea.Msg) tea.Cmd {
 		return tea.Tick(time.Second, func(time.Time) tea.Msg { return logTick{} })
 	case indexTick:
 		return s.inputs.indexStep()
+	case grepDone:
+		return s.inputs.grepDone(msg.(grepDone))
 	case toastLater, loadTick:
 		return s.dialogs.onMsg(msg)
 	case busy:
@@ -176,7 +178,7 @@ func (s *showcase) onMsg(msg tea.Msg) tea.Cmd {
 		s.task += 0.04
 		if s.task >= 1 {
 			s.taskOn, s.task = false, 0
-			return s.app.Toast(terminu.Info, "Copied 3 files")
+			return s.app.Toast(terminu.Success, "Copied 3 files")
 		}
 		return tea.Tick(200*time.Millisecond, func(time.Time) tea.Msg { return taskTick{} })
 	}

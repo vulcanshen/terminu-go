@@ -13,7 +13,11 @@ import (
 // FinderItem is one row of a Finder.
 type FinderItem struct {
 	ID   string // the app's own key for it
-	Text string // shown and matched
+	Text string // shown, and matched unless Match is set
+	// Match, when set, is what the typed words are matched against instead
+	// of Text: the item's other content, a file's text (components/input/finder:
+	// what is matched is the app's choice).
+	Match string
 	// Icon, when set, goes before the text in IconColor (a file's type).
 	Icon      string
 	IconColor Color
@@ -43,8 +47,15 @@ type Finder struct {
 	// it (components/input/file-picker), instead of Preview.
 	Files bool
 	// FS is where Files reads the paths: the local disk when nil.
-	FS   PreviewFS
-	Done func(FinderItem) tea.Cmd
+	FS PreviewFS
+	// Search, when set, is a search the app runs itself (a search tool, a
+	// remote host), answering a batch at a time: it gets the typed words each
+	// time they change and puts what it finds in Items as it comes, Loading
+	// meanwhile; the list is then Items as they are, not filtered again. It
+	// must not wait for the search: typing goes on while it runs
+	// (components/input/finder).
+	Search func(typed string) tea.Cmd
+	Done   func(FinderItem) tea.Cmd
 }
 
 // Select picks one value from a list (components/input/select).
@@ -118,7 +129,8 @@ const (
 
 // finderRow is one row of a finder's list.
 type finderRow struct {
-	text  string // matched and shown
+	text  string // shown, and matched unless match is set
+	match string // what is matched instead of text
 	label string // shown instead of text when set: a hotkey marker, ". (this directory)"
 	key   string // a select option's hotkey
 	icon  string
@@ -158,6 +170,9 @@ type finderView struct {
 	known   bool // the width is known when it opens
 	// enterRef, when set, is what Enter does in the key reference.
 	enterRef string
+	// search is the app's own search: it gets what is typed, and the rows
+	// are its results, not filtered again.
+	search func(typed string) tea.Cmd
 
 	ed       *lineEditor
 	onList   bool
@@ -179,12 +194,13 @@ func (a *App) Find(f *Finder) tea.Cmd {
 		rows: func() []finderRow {
 			out := make([]finderRow, len(f.Items))
 			for i, it := range f.Items {
-				out[i] = finderRow{text: it.Text, icon: it.Icon, color: it.IconColor, item: it}
+				out[i] = finderRow{text: it.Text, match: it.Match, icon: it.Icon, color: it.IconColor, item: it}
 			}
 			return out
 		},
 		verb:    func(finderRow) string { return cmpOr(f.Verb, "open") },
 		loading: func() bool { return f.Loading },
+		search:  f.Search,
 	}
 	fv.enter = func(a *App, _ int, r finderRow) tea.Cmd {
 		if f.Done == nil {
@@ -330,7 +346,7 @@ func (f *finderView) refilter() {
 	}
 	f.shown = f.shown[:0]
 	for i, r := range rows {
-		if Matches(r.text, words) {
+		if f.search != nil || Matches(cmpOr(r.match, r.text), words) {
 			f.shown = append(f.shown, i)
 		}
 	}
@@ -612,6 +628,9 @@ func (f *finderView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 		default:
 			if f.ed.key(key, msg) {
 				f.refilter()
+				if f.search != nil {
+					return true, f.search(f.ed.value()) // the app searches; typing goes on
+				}
 			}
 		}
 		return true, nil // the typing row takes every key (Rules K8)

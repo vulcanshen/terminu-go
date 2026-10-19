@@ -464,6 +464,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | finder §清單的標記 | select 前面 radio glyph、checkbox popup 前面 checkbox glyph；目前的值字 Green；cursor 在目前的值上照 cursor | I 的 `Profile`、`Namespaces` | `TestFinderMarkers` |
 | finder §狀態 | 只有 focus 那塊亮：focus 在打字列時清單 cursor 是層色 cursor 再淡化；focus 在清單時打字列整列灰、沒游標 | I `[/] Find` 按 `Tab` 來回 | `TestFinderFocusBrightness` |
 | finder §按鍵 | 打字列：字元篩選、`↑↓` 移 cursor（繞回）、`Enter` 到 cursor 那項（沒結果不作用）、`Tab` 到清單、`Esc` 關整個（filter 是清掉）；清單：移動（繞回）、`Enter` 去那裡（沒有結果不作用，checkbox popup 例外）、`Tab\|/` 回打字列接著舊的字打、`Esc` 關整個 | 同上 | `TestFinderTypingKeys`、`TestFinderListKeys` |
+| finder §比對 | 比對的對象由 app 決定：預設每一項顯示的字，也可以是其他內容（lib：`FinderItem.Match`）；搜尋要花時間時（讀每個檔、交給搜尋工具或遠端一次找一批）邊找邊列、打字列照常能打（lib：`Finder.Search`，app 自己找、結果放進 `Items`，lib 不再篩） | I `[2] FILES` 的 `[F]ind in files` | `TestFinderMatchesWhatTheAppSays` |
 | finder §比對 | 包含、不分大小寫、字要連續出現；空白分開的每個詞都要出現、順序不拘；結果保持清單本來的順序（數字照數值、文字照文字）；用在 finder、select、checkbox popup、file-picker 的一般字、panel filter | I `[/] Find` 打 `read`、`READ me`；P filter 打 `run 3d` | `TestMatchContains`、`TestMatchWords`、`TestMatchKeepsOrder` |
 | finder §hint | 打字列 `Enter\|Tab:list Esc:cancel`；清單 `Enter:<動詞> Tab\|/:filter Esc:cancel` | 同上 | `TestFinderHint` |
 | finder §hint | 沒有結果時（邊找邊列、一筆都還沒到也是）兩處的 `Enter` 都不作用，hint 拿掉 `Enter`：打字列 `Tab:list Esc:cancel`、清單 `Tab\|/:filter Esc:cancel`；有結果時放回來；select、file-picker 也一樣（G93） | I `[/] Find` 打 `zz`；I 的 `Profile`（select）篩到沒有 | `TestFinderHintNoResults` |

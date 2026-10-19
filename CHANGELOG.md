@@ -158,6 +158,9 @@ Each release names the version of terminu design (tdp) it implements.
 - `Terminal.SelectKey` puts a terminal in the selection mode, a viewer's: the screen holds still, the cursor goes
   up into the history, `v` selects, `y` copies (`Terminal.Copy`, or the clipboard with a Success toast)
   (components/dialog/terminal)
+- What a finder matches is the app's: `FinderItem.Match` instead of the text shown; `Finder.Search` runs the
+  app's own search at every change of the typed words, its results shown as they come, typing never waiting
+  (components/input/finder)
 - `List.Location` is a list's location row, where the user is, in Lavender above its header, cut from the front
   (layout/panel)
 
