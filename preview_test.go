@@ -61,11 +61,14 @@ func TestFilePreviewKinds(t *testing.T) {
 		t.Errorf("an image over 1 MB: %s", img)
 	}
 	zipTree := previewText(filePreview(filepath.Join(dir, "fonts.zip"), 40, 10, false, nil, 4))
-	if !strings.Contains(zipTree, "fonts\n├─") || !strings.Contains(zipTree, "└─ "+glyphFile+" b.ttf") || !strings.HasSuffix(zipTree, "LICENSE") {
+	if !strings.Contains(zipTree, "fonts\n  ├─") || !strings.Contains(zipTree, "└─ "+glyphFile+" b.ttf") || !strings.HasSuffix(zipTree, "LICENSE") {
 		t.Errorf("archive tree:\n%s", zipTree)
 	}
 	tree := previewText(filePreview(filepath.Join(dir, "tree"), 40, 10, false, nil, 4))
-	if !strings.Contains(tree, "└─ "+glyphFolder+" b") || strings.Contains(tree, "deep.txt") {
+	// The second level two cells in, under the first level's name; three
+	// levels and no more (components/input/file-picker).
+	wantTree := glyphFolder + " a\n  └─ " + glyphFolder + " b\n     └─ " + glyphFolder + " c\n" + glyphFile + " z.txt"
+	if tree != wantTree {
 		t.Errorf("a tree is three levels deep:\n%s", tree)
 	}
 	if short := previewText(filePreview(filepath.Join(dir, "tree"), 40, 2, false, nil, 4)); !strings.HasSuffix(short, "…") {

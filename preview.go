@@ -359,7 +359,7 @@ func drawTree(top []*treeNode, h int, load func(*treeNode) []*treeNode, icon fun
 				return
 			}
 			last := i == len(nodes)-1
-			lead, next := "", ""
+			lead, next := "", "  " // the second level two cells in (components/input/file-picker)
 			if depth > 0 {
 				lead, next = prefix+"├─ ", prefix+"│  "
 				if last {
