@@ -44,7 +44,7 @@ func newPanelsScreen(s *showcase) *panelsScreen {
 	ps := &panelsScreen{s: s}
 	ps.podList = &terminu.List{
 		Columns: []terminu.Column{
-			{Title: "Name", Flex: true}, {Title: "Ready"}, {Title: "Status"}, {Title: "Restarts", Number: true}, {Title: "Age", Number: true},
+			{Title: "Name", Middle: true}, {Title: "Ready", Drop: 3}, {Title: "Status"}, {Title: "Restarts", Number: true, Drop: 2}, {Title: "Age", Number: true, Drop: 1},
 		},
 		Marks:      true,
 		Draggable:  true,
@@ -170,10 +170,10 @@ var eventRows = []terminu.Row{
 func (ps *panelsScreen) switchTab(tab int) tea.Cmd {
 	cur := ps.podList.Sorting()
 	if tab == 1 {
-		ps.podList.Columns = []terminu.Column{{Title: "Object", Flex: true}, {Title: "Type"}, {Title: "Reason"}, {Title: "Count", Number: true}, {Title: "Age", Number: true}}
+		ps.podList.Columns = []terminu.Column{{Title: "Object", Middle: true}, {Title: "Type", Drop: 3}, {Title: "Reason"}, {Title: "Count", Number: true, Drop: 2}, {Title: "Age", Number: true, Drop: 1}}
 		ps.podList.SetRows(eventRows)
 	} else {
-		ps.podList.Columns = []terminu.Column{{Title: "Name", Flex: true}, {Title: "Ready"}, {Title: "Status"}, {Title: "Restarts", Number: true}, {Title: "Age", Number: true}}
+		ps.podList.Columns = []terminu.Column{{Title: "Name", Middle: true}, {Title: "Ready", Drop: 3}, {Title: "Status"}, {Title: "Restarts", Number: true, Drop: 2}, {Title: "Age", Number: true, Drop: 1}}
 		ps.podList.SetRows(podRows())
 	}
 	ps.podList.SortBy(cur...)

@@ -253,6 +253,40 @@ func TruncateLeft(s string, w int) string {
 	return truncated(s, strings.Join(head, "")+"…"+strings.Join(trimSpaces(kept, false), ""))
 }
 
+// TruncateMiddle fits one line in w cells, cutting from the middle and
+// putting "…" there: for a value whose two ends both matter, a pod's name with
+// its deployment in front and what tells it apart at the end
+// ("demo-app…66-gm72n"). The end keeps the extra cell of an odd split. The
+// result may be narrower than w when a wide character would straddle a cut.
+func TruncateMiddle(s string, w int) string {
+	if w <= 0 {
+		return ""
+	}
+	s = expandTabs(s)
+	d := Width(s)
+	if d <= w {
+		return s
+	}
+	if w == 1 {
+		return "…"
+	}
+	head := (w - 1) / 2
+	from := d - (w - 1 - head)
+	var b strings.Builder
+	col, cut := 0, false
+	walk(s, func(seq string, cells int) {
+		switch {
+		case cells == 0 || col+cells <= head || col >= from:
+			b.WriteString(seq)
+		case !cut:
+			b.WriteString("…")
+			cut = true
+		}
+		col += cells
+	})
+	return truncated(s, b.String())
+}
+
 // Fit pads or truncates (with "…") one line to exactly w cells.
 func Fit(s string, w int) string { return Pad(Truncate(s, w), w) }
 

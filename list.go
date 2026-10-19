@@ -12,14 +12,27 @@ import (
 
 // Column is one column of a List (layout/panel, ordinary lists).
 type Column struct {
+	// Title is the column's header. A list of one column whose Title is ""
+	// has no header.
 	Title string
 	// Number marks a number column: right-aligned and sorted by value (9
 	// before 10). Text columns are left-aligned and sorted as text.
 	Number bool
-	// Flex lets the column give up room first when the panel is narrow.
+	// Flex did let the column give up room first when the panel is narrow. It
+	// does nothing since tdp v0.8.0: columns that do not fit are taken away
+	// whole (Drop), and then all narrowed in proportion.
 	Flex bool
+	// Drop is when the column is taken away, whole and its header with it,
+	// while the columns do not fit: 1 first, then 2 and on; 0 never (the
+	// name). Only when the columns that are left still do not fit are they
+	// all narrowed, in proportion; as the panel grows the columns come back
+	// in order (layout/panel).
+	Drop int
 	// Path cuts the column's values from the front ("…/.ssh/id_ed25519").
 	Path bool
+	// Middle cuts the column's values in the middle, for a value whose two
+	// ends both matter ("demo-app…66-gm72n").
+	Middle bool
 }
 
 // Row is one item of a List.
@@ -340,7 +353,7 @@ func (l *List) Draw(w, h int, focused bool) []string {
 	}
 	textW := w - 1 - arrow - len(indent) // one cell of padding on the left, the arrow's on the right (layout/panel)
 	widths := l.widths(textW - markW)
-	if len(l.Columns) > 0 {
+	if l.headed() {
 		// The header goes in with the items, so the columns line up.
 		out = append(out, " "+indent+Repeat(" ", markW)+Pad(Fg(Blue).Render(l.header(widths)), textW-markW)+Repeat(" ", arrow))
 	}
@@ -456,9 +469,16 @@ func (l *List) moved() tea.Cmd {
 	return l.OnMove(r)
 }
 
+// headed reports whether the list draws a header: one of a single column
+// with no title has none (layout/panel).
+func (l *List) headed() bool {
+	return len(l.Columns) > 1 || len(l.Columns) == 1 && l.Columns[0].Title != ""
+}
+
 // widths are the columns' widths in w cells, two cells apart: each as wide as
-// its widest value or title; flexible columns give up room first, then the
-// last ones.
+// its widest value or title. While they do not fit, columns are taken away
+// whole in their Drop order (-1: not drawn); then the ones left are narrowed
+// in proportion (layout/panel).
 func (l *List) widths(w int) []int {
 	n := len(l.Columns)
 	if n == 0 {
@@ -471,32 +491,43 @@ func (l *List) widths(w int) []int {
 			ws[c] = max(ws[c], Width(l.cell(r, c)))
 		}
 	}
-	total := func() int {
-		t := 2 * (n - 1)
+	total := func() (t, shown int) {
 		for _, x := range ws {
-			t += x
-		}
-		return t
-	}
-	for over := total() - w; over > 0; over = total() - w {
-		// Take from a flexible column, else from the widest.
-		pick := -1
-		for c := range n {
-			if l.Columns[c].Flex && ws[c] > 3 && (pick < 0 || ws[c] > ws[pick]) {
-				pick = c
+			if x >= 0 {
+				t, shown = t+x, shown+1
 			}
 		}
-		if pick < 0 {
-			for c := range n {
-				if ws[c] > 3 && (pick < 0 || ws[c] > ws[pick]) {
-					pick = c
-				}
+		return t + 2*(shown-1), shown
+	}
+	for t, shown := total(); t > w && shown > 1; t, shown = total() {
+		pick := -1
+		for c := range n {
+			if d := l.Columns[c].Drop; ws[c] >= 0 && d > 0 && (pick < 0 || d < l.Columns[pick].Drop) {
+				pick = c
 			}
 		}
 		if pick < 0 {
 			break
 		}
-		ws[pick] = max(ws[pick]-over, 3)
+		ws[pick] = -1
+	}
+	if t, shown := total(); t > w {
+		room := max(w-2*(shown-1), 0)
+		sum := t - 2*(shown-1)
+		left := room
+		for c := range n {
+			if ws[c] > 0 {
+				ws[c] = ws[c] * room / sum
+				left -= ws[c]
+			}
+		}
+		// What the rounding down left goes to the first columns, a cell each.
+		for c := 0; c < n && left > 0; c++ {
+			if ws[c] >= 0 {
+				ws[c]++
+				left--
+			}
+		}
 	}
 	return ws
 }
@@ -521,13 +552,16 @@ func (l *List) title(c int) string {
 }
 
 func (l *List) header(ws []int) string {
-	parts := make([]string, len(ws))
+	var parts []string
 	for c := range ws {
+		if ws[c] < 0 {
+			continue // taken away
+		}
 		t := Truncate(l.title(c), ws[c])
 		if l.Columns[c].Number {
-			parts[c] = PadLeft(t, ws[c])
+			parts = append(parts, PadLeft(t, ws[c]))
 		} else {
-			parts[c] = Pad(t, ws[c])
+			parts = append(parts, Pad(t, ws[c]))
 		}
 	}
 	return strings.Join(parts, "  ")
@@ -541,8 +575,11 @@ func (l *List) rowText(r int, ws []int) string {
 		}
 		return Truncate(v, ws[0])
 	}
-	parts := make([]string, len(ws))
+	var parts []string
 	for c := range ws {
+		if ws[c] < 0 {
+			continue // taken away
+		}
 		v := ""
 		if c < len(l.rows[r].Cells) {
 			v = l.rows[r].Cells[c]
@@ -551,12 +588,14 @@ func (l *List) rowText(r int, ws []int) string {
 		switch {
 		case col.Path:
 			v = FitLeft(v, ws[c])
+		case col.Middle:
+			v = Pad(TruncateMiddle(v, ws[c]), ws[c])
 		case col.Number:
 			v = PadLeft(Truncate(v, ws[c]), ws[c])
 		default:
 			v = Fit(v, ws[c])
 		}
-		parts[c] = v
+		parts = append(parts, v)
 	}
 	return strings.Join(parts, "  ")
 }

@@ -57,7 +57,7 @@ func newTerminalScreen(s *showcase) *terminalScreen {
 		{Key: "PgUp", Desc: "the history above the screen"},
 		{Key: "Ctrl-C", Desc: "to the shell, as every other key"},
 	}}}
-	ts.list = &terminu.List{Columns: []terminu.Column{{Title: "Session"}, {Title: "Status"}, {Title: "What", Flex: true}}}
+	ts.list = &terminu.List{Columns: []terminu.Column{{Title: "Session"}, {Title: "Status", Drop: 2}, {Title: "What", Drop: 1}}}
 	ts.refresh()
 	open := func() tea.Cmd {
 		r, ok := ts.list.Current()

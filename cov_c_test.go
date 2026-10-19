@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"math"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -1707,17 +1708,90 @@ func TestListMarkColumn(t *testing.T) {
 }
 
 func TestListTruncate(t *testing.T) {
-	l := &List{Columns: []Column{{Title: "Name", Flex: true}, {Title: "Kind"}}}
+	l := &List{Columns: []Column{{Title: "Name"}, {Title: "Kind"}}}
 	l.SetRows([]Row{{Cells: []string{"a-very-long-pod-name-that-does-not-fit", "Pod"}}})
-	row := covCPlain(l.Draw(24, 2, false)[1])
-	if !strings.Contains(row, "a-very") || !strings.Contains(row, "…  Pod") {
+	row := covCPlain(l.Draw(60, 2, false)[1])
+	if !strings.Contains(row, "a-very-long-pod-name-that-does-not-fit  Pod") {
+		t.Errorf("everything fits: %q", row)
+	}
+	row = covCPlain(l.Draw(24, 2, false)[1])
+	if !strings.Contains(row, "a-very") || !strings.Contains(row, "…") {
 		t.Errorf("a name cut from the end: %q", row)
+	}
+	m := &List{Columns: []Column{{Title: "Name", Middle: true}}}
+	m.SetRows([]Row{{Cells: []string{"demo-app-7d4f9c8b66-gm72n"}}})
+	if row := strings.Trim(covCPlain(m.Draw(1+17+1, 2, false)[1]), " "+glyphHard); row != "demo-app…66-gm72n" {
+		t.Errorf("a pod name cut in the middle: %q", row)
 	}
 	p := &List{Columns: []Column{{Title: "Path", Path: true}}}
 	p.SetRows([]Row{{Cells: []string{"/tmp"}}, {Cells: []string{"/home/me/.ssh/keys/id_ed25519"}}})
-	row = strings.TrimSpace(covCPlain(p.Draw(20, 3, false)[2]))
+	row = strings.Trim(covCPlain(p.Draw(20, 3, false)[2]), " "+glyphHard)
 	if !strings.HasPrefix(row, "…") || !strings.HasSuffix(row, "/id_ed25519") {
 		t.Errorf("a path cut from the front: %q", row)
+	}
+}
+
+// TestListColumnsGiveWay: columns that do not fit are taken away whole, the
+// header with them, in the app's order, the name never; then the rest narrow
+// in proportion; they come back as the panel grows (layout/panel).
+func TestListColumnsGiveWay(t *testing.T) {
+	l := &List{Columns: []Column{{Title: "Name"}, {Title: "Status", Drop: 2}, {Title: "Node", Drop: 1}}}
+	l.SetRows([]Row{{Cells: []string{"web-0123456789", "Running", "worker-01"}}})
+	// header and row, in the text room of a w-cell body
+	draw := func(w int) (string, string) {
+		lines := l.Draw(w, 2, false)
+		return strings.Trim(covCPlain(lines[0]), " "+glyphHard), strings.Trim(covCPlain(lines[1]), " "+glyphHard)
+	}
+	if h, r := draw(1 + 14 + 2 + 7 + 2 + 9 + 1); h != "NAME            STATUS   NODE" || r != "web-0123456789  Running  worker-01" {
+		t.Errorf("all fit: %q %q", h, r)
+	}
+	if h, r := draw(1 + 14 + 2 + 7 + 1); h != "NAME            STATUS" || r != "web-0123456789  Running" {
+		t.Errorf("Drop 1 goes first, its header too: %q %q", h, r)
+	}
+	if h, r := draw(1 + 14 + 1); h != "NAME" || r != "web-0123456789" {
+		t.Errorf("then Drop 2: %q %q", h, r)
+	}
+	if h, r := draw(1 + 10 + 1); h != "NAME" || r != "web-01234…" {
+		t.Errorf("the name is never taken away; it is cut: %q %q", h, r)
+	}
+	if h, _ := draw(1 + 14 + 2 + 7 + 2 + 9 + 1); !strings.Contains(h, "NODE") {
+		t.Errorf("grown again, they come back: %q", h)
+	}
+	// An app that marks every column: the last one left stays.
+	every := &List{Columns: []Column{{Title: "Name", Drop: 2}, {Title: "Node", Drop: 1}}}
+	every.SetRows([]Row{{Cells: []string{"web-0123456789", "worker-01"}}})
+	if h := strings.Trim(covCPlain(every.Draw(1+10+1, 2, false)[0]), " "+glyphHard); h != "NAME" {
+		t.Errorf("one column always stays: %q", h)
+	}
+	// Nothing to take away: every column narrows in proportion.
+	p := &List{Columns: []Column{{Title: "A"}, {Title: "B"}}}
+	p.SetRows([]Row{{Cells: []string{strings.Repeat("a", 30), strings.Repeat("b", 10)}}})
+	if ws := p.widths(2 + 20); !slices.Equal(ws, []int{15, 5}) {
+		t.Errorf("in proportion: %v, want [15 5]", ws)
+	}
+	// A list of one column with no title has no header (layout/panel).
+	one := &List{Columns: []Column{{}}}
+	one.SetRows([]Row{{Cells: []string{"Kinds"}}, {Cells: []string{"Pods"}}})
+	if first := strings.Trim(covCPlain(one.Draw(20, 3, false)[0]), " "+glyphHard); first != "Kinds" {
+		t.Errorf("no header: the first line is %q", first)
+	}
+}
+
+func TestTruncateMiddle(t *testing.T) {
+	for _, c := range []struct {
+		s    string
+		w    int
+		want string
+	}{
+		{"demo-app-7d4f9c8b66-gm72n", 17, "demo-app…66-gm72n"},
+		{"demo-app-7d4f9c8b66-gm72n", 16, "demo-ap…66-gm72n"},
+		{"short", 10, "short"},
+		{"abcdef", 1, "…"},
+		{"漢字漢字漢字", 6, "漢…字"},
+	} {
+		if got := TruncateMiddle(c.s, c.w); got != c.want {
+			t.Errorf("TruncateMiddle(%q, %d) = %q, want %q", c.s, c.w, got, c.want)
+		}
 	}
 }
 

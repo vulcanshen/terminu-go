@@ -264,7 +264,9 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | panel §一般清單 | 捲動位置：放不下時 `N of M`（框線色），全放得下不寫；沒有 cursor 的寫 `N-M of T` | P `[1] PODS`（40 列）、`[2] LOG` | `TestPanelScrollPosition` |
 | panel §一般清單 | 標記欄：每列最前一格，標記的畫 Green U+F0132，沒標記的空白，欄寬一直保留 | P `[1] PODS` 的 `[m]ark` | `TestListMarkColumn` |
 | panel §一般清單 | Drag mode 拿著的那一列（進 Drag 的鍵由 app 決定）：照 cursor 畫，Subtext1 換成 Yellow 底、Base 粗體，箭頭也是 Yellow；標記欄畫 U+F04E2，放下後回到原本的標記；有 Drag 的 panel 每一列都保留標記欄；按鍵同 reorder 拿著時（`j\|k` 搬、到頭尾繞回，`Enter` 放下，`Esc` 放回）。lib：`List.Draggable`、`Hold`、`MoveHeld`、`Drop`，Drag mode 與它的鍵由 app 登記 | P `[1] PODS` 的 `[D]rag`（先 `m` 標記一列再拿起它） | `TestPanelDragHeldRow` |
-| panel §一般清單 | 截斷從尾端加 `…`；路徑、檔名可以從前面截 | P `[1] PODS` 的長名字；I `[2] FILES` 的路徑 | `TestListTruncate` |
+| panel §一般清單 | 截斷從尾端加 `…`；路徑、檔名可以從前面截；兩端都有意義的從中間截（`demo-app…66-gm72n`），從哪裡截由 app 替每一欄決定（lib：`Column.Path`、`Column.Middle`） | P `[1] PODS` 的長名字（從中間截）；I `[2] FILES` 的路徑 | `TestListTruncate`、`TestTruncateMiddle` |
+| panel §一般清單 | 欄放不下時先整欄收（表頭一起），照 app 標的順序，名稱欄不收；還放不下才照比例縮；變大時照順序回來（lib：`Column.Drop`） | P `[1] PODS` 把視窗縮窄：`AGE`、`RESTARTS`、`READY` 依序收掉 | `TestListColumnsGiveWay` |
+| panel §一般清單 | 單欄的清單沒有欄名時不畫表頭 | K `[1] KINDS` | `TestListColumnsGiveWay` |
 | panel §一般清單 | 空的照空狀態 | `Empty` | `TestEmptyState` |
 | panel §分組 | 分組標題 Blue、大寫、不加粗、沒有 glyph、離框一格；項目多縮兩格；組與組之間不空列、不畫分隔線；失焦跟著淡化 | K `[1] KINDS` | `TestPanelListGroups`、`TestPanelDetailsFollowCursor`（失焦） |
 | panel §分組 | 有標記欄時，標記畫在多縮的那兩格裡：標記離框一格、空一格，字離框三格；分組標題那一列不留標記欄 | 展示場的分組清單沒有標記（看得到的是 P `[1] PODS` 的一般清單） | `TestPanelListGroupsMarks` |

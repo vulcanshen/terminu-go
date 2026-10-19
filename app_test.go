@@ -21,7 +21,7 @@ type testApp struct {
 func newTestApp(t *testing.T) *testApp {
 	t.Helper()
 	ta := &testApp{App: New("test")}
-	ta.list = &List{Columns: []Column{{Title: "Name", Flex: true}, {Title: "Age", Number: true}}, Marks: true, Filterable: true}
+	ta.list = &List{Columns: []Column{{Title: "Name"}, {Title: "Age", Number: true, Drop: 1}}, Marks: true, Filterable: true}
 	var rows []Row
 	for i := range 40 {
 		rows = append(rows, Row{ID: fmt.Sprint(i), Cells: []string{fmt.Sprintf("pod-%02d", i), fmt.Sprint(i % 7)}})

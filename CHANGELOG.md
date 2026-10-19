@@ -63,6 +63,11 @@ Each release names the version of terminu design (tdp) it implements.
 - An icon's and a powerline symbol's width are also read from `LC_TERMINU_ICON_WIDTH` and
   `LC_TERMINU_POWERLINE_WIDTH`, which an app with ssh brings to the remote end (`RemoteIconWidth`,
   `RemotePowerlineWidth`): after `<APP>__` and `TERMINU__`, before asking the terminal (Rules E5)
+- A list's columns that do not fit are taken away whole, their headers too, in the order `Column.Drop` gives,
+  the name (`Drop` 0) never; only then are the columns left narrowed, in proportion. `Column.Flex` does nothing
+  now (layout/panel)
+- `Column.Middle` cuts a value in the middle, `demo-app…66-gm72n`; `TruncateMiddle` does it to any line
+- A list of one column with no `Title` draws no header
 
 ## v0.1.13 — tdp v0.7.2
 
