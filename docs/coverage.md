@@ -25,7 +25,7 @@ app 名 `showcase`，五個畫面，畫面 chip 列 `[P]ANELS [I]NPUTS [D]IALOGS
 
 **展示場自己的動作**（切換狀態用，順便測了 M 章）：P 的 Space menu（panel operation）有 `Empty`（清空這個 panel）、`Loading`
 （進入 loading，再按一次結束）、`Fail`（這個 panel 出錯；在 `[3] SETTINGS` 上是 `Timeout` 這一欄出錯）、`Disable`（把某些列與動作設成
-停用）、`Toast info`、`Toast warning`、`Toast error`、`Toast long`；I 的 Space menu 有 `Empty`、`Loading`、`Disable`、`Toast info`。
+停用）、`Toast success`、`Toast info`、`Toast warning`、`Toast error`、`Toast long`；I 的 Space menu 有 `Empty`、`Loading`、`Disable`、`Toast info`。
 global operation popup 有 `[N]arrow layout`（不管多寬都一次畫一個 panel）、`[1] About`（數字的 global 熱鍵）、`[S]tart task`（畫面
 chip 列下的進度條）、`Hide secrets in preview`。icon 佔兩格用 `SHOWCASE__ICON_WIDTH=2` 啟動（E5 的覆寫），statusbar 寫出現在用幾格。
 假的檔案在 `/tmp/terminu-showcase`（`project` 與 `.ssh`），file-picker 的打字列打得到；打 `~/` 開頭的路徑看的是真的家目錄。
@@ -388,9 +388,9 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 |---|---|---|---|
 | toast §長相 | popup 的框、一律第 1 層層色；不觸發淡化、也不被淡化 | D「Toast over a popup」 | `TestToastNotALayer` |
 | toast §長相 | 畫面下方水平置中；下框一律在畫面倒數第三列，最下面兩列一直看得到（平常是 panel 下框與 footer；terminal 開著時是 PTY 最後一列與 terminal 下框）；寬度照「內容確定」 | P 的 `Toast info`；T 的 terminal popup 裡按 `Alt-b`（卡住結束時跳 toast） | `TestToastPosition`、`TestToastPositionOverTerminal` |
-| toast §長相 | 文字置中、太長折行每列置中、最多三列、超過第三列結尾 `…` | `Toast long` | `TestToastWrapThreeLines` |
-| toast §長相 | Info U+F024 `INFO` Text 字；Warning U+F078F `WARNING` Peach；Error U+F0238 `ERROR` Red | P 的 `Toast info`、`Toast warning`、`Toast error` | `TestToastKinds` |
-| toast §長相 | Info 2200ms，Warning、Error 4400ms；第二個來直接取代、重新計時 | 連按兩次 `Toast …` | `TestToastDuration`、`TestToastReplace` |
+| toast §長相 | 文字置中、太長折行每列置中；最多幾列由 app 設（lib：`App.ToastLines`，預設不限），超過時最後一列結尾 `…`；不高過畫面倒數第三列以上放得下的 | `Toast long` | `TestToastWrapLines` |
+| toast §長相 | Success U+F05E0 `SUCCESS` Green 字；Info U+F024 `INFO` Text；Warning U+F078F `WARNING` Peach；Error U+F0238 `ERROR` Red | P 的 `Toast success`、`Toast info`、`Toast warning`、`Toast error` | `TestToastKinds` |
+| toast §長相 | Success、Info 2200ms，Warning、Error 4400ms；第二個來直接取代、重新計時 | 連按兩次 `Toast …` | `TestToastDuration`、`TestToastReplace` |
 | toast §按鍵 | `Esc` 立刻收、比其他 popup 先收；其他鍵穿過；PTY 裡只能等時間到；hint `Esc:close` | toast 開著時按 `j`；T 的 terminal popup 裡按 `Alt-b` | `TestToastEscFirst`、`TestToastKeysPassThrough` |
 
 ## input/README（所有 input 共用）
@@ -497,6 +497,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | U+F0ECC | `nf-md-shield_alert` | popup §外框、confirm | D「Confirm」 |
 | U+F04E2 | `nf-md-swap_vertical` | panel §一般清單（Drag 拿著的列）、reorder §長相 | P `[1] PODS` 的 `[D]rag`；I 的 `Segments` 按 `D` |
 | U+F018D | `nf-md-console` | popup §外框、terminal | T 的 terminal popup |
+| U+F05E0 | `nf-md-check_circle` | toast（Success） | P 的 `Toast success` |
 | U+F024 | `nf-fa-flag` | toast（Info） | P 的 `Toast info` |
 | U+F078F | `nf-md-alarm_light` | toast（Warning） | P 的 `Toast warning` |
 | U+F0238 | `nf-md-fire` | toast（Error）、note §error popup | P 的 `Toast error`；D「Error popup」 |

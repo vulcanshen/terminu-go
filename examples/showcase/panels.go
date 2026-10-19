@@ -269,15 +269,17 @@ func (ps *panelsScreen) stateActions(p *terminu.Panel) []terminu.Action {
 			}},
 		{Label: "Disable", Desc: "some rows and actions cannot be used now", Scope: terminu.PanelScope,
 			Do: func() tea.Cmd { ps.disabled = !ps.disabled; return nil }},
+		{Label: "Toast success", Desc: "something is done", Scope: terminu.PanelScope,
+			Do: func() tea.Cmd { return a.Toast(terminu.Success, "Copied 3 paths") }},
 		{Label: "Toast info", Desc: "a short message", Scope: terminu.PanelScope,
-			Do: func() tea.Cmd { return a.Toast(terminu.Info, "Copied 3 paths") }},
+			Do: func() tea.Cmd { return a.Toast(terminu.Info, "Switched to context prod") }},
 		{Label: "Toast warning", Desc: "something worth a look", Scope: terminu.PanelScope,
 			Do: func() tea.Cmd { return a.Toast(terminu.Warning, "The certificate expires in 3 days") }},
 		{Label: "Toast error", Desc: "something failed", Scope: terminu.PanelScope,
 			Do: func() tea.Cmd { return a.Toast(terminu.Error, "Could not reach the cluster") }},
-		{Label: "Toast long", Desc: "a message longer than three lines", Scope: terminu.PanelScope,
+		{Label: "Toast long", Desc: "a message of several lines", Scope: terminu.PanelScope,
 			Do: func() tea.Cmd {
-				return a.Toast(terminu.Info, "A toast says one short thing. This one goes on and on, longer than any toast should, so that it has to wrap onto more lines than three and end in an ellipsis on the third line, which is as far as a toast goes.")
+				return a.Toast(terminu.Info, "A toast says one short thing. This one goes on and on, longer than any toast should, so that it wraps onto several lines: a toast has as many lines as it needs, unless the app sets a cap, and then the last line it keeps ends in an ellipsis.")
 			}},
 	}
 }

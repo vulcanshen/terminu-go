@@ -54,6 +54,9 @@ Each release names the version of terminu design (tdp) it implements.
 - `App.Canvas` and `CanvasKey` let an app draw a whole screen itself, a lock screen, with the lib's popups and
   toasts over it
 - `App.OnResize` tells the app the terminal changed size
+- A `Success` toast says an action is done: `SUCCESS` in Green, 2200ms (components/dialog/toast)
+- A toast has as many lines as it needs, no longer three at most; `App.ToastLines` caps them, the last one kept
+  ending in `…`
 
 ## v0.1.13 — tdp v0.7.2
 

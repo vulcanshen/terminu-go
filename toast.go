@@ -6,26 +6,28 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// ToastKind is what a toast says (components/dialog/toast).
+// ToastKind is what a toast says (components/dialog/toast): which one goes
+// with the meaning of its colour.
 type ToastKind int
 
 const (
-	Info ToastKind = iota
-	Warning
-	Error
+	Info    ToastKind = iota // a neutral word, neither good nor bad
+	Warning                  // done, or still usable, with something to notice
+	Error                    // an action failed
+	Success                  // an action is done
 )
 
 func (k ToastKind) glyph() string {
-	return [...]string{glyphInfo, glyphWarning, glyphError}[k]
+	return [...]string{glyphInfo, glyphWarning, glyphError, glyphSuccess}[k]
 }
 
-func (k ToastKind) title() string { return [...]string{"INFO", "WARNING", "ERROR"}[k] }
+func (k ToastKind) title() string { return [...]string{"INFO", "WARNING", "ERROR", "SUCCESS"}[k] }
 
-func (k ToastKind) color() Color { return [...]Color{Text, Peach, Red}[k] }
+func (k ToastKind) color() Color { return [...]Color{Text, Peach, Red, Green}[k] }
 
-// duration: Info 2200ms, Warning and Error 4400ms.
+// duration: Success and Info 2200ms, Warning and Error 4400ms.
 func (k ToastKind) duration() time.Duration {
-	if k == Info {
+	if k == Info || k == Success {
 		return 2200 * time.Millisecond
 	}
 	return 4400 * time.Millisecond
@@ -38,6 +40,8 @@ type toastView struct {
 	text  string
 	lines []string
 	id    int
+	// most is the app's cap on its lines (App.ToastLines), 0 for none.
+	most int
 }
 
 type toastDone struct{ id int }
@@ -48,13 +52,20 @@ func (t *toastView) measure(sw, sh int) (int, int) {
 	most := max(min(sw-2, 120), 1)
 	w := min(max(Width(t.text)+4, Width(titleCapsule(t.kind.glyph(), t.kind.title(), Base, 1<<20))+4, hintWidth(t.hint())+6), most)
 	lines := Wrap(t.text, w-4)
-	if len(lines) > 3 {
-		// Three lines at most, the third ending in "…".
-		lines = lines[:3]
-		lines[2] = Truncate(lines[2]+" …", w-4)
-		if Width(lines[2]) < w-4 && lines[2][len(lines[2])-len("…"):] != "…" {
-			lines[2] += "…"
+	// As many lines as the app allows, and as fit above the bottom two rows;
+	// the last one kept ends in "…".
+	n := len(lines)
+	if t.most > 0 {
+		n = min(n, t.most)
+	}
+	n = max(min(n, sh-6), 1)
+	if n < len(lines) {
+		lines = lines[:n]
+		last := Truncate(lines[n-1]+" …", w-4)
+		if Width(last) < w-4 && last[len(last)-len("…"):] != "…" {
+			last += "…"
 		}
+		lines[n-1] = last
 	}
 	t.lines = lines
 	return w, len(lines) + 4

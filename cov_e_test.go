@@ -1000,7 +1000,7 @@ func TestErrorPopupClose(t *testing.T) {
 
 // --- toast -------------------------------------------------------------------
 
-func TestToastWrapThreeLines(t *testing.T) {
+func TestToastWrapLines(t *testing.T) {
 	ta := newTestApp(t)
 	ta.resize(60, 30)
 	// body is the toast's text rows, inside the frame.
@@ -1025,9 +1025,21 @@ func TestToastWrapThreeLines(t *testing.T) {
 	if len(rows) != 2 || !centred(rows[0]) || !centred(rows[1]) || strings.Contains(strings.Join(rows, ""), "…") {
 		t.Errorf("a long text wraps, each line centred: %q", rows)
 	}
-	rows = body(strings.Repeat("Copied the paths of every file under the directory. ", 6))
+	long := strings.Repeat("Copied the paths of every file under the directory. ", 6)
+	rows = body(long)
+	if len(rows) < 4 || strings.Contains(strings.Join(rows, ""), "…") {
+		t.Errorf("no cap unless the app sets one: %q", rows)
+	}
+	ta.ToastLines = 3
+	rows = body(long)
 	if len(rows) != 3 || !strings.HasSuffix(strings.TrimRight(rows[2], " "), "…") {
-		t.Errorf("three lines at most, the third ending in …: %q", rows)
+		t.Errorf("the app caps it at three lines, the third ending in …: %q", rows)
+	}
+	ta.ToastLines = 0
+	ta.resize(60, 9)
+	rows = body(long)
+	if len(rows) != 3 || !strings.HasSuffix(strings.TrimRight(rows[2], " "), "…") || ta.toast.y < 0 {
+		t.Errorf("no taller than fits above the bottom two rows: %q at row %d", rows, ta.toast.y)
 	}
 }
 
@@ -1037,6 +1049,7 @@ func TestToastKinds(t *testing.T) {
 		glyph, title string
 		color        Color
 	}{
+		{Success, "\U000F05E0", "SUCCESS", Green},
 		{Info, "\U0000F024", "INFO", Text}, {Warning, "\U000F078F", "WARNING", Peach}, {Error, "\U000F0238", "ERROR", Red},
 	} {
 		ta := newTestApp(t)
@@ -1056,7 +1069,7 @@ func TestToastDuration(t *testing.T) {
 	for _, c := range []struct {
 		kind ToastKind
 		want time.Duration
-	}{{Info, 2200 * time.Millisecond}, {Warning, 4400 * time.Millisecond}, {Error, 4400 * time.Millisecond}} {
+	}{{Success, 2200 * time.Millisecond}, {Info, 2200 * time.Millisecond}, {Warning, 4400 * time.Millisecond}, {Error, 4400 * time.Millisecond}} {
 		if got := c.kind.duration(); got != c.want {
 			t.Errorf("%s: %v, want %v", c.kind.title(), got, c.want)
 		}

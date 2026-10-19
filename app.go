@@ -74,6 +74,9 @@ type App struct {
 	// Tab puts in a textarea, and the spaces a tab in any text is drawn as;
 	// 4 when unset (components/input/textarea, Rules E3).
 	InputTabWidth int
+	// ToastLines caps how many lines a toast has, the last one kept ending in
+	// "…"; 0 for no cap (components/dialog/toast: the app's choice).
+	ToastLines int
 	// Progress is a long job's progress, 0 to 1, for the bar under the
 	// screen chips; ok false when there is none.
 	Progress func() (frac float64, ok bool)
@@ -506,7 +509,7 @@ func (a *App) relayout() {
 // second one replaces the first and starts its time again.
 func (a *App) Toast(kind ToastKind, text string) tea.Cmd {
 	a.toastSeq++
-	v := &toastView{kind: kind, text: text, id: a.toastSeq}
+	v := &toastView{kind: kind, text: text, id: a.toastSeq, most: a.ToastLines}
 	if a.toast != nil && !a.toast.closing {
 		a.toast.view = v
 	} else {
