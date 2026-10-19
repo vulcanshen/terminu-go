@@ -9,10 +9,19 @@ import (
 type noteView struct {
 	glyph, title string
 	lines        []string // drawn lines, already as wide as they will be
-	known        bool     // the width is known when it opens; a viewer's is not
-	color        *Color   // the frame's colour when it is not the layer's (Red)
-	enterCloses  bool     // an error popup and the typing note close with Enter too
-	helpCloses   bool     // a key reference closes with ? too
+	// text, when set, is a paragraph in textStyle the lines are folded from
+	// at the width it gets, each time it is measured: too long, it folds,
+	// never cut (an error popup, the typing note; components/dialog/note).
+	text      string
+	textStyle Style
+	// onlyClose takes every key but Enter and Esc and does nothing with them,
+	// ? and q too: the typing note, which comes while the user is still typing
+	// (components/dialog/form, Rules K9).
+	onlyClose    bool
+	known        bool   // the width is known when it opens; a viewer's is not
+	color        *Color // the frame's colour when it is not the layer's (Red)
+	enterCloses  bool   // an error popup and the typing note close with Enter too
+	helpCloses   bool   // a key reference closes with ? too
 	hint         []KeyHint
 	name         string
 	extraKeys    []KeyRow
@@ -21,6 +30,12 @@ type noteView struct {
 
 func (n *noteView) measure(sw, sh int) (int, int) {
 	w := popupWidth(sw, 0, false)
+	if n.text != "" {
+		n.lines = nil
+		for _, l := range Wrap(n.text, max(min(max(Width(n.text), 20), w-4), 1)) {
+			n.lines = append(n.lines, n.textStyle.Render(l))
+		}
+	}
 	if n.known {
 		content := 0
 		for _, l := range n.lines {
@@ -60,6 +75,12 @@ func (n *noteView) draw(w, h int, layer Color) []string {
 }
 
 func (n *noteView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {
+	if n.onlyClose {
+		if key == "Enter" || key == "Esc" {
+			return true, a.closeTop()
+		}
+		return true, nil
+	}
 	half := max(n.visible/2, 1)
 	switch key {
 	case "j", "↓":
@@ -110,7 +131,9 @@ func (n *noteView) keyRef() []refSection {
 	}}}
 }
 
-func (n *noteView) typing() bool { return false }
+// typing: the typing note takes what is typed on it, so the app's own core
+// keys do not act there either.
+func (n *noteView) typing() bool { return n.onlyClose }
 
 // keyReference builds the key reference of a surface (components/dialog/note),
 // title its name cased as a title is (a name in it as it is, components'
@@ -149,15 +172,10 @@ func keyReference(title string, sections []refSection) *noteView {
 
 // errorPopup is a popup's action failing (components/dialog/note, error
 // popup): Red frame and text, the fire glyph, Enter or Esc to close.
-func errorPopup(title, subject, message string, sw int) *noteView {
+func errorPopup(title, subject, message string) *noteView {
 	red := Red
-	w := min(max(Width(message), 20), max(min(sw-2, 120)-4, 1))
-	var lines []string
-	for _, l := range Wrap(message, w) {
-		lines = append(lines, Fg(Red).Render(l))
-	}
 	return &noteView{
-		glyph: glyphError, title: popupTitle(title, subject), lines: lines, known: true, color: &red, enterCloses: true,
+		glyph: glyphError, title: popupTitle(title, subject), text: message, textStyle: Fg(Red), known: true, color: &red, enterCloses: true,
 		hint: []KeyHint{{"Enter|Esc", "close"}}, name: title,
 	}
 }

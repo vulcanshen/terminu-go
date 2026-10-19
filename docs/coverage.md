@@ -323,7 +323,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | form §標題 | 寫表單要做什麼（標題膠囊），不寫型別；改的是某一筆時可以帶上它的名稱，`: ` 後照原樣 | 同上；D「Form: long」`EDIT: prod-db-01` | `TestPopupTitleSubject` |
 | form §欄位的排法 | 上下式、左右式，可混用；欄位之間、label 與值之間不空行；label、值、錯誤左緣對齊；左右式 label 欄寬取左右式最長的、與值之間兩格 | D「Form: New profile」（混用） | `TestFormLayouts` |
 | form §選項畫在表單上 | 五個以內畫在表單、超過用 select／checkbox popup；radio 與 checkbox 組一律直排、一個選項一列 | D「Form: New host」的 `Auth`、`Order` | `TestFormOptionsDrawn` |
-| form §focus 與 label | focus 照 menu 的 cursor（層色底 Base 粗體），從項目開頭一直到框（蓋住右邊留白）、最右邊一格是箭頭；按鈕的色塊就是按鈕、沒有箭頭；值空著也一整塊；箭頭兩格時放得下的值照樣整個畫、不加 `…` | 同上；`SHOWCASE__POWERLINE_WIDTH=2` | `TestFormFocusBlock`、`TestFormFocusWideArrow` |
+| form §focus 與 label | focus 照 menu 的 cursor（層色底 Base 粗體），從項目開頭一直到框（蓋住右邊留白）、最右邊一格是箭頭；按鈕的色塊就是按鈕、沒有箭頭；值空著也一整塊；箭頭兩格時放得下的值照樣整個畫、不加 `…`；每一列右邊的留白跟箭頭一樣寬（兩格時留兩格） | 同上；`SHOWCASE__POWERLINE_WIDTH=2` | `TestFormFocusBlock`、`TestFormFocusWideArrow`、`TestFormRightPadIsArrow` |
 | form §focus 與 label | label 不因 focus 變色：一般層色、停用 Surface2、值出錯 Red（優先）；停用的留原位；值不跟 label 同色 | D「Form: New host」的 `Credential`（停用）；送出失敗 | `TestFormLabelColors` |
 | form §動作區 | 按鈕：文字左右各一格、一塊底色；沒 focus Surface1 底 Text 字、focus 層色底 Base 粗體；寫按下去要做的事；不用 `[ Save ]`、不用膠囊 | D「Form: New host」 | `TestFormButton` |
 | form §動作區 | 位置：欄位區 → 空一列 → 錯誤列 → 分隔線 → 動作區；按鈕靠右離框一格；錯誤列、分隔線、動作區固定不捲；沒有取消按鈕 | D「Form: long」（欄位要捲） | `TestFormActionRowFixed` |
@@ -340,6 +340,8 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | form §`Enter` | radio 選項：選它；checkbox 選項：原地翻（`Space` 也能翻）；都不開 popup、focus 不動、馬上生效；按鈕：按下它（送出或做它的動作） | 同上 | `TestFormEnterOption`、`TestFormEnterButton`、`TestFormCheckboxSpace` |
 | form §送出 | 只有送出按鈕的 `Enter`；`Tab` 第一次就停在主要的送出；不用字母熱鍵；`Esc` 不把 focus 移到動作區 | 同上 | `TestFormSubmitOnlyButton` |
 | form §在欄位上打字 | 要打字的欄位上按表單操作鍵以外的可列印字元（含數字、`q`）跳說明 note：標題是欄位名、`Enter`／`Esc` 關、focus 不動；其他項目上不跳 | D「Form: New host」的 `Name` 上打 `s` | `TestFormTypingNote` |
+| form §在欄位上打字 | note 只收 `Enter`、`Esc`：其他可以打的字（含 `q`、`?`、app 的 core key）都接住、不作用，`Ctrl-C` 照樣有效（K9）；很窄時折行、不截斷 | 同上，接著打 `q` `?`；把視窗縮窄 | `TestFormTypingNote` |
+| form §動作區 | 按鈕能在表單上開 popup（例：terminal popup 跑 `ssh-copy-id`），表單留在底下；那個 popup 關掉、回到表單時 app 重讀表單的值，算改過（lib：`FormButton.Open`、`Back`） | D「Form: with actions」的 `Copy key`（跑完 Auth 變成 privatekey） | `TestFormButtonOpens` |
 | form §在欄位上打字 | 表單操作鍵不跳 note：移動鍵、`u\|d`、`g`（單按不作用）、`G`、`e`（沒錯時不作用）、`Enter`、`Esc`、`Space`（不作用）、`?`（key reference） | 同上，按 `e` `u` `g` `?` | `TestFormOperationKeys` |
 | form §hint | `Enter:` 後的字跟著 focus 換（`edit`／`choose`／checkbox 選項 `Enter\|Space:toggle`／按鈕小寫）；有問題的欄位加 `e:error`；`Tab` 寫要去的那塊：欄位區（含錯誤列）`Tab:actions`、按鈕上 `Tab:fields`；錯誤列 `Enter:show e:edit Tab:actions Esc:cancel`；按鈕寫按鈕的字，只有動詞小寫，名稱、路徑照原樣（`Enter:save as`、`Enter:test`、`Enter:export hosts.yaml`；lib：`FormButton.Subject`、`Form.ButtonSubject`，失敗的 error popup 標題名稱接在 `: ` 後照原樣）；不寫 `j\|k`；`Esc:cancel` | 同上 | `TestFormHint`、`TestFormButtonSubject` |
 | form §取消 | 沒改過 `Esc` 直接關；改過先 confirm（`Enter` 放棄、`Esc` 回表單值都在）；「改過了」只要寫回過就設、不清掉；只有表單、textarea 與 reorder 問 | D「Form: New host」改一欄再 `Esc`；I 的 `Segments` | `TestFormDiscardConfirm`、`TestFormDirtyFlag`、`TestReorderEsc` |

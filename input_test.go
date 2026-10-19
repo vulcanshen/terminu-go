@@ -679,10 +679,76 @@ func TestFormTypingNote(t *testing.T) {
 	if !ok || !strings.Contains(StripStyles(strings.Join(n.lines, "")), "Press [Enter] to edit Name.") {
 		t.Fatalf("typing on Name opens the note: %T", ta.topView())
 	}
+	// It takes only Enter and Esc: what is typed after it goes nowhere, q and
+	// ? too, the app's own core keys too (Rules K9, components/dialog/form).
+	ran := false
+	ta.CoreKeys = []CoreKey{{Key: "!", Desc: "app's", Do: func() tea.Cmd { ran = true; return nil }}}
+	ta.press("q", "?", "!", "y", "Space", "j", "Tab")
+	if ta.topView() != n || ta.quitting || ran {
+		t.Errorf("the note took them: %T, quitting %v, core key %v", ta.topView(), ta.quitting, ran)
+	}
+	ta.press("Esc")
+	if _, ok := ta.topView().(*formView); !ok {
+		t.Fatalf("Esc closes it: %T", ta.topView())
+	}
+	ta.press("x")
+	ta.press("Ctrl-C")
+	if !ta.quitting {
+		t.Error("Ctrl-C still starts the quit flow")
+	}
+	ta.press("Esc")
+	ta.settle()
+	ta.CoreKeys = nil
+	if _, ok := ta.topView().(*noteView); !ok {
+		t.Fatalf("back to the note: %T", ta.topView())
+	}
 	ta.press("Enter")
 	ta.press("j", "j", "q")
 	if _, ok := ta.topView().(*formView); !ok || ta.quitting {
 		t.Errorf("q on an option does nothing: %T, quitting %v", ta.topView(), ta.quitting)
+	}
+	// Too narrow, it folds; never cut (components/dialog/note).
+	ta.covBCloseAll()
+	ta.resize(24, 20)
+	ta.Form(testForm(nil))
+	ta.settle()
+	ta.press("x")
+	n = ta.topView().(*noteView)
+	if text := StripStyles(strings.Join(n.lines, " ")); len(n.lines) < 2 || text != "Press [Enter] to edit Name." {
+		t.Errorf("folded: %q", n.lines)
+	}
+}
+
+// TestFormRightPadIsArrow: every row of a form keeps as much room on its
+// right as the focus block's arrow, two cells where a powerline symbol
+// takes two (components/dialog/form, layout/popup).
+func TestFormRightPadIsArrow(t *testing.T) {
+	for _, pl := range []int{1, 2} {
+		withWidths(t, 1, pl)
+		ta := newTestApp(t)
+		r := &formResult{name: strings.Repeat("n", 200)}
+		ta.Form(testForm(r))
+		ta.settle()
+		lines, _ := covFDraw(ta)
+		for i, l := range lines[1 : len(lines)-1] {
+			p := StripStyles(l)
+			if strings.Contains(p, "─") {
+				break // the separator and the buttons keep one cell (layout/popup)
+			}
+			if strings.Contains(p, glyphHard) {
+				continue // the focus block: its arrow is the room
+			}
+			if !strings.HasSuffix(p, Repeat(" ", pl)+"┃") {
+				t.Errorf("powerline %d: row %d leaves less room: %q", pl, i+1, p)
+			}
+		}
+		ta.press("j")
+		lines, _ = covFDraw(ta)
+		for _, l := range lines {
+			if p := StripStyles(l); strings.Contains(p, glyphHard) && !strings.HasSuffix(p, glyphHard+"┃") {
+				t.Errorf("powerline %d: the arrow goes up to the frame: %q", pl, p)
+			}
+		}
 	}
 }
 

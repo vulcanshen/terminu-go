@@ -88,7 +88,7 @@ type Form struct {
 
 // FormButton is a button of a form's action area besides the main submit
 // (components/dialog/form): another submit, or an action that keeps the
-// form open. It has one of Submit, SubmitLong and Run.
+// form open. It has one of Submit, SubmitLong, Run and Open.
 type FormButton struct {
 	// Label is what it does ("Overwrite"); Subject the name it acts on, kept
 	// as it is, as the form's ButtonSubject.
@@ -105,6 +105,13 @@ type FormButton struct {
 	// is then dropped, Apply too.
 	Needs []*FormField
 	Run   func(ctx context.Context) FormResult
+	// Open makes it an action that opens a popup over the form, on the update
+	// loop, the form staying under it: a terminal popup (OpenTerminal) that
+	// copies a key to the host, say. Back, when set, runs as the popup it
+	// opened closes and the form is on top again: where the app reads what
+	// was done there into the fields; true counts as a change to the form.
+	Open func() tea.Cmd
+	Back func() (changed bool)
 }
 
 // FormResult is what came of a form's action (components/dialog/form): Err
@@ -158,7 +165,7 @@ type formView struct {
 // Form opens a form.
 // It panics on a field with more than five options: those go in a select or
 // a checkbox popup (components/dialog/form); on a form with both Submit and
-// SubmitLong; and on a button with not one of Submit, SubmitLong and Run:
+// SubmitLong; and on a button with not one of Submit, SubmitLong, Run and Open:
 // mistakes in the program.
 func (a *App) Form(f *Form) tea.Cmd {
 	for _, fl := range f.Fields {
@@ -173,13 +180,13 @@ func (a *App) Form(f *Form) tea.Cmd {
 	for _, row := range f.Buttons {
 		for _, b := range row {
 			n := 0
-			for _, set := range []bool{b.Submit != nil, b.SubmitLong != nil, b.Run != nil} {
+			for _, set := range []bool{b.Submit != nil, b.SubmitLong != nil, b.Run != nil, b.Open != nil} {
 				if set {
 					n++
 				}
 			}
 			if n != 1 {
-				panic(fmt.Sprintf("terminu: form button %q needs one of Submit, SubmitLong and Run", b.Label))
+				panic(fmt.Sprintf("terminu: form button %q needs one of Submit, SubmitLong, Run and Open", b.Label))
 			}
 			fv.buttons = append(fv.buttons, b)
 		}
@@ -254,7 +261,7 @@ func (fv *formView) buttonHint(it formItem) string {
 // title, the name after ": " as it is (components/layout/popup, title).
 func (fv *formView) failed(a *App, it formItem, err error) tea.Cmd {
 	label, subject := fv.buttonParts(it)
-	n := errorPopup(label+" failed", "", err.Error(), a.w)
+	n := errorPopup(label+" failed", "", err.Error())
 	n.title = popupTitle(label+" failed", subject)
 	return a.open(n)
 }
@@ -393,7 +400,12 @@ func (fv *formView) measure(sw, sh int) (int, int) {
 
 func (fv *formView) draw(w, h int, layer Color) []string {
 	inner := w - 2
-	cw := inner - 2 // the content, one cell from the frame on each side
+	// The content, one cell from the frame on the left; on the right as much
+	// room as the arrow at the end of the focus block, on every row, so the
+	// arrow never covers a value (components/dialog/form, layout/popup).
+	arrow := Width(glyphHard)
+	pad := Repeat(" ", arrow)
+	cw := inner - 1 - arrow
 	lw := fv.labelWidth()
 	var rows []string
 	fieldTop := map[*FormField]int{}
@@ -402,7 +414,7 @@ func (fv *formView) draw(w, h int, layer Color) []string {
 		label := fv.label(f, layer)
 		indent := 0
 		if f.Stacked {
-			rows = append(rows, " "+Fit(label, cw)+" ")
+			rows = append(rows, " "+Fit(label, cw)+pad)
 		} else {
 			indent = lw + 2
 			label = Pad(label, lw) + "  "
@@ -421,10 +433,10 @@ func (fv *formView) draw(w, h int, layer Color) []string {
 		case len(f.Options) > 0:
 			for i := range f.Options {
 				if fv.focus == (formItem{itemField, f, i}) {
-					rows = append(rows, " "+lead(i == 0)+fv.block(fv.option(f, i), room+1, layer))
+					rows = append(rows, " "+lead(i == 0)+fv.block(fv.option(f, i), room+arrow, layer))
 					continue
 				}
-				rows = append(rows, " "+lead(i == 0)+Fit(fv.option(f, i), room)+" ")
+				rows = append(rows, " "+lead(i == 0)+Fit(fv.option(f, i), room)+pad)
 			}
 		default:
 			value := fv.value(f)
@@ -437,10 +449,10 @@ func (fv *formView) draw(w, h int, layer Color) []string {
 			}
 			if fv.focus == (formItem{itemField, f, -1}) {
 				// Fitted to the block, the arrow taken off: a value that fits gets no ….
-				rows = append(rows, " "+lead(true)+fv.block(fit(value, room+1-Width(glyphHard)), room+1, layer))
+				rows = append(rows, " "+lead(true)+fv.block(fit(value, room), room+arrow, layer))
 				continue
 			}
-			rows = append(rows, " "+lead(true)+fit(value, room)+" ")
+			rows = append(rows, " "+lead(true)+fit(value, room)+pad)
 		}
 	}
 	// The fields area scrolls the least that keeps the focused field whole;
@@ -465,7 +477,7 @@ func (fv *formView) draw(w, h int, layer Color) []string {
 	}
 	body = append(body, Repeat(" ", inner))
 	body = append(body, fv.errorRow(cw, layer))
-	body = append(body, " "+Fg(Overlay0).Render(Repeat("─", cw))+" ")
+	body = append(body, " "+Fg(Overlay0).Render(Repeat("─", inner-2))+" ")
 	// Each row of buttons on the right, one cell between two buttons.
 	for _, row := range actions {
 		var parts []string
@@ -559,14 +571,15 @@ func (fv *formView) block(s string, w int, layer Color) string {
 }
 
 func (fv *formView) errorRow(cw int, layer Color) string {
+	arrow := Width(glyphHard)
 	if fv.errOn == nil {
-		return Repeat(" ", cw+2)
+		return Repeat(" ", 1+cw+arrow)
 	}
 	msg := fv.errs[fv.errOn]
 	if fv.focus.kind == itemError {
-		return " " + fv.block(Truncate(msg, cw), cw+1, layer)
+		return " " + fv.block(Truncate(msg, cw), cw+arrow, layer)
 	}
-	return " " + Fit(Fg(Red).Render(msg), cw) + " "
+	return " " + Fit(Fg(Red).Render(msg), cw) + Repeat(" ", arrow)
 }
 
 // step moves one item within the focus's area, wrapping at its ends (Rules
@@ -656,9 +669,9 @@ func (fv *formView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 		if it := fv.focus; it.kind == itemField && it.field.Edit != nil && it.field.Edit().typed() {
 			label := it.field.Label
 			return true, a.open(&noteView{
-				glyph: fv.f.Glyph, title: Upper(label), name: label, known: true, enterCloses: true,
-				lines: []string{Fg(Text).Render("Press [Enter] to edit " + label + ".")},
-				hint:  []KeyHint{{"Enter|Esc", "close"}},
+				glyph: fv.f.Glyph, title: Upper(label), name: label, known: true, enterCloses: true, onlyClose: true,
+				text: "Press [Enter] to edit " + label + ".", textStyle: Fg(Text),
+				hint: []KeyHint{{"Enter|Esc", "close"}},
 			})
 		}
 		return true, nil // q too: a form does not start the quit flow (Rules K9)
@@ -709,6 +722,21 @@ func (fv *formView) press(a *App, it formItem) tea.Cmd {
 		submit, long = b.Submit, b.SubmitLong
 	}
 	switch {
+	case b != nil && b.Open != nil:
+		n := len(a.stack)
+		cmd := b.Open()
+		if len(a.stack) > n && b.Back != nil {
+			// What it opened is over the form: once that is gone, the app
+			// reads back what was done there.
+			back := b.Back
+			a.stack[len(a.stack)-1].below = func() tea.Cmd {
+				if back() {
+					fv.dirty = true
+				}
+				return nil
+			}
+		}
+		return cmd
 	case b != nil && b.Run != nil:
 		if !fv.check(b.Needs) {
 			return nil

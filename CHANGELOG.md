@@ -100,6 +100,12 @@ Each release names the version of terminu design (tdp) it implements.
   (components/input/color-picker)
 - A value on a form or a panel writes its control characters as their red names, `\n`, `\x1b`, and a tab as
   `\t`, as a typing row does, the app's own colours kept (components/input/README, Rules E3)
+- A form's typing note takes only `Enter` and `Esc`: `q`, `?` and whatever else is typed after it go nowhere,
+  `Ctrl-C` still works (Rules K9); it folds when too narrow, as an error popup now also does on every resize
+- Every row of a form keeps as much room on its right as the focus block's arrow, two cells where a powerline
+  symbol takes two (components/dialog/form)
+- `FormButton.Open` opens a popup over the form, a terminal popup say, and `Back` reads what was done there into
+  the form as it closes (components/dialog/form)
 - `List.Location` is a list's location row, where the user is, in Lavender above its header, cut from the front
   (layout/panel)
 

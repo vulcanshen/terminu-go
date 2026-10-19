@@ -351,7 +351,21 @@ func (ds *dialogsScreen) actionsForm() tea.Cmd {
 	export := &terminu.FormButton{Label: "Export", Subject: "hosts.yaml", Submit: func() (tea.Cmd, error) {
 		return a.Toast(terminu.Info, "Exported "+f.Fields[0].Value()+" to hosts.yaml"), nil
 	}}
-	f.Buttons = [][]*terminu.FormButton{{test, scan, export}, {saveAs}}
+	// A button that runs a program in a terminal popup over the form; once it
+	// ends, the app reads back what it did: the key is on the host now, so
+	// Auth is privatekey (components/dialog/form).
+	copyKey := &terminu.FormButton{Label: "Copy key", Open: func() tea.Cmd {
+		host := hostF.Value()
+		if host == "" {
+			host = "the host"
+		}
+		return a.OpenTerminal(&terminu.Terminal{Title: "ssh-copy-id", Subject: host, Ends: true,
+			Command: []string{"sh", "-c", "echo Copying ~/.ssh/id_ed25519.pub to " + host + "; echo '(the showcase only pretends)'; sleep 2"}})
+	}, Back: func() bool {
+		f.Fields[3].Selected = 1
+		return true
+	}}
+	f.Buttons = [][]*terminu.FormButton{{test, scan, export}, {copyKey, saveAs}}
 	f.Button, f.Submit = "Connect", nil
 	f.SubmitLong = func(ctx context.Context) (tea.Cmd, error) {
 		host := hostF.Value()

@@ -426,7 +426,7 @@ func gone(l *layer) tea.Cmd {
 // the popup and its value staying (components/layout/popup, the action
 // failing).
 func (a *App) commitFailed(title, subject string, err error) tea.Cmd {
-	return a.open(errorPopup(title+" failed", subject, err.Error(), a.w))
+	return a.open(errorPopup(title+" failed", subject, err.Error()))
 }
 
 // runCommit runs a popup's Commit, when it has one.
@@ -544,7 +544,7 @@ func (a *App) Error(title, message string) tea.Cmd { return a.ErrorAbout(title, 
 // ErrorAbout is Error naming what failed: subject goes after ": " in the
 // title, kept as it is, RENAME FAILED: notes.md (components/dialog/note).
 func (a *App) ErrorAbout(title, subject, message string) tea.Cmd {
-	return a.open(errorPopup(title, subject, message, a.w))
+	return a.open(errorPopup(title, subject, message))
 }
 
 // Menu opens a menu of sections (Rules M8); running a row closes the menu

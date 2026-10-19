@@ -133,6 +133,44 @@ func TestFormActionAreaMoves(t *testing.T) {
 
 // An action checks only the fields it needs, runs with the loading icon
 // after the title, and says it is done in a toast; the form stays.
+// TestFormButtonOpens: a button can open a popup over the form, a terminal
+// popup for one; as it closes, Back reads what was done there into the
+// form, which then counts as changed (components/dialog/form; sshu SS19).
+func TestFormButtonOpens(t *testing.T) {
+	ta := newTestApp(t)
+	key := ""
+	var term *Terminal
+	f := &Form{Title: "New host", Name: "New host", Button: "Save",
+		Fields: []*FormField{{Label: "Key", Value: func() string { return key }, Empty: "none"}},
+		Buttons: [][]*FormButton{{{Label: "Copy key",
+			Open: func() tea.Cmd {
+				term = &Terminal{Title: "ssh-copy-id", in: &strings.Builder{}, started: true}
+				ta.open(&termView{t: term, a: ta.App})
+				return nil
+			},
+			Back: func() bool { key = "~/.ssh/id_ed25519.pub"; return true }}}},
+	}
+	ta.Form(f)
+	ta.settle()
+	fv := ta.topView().(*formView)
+	ta.press("Tab", "h", "Enter") // the action area lands on Save; Copy key is before it
+	ta.settle()
+	if _, ok := ta.topView().(*termView); !ok {
+		t.Fatalf("the terminal popup over the form: %T", ta.topView())
+	}
+	if key != "" {
+		t.Error("Back runs only once it is gone")
+	}
+	ta.closeTop()
+	ta.settle()
+	if ta.topView() != fv || key != "~/.ssh/id_ed25519.pub" || !fv.dirty {
+		t.Errorf("back on the form, the value read in, a change: %T %q %v", ta.topView(), key, fv.dirty)
+	}
+	if !strings.Contains(ta.screenText(), "~/.ssh/id_ed25519.pub") {
+		t.Error("the form draws the value read back")
+	}
+}
+
 func TestFormActionRun(t *testing.T) {
 	ta := newTestApp(t)
 	b := newButtonsForm()
