@@ -28,6 +28,32 @@ Each release names the version of terminu design (tdp) it implements.
 - A form's focused field no longer gets a `…` after a value that fits when the arrow is two cells wide
 - With `App.ShiftTab` a panel's key reference writes `Tab|Shift-Tab`; its app-wide section leaves out hidden
   global actions
+- `Commit` on every input (text, password, number, textarea, select, checkbox popup, colour picker, date picker,
+  file-picker, reorder) writes a changed value back when `Enter` takes it: an error keeps the input open with its
+  value and opens an error popup over it, instead of the input closing first and the value being lost
+- `OnCancel` on a confirm (`Ask`) and every input runs when it closes with no answer, by `Esc` or by the popup
+  under it closing, so a web page's prompt or ssh's askpass hears it was cancelled
+- `Action.AskFor` makes an action's question when it runs, naming the item under the cursor, or asks nothing; run
+  from a menu, `Esc` on its confirm goes back to the menu
+- `App.ErrorAbout` and `App.MenuAbout` keep the name of the one thing they are about as it is in the title:
+  `RENAME FAILED: notes.md`, `OPEN WITH: notes.md`
+- `Textarea.Check` holds back a changed text that fails it, as a one-line input does
+- `TextInput.Search` takes a pasted control character in a value that is only searched for
+- A one-value-per-row panel puts what its `Enter` does in the Space menu and the key reference, and has an empty
+  state of its own (`Values.EmptyFact`, `EmptyHint`)
+- `App.LoadSelect` and `App.LoadChecks` open a select or checkbox popup before its options are there, loading in
+  its title, as a `Finder` does
+- An app popup's body may have `Scroll()`: its scroll position on the bottom frame line
+- `Stay` makes a one-line input a step of a flow (current PIN, new PIN, confirm PIN): it stays under the next step
+  and `Esc` goes back to it; `App.CloseTop(n)` ends the flow, `App.CloseAll` the whole stack
+- `TerminalKey.Keys` lets one of the app's keys in a PTY take several keys, written once (`Alt-←|→|↑|↓`);
+  `Terminal.OnFirstOutput` and `Spoke` tell the app its program has started printing
+- `PreviewFS` lets a file preview read a file system the app gives, such as a remote host's over SFTP
+  (`Finder.FS`); `FinderItem.Line` starts a text file's preview near a search's hit; `FilePreview` is a panel's
+  body that previews a file, for a details panel
+- `App.Canvas` and `CanvasKey` let an app draw a whole screen itself, a lock screen, with the lib's popups and
+  toasts over it
+- `App.OnResize` tells the app the terminal changed size
 
 ## v0.1.13 — tdp v0.7.2
 
