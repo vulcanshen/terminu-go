@@ -232,3 +232,24 @@ func TestTerminalKeyTakesSeveral(t *testing.T) {
 		t.Errorf("footer %q", footer)
 	}
 }
+
+// TestTerminalFirstOutput: a terminal tells the app once when its program
+// first prints, so the app can end the panel's loading (Rules K10, F7; sshu
+// SS11).
+func TestTerminalFirstOutput(t *testing.T) {
+	ta := newTestApp(t)
+	calls := 0
+	term := &Terminal{Command: []string{"sh", "-c", "sleep 0.1; printf a; sleep 0.1; printf b"},
+		OnFirstOutput: func() tea.Cmd { calls++; return nil }}
+	start := term.Start()
+	if term.Exited() {
+		t.Skip("no PTY here")
+	}
+	if term.Spoke() {
+		t.Error("it spoke before the program printed")
+	}
+	runTerminal(t, ta, term, start)
+	if !term.Spoke() || calls != 1 {
+		t.Errorf("spoke %v, heard %d times", term.Spoke(), calls)
+	}
+}

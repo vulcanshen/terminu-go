@@ -38,6 +38,10 @@ type Terminal struct {
 	NotReady func() bool
 	// OnExit runs when the program ends.
 	OnExit func(err error) tea.Cmd
+	// OnFirstOutput runs when the program first prints something after
+	// Start: an ssh that has connected, to end the panel's loading and
+	// NotReady (Rules K10, F7).
+	OnFirstOutput func() tea.Cmd
 
 	mu      sync.Mutex
 	screen  *vt
@@ -46,6 +50,7 @@ type Terminal struct {
 	out     chan struct{}
 	started bool
 	exited  bool
+	spoke   bool // the program has printed something since Start
 	err     error
 	back    int  // lines scrolled back into the history
 	inside  bool // a terminal in a panel: the focus is in it
@@ -115,7 +120,7 @@ func (t *Terminal) Start() tea.Cmd {
 		return nil
 	}
 	t.in, t.proc = pty, proc
-	t.started, t.exited, t.err = true, false, nil
+	t.started, t.exited, t.err, t.spoke = true, false, nil, false
 	t.out = make(chan struct{}, 1)
 	go t.read(pty, proc)
 	return t.wait()
@@ -160,6 +165,9 @@ func (t *Terminal) wait() tea.Cmd {
 		return termOutput{t}
 	}
 }
+
+// Spoke reports whether the program has printed anything since Start.
+func (t *Terminal) Spoke() bool { return t.spoke }
 
 // Exited reports whether the program has ended.
 func (t *Terminal) Exited() bool { return t.exited }
@@ -477,6 +485,12 @@ func (a *App) ptyFocus() *Terminal {
 func (a *App) terminalMsg(msg tea.Msg) (tea.Cmd, bool) {
 	switch m := msg.(type) {
 	case termOutput:
+		if t := m.t; !t.spoke {
+			t.spoke = true
+			if t.OnFirstOutput != nil {
+				return tea.Batch(t.wait(), t.OnFirstOutput()), true
+			}
+		}
 		return m.t.wait(), true
 	case termExited:
 		t := m.t
