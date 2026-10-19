@@ -19,7 +19,8 @@ var (
 	powerlineCells = 1 // a powerline symbol: capsule ends, joins, the cursor arrow (tdp E5)
 	// tabCells is input_tab_width (Rules E3): a tab in text is drawn as that
 	// many spaces, as in a viewer, never sent to the terminal, so a row holding
-	// one keeps its width (Rules L4). App.Run sets it.
+	// one keeps its width (Rules L4). App.Run sets it. TODO(tdp G96): E3 names
+	// only the viewer and the file preview.
 	tabCells = 4
 )
 
