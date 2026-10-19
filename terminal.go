@@ -54,8 +54,19 @@ type Terminal struct {
 
 // TerminalKey is one of the app's own keys in a PTY (Rules K10).
 type TerminalKey struct {
-	Key, Desc string
-	Do        func() tea.Cmd
+	// Key is how it is written in the footer and the hint ("Alt-←|→|↑|↓");
+	// Keys are the keys it takes, Key itself when empty, as a ModeKey's
+	// (Rules M5).
+	Key  string
+	Keys []string
+	Desc string
+	Do   func() tea.Cmd
+	// DoKey, when set, runs instead of Do, with the key pressed.
+	DoKey func(key string) tea.Cmd
+}
+
+func (k TerminalKey) takes(key string) bool {
+	return ModeKey{Key: k.Key, Keys: k.Keys}.takes(key)
 }
 
 // process is the running program, as the platform has it.
@@ -239,7 +250,10 @@ func (t *Terminal) key(a *App, key string, msg tea.KeyMsg) tea.Cmd {
 		return a.Confirm(Ask{Title: Upper(verb[:1]) + verb[1:], Question: q, Verb: verb}, func() tea.Cmd { return t.leave(a) })
 	}
 	for _, k := range t.Keys {
-		if k.Key == key {
+		if k.takes(key) {
+			if k.DoKey != nil {
+				return k.DoKey(key)
+			}
 			return run(k.Do)
 		}
 	}

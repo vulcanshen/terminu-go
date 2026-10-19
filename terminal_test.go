@@ -213,3 +213,22 @@ func TestTerminalResizeWhileExiting(t *testing.T) {
 		}
 	}
 }
+
+// TestTerminalKeyTakesSeveral: one of the app's keys in a PTY can take
+// several keys, written once in the footer, and its DoKey hears which
+// (Rules K10, M5; sshu SS12).
+func TestTerminalKeyTakesSeveral(t *testing.T) {
+	ta, term, sent := ptyApp(t)
+	var got []string
+	term.Keys = []TerminalKey{{Key: "Alt-←|→|↑|↓", Keys: []string{"Alt-←", "Alt-→", "Alt-↑", "Alt-↓"}, Desc: "pane",
+		DoKey: func(key string) tea.Cmd { got = append(got, key); return nil }}}
+	for _, k := range []tea.KeyMsg{{Type: tea.KeyRight, Alt: true}, {Type: tea.KeyUp, Alt: true}} {
+		ta.Update2(k)
+	}
+	if strings.Join(got, " ") != "Alt-→ Alt-↑" || sent.Len() != 0 {
+		t.Errorf("the app got %v, the program %q", got, sent.String())
+	}
+	if footer := covCFooter(ta); strings.Count(footer, "Alt-←|→|↑|↓:pane") != 1 {
+		t.Errorf("footer %q", footer)
+	}
+}
