@@ -69,6 +69,7 @@ func newInputsScreen(s *showcase) *inputsScreen {
 		host           = "web-01"
 		identity       = filepath.Join(sshDir, "id_ed25519")
 		archive        = ""
+		highlight      terminu.Color // none yet: the theme's own
 		refresh        = ""
 		wrongPIN       = 0
 		pausedUntil    time.Time
@@ -201,6 +202,16 @@ func newInputsScreen(s *showcase) *inputsScreen {
 		{Label: "Background", Value: func() string { return terminu.ColorText(background) }, Edit: func() tea.Cmd {
 			return a.PickColor(terminu.ColorPicker{Title: "Background", Glyph: glyphPalette, Value: background,
 				Done: func(c terminu.Color) tea.Cmd { background = c; return nil }})
+		}},
+		// No colour yet: old says none, new starts from #000000.
+		{Label: "Highlight", Value: func() string {
+			if !highlight.Set {
+				return ""
+			}
+			return terminu.ColorText(highlight)
+		}, Empty: "the theme's own", Edit: func() tea.Cmd {
+			return a.PickColor(terminu.ColorPicker{Title: "Highlight", Glyph: glyphPalette, Value: highlight,
+				Done: func(c terminu.Color) tea.Cmd { highlight = c; return nil }})
 		}},
 		{Label: "Identity file", Path: true, Value: func() string { return identity }, Edit: func() tea.Cmd {
 			return a.PickFile(terminu.FilePicker{Title: "Identity file", Glyph: glyphKey, Root: sshDir, Value: identity,

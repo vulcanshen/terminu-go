@@ -1866,6 +1866,36 @@ func TestColorPickerLayout(t *testing.T) {
 	}
 }
 
+// TestColorPickerNoColour: with no colour yet, old has no swatch and says
+// none in grey, new starts from #000000, and Choose always writes it back
+// (components/input/color-picker).
+func TestColorPickerNoColour(t *testing.T) {
+	ta := newTestApp(t)
+	var got []Color
+	ta.PickColor(ColorPicker{Title: "Background", Done: func(c Color) tea.Cmd { got = append(got, c); return nil }})
+	ta.settle()
+	lines, _ := covFDraw(ta)
+	text := covFText(lines)
+	want := []string{
+		"┃           ████████                   ┃",
+		"┃           ████████  ███  ███  ███    ┃",
+		"┃ old       new       R    G    B      ┃",
+		"┃ none      #000000   00   00   00     ┃",
+	}
+	for i, w := range want {
+		if text[2+i] != w {
+			t.Errorf("row %d: %q, want %q", 2+i, text[2+i], w)
+		}
+	}
+	if !strings.Contains(lines[5], Fg(Overlay0).Render("none    ")) {
+		t.Errorf("none in Overlay0: %q", lines[5])
+	}
+	ta.press("Tab", "Enter")
+	if len(got) != 1 || got[0] != Hex("#000000") || ta.top() != nil {
+		t.Errorf("Choose writes #000000 back: %v", got)
+	}
+}
+
 func TestColorPickerKeys(t *testing.T) {
 	ta := newTestApp(t)
 	var got Color

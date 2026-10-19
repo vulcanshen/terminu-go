@@ -14,7 +14,10 @@ type ColorPicker struct {
 	// Subject is the one thing it acts on, kept as it is after ": " in the
 	// title: "EDIT: filu" (components/layout/popup).
 	Subject string
-	Value   Color
+	// Value is the colour now; one not Set is no colour yet (the theme's
+	// own): old shows none and no swatch, new starts from #000000, and Choose
+	// always counts as a change (components/input/color-picker).
+	Value Color
 	// Done gets the new colour. It is not called when it did not change.
 	Done func(Color) tea.Cmd
 	// Commit, when set, writes a changed value back when Enter takes it, on
@@ -95,16 +98,27 @@ func (cv *colorView) draw(w, h int, layer Color) []string {
 		{RGB: RGB{0, 0, cv.rgb[2]}, Set: true},
 	}
 	join := func(parts ...string) string { return strings.Join(parts, "  ") }
-	big := func(c Color) string { return Fg(c).Render(Repeat("█", 8)) }
+	big := func(c Color) string {
+		if !c.Set {
+			return Repeat(" ", 8) // no colour: no swatch
+		}
+		return Fg(c).Render(Repeat("█", 8))
+	}
 	small := func(c Color) string { return Fg(c).Render(Repeat("█", 3)) }
 	labels := []string{"old", "new", "R", "G", "B"}
 	hexes := []string{HexText(cv.c.Value), HexText(newC)}
+	if !cv.c.Value.Set {
+		hexes[0] = "none" // the 8 cells take no app's words for nothing
+	}
 	for i := range 3 {
 		hexes = append(hexes, fmt.Sprintf("%02X", cv.rgb[i]))
 	}
 	var labelRow, hexRow []string
 	for i := range labels {
 		label, hex := Fg(Overlay0).Render(Pad(labels[i], colorCols[i])), Fg(Text).Render(Pad(hexes[i], colorCols[i]))
+		if i == 0 && !cv.c.Value.Set {
+			hex = Fg(Overlay0).Render(Pad(hexes[i], colorCols[i]))
+		}
 		if i >= 2 && i-2 == cv.focus {
 			// The channel with the focus: its name and hex as the cursor, as
 			// wide as the swatch.
@@ -155,7 +169,8 @@ func (cv *colorView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {
 		}
 	case "Enter":
 		if cv.focus == colorChoose {
-			if cv.rgb == cv.c.Value.RGB || cv.c.Done == nil && cv.c.Commit == nil {
+			// From no colour to one is a change, #000000 too.
+			if cv.c.Value.Set && cv.rgb == cv.c.Value.RGB || cv.c.Done == nil && cv.c.Commit == nil {
 				return true, a.answer()
 			}
 			v := Color{RGB: cv.rgb, Set: true}

@@ -95,6 +95,9 @@ Each release names the version of terminu design (tdp) it implements.
   row, 7 rows with the frame (components/input/password)
 - `PasswordInput.PausedUntil` pauses it, after too many wrong PINs: the error row counts down each second and
   every key but `Esc` is swallowed (components/layout/popup)
+- A colour picker for no colour yet (`Value` not `Set`) shows `none` in grey and no swatch for old, starts new from
+  `#000000`, and always writes back on Choose, `#000000` too, which used to count as no change
+  (components/input/color-picker)
 - `List.Location` is a list's location row, where the user is, in Lavender above its header, cut from the front
   (layout/panel)
 
