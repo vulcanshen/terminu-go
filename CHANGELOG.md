@@ -2,7 +2,7 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.8.3
+## v0.2.2 — tdp v0.8.3
 
 - A one-line input's prompt folds when it is too long, several sentences and its own line breaks (a web page's
   `prompt()`), the popup growing with it; at its tallest the last row it keeps ends in `…`
