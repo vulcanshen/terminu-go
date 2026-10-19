@@ -188,7 +188,7 @@ func TestViewerControlChars(t *testing.T) {
 			t.Errorf("lang %q: copied %q, want the CRLF kept", lang, got)
 		}
 	}
-	for _, l := range highlight("crlf.go", "package main\r\n\tfunc main() {}\r\nx\x07\n", 10, 2) {
+	for _, l := range highlight("crlf.go", "package main\r\n\tfunc main() {}\r\nx\x07\n", 10, 2, 1) {
 		if plain := StripStyles(l); strings.ContainsAny(plain, "\r\t\x07") || strings.Contains(plain, `\r`) {
 			t.Errorf("a preview line: %q", plain)
 		}
@@ -346,7 +346,7 @@ func TestViewerSyntaxColours(t *testing.T) {
 		}
 		return out
 	}
-	preview := highlight("pod.yaml", strings.Join(text, "\n"), 10, 4)
+	preview := highlight("pod.yaml", strings.Join(text, "\n"), 10, 4, 1)
 	for _, lang := range []string{"yaml", "pod.yaml", "text/x-yaml; charset=utf-8"} {
 		ta := newTestApp(t)
 		ta.Viewer(&Viewer{Title: "YAML", Lines: text, Lang: lang})

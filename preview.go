@@ -3,6 +3,7 @@ package terminu
 import (
 	"archive/tar"
 	"archive/zip"
+	"bufio"
 	"bytes"
 	"compress/bzip2"
 	"compress/gzip"
@@ -10,7 +11,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"os"
 	"path"
 	"path/filepath"
 	"slices"
@@ -79,15 +79,23 @@ func isText(b []byte) bool {
 // numbers, anything else in hex. With hideSecrets, a private key shows its
 // first line only and any other file only its owner may read shows nothing.
 func filePreview(p string, w, h int, hideSecrets bool, icon func(string, bool) (string, Color), tabW int) []string {
+	return previewIn(nil, p, 0, w, h, hideSecrets, icon, tabW)
+}
+
+// previewIn is filePreview of p in fsys (the local disk when nil); a text
+// file starts near line when it is set: a search's hit, two lines above it in
+// sight. TODO(tdp G97): where a preview from a line puts it.
+func previewIn(fsys PreviewFS, p string, line, w, h int, hideSecrets bool, icon func(string, bool) (string, Color), tabW int) []string {
+	fsys = orLocal(fsys)
 	grey := func(s string) []string { return []string{Fg(Overlay0).Render(s)} }
-	st, err := os.Stat(p)
+	st, err := fsys.Stat(p)
 	if err != nil {
 		return grey("(unreadable)")
 	}
 	if st.IsDir() {
-		return dirTree(p, h, icon)
+		return dirTree(fsys, p, h, icon)
 	}
-	f, err := os.Open(p)
+	f, err := fsys.Open(p)
 	if err != nil {
 		return grey("(unreadable)")
 	}
@@ -106,13 +114,17 @@ func filePreview(p string, w, h int, hideSecrets bool, icon func(string, bool) (
 	}
 	switch kind {
 	case "archive":
-		return archiveTree(p, h, icon)
+		return archiveTree(fsys, p, h, icon)
 	case "image":
-		return imagePreview(p, st.Size(), w, h)
+		return imagePreview(fsys, p, st.Size(), w, h)
 	case "PDF":
-		return pdfText(p, st.Size(), h)
+		return pdfText(fsys, p, st.Size(), h)
 	case "text", "private key":
-		return highlight(p, string(trimPartialRune(head)), h, tabW)
+		if line > 3 && kind == "text" {
+			first, text := linesFrom(io.MultiReader(bytes.NewReader(head), f), line-2, h)
+			return highlight(p, text, h, tabW, first)
+		}
+		return highlight(p, string(trimPartialRune(head)), h, tabW, 1)
 	}
 	return hexDump(head, h)
 }
@@ -120,7 +132,7 @@ func filePreview(p string, w, h int, hideSecrets bool, icon func(string, bool) (
 // imagePreview is the type and the size in grey, a blank line, then the
 // image as a data URI folded at the preview's width; over 1 MB, a line
 // saying so. Only what is in sight is read.
-func imagePreview(p string, sz int64, w, h int) []string {
+func imagePreview(fsys PreviewFS, p string, sz int64, w, h int) []string {
 	if sz > 1<<20 {
 		return []string{Fg(Overlay0).Render("(" + size(sz) + " — too large to inline as a data URI)")}
 	}
@@ -129,7 +141,7 @@ func imagePreview(p string, sz int64, w, h int) []string {
 	out := []string{Fg(Overlay0).Render("data:" + mime + " · " + size(sz)), ""}
 	prefix := "data:" + mime + ";base64,"
 	need := max((h-len(out))*w-len(prefix), 0)
-	f, err := os.Open(p)
+	f, err := fsys.Open(p)
 	if err != nil {
 		return []string{Fg(Overlay0).Render("(unreadable)")}
 	}
@@ -207,10 +219,28 @@ func redNames(line string, chars []string, tabW int) string {
 // break, not drawn (components/dialog/note).
 func crlf(line string) (string, bool) { return strings.CutSuffix(line, "\r") }
 
+// linesFrom is h lines of r from line first on (counted from 1), and the
+// number of the first one, which is earlier when r ends sooner; it reads at
+// most 8 MB.
+func linesFrom(r io.Reader, first, h int) (int, string) {
+	sc := bufio.NewScanner(io.LimitReader(r, 8<<20))
+	sc.Buffer(make([]byte, 64<<10), 1<<20)
+	var window []string
+	n := 0
+	for sc.Scan() && n < first-1+h {
+		n++
+		window = append(window, sc.Text())
+		if len(window) > h {
+			window = window[1:]
+		}
+	}
+	return max(n-len(window)+1, 1), strings.Join(window, "\n")
+}
+
 // highlight is text in the colours of catppuccin-mocha (foreground only),
 // its line numbers in Overlay0; tabs and control characters as a viewer
 // draws them.
-func highlight(p, text string, h, tabW int) []string {
+func highlight(p, text string, h, tabW, first int) []string {
 	raw := strings.Split(strings.TrimRight(text, "\n"), "\n")
 	if len(raw) > h {
 		raw = raw[:h]
@@ -225,10 +255,10 @@ func highlight(p, text string, h, tabW int) []string {
 		lexer = lexers.Fallback
 	}
 	coloured := colourise(lexer, lines)
-	numW := len(strconv.Itoa(len(lines)))
+	numW := len(strconv.Itoa(first + len(lines) - 1))
 	out := make([]string, len(lines))
 	for i := range lines {
-		out[i] = Fg(Overlay0).Render(PadLeft(strconv.Itoa(i+1), numW)) + " " + redNames(coloured[i], graphemes(raw[i]), tabW)
+		out[i] = Fg(Overlay0).Render(PadLeft(strconv.Itoa(first+i), numW)) + " " + redNames(coloured[i], graphemes(raw[i]), tabW)
 	}
 	return out
 }
@@ -295,13 +325,13 @@ func hexDump(b []byte, h int) []string {
 
 // pdfText is the page count in grey, a blank line, then the text of the
 // first 20 pages, 128 KB of it at most.
-func pdfText(p string, sz int64, h int) (out []string) {
+func pdfText(fsys PreviewFS, p string, sz int64, h int) (out []string) {
 	defer func() {
 		if recover() != nil {
 			out = []string{Fg(Overlay0).Render("(unreadable)")}
 		}
 	}()
-	f, err := os.Open(p)
+	f, err := fsys.Open(p)
 	if err != nil {
 		return []string{Fg(Overlay0).Render("(unreadable)")}
 	}
@@ -387,12 +417,12 @@ func defaultIcon(_ string, dir bool) (string, Color) {
 	return glyphFile, Color{}
 }
 
-func dirTree(p string, h int, icon func(string, bool) (string, Color)) []string {
+func dirTree(fsys PreviewFS, p string, h int, icon func(string, bool) (string, Color)) []string {
 	if icon == nil {
 		icon = defaultIcon
 	}
 	load := func(n *treeNode) []*treeNode {
-		entries, err := dirEntries(n.path, false)
+		entries, err := dirEntriesIn(fsys, n.path, false)
 		if err != nil {
 			return nil
 		}
@@ -402,7 +432,7 @@ func dirTree(p string, h int, icon func(string, bool) (string, Color)) []string 
 		}
 		return out
 	}
-	if _, err := os.ReadDir(p); err != nil {
+	if _, err := fsys.ReadDir(p); err != nil {
 		return []string{Fg(Overlay0).Render("(permission denied)")}
 	}
 	top := load(&treeNode{path: p})
@@ -413,11 +443,11 @@ func dirTree(p string, h int, icon func(string, bool) (string, Color)) []string 
 }
 
 // archiveTree lists what an archive holds, as a directory's tree.
-func archiveTree(p string, h int, icon func(string, bool) (string, Color)) []string {
+func archiveTree(fsys PreviewFS, p string, h int, icon func(string, bool) (string, Color)) []string {
 	if icon == nil {
 		icon = defaultIcon
 	}
-	names, err := archiveNames(p)
+	names, err := archiveNames(fsys, p)
 	if err != nil {
 		return []string{Fg(Overlay0).Render("(unreadable)")}
 	}
@@ -465,25 +495,28 @@ func archiveTree(p string, h int, icon func(string, bool) (string, Color)) []str
 	return drawTree(root.kids, h, func(n *treeNode) []*treeNode { return n.kids }, icon)
 }
 
-func archiveNames(p string) ([]string, error) {
+func archiveNames(fsys PreviewFS, p string) ([]string, error) {
 	lower := strings.ToLower(p)
+	f, err := fsys.Open(p)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
 	if strings.HasSuffix(lower, ".zip") {
-		r, err := zip.OpenReader(p)
+		st, err := fsys.Stat(p)
 		if err != nil {
 			return nil, err
 		}
-		defer r.Close()
+		r, err := zip.NewReader(f, st.Size())
+		if err != nil {
+			return nil, err
+		}
 		var names []string
 		for _, f := range r.File {
 			names = append(names, f.Name)
 		}
 		return names, nil
 	}
-	f, err := os.Open(p)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
 	var src io.Reader = f
 	switch {
 	case strings.HasSuffix(lower, ".gz") || strings.HasSuffix(lower, ".tgz"):
@@ -520,14 +553,18 @@ func archiveNames(p string) ([]string, error) {
 // hidden ones left out), the time local to the minute, the mode written as
 // ls -l does. A link's size, time and mode are its target's; what cannot be
 // had is —.
-func fileInfo(p string, w int, layer Color) []string {
+func fileInfo(p string, w int, layer Color) []string { return fileInfoIn(nil, p, w, layer) }
+
+// fileInfoIn is fileInfo of p in fsys (the local disk when nil).
+func fileInfoIn(fsys PreviewFS, p string, w int, layer Color) []string {
+	fsys = orLocal(fsys)
 	rows := [4][2]string{{"TYPE", ""}, {"SIZE", ""}, {"MODIFIED", ""}, {"MODE", ""}}
-	if lst, err := os.Lstat(p); err == nil {
+	if lst, err := fsys.Lstat(p); err == nil {
 		st := lst
 		if lst.Mode()&fs.ModeSymlink != 0 {
-			target, _ := os.Readlink(p)
+			target, _ := fsys.ReadLink(p)
 			rows[0][1] = "link → " + target
-			s, err := os.Stat(p)
+			s, err := fsys.Stat(p)
 			if err != nil {
 				// A broken link: there is no target to tell of.
 				rows[1][1], rows[2][1], rows[3][1] = "—", "—", "—"
@@ -540,7 +577,7 @@ func fileInfo(p string, w int, layer Color) []string {
 			if rows[0][1] == "" {
 				rows[0][1] = "directory"
 			}
-			if entries, err := dirEntries(p, false); err == nil {
+			if entries, err := dirEntriesIn(fsys, p, false); err == nil {
 				rows[1][1] = strconv.Itoa(len(entries)) + " items"
 			} else {
 				rows[1][1] = "—" // it cannot be read: not 0 items, which reads as empty
@@ -548,7 +585,7 @@ func fileInfo(p string, w int, layer Color) []string {
 		default:
 			if rows[0][1] == "" {
 				head := make([]byte, 4096)
-				if f, err := os.Open(p); err == nil {
+				if f, err := fsys.Open(p); err == nil {
 					n, _ := io.ReadFull(f, head)
 					head = head[:n]
 					f.Close()

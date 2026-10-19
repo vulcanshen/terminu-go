@@ -1257,6 +1257,9 @@ func (a *App) panelArea(w, h int) []string {
 			break
 		}
 		r := rects[i]
+		if fp, ok := p.Body.(*FilePreview); ok {
+			fp.hide = a.HideSecretsInPreview // the app's setting, as a file-picker's preview has it
+		}
 		Composite(area, p.draw(i+1, r.W, r.H, i == s.focus), r.X, r.Y, w)
 	}
 	return area

@@ -3,10 +3,14 @@ package terminu
 import (
 	"archive/zip"
 	"bytes"
+	"fmt"
+	"io/fs"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func previewText(lines []string) string { return StripStyles(strings.Join(lines, "\n")) }
@@ -190,5 +194,133 @@ func TestFinderFileLayout(t *testing.T) {
 		if !strings.Contains(text, "TYPE      text") || !strings.Contains(text, "MODE") {
 			t.Errorf("%dx%d: no facts:\n%s", sz[0], sz[1], text)
 		}
+	}
+}
+
+// memFS is a PreviewFS in memory, as an app gives a remote host's.
+type memFS map[string]string // path to content; a path ending in / is a directory
+
+type memInfo struct {
+	name string
+	size int64
+	dir  bool
+}
+
+func (i memInfo) Name() string { return i.name }
+func (i memInfo) Size() int64  { return i.size }
+func (i memInfo) Mode() fs.FileMode {
+	if i.dir {
+		return fs.ModeDir | 0o755
+	}
+	return 0o644
+}
+func (i memInfo) ModTime() time.Time { return time.Date(2026, 10, 19, 9, 30, 0, 0, time.Local) }
+func (i memInfo) IsDir() bool        { return i.dir }
+func (i memInfo) Sys() any           { return nil }
+
+type memFile struct{ *bytes.Reader }
+
+func (memFile) Close() error { return nil }
+
+func (m memFS) Open(name string) (PreviewFile, error) {
+	if c, ok := m[name]; ok {
+		return memFile{bytes.NewReader([]byte(c))}, nil
+	}
+	return nil, fs.ErrNotExist
+}
+
+func (m memFS) Stat(name string) (fs.FileInfo, error) {
+	if c, ok := m[name]; ok {
+		return memInfo{path.Base(name), int64(len(c)), false}, nil
+	}
+	if _, ok := m[name+"/"]; ok {
+		return memInfo{path.Base(name), 0, true}, nil
+	}
+	return nil, fs.ErrNotExist
+}
+
+func (m memFS) Lstat(name string) (fs.FileInfo, error) { return m.Stat(name) }
+func (m memFS) ReadLink(string) (string, error)        { return "", fs.ErrInvalid }
+
+func (m memFS) ReadDir(name string) ([]fs.FileInfo, error) {
+	var out []fs.FileInfo
+	for p, c := range m {
+		if dir, base := path.Split(strings.TrimSuffix(p, "/")); dir == name+"/" {
+			out = append(out, memInfo{base, int64(len(c)), strings.HasSuffix(p, "/")})
+		}
+	}
+	return out, nil
+}
+
+// TestFinderFilesInFS: a finder of files in a file system the app gives
+// previews them, their trees and their facts from it (components/input/
+// file-picker, the preview; sshu SS18).
+func TestFinderFilesInFS(t *testing.T) {
+	remote := memFS{"/srv/": "", "/srv/app.conf": "port = 22\nhost = web\n", "/srv/logs/": "", "/srv/logs/a.log": "x\n"}
+	ta := newTestApp(t)
+	ta.Find(&Finder{Title: "Remote", Files: true, FS: remote,
+		Items: []FinderItem{{ID: "/srv/app.conf", Text: "app.conf"}, {ID: "/srv", Text: "srv"}}})
+	ta.settle()
+	text := ta.screenText()
+	for _, want := range []string{"1 port = 22", "2 host = web", "TYPE", "text", "21 B", "2026-10-19 09:30", "-rw-r--r--"} {
+		if !strings.Contains(text, want) {
+			t.Errorf("the remote file: no %q in\n%s", want, text)
+		}
+	}
+	ta.press("Tab", "j")
+	if text := ta.screenText(); !strings.Contains(text, glyphFolder+" logs") || !strings.Contains(text, "  └─ "+glyphFile+" a.log") ||
+		!strings.Contains(text, "2 items") {
+		t.Errorf("the remote directory:\n%s", text)
+	}
+}
+
+// TestFilePreviewPanel: a panel can show a file as a file-picker's preview
+// does, from a line a search found, with its facts under it
+// (components/input/file-picker; layout/panel, details; filu FL3, FL16).
+func TestFilePreviewPanel(t *testing.T) {
+	dir := t.TempDir()
+	var text []string
+	for i := range 40 {
+		text = append(text, fmt.Sprintf("line %d", i+1))
+	}
+	p := filepath.Join(dir, "notes.txt")
+	writeFile(t, p, []byte(strings.Join(text, "\n")+"\n"), 0o644)
+	fp := &FilePreview{Path: p, Line: 20, Info: true}
+	out := plainLines(fp.Draw(40, 12, true))
+	if len(out) != 12 || out[0] != " 18 line 18" || out[2] != " 20 line 20" {
+		t.Errorf("from line 20:\n%s", strings.Join(out, "\n"))
+	}
+	if !strings.Contains(out[8], "TYPE") || !strings.Contains(out[8], "text") || !strings.HasPrefix(out[7], " ─") {
+		t.Errorf("the facts under a separator:\n%s", strings.Join(out, "\n"))
+	}
+	fp.Line = 0
+	if out := plainLines(fp.Draw(40, 12, true)); out[0] != " 1 line 1" {
+		t.Errorf("from the top: %q", out[0])
+	}
+	// At the end of the file it shows the last lines.
+	fp.Line = 39
+	if out := plainLines(fp.Draw(40, 12, true)); out[0] != " 34 line 34" || out[6] != " 40 line 40" {
+		t.Errorf("near the end:\n%s", strings.Join(out, "\n"))
+	}
+	if (&FilePreview{}).Empty() != true || fp.Empty() {
+		t.Error("Empty reports the path")
+	}
+}
+
+// TestFilePreviewPanelHidesSecrets: a panel's file preview keeps to the app's
+// hide_secrets_in_preview, as a file-picker's does (components/input/
+// file-picker).
+func TestFilePreviewPanelHidesSecrets(t *testing.T) {
+	key := filepath.Join(t.TempDir(), "id_ed25519")
+	writeFile(t, key, []byte("-----BEGIN OPENSSH PRIVATE KEY-----\nsecret\n"), 0o600)
+	ta := &testApp{App: New("test")}
+	ta.AddScreen(&Screen{Name: "Files", Key: "F", Panels: []*Panel{{Label: "Key", Body: &FilePreview{Path: key}}}})
+	ta.resize(80, 20)
+	if text := ta.screenText(); !strings.Contains(text, "secret") {
+		t.Errorf("shown in full:\n%s", text)
+	}
+	ta.HideSecretsInPreview = true
+	if text := ta.screenText(); strings.Contains(text, "secret") || !strings.Contains(text, "(sensitive content not shown)") {
+		t.Errorf("hidden:\n%s", text)
 	}
 }

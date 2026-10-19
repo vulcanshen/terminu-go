@@ -1,6 +1,7 @@
 package terminu
 
 import (
+	"path"
 	"path/filepath"
 	"slices"
 	"strconv"
@@ -16,6 +17,9 @@ type FinderItem struct {
 	// Icon, when set, goes before the text in IconColor (a file's type).
 	Icon      string
 	IconColor Color
+	// Line, with Files, is a text file's line a search found: the preview
+	// starts near it.
+	Line int
 }
 
 // Finder is a list with a search that goes somewhere (components/input/finder):
@@ -38,7 +42,9 @@ type Finder struct {
 	// the preview shows them as a file-picker does, with their facts under
 	// it (components/input/file-picker), instead of Preview.
 	Files bool
-	Done  func(FinderItem) tea.Cmd
+	// FS is where Files reads the paths: the local disk when nil.
+	FS   PreviewFS
+	Done func(FinderItem) tea.Cmd
 }
 
 // Select picks one value from a list (components/input/select).
@@ -189,9 +195,9 @@ func (a *App) Find(f *Finder) tea.Cmd {
 	switch {
 	case f.Files:
 		fv.preview = func(r finderRow, w, h int) (string, []string) {
-			return filepath.Base(r.item.ID), filePreview(r.item.ID, w, h, a.HideSecretsInPreview, nil, a.inputTabWidth())
+			return path.Base(filepath.ToSlash(r.item.ID)), previewIn(f.FS, r.item.ID, r.item.Line, w, h, a.HideSecretsInPreview, nil, a.inputTabWidth())
 		}
-		fv.info = func(r finderRow, w int, layer Color) []string { return fileInfo(r.item.ID, w, layer) }
+		fv.info = func(r finderRow, w int, layer Color) []string { return fileInfoIn(f.FS, r.item.ID, w, layer) }
 	case f.Preview != nil:
 		fv.preview = func(r finderRow, _, _ int) (string, []string) { return f.Preview(r.item) }
 	}

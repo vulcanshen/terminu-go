@@ -249,6 +249,40 @@ func dirEntries(dir string, hidden bool) ([]dirEntry, error) {
 		}
 		out = append(out, dirEntry{e.Name(), p, isDir})
 	}
+	sortEntries(out)
+	return out, nil
+}
+
+// dirEntriesIn is dirEntries in fsys: the local disk reads as dirEntries does.
+func dirEntriesIn(fsys PreviewFS, dir string, hidden bool) ([]dirEntry, error) {
+	if _, ok := fsys.(localFS); ok {
+		return dirEntries(dir, hidden)
+	}
+	infos, err := fsys.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+	var out []dirEntry
+	for _, info := range infos {
+		if !hidden && strings.HasPrefix(info.Name(), ".") {
+			continue
+		}
+		p := joinIn(fsys, dir, info.Name())
+		isDir := info.IsDir()
+		if info.Mode()&fs.ModeSymlink != 0 {
+			if st, err := fsys.Stat(p); err == nil {
+				isDir = st.IsDir()
+			}
+		}
+		out = append(out, dirEntry{info.Name(), p, isDir})
+	}
+	sortEntries(out)
+	return out, nil
+}
+
+// sortEntries puts the directories first, then the files, each by name
+// ignoring case.
+func sortEntries(out []dirEntry) {
 	slices.SortStableFunc(out, func(a, b dirEntry) int {
 		if a.dir != b.dir {
 			if a.dir {
@@ -258,7 +292,6 @@ func dirEntries(dir string, hidden bool) ([]dirEntry, error) {
 		}
 		return strings.Compare(strings.ToLower(a.name), strings.ToLower(b.name))
 	})
-	return out, nil
 }
 
 // searchLimit keeps a ** search from walking a whole disk.
