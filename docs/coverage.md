@@ -1,6 +1,6 @@
-# tdp v0.8.2 coverage
+# tdp v0.8.3 coverage
 
-tdp v0.8.2 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
+tdp v0.8.3 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
 （[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -277,6 +277,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | panel §一般清單 | 標記欄：每列最前一格，標記的畫 Green U+F0132，沒標記的空白，欄寬一直保留 | P `[1] PODS` 的 `[m]ark` | `TestListMarkColumn` |
 | panel §一般清單 | lib：app 照 ID 設標記（`List.SetMarked`），篩選中沒顯示的列也勾得到 | P `[1] PODS` 的 `[m]ark` | `TestListMarkAndSelectByID` |
 | panel §一般清單 | Drag mode 拿著的那一列（進 Drag 的鍵由 app 決定）：照 cursor 畫，Subtext1 換成 Yellow 底、Base 粗體，箭頭也是 Yellow；標記欄畫 U+F04E2，放下後回到原本的標記；有 Drag 的 panel 每一列都保留標記欄；按鍵同 reorder 拿著時（`j\|k` 搬、到頭尾繞回，`Enter` 放下，`Esc` 放回）。lib：`List.Draggable`、`Hold`、`MoveHeld`、`Drop`，Drag mode 與它的鍵由 app 登記 | P `[1] PODS` 的 `[D]rag`（先 `m` 標記一列再拿起它） | `TestPanelDragHeldRow` |
+| panel §一般清單 | 欄放不下時，框邊落在的那一欄照它的截法截（從尾端或從中間，加 `…`），後面的欄不畫；不在框邊硬切 | P `[1] PODS` 縮到很窄 | `TestListColumnsGiveWay` |
 | panel §一般清單 | 截斷從尾端加 `…`；路徑、檔名可以從前面截；兩端都有意義的從中間截（`demo-app…66-gm72n`），從哪裡截由 app 替每一欄決定（lib：`Column.Path`、`Column.Middle`） | P `[1] PODS` 的長名字（從中間截）；I `[2] FILES` 的路徑 | `TestListTruncate`、`TestTruncateMiddle` |
 | panel §一般清單 | 欄的寬度：可以截短的欄（名稱、網址、一行文字）分剩下的寬度、照各自的截法截，其他短欄照最寬的值不縮；放不下先把可以截短的縮到最少寬度（app 定，預設 12），還放不下才照 app 標的順序整欄收（表頭一起），名稱欄不收；變大時欄照順序回來、可以截短的長回去（lib：`Column.Shrink`、`MinWidth`、`Drop`） | P `[1] PODS` 把視窗縮窄：名稱先縮到 12 格，再 `AGE`、`RESTARTS`、`READY` 依序收掉 | `TestListColumnsGiveWay` |
 | panel §一般清單 | 單欄的清單沒有欄名時不畫表頭 | K `[1] KINDS` | `TestListColumnsGiveWay` |
@@ -433,6 +434,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | input §什麼是 input | 打字列上是輸入態；不打字的部分 core key 照 K1（`?` key reference、`q`／`Ctrl-C` 離開、`Space` 不作用、`hjkl` 移動）；`Enter` 照 K3；`Esc` 關值不變；從表單開的確定後 focus 留原欄 | I `[1] INPUTS` 每一列 | `TestInputCommon` |
 | input §什麼是 input | 錯誤點名的是值的名字：從表單欄位開的是那一欄的名字；自己打開、標題寫在做什麼（`RENAME`、`SAVE AS`）的，用 app 另外給的名字（`Name`；沒給時用標題，是 lib 的退路）；text、password、number、textarea 都一樣 | I 的 `Name`（標題 `RENAME`）貼上多行按 `Enter`：`Name can't have control characters`；`ErrEmpty` 一樣點名（`Name can't be empty`） | `TestInputErrorNamesValue`、`TestPasteBlockedOnEnter`、`TestInputErrEmptyNamesValue` |
 | input §什麼是 input | 有按鈕的 input popup 照表單的動作區：`Tab\|Shift-Tab` 在欄位區與動作區之間來回、回來停在離開前那一項；hint 在欄位上 `Tab:actions`、在按鈕上 `Tab:fields`。lib 裡有按鈕的 input popup 只有 color picker | I 的 `Background`（color） | `TestColorPickerTab`、`TestColorPickerKeys` |
+| input §單行骨架 | 說明列太長時折行（網頁 `prompt()` 的好幾句話、換行），popup 照 F7 的高度跟著長高；長到最高還放不下時最後一列結尾加 `…` | 測試驗（webu 的 `prompt()`） | `TestInputPromptFolds` |
 | input §單行骨架 | 說明列一句話 Overlay0、空一列；打字列最前面 `nf-fa-angle_right`（層色，離框一格）、空一格接值；值 Lavender、游標 Lavender 底 Base 字；錯誤列；hint `Enter:<動詞> Esc:cancel`（列出全部操作）；寬度：自由打字用上限、有長度上限照內容 | I 的 `Name`、`Timeout`、`Password` | `TestSingleLineSkeleton`、`TestInputAngle` |
 | input §值比框長時 | 顯示游標附近那段、截掉的那邊補 `…`；游標一定看得到、只捲剛好的量；照顯示寬度、一個字不切半（紅色 `\n` 也是） | I 的 `Name`（打一串長的），`Home`／`End` | `TestInputLongValue` |
 | input §編輯鍵 | 字元、`Space` 插入；`←\|→`；`Home\|End`；`Backspace`、`Delete`；一個字是看起來的一個字；不收 `Ctrl-U`、`Ctrl-W`；其他 `Ctrl-`、`Alt-` 不作用不打字 | I 的 `Name`（打中文、emoji、組合字元） | `TestInputEditKeys`、`TestInputGraphemes`、`TestInputCtrlAltIgnored` |

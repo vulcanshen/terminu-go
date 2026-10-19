@@ -200,6 +200,37 @@ func TestFormEnterDescribesItsFields(t *testing.T) {
 	}
 }
 
+// TestInputPromptFolds: a long prompt folds (several sentences, its own line
+// breaks), the popup growing with it; at its tallest the last row it keeps
+// ends in "…" (components/input/README; webu WB20).
+func TestInputPromptFolds(t *testing.T) {
+	ta := newTestApp(t)
+	ta.resize(60, 40)
+	prompt := "The page at example.com asks for your name. It will be shown to other people in the room.\nLeave it empty to stay anonymous."
+	ta.Text(TextInput{Title: "Prompt", Prompt: prompt})
+	ta.settle()
+	lines, _ := covFDraw(ta)
+	text := StripStyles(strings.Join(lines, "\n"))
+	if !strings.Contains(text, "stay anonymous.") || strings.Contains(text, "…") {
+		t.Errorf("folded, nothing cut:\n%s", text)
+	}
+	if h := ta.top().h; h != 4+3+4 && h != 4+4+4 {
+		t.Errorf("grown with it: %d rows\n%s", h, text)
+	}
+	if v := covFValue(ta); v != "" && !strings.Contains(StripStyles(strings.Join(lines, "")), glyphTyping) {
+		t.Errorf("the typing row still there: %q", v)
+	}
+	ta.covBCloseAll()
+	ta.resize(60, 10)
+	ta.Text(TextInput{Title: "Prompt", Prompt: strings.Repeat("A sentence the page wrote. ", 20)})
+	ta.settle()
+	lines, _ = covFDraw(ta)
+	text = StripStyles(strings.Join(lines, "\n"))
+	if ta.top().h != 8 || !strings.Contains(text, "…") || !strings.Contains(text, glyphTyping) {
+		t.Errorf("at its tallest, the last row kept ends in …, the typing row stays:\n%s", text)
+	}
+}
+
 type formResult struct {
 	name, port string
 	submitted  int

@@ -1823,8 +1823,17 @@ func TestListColumnsGiveWay(t *testing.T) {
 	}
 	short := &List{Columns: []Column{{Title: "Name"}, {Title: "Age"}}}
 	short.SetRows([]Row{{Cells: []string{strings.Repeat("n", 30), "3d"}}})
-	if ws := short.widths(20); !slices.Equal(ws, []int{30, 3}) {
-		t.Errorf("no shrinkable column: none narrows (the row is cut): %v", ws)
+	if ws := short.widths(20); !slices.Equal(ws, []int{20, -1}) {
+		t.Errorf("no shrinkable column: the one the edge falls in is cut its own way, the rest not drawn: %v", ws)
+	}
+	// Cut with "…", not chopped at the frame (layout/panel, truncation).
+	if row := strings.Trim(covCPlain(short.Draw(1+20+1, 2, false)[1]), " "+glyphHard); row != strings.Repeat("n", 19)+"…" {
+		t.Errorf("cut from the end: %q", row)
+	}
+	mid := &List{Columns: []Column{{Title: "State"}, {Title: "Pod", Middle: true}}}
+	mid.SetRows([]Row{{Cells: []string{"Running", "demo-app-7d4f9c8b66-gm72n"}}})
+	if row := strings.Trim(covCPlain(mid.Draw(1+7+2+17+1, 2, false)[1]), " "+glyphHard); row != "Running  demo-app…66-gm72n" {
+		t.Errorf("the last column cut its own way, in the middle: %q", row)
 	}
 	// A list of one column with no title has no header (layout/panel).
 	one := &List{Columns: []Column{{}}}

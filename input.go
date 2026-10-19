@@ -390,7 +390,8 @@ func (li *lineInput) measure(sw, sh int) (int, int) {
 	if li.unlock {
 		frame = 2 // no padding (components/input/password)
 	}
-	return w, min(len(li.rows(w-2, ""))+frame, max(sh-2, 3))
+	tall := max(sh-2, 3)
+	return w, min(len(li.rows(w-2, "", tall-frame))+frame, tall)
 }
 
 func (li *lineInput) draw(w, h int, layer Color) []string {
@@ -413,7 +414,7 @@ func (li *lineInput) draw(w, h int, layer Color) []string {
 		}
 		value = typingAngle(layer) + li.ed.view(cw-angleWidth(), valueStyle, cursor, true, nil, suggest)
 	}
-	body := li.rows(inner, " "+value+" ")
+	body := li.rows(inner, " "+value+" ", h-4)
 	box := popupBox{color: layer, glyph: li.glyph, title: popupTitle(li.title, li.subject), hint: li.hint()}
 	if li.unlock {
 		// No padding below the error row: two blank rows, the typing row in
@@ -423,7 +424,9 @@ func (li *lineInput) draw(w, h int, layer Color) []string {
 		box.bare = true
 		return box.draw(w, body)
 	}
-	typing, errAt := 2, len(body)-1
+	// The typing row comes after the prompt and a blank row; a unit, a blank
+	// row and the error row after it.
+	typing, errAt := len(body)-3-btoi(li.unit != ""), len(body)-1
 	// Too short for all of it, the blank rows of the frame give way first
 	// (fitRows); then the rows above the error row scroll to keep the typing
 	// row in sight and the error row stays (components/layout/popup); with
@@ -446,19 +449,47 @@ func (li *lineInput) draw(w, h int, layer Color) []string {
 // typing row: the prompt, a blank row, the typing row, a number's unit, a
 // blank row, the error row (components/input/README); the unlock look has two
 // blank rows instead of the prompt and padding (components/input/password).
-func (li *lineInput) rows(inner int, value string) []string {
+func (li *lineInput) rows(inner int, value string, most int) []string {
 	cw := inner - 2
 	errRow := Fg(Red).Render(Truncate(li.err, cw))
 	blank := Repeat(" ", inner)
 	if li.unlock {
 		return []string{blank, blank, value, blank, padRow(Center(errRow, cw), inner)}
 	}
-	body := []string{padRow(Fg(Overlay0).Render(li.prompt), inner), blank, value}
+	var body []string
+	for _, l := range li.promptRows(cw, most) {
+		body = append(body, padRow(Fg(Overlay0).Render(l), inner))
+	}
+	body = append(body, blank, value)
 	if li.unit != "" {
 		// Under the value's first cell, not moving as it is typed.
 		body = append(body, padRow(Repeat(" ", angleWidth())+Fg(Overlay0).Render(li.unit), inner))
 	}
 	return append(body, blank, padRow(errRow, inner))
+}
+
+// promptRows is the prompt folded to cw cells (components, wrapping), several
+// sentences a web page's prompt gives, its own line breaks too: as many rows
+// as the popup has room for beside its other rows, at least one; the last one
+// kept ends in "…" when not all fit (components/input/README).
+func (li *lineInput) promptRows(cw, most int) []string {
+	rows := Wrap(li.prompt, max(cw, 1))
+	if len(rows) == 0 {
+		rows = []string{""}
+	}
+	others := 4 // a blank row, the typing row, a blank row, the error row
+	if li.unit != "" {
+		others++
+	}
+	if n := max(most-others, 1); len(rows) > n {
+		rows = rows[:n]
+		last := Truncate(rows[n-1]+" …", cw)
+		if !strings.HasSuffix(last, "…") {
+			last = Truncate(last+"…", cw)
+		}
+		rows[n-1] = last
+	}
+	return rows
 }
 
 // maskView draws a password: dots for what was typed, eight grey ones for a

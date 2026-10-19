@@ -2,6 +2,14 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.8.3
+
+- A one-line input's prompt folds when it is too long, several sentences and its own line breaks (a web page's
+  `prompt()`), the popup growing with it; at its tallest the last row it keeps ends in `…`
+  (components/input/README, tdp v0.8.3)
+- A column the panel's edge falls in is cut its own way, with `…` (from the end, or in the middle), the columns
+  after it not drawn; it was chopped at the frame (layout/panel)
+
 ## v0.2.1 — tdp v0.8.2
 
 - tdp v0.8.2 rewrites how a list's columns give way, reads file previews in the background and folds the "what each

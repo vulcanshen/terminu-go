@@ -587,7 +587,7 @@ func (l *List) widths(w int) []int {
 	}
 	room += 2
 	if want <= room || len(shrink) == 0 {
-		return ws
+		return cutLast(ws, w)
 	}
 	base, more := 0, 0
 	for _, c := range shrink {
@@ -612,6 +612,35 @@ func (l *List) widths(w int) []int {
 		}
 		ws[c]++
 		left--
+	}
+	return cutLast(ws, w)
+}
+
+// cutLast narrows the column the edge falls in to what is left of w, so it is
+// cut its own way with "…", not chopped at the frame; the ones after it are
+// not drawn (layout/panel, truncation).
+func cutLast(ws []int, w int) []int {
+	used := 0
+	for c, x := range ws {
+		if x < 0 {
+			continue
+		}
+		gap := 0
+		if used > 0 {
+			gap = 2
+		}
+		if used+gap+x <= w {
+			used += gap + x
+			continue
+		}
+		ws[c] = w - used - gap
+		if ws[c] < 1 {
+			ws[c] = -1
+		}
+		for k := c + 1; k < len(ws); k++ {
+			ws[k] = -1
+		}
+		break
 	}
 	return ws
 }
