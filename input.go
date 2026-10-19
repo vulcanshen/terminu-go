@@ -36,6 +36,10 @@ type TextInput struct {
 	// Check is the value's own rules: an error is written on the error row
 	// and the value is not written back.
 	Check func(string) error
+	// Search marks a value that is only searched for, never used: control
+	// characters in it are drawn, not held back on Enter, as on a finder's
+	// typing row (components/input/README, pasted control characters).
+	Search bool
 	// Done gets the new value. It is not called when the value did not change.
 	Done func(string) tea.Cmd
 }
@@ -96,6 +100,7 @@ type lineInput struct {
 	old          string // the suggestion; for a password, whether one is set
 	hasOld       bool
 	dropOld      bool // Backspace on an empty value threw the suggestion away
+	search       bool // only searched for: control characters are not held back
 	maxLen       int
 	unlock       bool
 	ed           *lineEditor
@@ -143,7 +148,7 @@ func then(written func(), cmd tea.Cmd) tea.Cmd {
 func (in TextInput) open(a *App, written func()) tea.Cmd {
 	return a.open(&lineInput{
 		kind: kindText, title: in.Title, name: cmpOr(in.Name, in.Title), subject: in.Subject, glyph: in.Glyph, prompt: in.Prompt, verb: cmpOr(in.Verb, "save"),
-		old: in.Old, hasOld: in.Old != "", maxLen: in.MaxLen, ed: newEditor(""), check: in.Check,
+		old: in.Old, hasOld: in.Old != "", maxLen: in.MaxLen, ed: newEditor(""), check: in.Check, search: in.Search,
 		done: func(v string, _ bool) tea.Cmd { return then(written, run2(in.Done, v)) },
 	})
 }
@@ -435,7 +440,7 @@ func (li *lineInput) confirm(a *App) tea.Cmd {
 	if li.showingOld() {
 		return a.closeTop() // nothing touched: no change
 	}
-	if li.ed.hasControl() {
+	if li.ed.hasControl() && !li.search {
 		li.err = cmpOr(li.name, "The value") + " can't have control characters"
 		return nil
 	}

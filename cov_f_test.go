@@ -2091,3 +2091,21 @@ func TestCheckboxUnavailableInPlace(t *testing.T) {
 		t.Errorf("on a form: the focus on %d, X11 ticked %v", fv.focus.option, x11.Checked[1])
 	}
 }
+
+// TestSearchInputNotBlocked: a text input that is only searched for draws a
+// pasted control character and takes it on Enter (components/input/README,
+// pasted control characters; kbu KB11).
+func TestSearchInputNotBlocked(t *testing.T) {
+	ta := newTestApp(t)
+	got := "unset"
+	ta.Text(TextInput{Title: "Find", Search: true, Done: func(v string) tea.Cmd { got = v; return nil }})
+	ta.settle()
+	covFPaste(ta, "key:\tvalue")
+	if lines, _ := covFDraw(ta); !strings.Contains(strings.Join(lines, "\n"), Fg(Red).Render(`\t`)) {
+		t.Errorf("the tab is not drawn as its red name:\n%s", strings.Join(lines, "\n"))
+	}
+	ta.press("Enter")
+	if ta.top() != nil || got != "key:\tvalue" {
+		t.Errorf("a search was held back: %q", got)
+	}
+}
