@@ -80,6 +80,22 @@ func (a *App) ClosePopup(b PopupBody) tea.Cmd {
 // input closed this way is cancelled (OnCancel).
 func (a *App) CloseAll() tea.Cmd { return a.closeAll() }
 
+// CloseTop closes the n popups on top, the lowest of them animating, as the
+// last step of a flow ends the steps under it (Rules T1); a step that has
+// been answered is not cancelled.
+func (a *App) CloseTop(n int) tea.Cmd {
+	var open []*layer
+	for _, l := range a.stack {
+		if !l.closing {
+			open = append(open, l)
+		}
+	}
+	if n <= 0 || len(open) == 0 {
+		return nil
+	}
+	return a.closeView(open[len(open)-min(n, len(open))].view)
+}
+
 type appPopup struct{ p Popup }
 
 func (v *appPopup) title() string { return popupTitle(v.p.Title, v.p.Subject) }

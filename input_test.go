@@ -1198,3 +1198,47 @@ func TestTextareaCheck(t *testing.T) {
 		t.Errorf("unchanged: checked or written (%d)", calls)
 	}
 }
+
+// TestInputSteps: a flow of inputs, each step a popup of its own over the one
+// before; Esc goes back a step with its value still there, and the last step
+// ends the flow, no step cancelled (Rules F1, F4, T1; locku LK7).
+func TestInputSteps(t *testing.T) {
+	ta := newTestApp(t)
+	var pins []string
+	step := func(title string, next func() tea.Cmd) PasswordInput {
+		return PasswordInput{Title: title, Stay: next != nil, OnCancel: ta.record("cancel " + title),
+			Done: func(v string, _ bool) tea.Cmd {
+				pins = append(pins, v)
+				if next == nil {
+					return ta.CloseTop(2)
+				}
+				return next()
+			}}
+	}
+	confirm := func() tea.Cmd { return ta.Password(step("Confirm PIN", nil)) }
+	newPIN := func() tea.Cmd { return ta.Password(step("New PIN", confirm)) }
+	ta.Password(step("Current PIN", newPIN))
+	ta.settle()
+	current := ta.topView().(*lineInput)
+	ta.press("1", "2", "3", "4", "Enter")
+	ta.settle()
+	if li, ok := ta.topView().(*lineInput); !ok || li.title != "New PIN" || len(ta.stack) != 2 {
+		t.Fatalf("after the first step: %T, %d popups", ta.topView(), len(ta.stack))
+	}
+	ta.press("Esc")
+	ta.settle()
+	if ta.topView() != current || current.ed.value() != "1234" {
+		t.Fatalf("Esc did not go back a step with its value: %T %q", ta.topView(), current.ed.value())
+	}
+	ta.press("Enter", "5", "6", "7", "8", "Enter", "5", "6", "7", "8", "Enter")
+	ta.settle()
+	if ta.top() != nil || len(ta.stack) != 0 {
+		t.Errorf("the flow is done, %d popups still open", len(ta.stack))
+	}
+	if !slices.Equal(pins, []string{"1234", "1234", "5678", "5678"}) {
+		t.Errorf("the steps got %v", pins)
+	}
+	if !slices.Equal(ta.ran, []string{"cancel New PIN"}) {
+		t.Errorf("ran %v: only the step left with Esc is cancelled", ta.ran)
+	}
+}

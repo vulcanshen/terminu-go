@@ -42,6 +42,11 @@ type TextInput struct {
 	Search bool
 	// Done gets the new value. It is not called when the value did not change.
 	Done func(string) tea.Cmd
+	// Stay keeps it open under what Done opens: a step of a flow (current
+	// PIN, new PIN, confirm PIN), each step a popup of its own, Esc on the
+	// next one coming back here (Rules F1, F4). The app ends the flow with
+	// CloseTop when its last step is done (T1).
+	Stay bool
 	// Commit, when set, writes a changed value back when Enter takes it, on
 	// the update loop, before Done: an error keeps the popup open with the
 	// value in it and opens an error popup over it, "RENAME FAILED"
@@ -71,6 +76,11 @@ type PasswordInput struct {
 	Check  func(string) error
 	// Done gets the new password; "" with clear true when it was removed.
 	Done func(value string, clear bool) tea.Cmd
+	// Stay keeps it open under what Done opens: a step of a flow (current
+	// PIN, new PIN, confirm PIN), each step a popup of its own, Esc on the
+	// next one coming back here (Rules F1, F4). The app ends the flow with
+	// CloseTop when its last step is done (T1).
+	Stay bool
 	// Commit, when set, writes a changed value back when Enter takes it, on
 	// the update loop, before Done: an error keeps the popup open with the
 	// value in it and opens an error popup over it, "RENAME FAILED"
@@ -97,6 +107,11 @@ type NumberInput struct {
 	Decimal  bool // "." may be typed
 	Check    func(string) error
 	Done     func(string) tea.Cmd
+	// Stay keeps it open under what Done opens: a step of a flow (current
+	// PIN, new PIN, confirm PIN), each step a popup of its own, Esc on the
+	// next one coming back here (Rules F1, F4). The app ends the flow with
+	// CloseTop when its last step is done (T1).
+	Stay bool
 	// Commit, when set, writes a changed value back when Enter takes it, on
 	// the update loop, before Done: an error keeps the popup open with the
 	// value in it and opens an error popup over it, "RENAME FAILED"
@@ -130,6 +145,7 @@ type lineInput struct {
 	search       bool // only searched for: control characters are not held back
 	onCancel     func() tea.Cmd
 	commit       func(v string, clear bool) error // nil without Commit
+	stay         bool                             // a step of a flow: Enter leaves it open under the next
 	maxLen       int
 	unlock       bool
 	ed           *lineEditor
@@ -177,7 +193,7 @@ func then(written func(), cmd tea.Cmd) tea.Cmd {
 func (in TextInput) open(a *App, written func()) tea.Cmd {
 	return a.open(&lineInput{
 		kind: kindText, title: in.Title, name: cmpOr(in.Name, in.Title), subject: in.Subject, glyph: in.Glyph, prompt: in.Prompt, verb: cmpOr(in.Verb, "save"),
-		old: in.Old, hasOld: in.Old != "", maxLen: in.MaxLen, ed: newEditor(""), check: in.Check, search: in.Search, onCancel: in.OnCancel,
+		old: in.Old, hasOld: in.Old != "", maxLen: in.MaxLen, ed: newEditor(""), check: in.Check, search: in.Search, onCancel: in.OnCancel, stay: in.Stay,
 		commit: func(v string, _ bool) error { return runCommit(in.Commit, v) },
 		done:   func(v string, _ bool) tea.Cmd { return then(written, run2(in.Done, v)) },
 	})
@@ -186,7 +202,7 @@ func (in TextInput) open(a *App, written func()) tea.Cmd {
 func (in PasswordInput) open(a *App, written func()) tea.Cmd {
 	return a.open(&lineInput{
 		kind: kindPassword, title: in.Title, name: cmpOr(in.Name, in.Title), subject: in.Subject, glyph: in.Glyph, prompt: in.Prompt, verb: cmpOr(in.Verb, "save"),
-		hasOld: in.Set, maxLen: in.MaxLen, unlock: in.Unlock, ed: newEditor(""), check: in.Check, onCancel: in.OnCancel,
+		hasOld: in.Set, maxLen: in.MaxLen, unlock: in.Unlock, ed: newEditor(""), check: in.Check, onCancel: in.OnCancel, stay: in.Stay,
 		commit: func(v string, clear bool) error {
 			if in.Commit == nil {
 				return nil
@@ -205,7 +221,7 @@ func (in PasswordInput) open(a *App, written func()) tea.Cmd {
 func (in NumberInput) open(a *App, written func()) tea.Cmd {
 	li := &lineInput{
 		kind: kindNumber, title: in.Title, name: cmpOr(in.Name, in.Title), subject: in.Subject, glyph: in.Glyph, prompt: in.Prompt, verb: cmpOr(in.Verb, "save"),
-		old: in.Old, hasOld: in.Old != "", ed: newEditor(""), onCancel: in.OnCancel,
+		old: in.Old, hasOld: in.Old != "", ed: newEditor(""), onCancel: in.OnCancel, stay: in.Stay,
 		commit: func(v string, _ bool) error { return runCommit(in.Commit, v) },
 		done:   func(v string, _ bool) tea.Cmd { return then(written, run2(in.Done, v)) },
 	}
@@ -499,6 +515,13 @@ func (li *lineInput) confirm(a *App) tea.Cmd {
 func (li *lineInput) write(a *App, v string, clear bool) tea.Cmd {
 	if err := li.commit(v, clear); err != nil {
 		return a.commitFailed(li.title, li.subject, err)
+	}
+	if li.stay {
+		// A step of a flow: answered, and open under the next step.
+		if l := a.top(); l != nil {
+			l.answered = true
+		}
+		return li.done(v, clear)
 	}
 	return tea.Batch(a.answer(), li.done(v, clear))
 }
