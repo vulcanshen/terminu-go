@@ -65,6 +65,9 @@ type Values struct {
 	// field not drawn in place). It runs before the frame is drawn, so a
 	// details panel follows in the same frame (layout/panel, details).
 	OnMove func(f *Field, option int) tea.Cmd
+	// EmptyFact and EmptyHint are what it says with no fields, in Overlay0, as
+	// a list does (layout/screen, the empty state).
+	EmptyFact, EmptyHint string
 
 	at      valueItem // where OnMove last ran
 	cursor  int       // item index across all fields
@@ -138,6 +141,10 @@ func (v *Values) labelWidth() int {
 
 // Draw draws the fields: labels in upper case in Blue, two cells, the values.
 func (v *Values) Draw(w, h int, focused bool) []string {
+	if len(v.Fields) == 0 {
+		v.scroll = ""
+		return EmptyState(w, h, v.EmptyFact, v.EmptyHint)
+	}
 	items := v.itemList()
 	v.fixCursor(items, 1)
 	lw := v.labelWidth()

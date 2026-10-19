@@ -2008,3 +2008,19 @@ func TestPanelFilterFocusReturn(t *testing.T) {
 	ta.press("1")
 	at(0, true)
 }
+
+// TestValuesEmptyState: a one-value-per-row panel with nothing to list says
+// so as a list does, the fact and the hint in Overlay0 (layout/screen, the
+// empty state; ccdrawu CD23).
+func TestValuesEmptyState(t *testing.T) {
+	ta := newTestApp(t)
+	ta.values.Fields = nil
+	ta.values.EmptyFact, ta.values.EmptyHint = "No settings here", "Press [A] to add one"
+	ta.press("3")
+	inside := covCCrop(ta.Frame(), 81, 119)
+	for _, text := range []string{"No settings here", "Press [A] to add one"} {
+		if _, cells := covCFind(t, inside, text); cells[0].St.Fg != Overlay0 {
+			t.Errorf("%q in %v, want Overlay0", text, cells[0].St.Fg)
+		}
+	}
+}
