@@ -309,6 +309,8 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmd = msg.done(a)
 	case pauseTick:
 		cmd = msg.li.countDown()
+	case readDone:
+		msg.r.keep(msg)
 	case termOutput, termExited:
 		cmd, _ = a.terminalMsg(msg)
 	default:
@@ -316,7 +318,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmd = a.OnMsg(msg)
 		}
 	}
-	cmd = tea.Batch(cmd, a.moved())
+	cmd = tea.Batch(cmd, a.moved(), a.fetch())
 	if !a.spin && a.loading() {
 		a.spin = true
 		cmd = tea.Batch(cmd, spinTick())
@@ -366,8 +368,25 @@ func (a *App) growLoading() {
 	}
 }
 
+// fetch starts what the popups' last frame asked to read in the background
+// (a file preview).
+func (a *App) fetch() tea.Cmd {
+	var cmds []tea.Cmd
+	for _, l := range a.stack {
+		if f, ok := l.view.(interface{ fetch() tea.Cmd }); ok && !l.closing {
+			cmds = append(cmds, f.fetch())
+		}
+	}
+	return tea.Batch(cmds...)
+}
+
 // loading reports whether a loading icon is on screen, so it keeps turning.
 func (a *App) loading() bool {
+	for _, l := range a.stack {
+		if f, ok := l.view.(interface{ fetching() bool }); ok && f.fetching() {
+			return true // reads in the background: frames keep coming until they are drawn
+		}
+	}
 	if a.Spinning != nil && a.Spinning() {
 		return true
 	}

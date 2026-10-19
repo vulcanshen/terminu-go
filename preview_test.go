@@ -8,9 +8,12 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 func previewText(lines []string) string { return StripStyles(strings.Join(lines, "\n")) }
@@ -251,7 +254,7 @@ func TestFinderFileLayout(t *testing.T) {
 		ta.resize(sz[0], sz[1])
 		ta.PickFile(FilePicker{Title: "Identity file", Root: dir, Value: filepath.Join(dir, "config")})
 		ta.settle()
-		text := ta.screenText()
+		text := ta.readAll()
 		info := strings.Contains(text, "INFO")
 		if info == (sz[0] >= 96) {
 			t.Errorf("%dx%d: an INFO box %v (it is one only when the preview is below)", sz[0], sz[1], info)
@@ -320,20 +323,116 @@ func (m memFS) ReadDir(name string) ([]fs.FileInfo, error) {
 // TestFinderFilesInFS: a finder of files in a file system the app gives
 // previews them, their trees and their facts from it (components/input/
 // file-picker, the preview; sshu SS18).
+// readAll draws a frame and reads at once what it asked to read in the
+// background, as the app does off the update loop; the screen then.
+func (ta *testApp) readAll() string {
+	ta.Frame()
+	for {
+		cmd := ta.fetch()
+		if cmd == nil {
+			break
+		}
+		ta.runAll(cmd)
+		ta.Frame()
+	}
+	return ta.screenText()
+}
+
+// runAll runs cmd and gives the app what it sends, a batch's too; not what
+// the app sends back.
+func (ta *testApp) runAll(cmd tea.Cmd) {
+	if cmd == nil {
+		return
+	}
+	switch m := cmd().(type) {
+	case tea.BatchMsg:
+		for _, c := range m {
+			ta.runAll(c)
+		}
+	default:
+		ta.Update(m)
+	}
+}
+
+// TestFilePreviewReadInTheBackground: a file preview is read off the update
+// loop: meanwhile the loading icon after its title, "(loading…)" and blank
+// facts; what was read is kept for the row while the popup is open
+// (components/input/file-picker; sshu SS40).
+func TestFilePreviewReadInTheBackground(t *testing.T) {
+	remote := memFS{"/srv/": "", "/srv/app.conf": "port = 22\n", "/srv/b.conf": "host = web\n"}
+	ta := newTestApp(t)
+	ta.Find(&Finder{Title: "Remote", Files: true, FS: remote,
+		Items: []FinderItem{{ID: "/srv/app.conf", Text: "app.conf"}, {ID: "/srv/b.conf", Text: "b.conf"}}})
+	ta.settle()
+	text := ta.screenText()
+	if !strings.Contains(text, "(loading…)") || strings.Contains(text, "port = 22") || strings.Contains(text, "—") ||
+		!strings.Contains(text, "TYPE") || strings.Contains(text, "TYPE      text") {
+		t.Errorf("before it is read: (loading…), blank facts, not a dash:\n%s", text)
+	}
+	titled := slices.ContainsFunc(ta.Frame(), func(row string) bool {
+		p := StripStyles(row)
+		return strings.Contains(p, "app.conf") && slices.ContainsFunc(loadingFrames[:], func(g string) bool { return strings.Contains(p, g) })
+	})
+	if !titled {
+		t.Error("the loading icon after the preview title")
+	}
+	if !ta.loading() {
+		t.Error("frames keep coming while it reads")
+	}
+	cmd := ta.Update2(struct{}{})
+	if cmd == nil {
+		t.Fatal("the next update starts reading")
+	}
+	ta.runAll(cmd)
+	if !strings.Contains(ta.screenText(), "port = 22") {
+		t.Error("what the update started reading is drawn once it is read")
+	}
+	if text := ta.readAll(); !strings.Contains(text, "port = 22") || !strings.Contains(text, "TYPE      text") {
+		t.Errorf("read:\n%s", text)
+	}
+	ta.press("Tab", "j")
+	ta.readAll()
+	ta.press("k")
+	ta.Frame()
+	fv := ta.topView().(*finderView)
+	if fv.read.busy() || !strings.Contains(ta.screenText(), "port = 22") {
+		t.Error("back to a row read before: nothing read again")
+	}
+}
+
+// TestPreviewFromALineThatFits: a file that fits in the preview is drawn
+// from its first line even when the preview starts from a later one
+// (components/input/finder).
+func TestPreviewFromALineThatFits(t *testing.T) {
+	fs := memFS{"/a.txt": "one\ntwo\nthree\nfour\nfive\n"}
+	lines := previewIn(fs, "/a.txt", 4, 40, 10, false, nil, 4)
+	if text := previewText(lines); !strings.HasPrefix(strings.TrimSpace(text), "1 one") {
+		t.Errorf("from line 1:\n%s", text)
+	}
+	long := ""
+	for i := 1; i <= 40; i++ {
+		long += fmt.Sprintf("line %d\n", i)
+	}
+	fs["/b.txt"] = long
+	if text := previewText(previewIn(fs, "/b.txt", 20, 40, 10, false, nil, 4)); !strings.HasPrefix(strings.TrimSpace(text), "18 line 18") {
+		t.Errorf("the line on the third row:\n%s", text)
+	}
+}
+
 func TestFinderFilesInFS(t *testing.T) {
 	remote := memFS{"/srv/": "", "/srv/app.conf": "port = 22\nhost = web\n", "/srv/logs/": "", "/srv/logs/a.log": "x\n"}
 	ta := newTestApp(t)
 	ta.Find(&Finder{Title: "Remote", Files: true, FS: remote,
 		Items: []FinderItem{{ID: "/srv/app.conf", Text: "app.conf"}, {ID: "/srv", Text: "srv"}}})
 	ta.settle()
-	text := ta.screenText()
+	text := ta.readAll()
 	for _, want := range []string{"1 port = 22", "2 host = web", "TYPE", "text", "21 B", "2026-10-19 09:30", "-rw-r--r--"} {
 		if !strings.Contains(text, want) {
 			t.Errorf("the remote file: no %q in\n%s", want, text)
 		}
 	}
 	ta.press("Tab", "j")
-	if text := ta.screenText(); !strings.Contains(text, glyphFolder+" logs") || !strings.Contains(text, "  └─ "+glyphFile+" a.log") ||
+	if text := ta.readAll(); !strings.Contains(text, glyphFolder+" logs") || !strings.Contains(text, "  └─ "+glyphFile+" a.log") ||
 		!strings.Contains(text, "2 items") {
 		t.Errorf("the remote directory:\n%s", text)
 	}

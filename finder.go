@@ -170,6 +170,12 @@ type finderView struct {
 	known   bool // the width is known when it opens
 	// enterRef, when set, is what Enter does in the key reference.
 	enterRef string
+	// slow marks a preview and facts read from files: they are read off the
+	// update loop (components/input/file-picker, read in the background);
+	// previewTitle is the preview box's title meanwhile.
+	slow         bool
+	previewTitle func(r finderRow) string
+	read         reads
 	// search is the app's own search: it gets what is typed, and the rows
 	// are its results, not filtered again.
 	search func(typed string) tea.Cmd
@@ -214,6 +220,8 @@ func (a *App) Find(f *Finder) tea.Cmd {
 			return path.Base(filepath.ToSlash(r.item.ID)), previewIn(f.FS, r.item.ID, r.item.Line, w, h, a.HideSecretsInPreview, nil, a.inputTabWidth())
 		}
 		fv.info = func(r finderRow, w int, layer Color) []string { return fileInfoIn(f.FS, r.item.ID, w, layer) }
+		fv.slow = true
+		fv.previewTitle = func(r finderRow) string { return path.Base(filepath.ToSlash(r.item.ID)) }
 	case f.Preview != nil:
 		fv.preview = func(r finderRow, _, _ int) (string, []string) { return f.Preview(r.item) }
 	}
@@ -479,7 +487,7 @@ func (f *finderView) drawInfo(w, h int, layer Color) []string {
 	inner := w - 2
 	var rows []string
 	if _, r, ok := f.at(); ok {
-		rows = f.info(r, inner-2, layer)
+		rows = f.facts(r, inner-2, layer)
 	}
 	body := make([]string, 0, max(h-4, 0))
 	for i := range max(h-4, 0) {
@@ -569,10 +577,25 @@ func (f *finderView) drawPreview(w, h int, layer Color, withInfo bool) []string 
 	}
 	title, lines := "", []string(nil)
 	var info []string
+	reading := false
 	if _, r, ok := f.at(); ok {
-		title, lines = f.preview(r, inner-2, area)
+		if f.slow {
+			// Read in the background: meanwhile the loading icon after the
+			// title and "(loading…)" (components/input/file-picker).
+			title = f.previewTitle(r)
+			var done bool
+			lines, done = f.read.get(rowPath(r)+"\x00p"+itoa(inner-2)+"x"+itoa(area), func() []string {
+				_, l := f.preview(r, inner-2, area)
+				return l
+			})
+			if !done {
+				lines, reading = []string{Fg(Overlay0).Render("(loading…)")}, true
+			}
+		} else {
+			title, lines = f.preview(r, inner-2, area)
+		}
 		if withInfo {
-			info = f.info(r, inner-2, layer)
+			info = f.facts(r, inner-2, layer)
 		}
 	}
 	body := make([]string, 0, rows)
@@ -593,8 +616,87 @@ func (f *finderView) drawPreview(w, h int, layer Color, withInfo bool) []string 
 			}
 		}
 	}
-	return popupBox{color: layer, title: title}.draw(w, Pad2(body, inner, rows))
+	return popupBox{color: layer, title: title, loading: reading}.draw(w, Pad2(body, inner, rows))
 }
+
+// facts are the four rows of facts about the row under the cursor; read in
+// the background, their values are blank until they are there: not "—",
+// which says a value cannot be had (components/input/file-picker).
+func (f *finderView) facts(r finderRow, w int, layer Color) []string {
+	if !f.slow {
+		return f.info(r, w, layer)
+	}
+	rows, done := f.read.get(rowPath(r)+"\x00i"+itoa(w)+layer.String(), func() []string { return f.info(r, w, layer) })
+	if !done {
+		return infoRows([4][2]string{{"TYPE", ""}, {"SIZE", ""}, {"MODIFIED", ""}, {"MODE", ""}}, w, layer)
+	}
+	return rows
+}
+
+// rowPath is the path a row of files stands for.
+func rowPath(r finderRow) string { return cmpOr(r.path, r.item.ID) }
+
+// reads are what a popup reads off the update loop: kept by what was asked,
+// so going back to a row reads nothing again while it is open; wanted until
+// the app starts reading them; in flight until they come.
+type reads struct {
+	done     map[string][]string
+	wanted   map[string]func() []string
+	inFlight map[string]bool
+}
+
+// get is what was read for key, or false, key then wanted, read by fn.
+func (r *reads) get(key string, fn func() []string) ([]string, bool) {
+	if lines, ok := r.done[key]; ok {
+		return lines, true
+	}
+	if !r.inFlight[key] {
+		if r.wanted == nil {
+			r.wanted = map[string]func() []string{}
+		}
+		r.wanted[key] = fn
+	}
+	return nil, false
+}
+
+// readDone is what was read for key.
+type readDone struct {
+	r     *reads
+	key   string
+	lines []string
+}
+
+// start starts reading what is wanted, each off the update loop.
+func (r *reads) start() tea.Cmd {
+	var cmds []tea.Cmd
+	for key, fn := range r.wanted {
+		if r.inFlight == nil {
+			r.inFlight = map[string]bool{}
+		}
+		r.inFlight[key] = true
+		cmds = append(cmds, func() tea.Msg { return readDone{r, key, fn()} })
+	}
+	r.wanted = nil
+	return tea.Batch(cmds...)
+}
+
+// keep keeps what was read.
+func (r *reads) keep(m readDone) {
+	if r.done == nil {
+		r.done = map[string][]string{}
+	}
+	r.done[m.key] = m.lines
+	delete(r.inFlight, m.key)
+}
+
+// busy reports something wanted or being read.
+func (r *reads) busy() bool { return len(r.wanted) > 0 || len(r.inFlight) > 0 }
+
+// fetch starts the reads the last frame wanted.
+func (f *finderView) fetch() tea.Cmd { return f.read.start() }
+
+// fetching keeps the frames coming while something is read.
+func (f *finderView) fetching() bool { return f.read.busy() }
 
 func cmpColor(c, def Color) Color {
 	if !c.Set {

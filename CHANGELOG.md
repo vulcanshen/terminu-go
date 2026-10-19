@@ -17,6 +17,10 @@ Each release names the version of terminu design (tdp) it implements.
   unset); short columns keep the width of their widest value. Only when the shrinkable ones are at their least are
   columns taken away, in `Drop` order. Nothing narrows in proportion any more: a list with no `Shrink` column is
   cut at its right edge (layout/panel)
+- A finder's and a file-picker's file previews and facts are read in the background, off the update loop: typing
+  and moving never wait for a slow or remote file system. Meanwhile the preview's title has the loading icon, the
+  box says `(loading…)` in grey and the facts' values are blank; what was read is kept for the popup's life
+  (components/input/file-picker)
 - A key reference folds a long description in its "what each row is" section in the right column, the name column
   blank under it; the sections of keys stay one line a key (components/dialog/note)
 - `App.CloseAll`'s comment says every popup plays its closing at once, as it does
