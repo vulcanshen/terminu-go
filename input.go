@@ -284,7 +284,22 @@ func (li *lineInput) draw(w, h int, layer Color) []string {
 		Repeat(" ", inner),
 		padRow(errRow, inner),
 	}
-	return popupBox{color: layer, glyph: li.glyph, title: popupTitle(li.title, li.subject), hint: li.hint()}.draw(w, Pad2(body, inner, h-4))
+	// Too short for all of it, the blank rows of the frame give way first
+	// (fitRows); then the rows above the error row scroll to keep the typing
+	// row in sight and the error row stays (components/layout/popup); with
+	// one row, the typing row.
+	if h-4 < len(body) {
+		switch n := max(h-2, 0); {
+		case n == 0:
+			body = nil
+		case n == 1:
+			body = body[2:3]
+		case n < len(body):
+			top := scrollWindow(0, 2, n-1, 4)
+			body = append(body[top:top+n-1:top+n-1], body[4])
+		}
+	}
+	return popupBox{color: layer, glyph: li.glyph, title: popupTitle(li.title, li.subject), hint: li.hint()}.draw(w, Pad2(body, inner, max(h-4, len(body))))
 }
 
 // maskView draws a password: dots for what was typed, eight grey ones for a

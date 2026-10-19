@@ -1,6 +1,8 @@
 package terminu
 
 import (
+	"slices"
+	"strings"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -82,6 +84,27 @@ func (l *layer) drawFrame(full []string, color Color) (rows []string, first, x i
 		return full[start : start+n], start, 0
 	}
 	return full, 0, 0
+}
+
+// fitRows keeps a popup drawn on a screen too short for it to its height, so
+// the footer stays in sight (Rules F7): the rows blank inside the frame go
+// first, from the top, then the rows above the bottom border.
+func fitRows(rows []string, h int) []string {
+	if len(rows) <= h {
+		return rows
+	}
+	rows = slices.Clone(rows)
+	for i := 1; len(rows) > h && i < len(rows)-1; {
+		if w := Width(rows[i]); strings.TrimSpace(StripStyles(Cut(rows[i], 1, w-1))) == "" {
+			rows = slices.Delete(rows, i, i+1)
+			continue
+		}
+		i++
+	}
+	for len(rows) > max(h, 2) {
+		rows = slices.Delete(rows, len(rows)-2, len(rows)-1)
+	}
+	return rows
 }
 
 // refSection is one section of a key reference: a title (none for the first

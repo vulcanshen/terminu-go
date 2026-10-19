@@ -1084,7 +1084,7 @@ func (a *App) Frame() []string {
 		if !l.closing {
 			open++
 		}
-		full := l.view.draw(l.w, l.h, color)
+		full := fitRows(l.view.draw(l.w, l.h, color), l.h)
 		if i < under {
 			full = DimLines(full)
 		}

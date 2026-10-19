@@ -1560,3 +1560,56 @@ func TestT1SourceClosesWhileTargetOpens(t *testing.T) {
 		t.Errorf("%d layers once the menu has closed", len(ta.stack))
 	}
 }
+
+// TestF7ShortScreenKeepsFooter: on a screen too short for a popup, it is
+// drawn no taller than its height, so the chip row and the footer stay in
+// sight (Rules F7; demou DM5).
+func TestF7ShortScreenKeepsFooter(t *testing.T) {
+	calls := inputOpeners(t)
+	for name, open := range dialogOpeners() {
+		calls[name] = open
+	}
+	for name, open := range calls {
+		for sh := 5; sh <= 14; sh++ {
+			ta := newTestApp(t)
+			ta.resize(80, sh)
+			before := ta.Frame()
+			open(ta)
+			ta.settle()
+			after := ta.Frame()
+			if name == "form" && sh >= 9 && !strings.Contains(StripStyles(strings.Join(after, "\n")), "Name     required") {
+				t.Errorf("form at 80x%d: its first field is not in sight", sh)
+			}
+			rows := []int{0, sh - 1}
+			if name == "terminal" {
+				rows = rows[:1] // it covers the footer (Rules F7)
+			}
+			for _, row := range rows {
+				if got, want := StripStyles(after[row]), StripStyles(before[row]); got != want {
+					t.Errorf("%s at 80x%d: row %d is %q, want %q", name, sh, row, got, want)
+				}
+			}
+		}
+	}
+}
+
+// TestInputShortScreenKeepsTypingRow: an input too short for its prompt keeps
+// the typing row in sight, and the error row while there is room for both
+// (components/layout/popup; demou DM6).
+func TestInputShortScreenKeepsTypingRow(t *testing.T) {
+	for sh := 5; sh <= 10; sh++ {
+		ta := newTestApp(t)
+		ta.resize(80, sh)
+		ta.Number(NumberInput{Title: "Port", Prompt: "Which port", Min: 1, Max: 10})
+		ta.settle()
+		ta.press("9", "9", "Enter")
+		l := ta.top()
+		text := strings.Join(plainLines(fitRows(l.view.draw(l.w, l.h, Blue), l.h)), "\n")
+		if !strings.Contains(text, "99") {
+			t.Errorf("80x%d: no typing row:\n%s", sh, text)
+		}
+		if l.h-4 >= 2 && !strings.Contains(text, "Port must be 1-10") {
+			t.Errorf("80x%d: no error row:\n%s", sh, text)
+		}
+	}
+}
