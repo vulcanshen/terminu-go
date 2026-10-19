@@ -14,6 +14,10 @@ type noteView struct {
 	// never cut (an error popup, the typing note; components/dialog/note).
 	text      string
 	textStyle Style
+	// build, when set, makes the lines for a room of so many cells, each
+	// time it is measured: a key reference whose "what each row is" section
+	// folds its descriptions to the room there is.
+	build func(room int) []string
 	// onlyClose takes every key but Enter and Esc and does nothing with them,
 	// ? and q too: the typing note, which comes while the user is still typing
 	// (components/dialog/form, Rules K9).
@@ -30,6 +34,9 @@ type noteView struct {
 
 func (n *noteView) measure(sw, sh int) (int, int) {
 	w := popupWidth(sw, 0, false)
+	if n.build != nil {
+		n.lines = n.build(1 << 20) // as wide as they are, for the width
+	}
 	if n.text != "" {
 		n.lines = nil
 		for _, l := range Wrap(n.text, max(min(max(Width(n.text), 20), w-4), 1)) {
@@ -46,6 +53,9 @@ func (n *noteView) measure(sw, sh int) (int, int) {
 			content = max(content, scrollRoom(n.hint, scrollText(false, t, t, t)))
 		}
 		w = min(content, w)
+	}
+	if n.build != nil {
+		n.lines = n.build(max(w-4, 1)) // folded to the room it has
 	}
 	h := min(len(n.lines)+4, max(sh-2, 3))
 	return w, h
@@ -153,27 +163,41 @@ func keyReference(title string, sections []refSection) *noteView {
 			keyW = max(keyW, Width(r.Key))
 		}
 	}
-	var lines []string
-	for _, s := range sections {
-		if len(s.rows) == 0 {
-			continue
-		}
-		if s.title != "" {
-			lines = append(lines, Fg(Overlay0).Render(glyphHexagon+" "+Upper(s.title)))
-		}
-		for _, r := range s.rows {
-			key, desc := Pad(renderKey(r.Key, Fg(Blue), Overlay0), keyW), Fg(Text).Render(r.Desc)
-			if s.names {
-				key = Fg(Text).Render(Pad(r.Key, keyW))
+	// The rows in room cells. A row of keys is one line, cut when too long;
+	// a row of "what each row is" folds its description in the right column,
+	// the name's column left blank under it: it is a sentence to read
+	// (components/dialog/note).
+	build := func(room int) []string {
+		var lines []string
+		for _, s := range sections {
+			if len(s.rows) == 0 {
+				continue
 			}
-			if r.Disabled {
-				key, desc = Fg(Surface2).Render(Pad(r.Key, keyW)), Fg(Surface2).Render(r.Desc)
+			if s.title != "" {
+				lines = append(lines, Fg(Overlay0).Render(glyphHexagon+" "+Upper(s.title)))
 			}
-			lines = append(lines, " "+key+"  "+desc)
+			for _, r := range s.rows {
+				key, desc := Pad(renderKey(r.Key, Fg(Blue), Overlay0), keyW), Fg(Text).Render(r.Desc)
+				if r.Disabled {
+					key, desc = Fg(Surface2).Render(Pad(r.Key, keyW)), Fg(Surface2).Render(r.Desc)
+				}
+				if s.names {
+					for i, l := range Wrap(r.Desc, max(room-1-keyW-2, 1)) {
+						name := Repeat(" ", keyW)
+						if i == 0 {
+							name = Fg(Text).Render(Pad(r.Key, keyW))
+						}
+						lines = append(lines, " "+name+"  "+Fg(Text).Render(l))
+					}
+					continue
+				}
+				lines = append(lines, " "+key+"  "+desc)
+			}
 		}
+		return lines
 	}
 	return &noteView{
-		glyph: glyphKeys, title: title + " KEYS", lines: lines, known: true, helpCloses: true,
+		glyph: glyphKeys, title: title + " KEYS", lines: build(1 << 20), build: build, known: true, helpCloses: true,
 		hint: []KeyHint{{"?|Esc", "close"}}, name: title + " keys",
 	}
 }

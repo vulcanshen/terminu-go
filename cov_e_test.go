@@ -940,6 +940,38 @@ func TestKeyReferenceScrollOnlyWhenItScrolls(t *testing.T) {
 	}
 }
 
+// TestKeyReferenceRowsFold: in the "what each row is" section a long
+// description folds in the right column, the name's column blank under it;
+// the sections of keys stay one line a key (components/dialog/note).
+func TestKeyReferenceRowsFold(t *testing.T) {
+	ta := newTestApp(t)
+	ta.resize(60, 40)
+	long := "the name shown in the title, in the splash, in the window's title bar and in every toast"
+	ta.values.Fields[0].Desc = long
+	ta.pods.Actions = append(ta.pods.Actions, Action{Key: "z", Label: "Zap", Desc: long, Scope: PanelScope})
+	ta.press("3", "?")
+	ta.settle()
+	n := ta.topView().(*noteView)
+	var rows []string
+	for _, l := range n.lines {
+		rows = append(rows, StripStyles(l))
+	}
+	text := strings.Join(rows, "\n")
+	at := -1
+	for i, r := range rows {
+		if strings.HasPrefix(strings.TrimSpace(r), "NAME") {
+			at = i
+		}
+	}
+	if at < 0 || !strings.HasPrefix(rows[at+1], " "+Repeat(" ", strings.Index(rows[at], "the")-1)) || strings.Contains(rows[at], "…") {
+		t.Fatalf("folded under the description, the name column blank:\n%s", text)
+	}
+	got := strings.Join(strings.Fields(strings.Join(rows[at:at+3], " ")), " ")
+	if !strings.Contains(got, "every toast") {
+		t.Errorf("nothing lost: %q", got)
+	}
+}
+
 // TestKeyReferenceWhatEachRowIs: a value panel's key reference may start with
 // what each row is, the setting's name in Text, not a key's Blue
 // (layout/panel, components/dialog/note).

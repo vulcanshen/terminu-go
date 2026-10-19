@@ -296,7 +296,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | panel §明細 | 另一個 panel 的 cursor 一移動，明細立刻換成那一筆，label 寫那一筆的名字時一起換；不用 `Enter`，cursor 移動時 focus 不動；app 也可以讓清單上的 `Enter` 把 focus 送到明細（K3） | K `[1] KINDS` 上 `j\|k`，看 `[2]`；`Enter` 進 `[2]` | `TestPanelDetailsFollowCursor`、`TestValuesOnMove`、`TestFilePreviewPanel`、`TestFilePreviewPanelHidesSecrets`（預覽當明細：`FilePreview`） |
 | panel §一列一個值 | focus 色塊 Subtext1 底 Base 粗體、最右邊一格是箭頭，從項目開頭到 panel 內右緣；label 大寫，一般 Blue、停用 Surface2、出錯 Red；label 欄寬取最長的 label、與值之間兩格 | `[3] SETTINGS` 的 `Disable`（`Remote` 停用）、`Fail`（`Timeout` 的 label 變 Red） | `TestValuePanelFocusBlock`、`TestValuePanelLabels` |
 | panel §一列一個值 | 捲動位置照表單以欄位為單位：radio 的幾個選項算同一欄 | P `[3] SETTINGS` 縮矮 | `TestValuePanelScrollByField` |
-| panel §一列一個值 | `?` 最前面可以有「每一列」一節（`what each row is`）：設定的名稱用一般字色（Text）、右欄說明，按鍵的節接在後面；要不要有由 app 決定（lib：`Field.Desc`，有一欄有就有這一節） | P `[3] SETTINGS` 按 `?` | `TestKeyReferenceWhatEachRowIs` |
+| panel §一列一個值 | `?` 最前面可以有「每一列」一節（`what each row is`）：設定的名稱用一般字色（Text）、右欄說明，按鍵的節接在後面；要不要有由 app 決定（lib：`Field.Desc`，有一欄有就有這一節） | P `[3] SETTINGS` 按 `?` | `TestKeyReferenceWhatEachRowIs`、`TestKeyReferenceRowsFold`（說明太長在右欄折行、名稱欄不動，按鍵的節照舊截） |
 | panel §一列一個值 | 表頭（`PROPERTY  VALUE`）Overlay0，不用 label 的 Blue；panel 失焦時跟著淡化（T2）；一般清單的表頭照舊 Blue | P `[3] SETTINGS` 的 `PROPERTY  VALUE`；I `[1] INPUTS` 的 `INPUT  VALUE` | `TestValuePanelHeader` |
 | panel §panel filter | `/` 在最上面出現打字列（清單有表頭時在表頭上面）、即時篩選、不開 popup；最前面 U+F105 離框一格（跟 finder 的打字列一樣）、空一格才接打的字，打字時框線色（Blue）、在清單時 Overlay0；右邊 `符合/總數`，Overlay0；打字列按鍵與比對同 finder；篩選後保持 panel 的排序 | P `[1] PODS` 按 `/` | `TestPanelFilter` |
 | panel §panel filter | 清單上 `Tab` 下一個 panel；清單上 `Esc` 清掉篩選；選了之後清單留著篩選、打字列變灰；清單上 `/` 回打字列接著打 | 同上 | `TestPanelFilterListKeys` |

@@ -187,7 +187,7 @@ type lineInput struct {
 	pause        time.Time // until when it takes no value
 	search       bool      // only searched for: control characters are not held back
 	onCancel     func() tea.Cmd
-	unchanged    func() tea.Cmd // Enter on the value it opened with
+	unchanged    func() tea.Cmd                   // Enter on the value it opened with
 	commit       func(v string, clear bool) error // nil without Commit
 	stay         bool                             // a step of a flow: Enter leaves it open under the next
 	maxLen       int

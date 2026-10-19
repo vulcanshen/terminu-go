@@ -12,6 +12,8 @@ Each release names the version of terminu design (tdp) it implements.
 - A hotkey of several letters goes in place at the start of its label in either case too: `[go]to` on `Goto`
 - A form's key reference says what `Enter` does on the kinds of items the form has, not all of them (Rules M6)
 - A form button's `FormResult.Toast` is a Success toast: the action is done
+- A key reference folds a long description in its "what each row is" section in the right column, the name column
+  blank under it; the sections of keys stay one line a key (components/dialog/note)
 - `App.CloseAll`'s comment says every popup plays its closing at once, as it does
 
 ## v0.2.0 — tdp v0.8.1
