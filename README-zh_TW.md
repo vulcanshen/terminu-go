@@ -8,7 +8,8 @@
 整個畫面，並處理 core key：`Space` menu、`?` 的 key reference、每個 panel 下框的 hint、footer、confirm、淡化沒有 focus 的
 地方、`Esc` 一次關一層、popup 上再疊 popup。menu、key reference 與實際的按鍵出自同一份登記，所以不會對不上。
 
-函式庫管不到的畫面（全螢幕的鎖定畫面、好幾個並排的終端機），照樣可以用它的零件：confirm、toast 與每一種 input 都能單獨用。
+函式庫管不到的畫面（全螢幕的鎖定畫面、好幾個並排的終端機），照樣可以用它的零件：用 `App.Canvas` 自己畫那個畫面，
+confirm、toast 與每一種 input 照樣疊在上面，跟在其他地方一樣。
 app 自己的 popup（例如畫格子的）也放進同一疊：框裡畫什麼、按鍵做什麼由你決定；外框、開關動畫、淡化與 `Esc` 交給函式庫，
 函式庫的 confirm 與 input 也會疊在你的 popup 上面。
 
@@ -85,7 +86,7 @@ go run github.com/vulcanshen/terminu-go/examples/showcase@latest
 | key | 作用 | 預設 | 交給 |
 |---|---|---|---|
 | `hide_secrets_in_preview` | 檔案預覽裡藏起私鑰與只有擁有者能讀的檔 | `false` | `App.HideSecretsInPreview` |
-| `input_tab_width` | 多行文字裡按 `Tab` 插入幾個空白 | `4` | `App.InputTabWidth` |
+| `input_tab_width` | 多行文字裡按 `Tab` 插入幾個空白；畫面上文字裡的 Tab 也畫成這麼寬 | `4` | `App.InputTabWidth` |
 
 ## 實作哪一版 terminu design
 

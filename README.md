@@ -11,7 +11,8 @@ the `?` key reference, the hint on each panel's bottom border, the footer, confi
 themselves come from the same registration, they cannot drift apart.
 
 Screens the library does not own (a full-screen lock screen, several terminals side by side) can still use its parts:
-confirm, toast and every kind of input work on their own. A popup of your own (a grid to draw on) goes on the same
+draw such a screen yourself with `App.Canvas`, and confirm, toast and every kind of input open over it as they do
+anywhere else. A popup of your own (a grid to draw on) goes on the same
 stack as the library's: you draw what is inside and handle its keys; the frame, the animation, the fading and `Esc` are
 the library's, and its confirms and inputs open over yours.
 
@@ -92,7 +93,7 @@ app reads them from its own and hands them over.
 | Key | What it does | Default | Set |
 |---|---|---|---|
 | `hide_secrets_in_preview` | Previews of files hide private keys and files only their owner may read | `false` | `App.HideSecretsInPreview` |
-| `input_tab_width` | How many spaces `Tab` puts in a multi-line text | `4` | `App.InputTabWidth` |
+| `input_tab_width` | How many spaces `Tab` puts in a multi-line text, and how wide a tab in text on the screen is drawn | `4` | `App.InputTabWidth` |
 
 ## Which terminu design
 

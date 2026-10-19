@@ -161,6 +161,7 @@ Each release names the version of terminu design (tdp) it implements.
 - What a finder matches is the app's: `FinderItem.Match` instead of the text shown; `Finder.Search` runs the
   app's own search at every change of the typed words, its results shown as they come, typing never waiting
   (components/input/finder)
+- The README says how a screen the library does not own uses its parts: drawn with `App.Canvas`, popups over it
 - `List.Location` is a list's location row, where the user is, in Lavender above its header, cut from the front
   (layout/panel)
 
