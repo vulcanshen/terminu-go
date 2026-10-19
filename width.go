@@ -3,6 +3,7 @@
 package terminu
 
 import (
+	"slices"
 	"strings"
 	"unicode/utf8"
 
@@ -160,13 +161,49 @@ func Truncate(s string, w int) string {
 	if w == 1 {
 		return "…"
 	}
-	cut := trimRight(Cut(s, 0, w-1))
-	// Plain text stays plain: a reset in it would end the style of whatever
-	// it is drawn in (the title capsule's background before its "…").
-	if !strings.Contains(s, "\x1b") {
-		cut = strings.TrimSuffix(cut, ansi.ResetStyle)
+	// What fits before the cut and the styles set up to it, nothing after:
+	// "…" is drawn in the style of the text it stands for (components/color).
+	// A wide character that would straddle the cut is left out.
+	var kept []string
+	col := 0
+	walk(s, func(seq string, cells int) {
+		if col < 0 || cells > 0 && col+cells > w-1 {
+			col = -1
+			return
+		}
+		kept = append(kept, seq)
+		col += cells
+	})
+	return truncated(s, strings.Join(trimSpaces(kept, true), "")+"…")
+}
+
+// truncated ends a cut styled line with a reset, as Cut does. Plain text stays
+// plain: a reset in it would end the style of whatever it is drawn in (the
+// title capsule's background before its "…").
+func truncated(s, cut string) string {
+	if strings.Contains(s, "\x1b") {
+		return cut + ansi.ResetStyle
 	}
-	return cut + "…"
+	return cut
+}
+
+// trimSpaces drops the spaces at the end (or the start) of the kept pieces of
+// a line, the styles among them staying, so "…" sits right next to the last
+// (or first) character kept.
+func trimSpaces(kept []string, end bool) []string {
+	out := slices.Clone(kept)
+	for k := range out {
+		i := k
+		if end {
+			i = len(out) - 1 - k
+		}
+		if out[i] == " " {
+			out[i] = ""
+		} else if Width(out[i]) > 0 {
+			break
+		}
+	}
+	return out
 }
 
 // TruncateLeft fits one line in w cells, cutting from the front and putting
@@ -182,18 +219,23 @@ func TruncateLeft(s string, w int) string {
 	if w == 1 {
 		return "…"
 	}
-	return "…" + trimLeft(Cut(s, d-(w-1), d))
+	// The styles set before the cut come first, so "…" is drawn in the style
+	// of the text it stands for; a wide character straddling the cut is left
+	// out.
+	from := d - (w - 1)
+	var head, kept []string
+	col := 0
+	walk(s, func(seq string, cells int) {
+		switch {
+		case cells == 0 && len(kept) == 0:
+			head = append(head, seq)
+		case cells == 0 || col >= from:
+			kept = append(kept, seq)
+		}
+		col += cells
+	})
+	return truncated(s, strings.Join(head, "")+"…"+strings.Join(trimSpaces(kept, false), ""))
 }
-
-// trimRight drops the spaces Cut put where a wide character was cut in half,
-// so "…" sits right after the last whole character.
-func trimRight(s string) string {
-	reset := ansi.ResetStyle
-	body := strings.TrimSuffix(s, reset)
-	return strings.TrimRight(body, " ") + reset
-}
-
-func trimLeft(s string) string { return strings.TrimLeft(s, " ") }
 
 // Fit pads or truncates (with "…") one line to exactly w cells.
 func Fit(s string, w int) string { return Pad(Truncate(s, w), w) }

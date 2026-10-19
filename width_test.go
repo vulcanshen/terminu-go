@@ -1,6 +1,7 @@
 package terminu
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -66,6 +67,38 @@ func TestTruncate(t *testing.T) {
 	}
 	if got := StripStyles(TruncateLeft("/a/b/c/d", 5)); got != "…/c/d" {
 		t.Errorf("TruncateLeft = %q", got)
+	}
+}
+
+// TestTruncateKeepsStyle: "…" is drawn in the style of the text it stands
+// for, and plain text stays plain (components/color).
+func TestTruncateKeepsStyle(t *testing.T) {
+	withWidths(t, 1, 1)
+	for _, c := range []struct {
+		s, want, at string
+		w           int
+		left        bool
+		fg          Color
+	}{
+		{s: Fg(Red).Render("abcdef"), w: 4, want: "abc…", fg: Red},
+		{s: Fg(Blue).Render("ab") + Fg(Red).Render("cdef"), w: 4, want: "abc…", fg: Red},
+		{s: Fg(Red).Render("ab  ") + Fg(Blue).Render("cdef"), w: 4, want: "ab…", fg: Red},
+		{s: Fg(Red).Render("\U00004E2D\U00006587\U00005B57"), w: 4, want: "\U00004E2D…", fg: Red},
+		{s: Fg(Red).Render("/a/b/") + Fg(Blue).Render("c/d"), w: 5, want: "…/c/d", left: true, fg: Red},
+	} {
+		got := Truncate(c.s, c.w)
+		if c.left {
+			got = TruncateLeft(c.s, c.w)
+		}
+		if plain := StripStyles(got); plain != c.want {
+			t.Errorf("%q in %d: %q, want %q", c.s, c.w, plain, c.want)
+		}
+		covCWant(t, fmt.Sprintf("%q in %d", c.s, c.w), []string{got}, "…", c.fg, Color{})
+	}
+	for _, got := range []string{Truncate("plain text here", 8), TruncateLeft("/plain/path/here", 8)} {
+		if strings.Contains(got, "\x1b") {
+			t.Errorf("plain text got a style: %q", got)
+		}
 	}
 }
 
