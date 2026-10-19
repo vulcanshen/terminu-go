@@ -1145,3 +1145,24 @@ func TestCheckboxPopupUnavailable(t *testing.T) {
 	}
 	cursorOn("kappa")
 }
+
+// TestInputErrEmptyNamesValue: ErrEmpty in the error row names the value, as
+// every input error does (components/input/README; sshu SS15).
+func TestInputErrEmptyNamesValue(t *testing.T) {
+	ta := newTestApp(t)
+	notEmpty := func(v string) error {
+		if v == "" {
+			return ErrEmpty
+		}
+		return nil
+	}
+	for _, c := range []struct{ name, want string }{{"Name", "Name can't be empty"}, {"", "Rename can't be empty"}} {
+		ta.Text(TextInput{Title: "Rename", Name: c.name, Old: "assets", Check: notEmpty})
+		ta.settle()
+		ta.press("Backspace", "Enter")
+		if li, ok := ta.topView().(*lineInput); !ok || li.err != c.want {
+			t.Errorf("Name %q: the error row is %q, want %q", c.name, li.err, c.want)
+		}
+		ta.covBCloseAll()
+	}
+}

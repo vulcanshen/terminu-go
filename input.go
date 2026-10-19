@@ -426,7 +426,7 @@ func (li *lineInput) confirm(a *App) tea.Cmd {
 		v := li.ed.value()
 		if li.check != nil {
 			if err := li.check(v); err != nil {
-				li.err = err.Error()
+				li.err = checkMessage(li.name, err)
 				return nil
 			}
 		}
@@ -445,7 +445,7 @@ func (li *lineInput) confirm(a *App) tea.Cmd {
 	}
 	if li.check != nil {
 		if err := li.check(v); err != nil {
-			li.err = err.Error()
+			li.err = checkMessage(li.name, err)
 			return nil
 		}
 	}
@@ -460,5 +460,15 @@ func (li *lineInput) surface() string { return li.title }
 func (li *lineInput) keyRef() []refSection { return nil }
 func (li *lineInput) typing() bool         { return true }
 
-// ErrEmpty is a ready "may not be empty" check.
+// ErrEmpty is a ready "may not be empty" check. The input names the value
+// before it: "Name can't be empty" (components/input/README).
 var ErrEmpty = errors.New("can't be empty")
+
+// checkMessage is a check's error for the error row; ErrEmpty, which cannot
+// know the value, gets its name in front, as the control character error has.
+func checkMessage(name string, err error) string {
+	if err == ErrEmpty {
+		return cmpOr(name, "The value") + " " + err.Error()
+	}
+	return err.Error()
+}
