@@ -75,6 +75,12 @@ type List struct {
 	// EmptyFact and EmptyHint are what an empty list says (layout/screen,
 	// empty states); keys in the hint written in brackets.
 	EmptyFact, EmptyHint string
+	// Location, when set, is the list's location row: where the user is (a
+	// directory, a remote path, the level drilled into), in Lavender on the
+	// panel's first row, cut from the front. It is only shown: the cursor
+	// does not stop on it and the scroll position does not count it
+	// (layout/panel, location row). Whether a list has one is the app's.
+	Location string
 	// OnMove runs when the cursor comes to another row, by a key or not, the
 	// first time included: before the frame is drawn, so a details panel
 	// shows that row in the same frame (layout/panel, details). It does not
@@ -359,16 +365,24 @@ func leadingNumber(s string) (float64, error) {
 	return strconv.ParseFloat(s[:end], 64)
 }
 
-// Draw draws the list in w × h: the filter's typing row, the header, the rows.
+// Draw draws the list in w × h: the location row, the filter's typing row,
+// the header, the rows.
 func (l *List) Draw(w, h int, focused bool) []string {
 	out := make([]string, 0, h)
+	if l.Location != "" {
+		// One cell from the frame on the left, the arrow's room on the right.
+		room := w - 1 - Width(glyphHard)
+		out = append(out, " "+Pad(Fg(Lavender).Render(TruncateLeft(l.Location, room)), w-1))
+	}
 	if l.filter != nil {
 		out = append(out, l.filterRow(w, focused))
 	}
 	if len(l.rows) == 0 {
+		// The location stays: an empty directory is still somewhere.
+		// TODO(tdp G98)
 		rest := EmptyState(w, h-len(out), l.EmptyFact, l.EmptyHint)
 		l.scroll = ""
-		return append(out, rest...)
+		return append(out, rest...)[:max(h, 0)]
 	}
 	arrow := Width(glyphHard)
 	markW := 0

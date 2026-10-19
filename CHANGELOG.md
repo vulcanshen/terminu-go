@@ -75,6 +75,8 @@ Each release names the version of terminu design (tdp) it implements.
 - `List.SetMarked` marks rows by ID, rows the panel filter hides too
 - `List.Select` reports whether the row is shown: after adding an item the app selects it, and the next frame
   scrolls it into sight (Rules K3)
+- `List.Location` is a list's location row, where the user is, in Lavender above its header, cut from the front
+  (layout/panel)
 
 ## v0.1.13 — tdp v0.7.2
 

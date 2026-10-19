@@ -183,6 +183,7 @@ func newInputsScreen(s *showcase) *inputsScreen {
 	}
 	is.fileList.SetRows(fileRows())
 	is.fileList.SortBy(terminu.SortKey{Col: 0})
+	is.fileList.Location = projectDir // where the files are (layout/panel, location row)
 	// This panel's hint lists only what can be pressed now (Rules M6: the
 	// app's choice): View, disabled, leaves it.
 	is.files = &terminu.Panel{Label: "Files", Body: is.fileList, HintPressableOnly: true}

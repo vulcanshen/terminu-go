@@ -1884,6 +1884,55 @@ func TestListMarkAndSelectByID(t *testing.T) {
 	}
 }
 
+// TestListLocationRow: a list's location row is its first row, one cell from
+// the frame, in Lavender, cut from the front, above the filter's typing row
+// and the header; the cursor and the scroll position leave it out
+// (layout/panel, location row).
+func TestListLocationRow(t *testing.T) {
+	l := &List{Columns: []Column{{Title: "Name"}}, Filterable: true, Location: "~/Documents/sideproj/terminu/components/layout"}
+	var rows []Row
+	for i := range 20 {
+		rows = append(rows, Row{ID: fmt.Sprint(i), Cells: []string{fmt.Sprintf("file-%02d.md", i)}})
+	}
+	l.SetRows(rows)
+	lines := l.Draw(30, 8, true)
+	plain := StripStyles(lines[0])
+	if !strings.HasPrefix(plain, " …") || !strings.HasSuffix(strings.TrimRight(plain, " "), "/components/layout") || Width(lines[0]) != 30 {
+		t.Errorf("one cell in, cut from the front, the whole width: %q", plain)
+	}
+	if on := strings.SplitN(Fg(Lavender).Render("x"), "x", 2)[0]; !strings.Contains(lines[0], on+"…") {
+		t.Errorf("Lavender: %q", lines[0])
+	}
+	if h := strings.TrimSpace(StripStyles(lines[1])); h != "NAME" {
+		t.Errorf("the header under it: %q", h)
+	}
+	if got := l.Scroll(); got != "1 of 20" {
+		t.Errorf("the scroll position counts the rows only: %q", got)
+	}
+	l.OpenFilter()
+	lines = l.Draw(30, 8, true)
+	if !strings.Contains(StripStyles(lines[0]), "/components/layout") || !strings.Contains(StripStyles(lines[1]), glyphTyping) {
+		t.Errorf("the typing row under the location: %q %q", StripStyles(lines[0]), StripStyles(lines[1]))
+	}
+	l.ClearFilter()
+	l.Key("k", tea.KeyMsg{})
+	if r, _ := l.Current(); r.ID != "19" {
+		t.Errorf("k from the first row goes round to the last row, not to the location: %q", r.ID)
+	}
+	for _, h := range []int{0, 1, 2} {
+		if got := len(l.Draw(30, h, true)); got != h {
+			t.Errorf("%d rows drawn in %d", got, h)
+		}
+	}
+	l.SetRows(nil)
+	if lines := l.Draw(30, 8, true); len(lines) != 8 || !strings.Contains(StripStyles(lines[0]), "/components/layout") {
+		t.Errorf("an empty list keeps its location (G98, for now): %q", StripStyles(strings.Join(lines, "|")))
+	}
+	if got := len(l.Draw(30, 0, true)); got != 0 {
+		t.Errorf("%d rows drawn in 0", got)
+	}
+}
+
 func TestPanelLoading(t *testing.T) {
 	ta := newTestApp(t)
 	ta.pods.Loading = true
