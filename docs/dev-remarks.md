@@ -74,8 +74,9 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
 
 ## 已知的牆與未做
 
-- **自己開 bubbletea program 的 app 沒有那一層輸出**：只拿零件用、畫面自己管的 app（例：locku 的鎖定畫面），renderer 補的「清到
-  行尾」不會被拿掉。要不要把 `screenOutput` 開放出去，等第一個這樣用的 app 再決定。
+- **畫面自己管的 app 用 `App.Canvas`**：例：locku 的鎖定畫面。整個畫面由 app 畫，lib 不畫畫面、chip 列與 footer，popup 與 toast
+  照樣疊在上面，按鍵先給 `CanvasKey`；它一樣走 `App.Run`，renderer 補的「清到行尾」照樣由 `screenOutput` 拿掉。自己開 bubbletea
+  program 的 app 沒有那一層輸出，`screenOutput` 沒有開放出去。
 - **splash**（Rules S）：機制是 `App.Splash`（`V` 打開、任意鍵關掉、不揭露、只在 panel 上、10ms 的 tick）；`NewSplash` 照 S5 畫：
   讀 app 的 `docs/icon.svg`，一格一個 `nf-fa-square`，下面六列字，揭露動畫全家族一樣。金色的字怎麼分成一個一個字：svg 裡每一個
   XML 註解開始下一個字（`<!-- K -->`），所以 svg 要照 app 名字的順序列字。`Run` 拒絕沒有 splash、或每個 panel 都把 `V` 讓出去的 app。

@@ -55,6 +55,16 @@ type App struct {
 	Global []Action
 	// Status draws the statusbar in w cells (layout/screen); nil for none.
 	Status func(w int) string
+	// Canvas, when set, is a screen the app draws itself, whole: a full-screen
+	// lock screen. The lib draws it instead of its screens, chips and footer,
+	// h lines of w cells, and puts its popups and toasts over it, so confirm,
+	// toast and every kind of input work there as anywhere (Rules E8).
+	Canvas func(w, h int) []string
+	// CanvasKey gets every key on the Canvas while no popup is open and
+	// reports whether it took it. Of what it leaves only Ctrl-C does
+	// something, the quit flow (Rules K9: App.Quit decides); no Space menu,
+	// no ?, no q: the screen is the app's.
+	CanvasKey func(key string, msg tea.KeyMsg) (bool, tea.Cmd)
 	// HideSecretsInPreview is the user's setting hide_secrets_in_preview,
 	// read from the app's settings file (tdp E3): a file preview shows only
 	// the first line of a private key, and nothing of a file only its owner
@@ -873,6 +883,17 @@ func (a *App) handleKey(msg tea.KeyMsg) tea.Cmd {
 		}
 		return a.animate()
 	}
+	if a.Canvas != nil && a.top() == nil {
+		if a.CanvasKey != nil {
+			if done, cmd := a.CanvasKey(key, msg); done {
+				return cmd
+			}
+		}
+		if key == "Ctrl-C" {
+			return a.startQuit()
+		}
+		return nil
+	}
 	if key == "Ctrl-C" {
 		return a.startQuit()
 	}
@@ -1174,6 +1195,9 @@ func (a *App) Frame() []string {
 // base is the screen under the popups: the top row, the panels, the footer.
 func (a *App) base() []string {
 	w, h := a.w, a.h
+	if a.Canvas != nil {
+		return Pad2(a.Canvas(w, h), w, h)
+	}
 	lines := make([]string, 0, h)
 	multi := len(a.screens) > 1
 	switch {

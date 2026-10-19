@@ -375,3 +375,83 @@ func TestCloseAll(t *testing.T) {
 		t.Errorf("%d popups left, ran %v", len(ta.stack), ta.ran)
 	}
 }
+
+// TestCanvas: a screen the app draws itself, whole, has the lib's popups and
+// toasts over it and no footer; its keys are the app's, the screens under it
+// get none, and only Ctrl-C is left to the quit flow (Rules E8, K9; locku
+// LK1).
+func TestCanvas(t *testing.T) {
+	ta := newTestApp(t)
+	ta.Quit = &Ask{Question: "Quit test?", Verb: "quit"}
+	var keys []string
+	type tick struct{}
+	ta.Canvas = func(w, h int) []string { return []string{"", Center("LOCKED", w)} }
+	ta.CanvasKey = func(key string, _ tea.KeyMsg) (bool, tea.Cmd) {
+		switch key {
+		case "Ctrl-C", "q", "x":
+			return false, nil // left to the lib
+		case "Enter":
+			keys = append(keys, key)
+			return true, ta.Password(PasswordInput{Title: "Unlock", Unlock: true, MaxLen: 4, Done: func(v string, _ bool) tea.Cmd {
+				keys = append(keys, "pin "+v)
+				return nil
+			}})
+		}
+		keys = append(keys, key)
+		return true, func() tea.Msg { return tick{} }
+	}
+	ta.resize(40, 10)
+	lines := ta.Frame()
+	if len(lines) != 10 || !strings.Contains(StripStyles(lines[1]), "LOCKED") || strings.Contains(ta.screenText(), "quit") {
+		t.Fatalf("the canvas:\n%s", ta.screenText())
+	}
+	for i, l := range lines {
+		if Width(l) != 40 {
+			t.Errorf("row %d is %d wide", i, Width(l))
+		}
+	}
+	if !batchHas(ta.press("t"), tick{}) {
+		t.Error("the command of a key the canvas took did not come back")
+	}
+	ta.press("q", "x", "?", "Space")
+	if ta.quitting || ta.top() != nil || len(ta.ran) != 0 {
+		t.Fatalf("a key the canvas left did something: quitting %v, %T open, ran %v", ta.quitting, ta.topView(), ta.ran)
+	}
+	ta.press("Enter")
+	ta.settle()
+	if _, ok := ta.topView().(*lineInput); !ok {
+		t.Fatalf("no PIN popup over the canvas: %T", ta.topView())
+	}
+	ta.press("1", "2", "3", "4", "Enter")
+	ta.settle()
+	if !slices.Equal(keys, []string{"t", "?", "Space", "Enter", "pin 1234"}) || ta.top() != nil {
+		t.Errorf("the canvas and its PIN popup got %v", keys)
+	}
+	ta.Toast(Info, "Unlocked")
+	ta.settle()
+	if !strings.Contains(ta.screenText(), "Unlocked") {
+		t.Errorf("no toast over the canvas:\n%s", ta.screenText())
+	}
+	ta.press("Ctrl-C")
+	if !ta.quitting {
+		t.Error("Ctrl-C the canvas left: no quit flow")
+	}
+}
+
+// batchHas reports whether cmd, or a command it batches, gives msg.
+func batchHas(cmd tea.Cmd, msg tea.Msg) bool {
+	if cmd == nil {
+		return false
+	}
+	switch got := cmd().(type) {
+	case tea.BatchMsg:
+		for _, c := range got {
+			if batchHas(c, msg) {
+				return true
+			}
+		}
+		return false
+	default:
+		return got == msg
+	}
+}
