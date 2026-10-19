@@ -100,9 +100,18 @@ func covFRow(lines []string, s string) string {
 // covFValue is the value cell of a one-line input popup: its fifth row
 // without the frame, the cell of padding on each side and the angle before
 // the value (the unlock look has none).
+// covFTyping is the typing row of the top one-line input: under its prompt
+// and a blank row, or under two blank rows in the unlock look.
+func covFTyping(ta *testApp) int {
+	if covFLine(ta).unlock {
+		return 3
+	}
+	return 4
+}
+
 func covFValue(ta *testApp) string {
 	lines, _ := covFDraw(ta)
-	row := StripStyles(lines[4])
+	row := StripStyles(lines[covFTyping(ta)])
 	return strings.TrimPrefix(strings.TrimSuffix(strings.TrimPrefix(row, "┃ "), " ┃"), glyphTyping+" ")
 }
 
@@ -861,7 +870,7 @@ func TestPasswordMasks(t *testing.T) {
 	l3, r3 := pads()
 	lines, _ = covFDraw(ta)
 	// The cursor after them counts: a space and a block, blank without styles.
-	if v := covFValue(ta); strings.TrimSpace(v) != "● ● ●" || l3-(r3-2) > 1 || (r3-2)-l3 > 1 || !strings.Contains(lines[4], Fg(Lavender).Render("● ● ● ")) {
+	if v := covFValue(ta); strings.TrimSpace(v) != "● ● ●" || l3-(r3-2) > 1 || (r3-2)-l3 > 1 || !strings.Contains(lines[covFTyping(ta)], Fg(Lavender).Render("● ● ● ")) {
 		t.Errorf("unlock: %q", v)
 	}
 	ta.press("4")
@@ -871,8 +880,8 @@ func TestPasswordMasks(t *testing.T) {
 	ta.press("Esc")
 	ta.Password(PasswordInput{Title: "PIN", Unlock: true, MaxLen: 12, Set: true})
 	ta.settle()
-	if lines, _ := covFDraw(ta); !strings.Contains(lines[4], Style{Fg: Base, Bg: Lavender}.Render("●")+Fg(Overlay0).Render(" ● ● ● ● ● ● ●")) {
-		t.Errorf("unlock, set: eight ● a cell apart, the cursor on the first: %q", StripStyles(lines[4]))
+	if lines, _ := covFDraw(ta); !strings.Contains(lines[covFTyping(ta)], Style{Fg: Base, Bg: Lavender}.Render("●")+Fg(Overlay0).Render(" ● ● ● ● ● ● ●")) {
+		t.Errorf("unlock, set: eight ● a cell apart, the cursor on the first: %q", StripStyles(lines[covFTyping(ta)]))
 	}
 	ta.press("Esc")
 
@@ -907,7 +916,7 @@ func TestUnlockCursor(t *testing.T) {
 	block := Style{Fg: Base, Bg: Lavender}
 	row := func() (string, string) {
 		lines, _ := covFDraw(ta)
-		return lines[4], covFValue(ta)
+		return lines[covFTyping(ta)], covFValue(ta)
 	}
 	if styled, v := row(); !strings.Contains(styled, block.Render(" ")) || strings.TrimSpace(v) != "" {
 		t.Errorf("nothing typed: the cursor alone: %q", styled)

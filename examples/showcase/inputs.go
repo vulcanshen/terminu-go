@@ -68,6 +68,10 @@ func newInputsScreen(s *showcase) *inputsScreen {
 		downloads      = filepath.Join(home, "Downloads")
 		host           = "web-01"
 		identity       = filepath.Join(sshDir, "id_ed25519")
+		archive        = ""
+		refresh        = ""
+		wrongPIN       = 0
+		pausedUntil    time.Time
 	)
 	disabled := func() bool { return is.disabled }
 	is.values = &terminu.Values{Header: [2]string{"Input", "Value"}}
@@ -95,9 +99,49 @@ func newInputsScreen(s *showcase) *inputsScreen {
 			return a.Password(terminu.PasswordInput{Title: "Password", Glyph: glyphKey, Prompt: "The password for web-01", Verb: "save", Set: password,
 				Done: func(v string, clear bool) tea.Cmd { password = !clear; return nil }})
 		}},
+		// The unlock look has no prompt: its title says what to type.
 		{Label: "PIN", Value: func() string { return dots(pin != "") }, Empty: "not set", Edit: func() tea.Cmd {
-			return a.Password(terminu.PasswordInput{Title: "PIN", Glyph: glyphLock, Prompt: "Up to 12 digits", Verb: "save", Set: pin != "", Unlock: true, MaxLen: 12,
+			return a.Password(terminu.PasswordInput{Title: "New PIN", Glyph: glyphLock, Verb: "save", Set: pin != "", Unlock: true, MaxLen: 12,
 				Done: func(v string, clear bool) tea.Cmd { pin = v; return nil }})
+		}},
+		// Three wrong PINs pause it for 30 seconds, counted down on the error
+		// row; the PIN is 1234.
+		{Label: "Unlock", Value: func() string { return "the PIN is 1234" }, Edit: func() tea.Cmd {
+			return a.Password(terminu.PasswordInput{Title: "Unlock", Glyph: glyphLock, Verb: "unlock", Unlock: true, MaxLen: 4,
+				Check: func(v string) error {
+					if v == "1234" {
+						wrongPIN = 0
+						return nil
+					}
+					if wrongPIN++; wrongPIN%3 == 0 {
+						pausedUntil = time.Now().Add(30 * time.Second)
+					}
+					return fmt.Errorf("Wrong PIN")
+				},
+				PausedUntil: func() time.Time { return pausedUntil },
+				Done:        func(string, bool) tea.Cmd { return a.Toast(terminu.Success, "Unlocked") }})
+		}},
+		// A new thing with a name the app proposes: Enter takes it.
+		{Label: "Archive", Value: func() string { return archive }, Empty: "not packed", Edit: func() tea.Cmd {
+			return a.Text(terminu.TextInput{Title: "Pack", Name: "Name", Glyph: glyphPencil, Prompt: "The archive to pack the files into", Verb: "pack",
+				Suggest: "assets.zip",
+				Check: func(v string) error {
+					if v == "" {
+						return terminu.ErrEmpty
+					}
+					return nil
+				},
+				Done: func(v string) tea.Cmd { archive = v; return nil }})
+		}},
+		// A number with a unit that may be empty: empty means the default.
+		{Label: "Refresh", Value: func() string {
+			if refresh == "" {
+				return ""
+			}
+			return refresh + " seconds"
+		}, Empty: "30 seconds (default)", Edit: func() tea.Cmd {
+			return a.Number(terminu.NumberInput{Title: "Refresh", Glyph: glyphTune, Name: "Refresh", Prompt: "Seconds between runs while nothing happens, 1-60",
+				Verb: "save", Old: refresh, Min: 1, Max: 60, Optional: true, Unit: "seconds", Done: func(v string) tea.Cmd { refresh = v; return nil }})
 		}},
 		{Label: "Port", Value: func() string { return port }, Edit: func() tea.Cmd {
 			return a.Number(terminu.NumberInput{Title: "Port", Glyph: glyphLan, Name: "Port", Prompt: "The SSH port, 1-65535", Verb: "save",

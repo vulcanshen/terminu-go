@@ -983,7 +983,7 @@ func TestOldPasswordDotsCursor(t *testing.T) {
 	ta.Password(PasswordInput{Title: "PIN", Unlock: true, MaxLen: 4, Set: true})
 	ta.settle()
 	lines, _ = covFDraw(ta)
-	row := StripStyles(lines[4])
+	row := StripStyles(lines[covFTyping(ta)])
 	inner := strings.TrimSuffix(strings.TrimPrefix(row, "┃"), "┃")
 	dots := strings.TrimSpace(inner)
 	left := len(inner) - len(strings.TrimLeft(inner, " "))
@@ -991,8 +991,8 @@ func TestOldPasswordDotsCursor(t *testing.T) {
 	if dots != "● ● ● ● ● ● ● ●" || Width(dots) != 15 || left-right > 1 || right-left > 1 {
 		t.Errorf("unlock: %q (left %d, right %d)", row, left, right)
 	}
-	if !strings.Contains(lines[4], cursor.Render("●")+Fg(Overlay0).Render(" ● ● ● ● ● ● ●")) {
-		t.Errorf("unlock: the cursor is not on the first dot: %q", lines[4])
+	if !strings.Contains(lines[covFTyping(ta)], cursor.Render("●")+Fg(Overlay0).Render(" ● ● ● ● ● ● ●")) {
+		t.Errorf("unlock: the cursor is not on the first dot: %q", lines[covFTyping(ta)])
 	}
 }
 
@@ -1240,5 +1240,239 @@ func TestInputSteps(t *testing.T) {
 	}
 	if !slices.Equal(ta.ran, []string{"cancel New PIN"}) {
 		t.Errorf("ran %v: only the step left with Esc is cancelled", ta.ran)
+	}
+}
+
+// TestInputSuggestedValue: with no old value the app may propose one, offered
+// in grey as the old value is; Enter with nothing touched takes it, checked
+// and written back (components/input/README, a suggested value).
+func TestInputSuggestedValue(t *testing.T) {
+	ta := newTestApp(t)
+	got, calls := "", 0
+	done := func(v string) tea.Cmd { got, calls = v, calls+1; return nil }
+	ta.Text(TextInput{Title: "Pack", Name: "Name", Suggest: "assets.zip", Check: func(v string) error {
+		if v == "" {
+			return ErrEmpty
+		}
+		return nil
+	}, Done: done})
+	ta.settle()
+	if v := covFValue(ta); !strings.HasPrefix(strings.TrimSpace(v), "assets.zip") {
+		t.Errorf("offered in grey: %q", v)
+	}
+	if h := strings.Join(covDHintKeys(ta, ta.top()), " "); h != "Enter Tab Backspace Esc" {
+		t.Errorf("the hint of a grey suggestion: %q", h)
+	}
+	ta.press("Enter")
+	if got != "assets.zip" || calls != 1 || ta.top() != nil {
+		t.Errorf("Enter takes it: %q (%d), open %v", got, calls, ta.top() != nil)
+	}
+	ta.Text(TextInput{Title: "Pack", Suggest: "assets.zip", Done: done})
+	ta.settle()
+	ta.press("Tab", "Backspace", "Backspace", "Backspace", "t", "a", "r", "Enter")
+	if got != "assets.tar" {
+		t.Errorf("Tab edits it: %q", got)
+	}
+	ta.Text(TextInput{Title: "Pack", Name: "Name", Suggest: "assets.zip", Check: func(v string) error {
+		if v == "" {
+			return ErrEmpty
+		}
+		return nil
+	}, Done: done})
+	ta.settle()
+	ta.press("Backspace", "Enter")
+	if li, ok := ta.topView().(*lineInput); !ok || li.err != "Name can't be empty" || calls != 2 {
+		t.Errorf("thrown away with Backspace, empty is checked: %v %d", ok, calls)
+	}
+	ta.covBCloseAll()
+	ta.Text(TextInput{Title: "Pack", Suggest: "assets.zip", Check: func(v string) error { return errors.New("assets.zip exists") }, Done: done})
+	ta.settle()
+	ta.press("Enter")
+	if li, ok := ta.topView().(*lineInput); !ok || li.err != "assets.zip exists" || calls != 2 {
+		t.Error("the suggestion is checked as any value")
+	}
+	ta.covBCloseAll()
+	// An old value wins: the two never show at once.
+	ta.Text(TextInput{Title: "Rename", Old: "notes.md", Suggest: "assets.zip", Done: done})
+	ta.settle()
+	if v := covFValue(ta); !strings.HasPrefix(strings.TrimSpace(v), "notes.md") {
+		t.Errorf("the old value is offered: %q", v)
+	}
+	ta.press("Enter")
+	if calls != 2 || ta.top() != nil {
+		t.Error("the old value untouched: no change")
+	}
+	ta.Number(NumberInput{Title: "Port", Suggest: "22", Min: 1, Max: 65535, Done: done})
+	ta.settle()
+	ta.press("Enter")
+	if got != "22" || calls != 3 {
+		t.Errorf("a number takes its suggestion too: %q", got)
+	}
+}
+
+// TestInputGreyTakesABurst: a burst of characters typed on a grey suggestion
+// is typed whole (HU10).
+func TestInputGreyTakesABurst(t *testing.T) {
+	ta := newTestApp(t)
+	got := ""
+	ta.Text(TextInput{Title: "Rename", Old: "assets", Done: func(v string) tea.Cmd { got = v; return nil }})
+	ta.settle()
+	ta.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("notes.md")})
+	ta.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("x"), Paste: true})
+	ta.press("Enter")
+	if got != "notes.mdx" {
+		t.Errorf("typed whole: %q", got)
+	}
+}
+
+// TestNumberOptional: a number that may be empty is not checked against its
+// range when empty, and is written back empty (components/input/number).
+func TestNumberOptional(t *testing.T) {
+	ta := newTestApp(t)
+	got, calls := "x", 0
+	ta.Number(NumberInput{Title: "Timeout", Old: "30", Min: 1, Max: 60, Optional: true,
+		Done: func(v string) tea.Cmd { got, calls = v, calls+1; return nil }})
+	ta.settle()
+	ta.press("Backspace", "Enter")
+	if got != "" || calls != 1 || ta.top() != nil {
+		t.Errorf("empty, written back: %q (%d)", got, calls)
+	}
+	ta.Number(NumberInput{Title: "Timeout", Min: 1, Max: 60, Optional: true})
+	ta.settle()
+	ta.press("9", "9", "Enter")
+	if li, ok := ta.topView().(*lineInput); !ok || li.err != "Timeout must be 1-60" {
+		t.Error("a value is still checked against the range")
+	}
+}
+
+// TestNumberUnit: a number's unit is a row of its own under the value, the
+// whole word, in grey, under the value's first cell, counted in the width
+// (components/input/number).
+func TestNumberUnit(t *testing.T) {
+	ta := newTestApp(t)
+	ta.Number(NumberInput{Title: "Refresh", Prompt: "1-60", Min: 1, Max: 60, Unit: "seconds between two runs of the job"})
+	ta.settle()
+	ta.press("1", "0")
+	lines, _ := covFDraw(ta)
+	value, unit := StripStyles(lines[4]), StripStyles(lines[5])
+	at := Width(value[:strings.Index(value, "10")])
+	if strings.Trim(unit, "┃ ") != "seconds between two runs of the job" || Width(unit[:strings.Index(unit, "seconds")]) != at {
+		t.Errorf("under the value first cell: %q / %q", value, unit)
+	}
+	if !strings.Contains(lines[5], Fg(Overlay0).Render("seconds between two runs of the job")) {
+		t.Errorf("in Overlay0: %q", lines[5])
+	}
+	if l := ta.top(); l.w != Width("seconds between two runs of the job")+angleWidth()+1+4 { // the cursor after it too
+		t.Errorf("the unit counts in the width: %d", l.w)
+	}
+	if li := covFLine(ta); !covFBlank(StripStyles(lines[6])) || len(lines) != 10 || li.err != "" {
+		t.Errorf("a blank row and the error row follow: %d rows", len(lines))
+	}
+	ta.press("Backspace", "Backspace", "7", "0", "Enter")
+	if lines, _ = covFDraw(ta); !strings.Contains(StripStyles(lines[7]), "Refresh must be 1-60") {
+		t.Errorf("the error row under them: %q", StripStyles(lines[7]))
+	}
+}
+
+// TestPasswordUnlockRows: the unlock look has no prompt row: two blank rows,
+// the typing row in the middle, a blank row, the error row; 7 rows with the
+// frame (components/input/password).
+func TestPasswordUnlockRows(t *testing.T) {
+	ta := newTestApp(t)
+	ta.Password(PasswordInput{Title: "Unlock", Prompt: "never drawn", Unlock: true, MaxLen: 4,
+		Check: func(string) error { return errors.New("Wrong PIN") }})
+	ta.settle()
+	ta.press("1", "2")
+	lines, _ := covFDraw(ta)
+	if len(lines) != 7 || ta.top().h != 7 {
+		t.Fatalf("7 rows: %d", len(lines))
+	}
+	for _, i := range []int{1, 2, 4, 5} {
+		if !covFBlank(StripStyles(lines[i])) {
+			t.Errorf("row %d is not blank: %q", i, StripStyles(lines[i]))
+		}
+	}
+	if !strings.Contains(StripStyles(lines[3]), "● ●") || strings.Contains(strings.Join(lines, ""), "never drawn") {
+		t.Errorf("the typing row in the middle, no prompt: %q", StripStyles(lines[3]))
+	}
+	ta.press("3", "4", "Enter")
+	if lines, _ = covFDraw(ta); !strings.Contains(StripStyles(lines[5]), "Wrong PIN") {
+		t.Errorf("the error row last: %q", StripStyles(lines[5]))
+	}
+	// Empty it opened, empty it closes: nothing written.
+	ta.covBCloseAll()
+	calls := 0
+	ta.Password(PasswordInput{Title: "Passphrase", Done: func(string, bool) tea.Cmd { calls++; return nil }})
+	ta.settle()
+	ta.press("Enter")
+	if calls != 0 || ta.top() != nil {
+		t.Errorf("no password, none typed: written (%d) or open", calls)
+	}
+}
+
+// TestPasswordPause: while the app pauses it, the error row counts down each
+// second and every key but Esc is swallowed (components/layout/popup, the
+// error row).
+func TestPasswordPause(t *testing.T) {
+	ta := newTestApp(t)
+	wrong := 0
+	var until time.Time
+	ta.Password(PasswordInput{Title: "Unlock", Unlock: true, MaxLen: 4,
+		Check: func(v string) error {
+			if v == "1234" {
+				return nil
+			}
+			if wrong++; wrong == 3 {
+				until = time.Now().Add(2500 * time.Millisecond)
+			}
+			return errors.New("Wrong PIN")
+		},
+		PausedUntil: func() time.Time { return until }})
+	ta.settle()
+	li := covFLine(ta)
+	for range 2 {
+		ta.press("9", "Enter", "Backspace")
+		if li.err != "Wrong PIN" {
+			t.Fatalf("not paused yet: %q", li.err)
+		}
+	}
+	cmd := li.paused()
+	if cmd != nil {
+		t.Error("nothing to count down yet")
+	}
+	ta.press("9", "Enter")
+	if li.err != "try again in 3 s" {
+		t.Errorf("the count down on the error row: %q", li.err)
+	}
+	ta.press("Backspace", "1", "2", "3", "4", "Enter")
+	if li.ed.value() != "9" || ta.topView() != li {
+		t.Errorf("keys swallowed while paused: %q", li.ed.value())
+	}
+	li.pause = time.Now().Add(1100 * time.Millisecond)
+	if li.countDown() == nil || li.err != "try again in 2 s" {
+		t.Errorf("each second: %q", li.err)
+	}
+	li.pause = time.Now().Add(-time.Millisecond)
+	if _, cmd := ta.Update(pauseTick{li}); li.err != "" || cmd != nil && fmt.Sprint(cmd()) != "{}" && cmd() != nil {
+		t.Errorf("over: the row cleared: %q", li.err)
+	}
+	if li.countDown() != nil {
+		t.Error("over: no more ticks")
+	}
+	ta.press("Backspace", "1", "2", "3", "4")
+	if li.ed.value() != "1234" {
+		t.Errorf("keys again after the pause: %q", li.ed.value())
+	}
+	li.pause = time.Now().Add(time.Hour)
+	ta.press("Esc")
+	if ta.top() != nil && ta.topView() == li {
+		t.Error("Esc still closes it while paused")
+	}
+	// Opened while paused, it says so at once.
+	ta.settle()
+	ta.Password(PasswordInput{Title: "Unlock", Unlock: true, PausedUntil: func() time.Time { return time.Now().Add(10 * time.Second) }})
+	ta.settle()
+	if covFLine(ta).err != "try again in 10 s" {
+		t.Errorf("paused from the start: %q", covFLine(ta).err)
 	}
 }

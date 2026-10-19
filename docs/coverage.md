@@ -66,7 +66,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | K3 | `Enter` 不移動 focus（表單送出失敗跳到第一個問題欄位是寫明的例外） | D「Form: New host」；P `[3] SETTINGS` | `TestK3EnterKeepsFocus` |
 | K3 | 唯一可以用 `Enter` 換 panel 的是明細：列出項目的 panel 上，`Enter` 可以把 focus 移到顯示那一項明細的 panel；要不要、在哪些項目上由 app 決定。lib：只有 `Enter`、而且 panel 的 `Details` 是同一個畫面的另一個 panel 才收 | K `[1] KINDS` 在 namespaced 的種類上 `Enter` 進 `[2]`；cluster 層級的（`nodes`、`namespaces`…）不進去 | `TestK3EnterToDetails`、`TestK3ToDetailsOnlyEnter` |
 | K3 | 新增一項之後 cursor 移到新的那一項、捲到看得到（lib：`List.Select`，回報那一列看不看得到） | P `[1] PODS` 的 `[n]ew` | `TestListMarkAndSelectByID` |
-| K3 | input popup：確定寫回並關；不合格不寫回、錯誤列、不關；值沒變不寫回直接關 | I 的 `Port`（打 `0`） | `TestK3InputConfirm`、`TestK3InputInvalidStays`、`TestK3InputUnchangedNoWrite`、`TestTextareaCheck`（textarea 也一樣：`Textarea.Check`） |
+| K3 | input popup：確定寫回並關；不合格不寫回、錯誤列、不關；值跟打開時一樣、而且打開時就合格才不寫回直接關：打開時是空的、又不能空的，什麼都沒打（或打了又刪光）按 `Enter` 照不合格處理；有建議值時用建議值 | I 的 `Port`（打 `0`）；I 的 `Archive` 按 `Backspace` 再 `Enter` | `TestK3InputConfirm`、`TestK3InputInvalidStays`、`TestK3InputUnchangedNoWrite`、`TestTextareaCheck`（textarea 也一樣：`Textarea.Check`） |
 | K3 | 多行文字：寫入狀態 `Enter` 換行，離開寫入後才確定 | I 的 `Comment` | `TestTextarea` |
 | K3 | 打字列的 `Enter` 把 focus 移到清單 cursor 那一項、不執行；沒有結果不作用 | I `[/] Find` | `TestFinderTypingEnter` |
 | K3 | 其他部分做最直觀的事（月份 → 日曆、R → 選值清單） | I 的 `Meeting`、`Background`（color） | `TestDatetimeEnterMonth`、`TestColorPickerEnterChannel` |
@@ -312,6 +312,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | popup §內容放不下時 | 只有內容區捲，留白、錯誤列、上下框固定；跟著 focus 捲最少的量；`N of M`（有 cursor）／`N-M of T`（note），層色；有游標的（textarea、選取模式裡的 viewer）也寫 `N of M`，以行為單位；表單以欄位為單位、只算欄位，focus 在錯誤列或按鈕上時不寫 | D「Menu: long」、「Note viewer」、「Form: long」 | `TestPopupScroll`、`TestPopupScrollPosition`、`TestFormScrollPosition`、`TestInputShortScreenKeepsTypingRow`（輸入框太矮時打字列與錯誤列留著）、`TestAppPopupScroll`（app 自己的 popup：body 的 `Scroll()`） |
 | popup §錯誤列 | 內容區下面、空一列；只有值可能不合格的預留；只放值的錯；Red、左緣對齊（內容置中時也置中）；框與標題維持層色 | I 的 `Port` | `TestErrorRow` |
 | popup §錯誤列 | 只佔一列、截斷加 `…`；表單上可 focus、`Enter` 開完整訊息；input popup 裡不拿 focus；只在檢查時改 | D「Form: New host」送出失敗；I 的 `Port` | `TestErrorRowTruncate`、`TestErrorRowChangesOnCheckOnly` |
+| popup §錯誤列 | 值錯太多次而暫停收值時倒數寫在錯誤列：Red、每秒更新（`try again in 27 s`）、倒數完清掉；暫停期間除了 `Esc` 都吞掉（lib：`PasswordInput.PausedUntil`） | I 的 `Unlock` 連錯三次 | `TestPasswordPause` |
 | popup §錯誤列 | 動作失敗開 error popup 蓋在上面，關掉回原本的 popup、值都在 | D「Form: save fails」 | `TestActionFailureErrorPopup`、`TestCommitFailureKeepsPopup`（input 寫回失敗：`Commit`） |
 
 ## dialog/form
@@ -412,7 +413,8 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | input §單行骨架 | 說明列一句話 Overlay0、空一列；打字列最前面 `nf-fa-angle_right`（層色，離框一格）、空一格接值；值 Lavender、游標 Lavender 底 Base 字；錯誤列；hint `Enter:<動詞> Esc:cancel`（列出全部操作）；寬度：自由打字用上限、有長度上限照內容 | I 的 `Name`、`Timeout`、`Password` | `TestSingleLineSkeleton`、`TestInputAngle` |
 | input §值比框長時 | 顯示游標附近那段、截掉的那邊補 `…`；游標一定看得到、只捲剛好的量；照顯示寬度、一個字不切半（紅色 `\n` 也是） | I 的 `Name`（打一串長的），`Home`／`End` | `TestInputLongValue` |
 | input §編輯鍵 | 字元、`Space` 插入；`←\|→`；`Home\|End`；`Backspace`、`Delete`；一個字是看起來的一個字；不收 `Ctrl-U`、`Ctrl-W`；其他 `Ctrl-`、`Alt-` 不作用不打字 | I 的 `Name`（打中文、emoji、組合字元） | `TestInputEditKeys`、`TestInputGraphemes`、`TestInputCtrlAltIgnored` |
-| input §灰字提議 | 只用在單行（text、number）；打開是空的、舊值灰字從游標那一格開始（游標壓在第一個字上，Lavender 底、Base 字）；`Tab` 收進來；直接打字換新值（刪光再出現）；空的時候 `Backspace` 丟掉舊值、`Enter` 存空；什麼都沒碰 `Enter` 不改；hint 加 `Tab:edit Backspace:clear`；只有舊值這一種來源 | I 的 `Name` | `TestInputSuggestion`、`TestSuggestionUnderCursor` |
+| input §灰字提議 | 只用在單行（text、number）；打開是空的、舊值灰字從游標那一格開始（游標壓在第一個字上，Lavender 底、Base 字）；`Tab` 收進來；直接打字換新值（刪光再出現）；空的時候 `Backspace` 丟掉舊值、`Enter` 存空；什麼都沒碰 `Enter` 不改；hint 加 `Tab:edit Backspace:clear`；兩種來源：舊值與沒有舊值時 app 給的建議值，不同時出現 | I 的 `Name` | `TestInputSuggestion`、`TestSuggestionUnderCursor`、`TestInputGreyTakesABurst`（一次送進一整串字照樣打進去） |
+| input §新建一個值：建議值 | 沒有舊值、app 有合理的預設時用灰字提議（text、number）；長相、`Tab`、打字、`Backspace`、hint 跟舊值一樣；什麼都沒碰按 `Enter` 用建議值、照常檢查、寫回；不能空又有建議值時 `Enter` 用建議值，`Backspace` 丟掉後再 `Enter` 才是「不能空」（lib：`TextInput.Suggest`、`NumberInput.Suggest`） | I 的 `Archive`（`assets.zip`） | `TestInputSuggestedValue` |
 | input §不放 placeholder | input popup 裡不放 placeholder | I 每一列 | `TestInputNoPlaceholder` |
 | input §貼上的控制字元 | 一行的值：貼上的控制字元一個都不丟、畫成紅字不切開：`\r` `\n` `\t` 寫名字（2 格）、其他 C0、DEL、C1 寫 `\xNN`（4 格）；`\r\n` 是兩個；灰列裡跟著灰；游標停在上面時整個控制字元 Red 底、Base 字（textarea 的寫與移也一樣）；`Backspace` 整個刪；遮罩照遮 | I 的 `Name` 貼上多行、貼上帶顏色的字，`←` 移到控制字元上 | `TestPasteMarkers`、`TestPasteControlChars`、`TestCursorOnControlChar` |
 | input §貼上的控制字元 | 不是打字來的值走同一個過濾；會被拿去用的在 `Enter` 時擋、錯誤列點名值（`Name can't have control characters`）；在去空白字元之前檢查；搜尋與篩選的打字列只畫不擋 | I 的 `Name`；I `[/] Find` 貼上 | `TestPasteBlockedOnEnter`、`TestPasteSearchNotBlocked`、`TestSearchInputNotBlocked`（只拿來搜尋的 text input：`TextInput.Search`） |
@@ -426,10 +428,13 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | text | 單行骨架、編輯鍵、提議、貼上照 README；確定去空白字元 | I 的 `Name`、`Path` | `TestTextInput` |
 | password §長相 | 兩個方案：一般（每字一個 `•` 靠左）、解鎖（每字一顆 `●` 間隔一格、置中往兩側長）；遮罩 Lavender；舊密碼 8 個灰點用同方案的字；放不下照「值比框長時」；有長度上限照內容寬 | I 的 `Password`（一般）、`PIN`（解鎖，12 碼，框 43 格） | `TestPasswordMasks`、`TestPasswordUnlockWidth` |
 | password §解鎖的游標 | 游標在下一顆 `●` 會出現的位置；打滿最後一碼時停在最後一顆上（Lavender 底、Base 的 `●`）；置中連游標一起算（n 碼 2n + 1 格、打滿 2N − 1 格）；解鎖沒有 `nf-fa-angle_right` | I 的 `PIN` 打幾碼、打滿 12 碼 | `TestUnlockCursor` |
+| password §長相 | 解鎖沒有說明列，要輸入什麼由標題講；框裡兩列空白、打字列、一列空白、錯誤列，連框 7 列，打字列在正中間 | I 的 `PIN`（`NEW PIN`）、`Unlock` | `TestPasswordUnlockRows` |
 | password §狀態 | 打開是空的、有舊密碼畫 8 個灰點，游標壓在第一顆上（解鎖樣式 8 顆間隔一格、置中、15 格）；什麼都沒打 `Enter`／`Esc` 保留；打字換新的；沒有 `Tab` | I 的 `Password`（已設）、`PIN`（已設） | `TestPasswordExisting`、`TestOldPasswordDotsCursor` |
 | password §按鍵 | 貼上照 README（照遮）；`Backspace` 一次清全部（打的 → 回到灰點；空的 → 清掉舊密碼、`Enter` 存成沒有）；hint 加 `Backspace:clear`；只接在尾端，`←→` `Home` `End` `Delete` 沒作用 | 同上 | `TestPasswordBackspaceClears`、`TestPasswordAppendOnly` |
 | password §值 | 不去空白字元；表單與 panel 上設了是 8 個 `•`（Text）、沒設照空值 | I `[1] INPUTS` 的兩列 | `TestPasswordDisplay` |
 | number | 說明列寫範圍；範圍已知寬度確定；打字只收可能的字（負數 `-`、小數 `.`）、貼上只留會收的；不做 `↑↓` 加減；範圍在 `Enter` 檢查 | I 的 `Port`（1-65535）、`Ratio`（小數、可負） | `TestNumberFilter`、`TestNumberRange` |
+| number §值 | 欄位可以空時空的值不做範圍檢查、存成空的，空著代表什麼由 app 用灰字寫；不能空時空的值照錯誤處理（lib：`NumberInput.Optional`；不能空的錯誤是 `ErrEmpty`：`Port can't be empty`） | I 的 `Refresh`（`30 seconds (default)`） | `TestNumberOptional`、`TestK3InputUnchangedNoWrite` |
+| number §長相 | 單位：打字列下面一列單位列，完整的字、Overlay0、跟值的第一格對齊、不跟著打的字移動；寬度算進去；表單與 panel 上由 app 寫成 `10 seconds`（lib：`NumberInput.Unit`） | I 的 `Refresh` | `TestNumberUnit` |
 | textarea §長相 | 太長自動折行（在空白處斷，見 components §折行）、不左右捲；行號每行第一列、靠右、寬度 max(2, 最大行號位數)、後空一格、折下來的空白；行號 Overlay0、游標那行 Text；寬度與高度都用上限、內容在框裡捲，放不下時捲動位置寫游標的行 `N of M`；值裡的 `\t` 畫成 `input_tab_width` 格 | I 的 `Comment` | `TestTextareaWrapAndNumbers`、`TestTextareaGutterTwoDigits` |
 | textarea §按鍵 | 寫（輸入態、`Enter` 換行、`Tab` 插 `input_tab_width` 個空白（設定、預設 4）、hint `Esc:move`、游標 Lavender 一格）／移（游標層色一格；`Esc` 進來、`i` `a` `o` 回寫、`Enter` 確定、hint `Enter:save i:write Esc:cancel`）；移裡 `Esc` 關（改過先 confirm）；打開在「寫」、舊值帶入、游標在最後、沒有灰字提議 | 同上（有舊值） | `TestTextarea` |
 | textarea §按鍵 | 寫的編輯鍵加 `↑↓`（照畫出的列）、`←→` 跨行、行首 `Backspace` 合併、`Home\|End` 到整篇的頭尾；移的鍵 `hjkl` `w\|b\|e` `0\|$` `u\|d` `gg\|G`；移不是模式也不是輸入態（`?` 開 key reference） | 同上 | `TestTextareaWriteKeys`、`TestTextareaMoveKeys`、`TestTextareaHomeEnd` |

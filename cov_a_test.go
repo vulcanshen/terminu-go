@@ -556,8 +556,9 @@ func TestK3InputUnchangedNoWrite(t *testing.T) {
 			t.Errorf("%v: the same value was written (%d) or the popup stayed", keys, calls)
 		}
 	}
-	// With no old value it opened empty: empty again is the same value, so
-	// it is not checked either.
+	// It opened empty: empty again closes only when empty passes its check;
+	// one that may not be empty is held back with its error, whether nothing
+	// was typed or it was typed and deleted (components/input/README).
 	for _, keys := range [][]string{{"Enter"}, {"a", "b", "Backspace", "Backspace", "Enter"}} {
 		ta.Text(TextInput{Title: "New name", Check: func(v string) error {
 			if v == "" {
@@ -567,23 +568,41 @@ func TestK3InputUnchangedNoWrite(t *testing.T) {
 		}, Done: done})
 		ta.settle()
 		ta.press(keys...)
+		if li, ok := ta.topView().(*lineInput); calls != 0 || !ok || li.err != "New name can't be empty" {
+			t.Errorf("no old value, may not be empty, %v: written (%d), or closed, or no error", keys, calls)
+		}
+		ta.covBCloseAll()
+		ta.Text(TextInput{Title: "Filter", Done: done})
+		ta.settle()
+		ta.press(keys...)
 		if calls != 0 || ta.top() != nil {
-			t.Errorf("no old value, %v: written (%d) or the popup stayed", keys, calls)
+			t.Errorf("no old value, may be empty, %v: written (%d) or the popup stayed", keys, calls)
 		}
 	}
 	for _, c := range []struct {
-		old  string
-		keys []string
+		old      string
+		optional bool
+		keys     []string
 	}{
-		{"22", []string{"2", "2", "Enter"}},
-		{"22", []string{"Backspace", "2", "2", "Enter"}},
-		{"", []string{"2", "Backspace", "Enter"}},
+		{"22", false, []string{"2", "2", "Enter"}},
+		{"22", false, []string{"Backspace", "2", "2", "Enter"}},
+		{"", true, []string{"2", "Backspace", "Enter"}},
+		{"", true, []string{"Enter"}},
 	} {
-		ta.Number(NumberInput{Title: "Port", Old: c.old, Min: 1, Max: 65535, Done: done})
+		ta.Number(NumberInput{Title: "Port", Old: c.old, Min: 1, Max: 65535, Optional: c.optional, Done: done})
 		ta.settle()
 		ta.press(c.keys...)
 		if calls != 0 || ta.top() != nil {
 			t.Errorf("a number, old %q, %v: the same value was written", c.old, c.keys)
+		}
+		ta.covBCloseAll()
+	}
+	for _, keys := range [][]string{{"Enter"}, {"2", "Backspace", "Enter"}} {
+		ta.Number(NumberInput{Title: "Port", Min: 1, Max: 65535, Done: done})
+		ta.settle()
+		ta.press(keys...)
+		if li, ok := ta.topView().(*lineInput); calls != 0 || !ok || li.err != "Port can't be empty" {
+			t.Errorf("a number that may not be empty, %v: written (%d), or closed, or no error", keys, calls)
 		}
 		ta.covBCloseAll()
 	}

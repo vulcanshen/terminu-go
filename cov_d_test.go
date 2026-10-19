@@ -547,7 +547,7 @@ func TestPopupNarrowContentAlign(t *testing.T) {
 	ta.Password(PasswordInput{Title: "PIN", Prompt: "Up to 12 digits", Unlock: true, MaxLen: 12})
 	ta.settle()
 	ta.press("1", "2", "3")
-	row = covDTop(ta)[4]
+	row = covDTop(ta)[3]
 	// The cursor after the dots counts, a space and a block, blank without
 	// styles (components/input/password).
 	if left, right := covDGaps(row); !strings.Contains(row, "●") || left <= 1 || left-(right-2) > 1 || (right-2)-left > 1 {
@@ -722,7 +722,7 @@ func TestErrorRow(t *testing.T) {
 		Check: func(string) error { return errors.New("Wrong PIN") }})
 	ta.settle()
 	ta.press("1", "2", "3", "4", "Enter")
-	row := covDTop(ta)[6]
+	row := covDTop(ta)[5]
 	if left, right := covDGaps(row); !strings.Contains(row, "Wrong PIN") || left <= 1 || left-right > 1 || right-left > 1 {
 		t.Errorf("under centred content the error is centred: %q", row)
 	}

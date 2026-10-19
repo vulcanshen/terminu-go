@@ -3,8 +3,10 @@ package terminu
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -30,6 +32,11 @@ type TextInput struct {
 	// Old is the value now: offered in grey from the cursor on, Tab takes it
 	// (components/input/README, the grey suggestion).
 	Old string
+	// Suggest, when there is no Old, is a value the app proposes for a new
+	// thing ("assets.zip"), offered in grey as Old is; Enter with nothing
+	// touched takes it, checked and written back as any value
+	// (components/input/README, a suggested value).
+	Suggest string
 	// MaxLen, when set, is the most characters the value can have; the
 	// popup's width is then known when it opens.
 	MaxLen int
@@ -70,10 +77,17 @@ type PasswordInput struct {
 	// Set says a password exists now: eight grey dots stand for it.
 	Set bool
 	// Unlock is the unlock look: one ● per character, a cell apart, centred
-	// (a PIN); otherwise one • per character from the left.
+	// (a PIN), and no prompt row: the title says what to type (UNLOCK,
+	// CURRENT PIN); otherwise one • per character from the left.
 	Unlock bool
 	MaxLen int
 	Check  func(string) error
+	// PausedUntil, when set, is asked when the popup opens and after each
+	// Enter: until the time it gives, the popup takes no value, the error row
+	// counting down each second ("try again in 27 s") and every key but Esc
+	// swallowed (a PIN wrong too many times; components/layout/popup, the
+	// error row).
+	PausedUntil func() time.Time
 	// Done gets the new password; "" with clear true when it was removed.
 	Done func(value string, clear bool) tea.Cmd
 	// Stay keeps it open under what Done opens: a step of a flow (current
@@ -100,13 +114,23 @@ type NumberInput struct {
 	Subject string
 	// Name is the value's name in its errors ("Port must be 1-65535"); left
 	// unset, the title names it.
-	Name     string
-	Old      string
+	Name string
+	Old  string
+	// Suggest is a value the app proposes when there is no Old, as on a
+	// TextInput.
+	Suggest  string
 	Min, Max float64
 	Negative bool // "-" may be typed
 	Decimal  bool // "." may be typed
-	Check    func(string) error
-	Done     func(string) tea.Cmd
+	// Optional lets the value be empty: an empty one is not checked against
+	// the range and is written back empty; what it means the form or panel
+	// says in grey (components/input/number). Otherwise empty is an error.
+	Optional bool
+	// Unit is what the number counts, the whole word ("seconds"), in grey on
+	// a row of its own under the value (components/input/number).
+	Unit  string
+	Check func(string) error
+	Done  func(string) tea.Cmd
 	// Stay keeps it open under what Done opens: a step of a flow (current
 	// PIN, new PIN, confirm PIN), each step a popup of its own, Esc on the
 	// next one coming back here (Rules F1, F4). The app ends the flow with
@@ -139,10 +163,14 @@ type lineInput struct {
 	subject      string
 	name         string // the value's name in its errors: the app's Name, else the title
 	prompt, verb string
-	old          string // the suggestion; for a password, whether one is set
-	hasOld       bool
-	dropOld      bool // Backspace on an empty value threw the suggestion away
-	search       bool // only searched for: control characters are not held back
+	old          string // the value it opened with
+	hasOld       bool   // there is one: offered in grey; for a password, one is set
+	suggest      string // the app's proposal when there is no old value, in grey
+	dropOld      bool   // Backspace on an empty value threw the grey value away
+	unit         string // a number's unit, on the row under the value
+	pausedUntil  func() time.Time
+	pause        time.Time // until when it takes no value
+	search       bool      // only searched for: control characters are not held back
 	onCancel     func() tea.Cmd
 	commit       func(v string, clear bool) error // nil without Commit
 	stay         bool                             // a step of a flow: Enter leaves it open under the next
@@ -193,16 +221,16 @@ func then(written func(), cmd tea.Cmd) tea.Cmd {
 func (in TextInput) open(a *App, written func()) tea.Cmd {
 	return a.open(&lineInput{
 		kind: kindText, title: in.Title, name: cmpOr(in.Name, in.Title), subject: in.Subject, glyph: in.Glyph, prompt: in.Prompt, verb: cmpOr(in.Verb, "save"),
-		old: in.Old, hasOld: in.Old != "", maxLen: in.MaxLen, ed: newEditor(""), check: in.Check, search: in.Search, onCancel: in.OnCancel, stay: in.Stay,
+		old: in.Old, hasOld: in.Old != "", suggest: proposal(in.Old, in.Suggest), maxLen: in.MaxLen, ed: newEditor(""), check: in.Check, search: in.Search, onCancel: in.OnCancel, stay: in.Stay,
 		commit: func(v string, _ bool) error { return runCommit(in.Commit, v) },
 		done:   func(v string, _ bool) tea.Cmd { return then(written, run2(in.Done, v)) },
 	})
 }
 
 func (in PasswordInput) open(a *App, written func()) tea.Cmd {
-	return a.open(&lineInput{
+	li := &lineInput{
 		kind: kindPassword, title: in.Title, name: cmpOr(in.Name, in.Title), subject: in.Subject, glyph: in.Glyph, prompt: in.Prompt, verb: cmpOr(in.Verb, "save"),
-		hasOld: in.Set, maxLen: in.MaxLen, unlock: in.Unlock, ed: newEditor(""), check: in.Check, onCancel: in.OnCancel, stay: in.Stay,
+		hasOld: in.Set, maxLen: in.MaxLen, unlock: in.Unlock, ed: newEditor(""), check: in.Check, onCancel: in.OnCancel, stay: in.Stay, pausedUntil: in.PausedUntil,
 		commit: func(v string, clear bool) error {
 			if in.Commit == nil {
 				return nil
@@ -215,13 +243,14 @@ func (in PasswordInput) open(a *App, written func()) tea.Cmd {
 			}
 			return then(written, in.Done(v, clear))
 		},
-	})
+	}
+	return tea.Batch(a.open(li), li.paused())
 }
 
 func (in NumberInput) open(a *App, written func()) tea.Cmd {
 	li := &lineInput{
 		kind: kindNumber, title: in.Title, name: cmpOr(in.Name, in.Title), subject: in.Subject, glyph: in.Glyph, prompt: in.Prompt, verb: cmpOr(in.Verb, "save"),
-		old: in.Old, hasOld: in.Old != "", ed: newEditor(""), onCancel: in.OnCancel, stay: in.Stay,
+		old: in.Old, hasOld: in.Old != "", suggest: proposal(in.Old, in.Suggest), unit: in.Unit, ed: newEditor(""), onCancel: in.OnCancel, stay: in.Stay,
 		commit: func(v string, _ bool) error { return runCommit(in.Commit, v) },
 		done:   func(v string, _ bool) tea.Cmd { return then(written, run2(in.Done, v)) },
 	}
@@ -232,6 +261,17 @@ func (in NumberInput) open(a *App, written func()) tea.Cmd {
 		li.knownW = max(len(formatNum(in.Min)), len(formatNum(in.Max)))
 	}
 	li.check = func(v string) error {
+		if v == "" {
+			// Empty is a value of its own: not a number out of range
+			// (components/input/number).
+			if !in.Optional {
+				return ErrEmpty
+			}
+			if in.Check != nil {
+				return in.Check(v)
+			}
+			return nil
+		}
 		n, err := strconv.ParseFloat(v, 64)
 		inRange := err == nil && (in.Max <= in.Min || n >= in.Min && n <= in.Max)
 		if !inRange {
@@ -251,6 +291,15 @@ func (in NumberInput) open(a *App, written func()) tea.Cmd {
 
 func formatNum(f float64) string { return strconv.FormatFloat(f, 'f', -1, 64) }
 
+// proposal is the app's proposed value, offered only when there is no old
+// one: the two never show at once (components/input/README).
+func proposal(old, suggest string) string {
+	if old != "" {
+		return ""
+	}
+	return suggest
+}
+
 func run2(f func(string) tea.Cmd, v string) tea.Cmd {
 	if f == nil {
 		return nil
@@ -258,8 +307,14 @@ func run2(f func(string) tea.Cmd, v string) tea.Cmd {
 	return f(v)
 }
 
-// showingOld reports whether the grey suggestion (or the grey dots) is shown.
-func (li *lineInput) showingOld() bool { return li.hasOld && !li.dropOld && li.ed.empty() }
+// showingOld reports whether the grey suggestion (or the grey dots) is shown:
+// the old value or the app's proposal.
+func (li *lineInput) showingOld() bool {
+	return (li.hasOld || li.suggest != "") && !li.dropOld && li.ed.empty()
+}
+
+// grey is the value the grey suggestion offers.
+func (li *lineInput) grey() string { return cmpOr(li.old, li.suggest) }
 
 func (li *lineInput) hint() []KeyHint {
 	h := []KeyHint{{"Enter", li.verb}}
@@ -293,13 +348,20 @@ func (li *lineInput) measure(sw, sh int) (int, int) {
 		if li.kind == kindPassword && li.hasOld {
 			content = max(content, oldDotsWidth(li.unlock)) // the eight grey dots
 		}
-		need := max(content+extra, Width(li.prompt)) + 4
+		if li.unit != "" {
+			content = max(content, Width(li.unit)) // the unit row lines up with the value
+		}
+		prompt := Width(li.prompt)
+		if li.unlock {
+			prompt = 0 // no prompt row (components/input/password)
+		}
+		need := max(content+extra, prompt) + 4
 		need = max(need, Width(titleCapsule(li.glyph, popupTitle(li.title, li.subject), Base, 1<<20))+4)
 		// The whole hint, with the suggestion's keys: only a typing row here,
 		// so the hint lists every key (Rules M3) and the box holds all of it
 		// (layout/popup, width).
 		full := []KeyHint{{"Enter", li.verb}, {"Tab", "edit"}, {"Backspace", "clear"}, {"Esc", "cancel"}}
-		if li.kind == kindPassword || !li.hasOld {
+		if li.kind == kindPassword || !li.hasOld && li.suggest == "" {
 			full = li.hint()
 			if li.kind != kindPassword {
 				full = []KeyHint{{"Enter", li.verb}, {"Esc", "cancel"}}
@@ -308,7 +370,11 @@ func (li *lineInput) measure(sw, sh int) (int, int) {
 		need = max(need, hintWidth(full)+6)
 		w = min(need, most)
 	}
-	return w, min(9, max(sh-2, 3))
+	frame := 4 // the borders and a blank row inside each
+	if li.unlock {
+		frame = 2 // no padding (components/input/password)
+	}
+	return w, min(len(li.rows(w-2, ""))+frame, max(sh-2, 3))
 }
 
 func (li *lineInput) draw(w, h int, layer Color) []string {
@@ -327,21 +393,21 @@ func (li *lineInput) draw(w, h int, layer Color) []string {
 	default:
 		suggest := ""
 		if li.showingOld() {
-			suggest = li.old
+			suggest = li.grey()
 		}
 		value = typingAngle(layer) + li.ed.view(cw-angleWidth(), valueStyle, cursor, true, nil, suggest)
 	}
-	errRow := Fg(Red).Render(Truncate(li.err, cw))
+	body := li.rows(inner, " "+value+" ")
+	box := popupBox{color: layer, glyph: li.glyph, title: popupTitle(li.title, li.subject), hint: li.hint()}
 	if li.unlock {
-		errRow = Center(errRow, cw)
+		// No padding below the error row: two blank rows, the typing row in
+		// the middle, a blank row, the error row; 7 rows with the frame
+		// (components/input/password). Too short, the blank rows go first
+		// (fitRows).
+		box.bare = true
+		return box.draw(w, body)
 	}
-	body := []string{
-		padRow(Fg(Overlay0).Render(li.prompt), inner),
-		Repeat(" ", inner),
-		" " + value + " ",
-		Repeat(" ", inner),
-		padRow(errRow, inner),
-	}
+	typing, errAt := 2, len(body)-1
 	// Too short for all of it, the blank rows of the frame give way first
 	// (fitRows); then the rows above the error row scroll to keep the typing
 	// row in sight and the error row stays (components/layout/popup); with
@@ -351,13 +417,32 @@ func (li *lineInput) draw(w, h int, layer Color) []string {
 		case n == 0:
 			body = nil
 		case n == 1:
-			body = body[2:3]
+			body = body[typing : typing+1]
 		case n < len(body):
-			top := scrollWindow(0, 2, n-1, 4)
-			body = append(body[top:top+n-1:top+n-1], body[4])
+			top := scrollWindow(0, typing, n-1, errAt)
+			body = append(body[top:top+n-1:top+n-1], body[errAt])
 		}
 	}
-	return popupBox{color: layer, glyph: li.glyph, title: popupTitle(li.title, li.subject), hint: li.hint()}.draw(w, Pad2(body, inner, max(h-4, len(body))))
+	return box.draw(w, Pad2(body, inner, max(h-4, len(body))))
+}
+
+// rows are the body of a one-line input inner cells wide, value being its
+// typing row: the prompt, a blank row, the typing row, a number's unit, a
+// blank row, the error row (components/input/README); the unlock look has two
+// blank rows instead of the prompt and padding (components/input/password).
+func (li *lineInput) rows(inner int, value string) []string {
+	cw := inner - 2
+	errRow := Fg(Red).Render(Truncate(li.err, cw))
+	blank := Repeat(" ", inner)
+	if li.unlock {
+		return []string{blank, blank, value, blank, padRow(Center(errRow, cw), inner)}
+	}
+	body := []string{padRow(Fg(Overlay0).Render(li.prompt), inner), blank, value}
+	if li.unit != "" {
+		// Under the value's first cell, not moving as it is typed.
+		body = append(body, padRow(Repeat(" ", angleWidth())+Fg(Overlay0).Render(li.unit), inner))
+	}
+	return append(body, blank, padRow(errRow, inner))
 }
 
 // maskView draws a password: dots for what was typed, eight grey ones for a
@@ -412,6 +497,9 @@ func (li *lineInput) unlockDots(w int, style, cursor Style) string {
 }
 
 func (li *lineInput) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
+	if key != "Esc" && time.Now().Before(li.pause) {
+		return true, nil // paused: every key but Esc swallowed
+	}
 	switch key {
 	case "Enter":
 		return true, li.confirm(a)
@@ -419,14 +507,14 @@ func (li *lineInput) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 		return true, a.closeTop()
 	case "Tab":
 		if li.kind != kindPassword && li.showingOld() {
-			li.ed.set(li.old)
+			li.ed.set(li.grey())
 		}
 		return true, nil
 	case "Backspace":
 		switch {
 		case li.kind == kindPassword && !li.ed.empty():
 			li.ed.set("")
-		case li.ed.empty() && li.hasOld:
+		case li.ed.empty() && (li.hasOld || li.suggest != ""):
 			li.dropOld = true
 		default:
 			li.ed.key(key, msg)
@@ -468,29 +556,31 @@ func (li *lineInput) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 }
 
 // confirm is Enter on the value (Rules K3): checked, written back and closed;
-// a wrong value stays with its error; an unchanged one just closes.
+// a wrong value stays with its error. The value it opened with just closes,
+// but only when it passes: one that opened empty and may not be, Enter with
+// nothing typed is an error (components/input/README).
 func (li *lineInput) confirm(a *App) tea.Cmd {
 	if li.kind == kindPassword {
-		switch {
-		case li.ed.empty() && li.showingOld():
+		if li.ed.empty() && li.showingOld() {
 			return a.answer() // nothing typed: the old password stays
-		case li.ed.empty():
-			return li.write(a, "", true)
 		}
 		if li.ed.hasControl() {
 			li.err = cmpOr(li.name, "The value") + " can't have control characters"
 			return nil
 		}
 		v := li.ed.value()
-		if li.check != nil {
-			if err := li.check(v); err != nil {
-				li.err = checkMessage(li.name, err)
-				return nil
-			}
+		if !li.checked(v) {
+			return li.paused()
+		}
+		switch {
+		case v == "" && li.hasOld:
+			return li.write(a, "", true) // Backspace threw the old one away
+		case v == "":
+			return a.answer() // empty it opened, empty it closes
 		}
 		return li.write(a, v, false)
 	}
-	if li.showingOld() {
+	if li.showingOld() && li.suggest == "" {
 		return a.answer() // nothing touched: no change
 	}
 	if li.ed.hasControl() && !li.search {
@@ -498,17 +588,60 @@ func (li *lineInput) confirm(a *App) tea.Cmd {
 		return nil
 	}
 	v := strings.TrimFunc(li.ed.value(), unicode.IsSpace)
+	if li.showingOld() {
+		v = li.suggest // nothing touched: the app's proposal is taken
+	}
+	if !li.checked(v) {
+		return nil
+	}
 	if v == li.old {
 		return a.answer() // the value it opened with: nothing to write back (Rules K3)
 	}
+	return li.write(a, v, false)
+}
+
+// checked runs the value's check: its error goes on the error row, or the
+// row is cleared.
+func (li *lineInput) checked(v string) bool {
 	if li.check != nil {
 		if err := li.check(v); err != nil {
 			li.err = checkMessage(li.name, err)
-			return nil
+			return false
 		}
 	}
 	li.err = ""
-	return li.write(a, v, false)
+	return true
+}
+
+// pauseTick counts a paused input down, a second at a time.
+type pauseTick struct{ li *lineInput }
+
+// paused starts the pause the app asks for, if it asks for one now: the
+// error row counts down (components/layout/popup, the error row).
+func (li *lineInput) paused() tea.Cmd {
+	if li.pausedUntil == nil {
+		return nil
+	}
+	li.pause = li.pausedUntil()
+	return li.countDown()
+}
+
+// countDown writes what is left of the pause on the error row and ticks
+// again in a second; once it is over it clears the row.
+func (li *lineInput) countDown() tea.Cmd {
+	left := time.Until(li.pause)
+	if left <= 0 {
+		if strings.HasPrefix(li.err, "try again in ") {
+			li.err = ""
+		}
+		return nil
+	}
+	li.err = fmt.Sprintf("try again in %d s", int(math.Ceil(left.Seconds())))
+	next := left - left.Truncate(time.Second)
+	if next == 0 {
+		next = time.Second
+	}
+	return tea.Tick(next, func(time.Time) tea.Msg { return pauseTick{li} })
 }
 
 // write writes a value Enter took back: Commit first, then Done.

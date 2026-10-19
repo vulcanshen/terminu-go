@@ -13,8 +13,7 @@ Each release names the version of terminu design (tdp) it implements.
   10-row screen no longer covers the footer (Rules F7)
 - An input too short for its prompt keeps its typing row and its error row in sight
 - An input closes without calling `Done` when its value is the one it opened with: typed and deleted back to
-  empty, or its suggestion thrown away and typed again (Rules K3). An input that opened empty closes on `Enter`
-  without running its check
+  empty, or its suggestion thrown away and typed again (Rules K3)
 - `ErrEmpty` in an error row names the value: `Name can't be empty`
 - A truncated styled line draws its `…` in the style of the text it stands for, not the terminal's default colour;
   `TruncateLeft` too, and plain text gets no reset
@@ -85,6 +84,17 @@ Each release names the version of terminu design (tdp) it implements.
   line kept before the corner: `┏[2] DEPLOYM…━┓` (layout/panel)
 - An empty state too long for its panel folds at its spaces, every line centred one cell from the frame, instead
   of being cut (layout/screen)
+- An input closes on the value it opened with only when that value passes its check: one that opened empty and
+  may not be empty holds `Enter` back with its error, nothing typed or typed and deleted (Rules K3); a password
+  that opened empty closes on `Enter` with nothing typed instead of writing an empty one back
+- `TextInput.Suggest` and `NumberInput.Suggest` offer a value the app proposes in grey when there is no old one;
+  `Enter` with nothing touched takes it, checked and written back (components/input/README)
+- `NumberInput.Optional` lets a number be empty, not checked against its range; one that may not be empty says
+  `Port can't be empty`; `NumberInput.Unit` puts the unit under the value, in grey (components/input/number)
+- A password's unlock look has no prompt row: two blank rows, the typing row in the middle, a blank row, the error
+  row, 7 rows with the frame (components/input/password)
+- `PasswordInput.PausedUntil` pauses it, after too many wrong PINs: the error row counts down each second and
+  every key but `Esc` is swallowed (components/layout/popup)
 - `List.Location` is a list's location row, where the user is, in Lavender above its header, cut from the front
   (layout/panel)
 
