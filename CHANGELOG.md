@@ -75,6 +75,10 @@ Each release names the version of terminu design (tdp) it implements.
 - `List.SetMarked` marks rows by ID, rows the panel filter hides too
 - `List.Select` reports whether the row is shown: after adding an item the app selects it, and the next frame
   scrolls it into sight (Rules K3)
+- `Panel.Name` is the name of what a panel shows, kept as it is after its label: `[2] PODS: nginx-7d4f`, or the
+  whole label, `[1] prod-web-01`; its Space menu and key reference write it so too
+- On a panel's first tab the blank between `[N]` and the label is as wide as a join, so the text does not move
+  when the tab changes where a powerline symbol takes two cells (layout/panel)
 - `List.Location` is a list's location row, where the user is, in Lavender above its header, cut from the front
   (layout/panel)
 

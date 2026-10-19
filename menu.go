@@ -29,6 +29,7 @@ func (r menuRow) selectable() bool { return r.kind == menuItem && !r.action.disa
 type menuView struct {
 	glyph, title string
 	subject      string // after ": " in the title, kept as it is
+	cased        string // the whole title, in its case already (a panel's with its name)
 	rows         []menuRow
 	cursor       int // index into rows, always a selectable one when there is one
 	top          int
@@ -127,7 +128,7 @@ func (m *menuView) measure(sw, sh int) (int, int) {
 		content = max(content, m.rowWidth(r))
 	}
 	need := content + 3 + m.arrowRoom() // frame, the left cell, the arrow's cells
-	need = max(need, Width(titleCapsule(m.glyph, popupTitle(m.title, m.subject), Base, 1<<20))+4)
+	need = max(need, Width(titleCapsule(m.glyph, m.titleText(), Base, 1<<20))+4)
 	for i, r := range m.rows {
 		if r.kind == menuItem {
 			saved := m.cursor
@@ -214,7 +215,15 @@ func (m *menuView) draw(w, h int, color Color) []string {
 		}
 		scroll = scrollText(true, pos, 0, total)
 	}
-	return popupBox{color: color, glyph: m.glyph, title: popupTitle(m.title, m.subject), hint: m.hint(), scroll: scroll}.draw(w, body)
+	return popupBox{color: color, glyph: m.glyph, title: m.titleText(), hint: m.hint(), scroll: scroll}.draw(w, body)
+}
+
+// titleText is the title as drawn: upper case, the subject as it is.
+func (m *menuView) titleText() string {
+	if m.cased != "" {
+		return m.cased
+	}
+	return popupTitle(m.title, m.subject)
 }
 
 // rowText is a row in w cells: label in Text, description in Overlay0 on the

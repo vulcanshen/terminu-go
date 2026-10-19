@@ -59,11 +59,13 @@ func newKindsScreen(a *terminu.App) *kindsScreen {
 				ks.kind = &kinds[i]
 			}
 		}
-		ks.details.Label = ks.kind.name
+		ks.details.Name = ks.kind.name
 		return nil
 	}
 	value := func(f func(k kind) string) func() string { return func() string { return f(*ks.kind) } }
-	ks.details = &terminu.Panel{Label: ks.kind.name, Body: &terminu.Values{Fields: []*terminu.Field{
+	// The panel is the kind's details; the kind's name is kept as it is
+	// after the label ([2] KIND: pods; components, upper case).
+	ks.details = &terminu.Panel{Label: "Kind", Name: ks.kind.name, Body: &terminu.Values{Fields: []*terminu.Field{
 		{Label: "Group", Value: value(func(k kind) string { return k.group })},
 		{Label: "API version", Value: value(func(k kind) string { return k.api })},
 		{Label: "Short name", Value: value(func(k kind) string { return k.short }), Empty: "none", Edit: func() tea.Cmd {

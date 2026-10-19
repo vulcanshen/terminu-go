@@ -21,7 +21,7 @@ app 名 `showcase`，五個畫面，畫面 chip 列 `[P]ANELS [I]NPUTS [D]IALOGS
 | `[I]NPUTS` | 每一種 input | `[1] INPUTS`：一列一個值，每一種 input（含各方案）各一列，`Enter` 打開它的 popup（`Host` 是 app 自己給預覽的 finder）；`[2] FILES`：清單，`[/] Find` 開一般的 finder（有預覽）、`[S]low index` 是結果慢慢進來的 finder、`[V]iew` 用 viewer 開檔案 |
 | `[D]IALOGS` | 每一種 dialog 與疊法 | `[1] DIALOGS`：每一列是一個情境（某一種 dialog、某一種狀態、某一種疊法），`Enter` 開它 |
 | `[t]ERMINAL` | PTY 的兩種放法（畫面的鍵是小寫的 `t`） | `[1] SHELL`：PTY 放在 panel 裡；`[2] SESSIONS`：清單，`[Alt-t]erm` 開 terminal popup |
-| `[K]INDS` | 清單分組與跟著 cursor 換的明細 | `[1] KINDS`：分組的一般清單（五組、16 種、panel filter）；`[2]`：`[1]` cursor 那一種的明細（一列一個值），label 寫那一種的名字 |
+| `[K]INDS` | 清單分組與跟著 cursor 換的明細 | `[1] KINDS`：分組的一般清單（五組、16 種、panel filter）；`[2]`：`[1]` cursor 那一種的明細（一列一個值），標題 `[2] KIND: pods`，名稱照原樣 |
 
 **展示場自己的動作**（切換狀態用，順便測了 M 章）：P 的 Space menu（panel operation）有 `Empty`（清空這個 panel）、`Loading`
 （進入 loading，再按一次結束）、`Fail`（這個 panel 出錯；在 `[3] SETTINGS` 上是 `Timeout` 這一欄出錯）、`Disable`（把某些列與動作設成
@@ -259,6 +259,8 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | panel §框 | 框上的字與角之間隔一段線（`┗━ Enter:logs`、`3 of 40 ━┛`、`┫Drag┣━┓`），只有 `[N] label` 膠囊緊接左上角 | 每個 panel | `TestPanelFrameTextSpacing` |
 | panel §框 | hint：這個 panel 自己的鍵（`Enter` 做什麼、常用熱鍵），不寫移動鍵與 footer 已有的 core key；清單一項都沒有時（panel filter 篩到空，或本來就空）拿掉 `Enter` 與對項目的熱鍵，只留對整個 panel 的；focus 時鍵 Blue 說明 Overlay0、失焦跟著淡化；放不下從尾端整組捨、捲動位置留著 | 每個 panel；縮窄；I `[2] FILES` 的 `Empty`（只剩 `/:find`），或按 `/` 打 `zz` 再 `Tab` | `TestPanelHintContent`、`TestPanelHintDrop`、`TestPanelHintNoItems` |
 | panel §膠囊串 | 兩端斜角 U+E0BA / U+E0B0；選中的填串色、字 Base 粗體；沒選中的不填、字用串色；斜角與接縫照 Powerline 上色（前景左段的底、背景右段的底，沒選中的底當 Base）；串色：panel 是框線色、popup 是層色、chip 是 Blue；`[N]` 膠囊與目前 tab 都算選中 | P `[1] PODS` 換 tab；D「Popup with tabs」 | `TestCapsuleChain` |
+| panel §框 | label 裡的名稱照原樣，跟 popup 的標題一樣：`[2] PODS: nginx-7d4f`；整個 label 就是名稱時照原樣（lib：`Panel.Name`；Space menu 與 `?` 的標題也一樣） | K `[2] KIND: pods` | `TestPanelName` |
+| panel §膠囊串 | `[N]` 與第一個 tab 都選中時中間的空白跟接縫一樣佔一個 powerline 符號的寬度，換 tab 時字不位移 | P `[1] PODS` 換 tab（`SHOWCASE__POWERLINE_WIDTH=2` 也試一次） | `TestPanelTabSpaceIsAJoin` |
 | panel §膠囊串 | 接縫：換色 U+E0B0、同色 U+E0B1；字前後不加空白、大寫；放不下先縮沒選中的成第一個字，再從尾端收成 `…`，選中的永遠留著、不撐寬框 | 縮窄 | `TestCapsuleChainShrink` |
 | panel §一般清單 | cursor：Subtext1 底、Base 粗體、佔滿內寬、整列 Base 字；右邊的留白（跟箭頭一樣寬）畫 U+E0B0、Subtext1；失焦跟著淡化 | P `[1] PODS` | `TestListCursor`、`TestCursorArrow` |
 | panel §一般清單 | 表頭 Blue 不加粗、大寫、固定不捲；每欄是數字或文字：數字靠右照數值排、文字靠左照文字排；欄間兩格；排序欄位加 U+F160（升）/ U+F161（降）；多欄排序在箭頭前加順位 `(2)` | P `[1] PODS` 的 `Sort by`（Name 升冪、Age 降冪、兩欄） | `TestListHeader`、`TestListSortGlyphs`、`TestListSortNumbers` |

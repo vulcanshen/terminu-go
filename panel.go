@@ -90,6 +90,11 @@ type Panel struct {
 	// Label is the panel's name after its [N]. With tabs it is the first
 	// tab's name: a panel has no other name (layout/panel, tabs).
 	Label string
+	// Name, when set, is the name of the one thing the panel shows, kept as it
+	// is after the label, upper case, and ": " ([2] PODS: nginx-7d4f); with no
+	// Label it is the whole label ([1] prod-web-01). The Space menu and the
+	// key reference write it so too (components, upper case).
+	Name string
 	// Tabs are the panel's other tabs, after the label's own. Tab is the
 	// current one, 0 being the label's; h/l switch tabs and call OnTab.
 	Tabs  []string
@@ -193,20 +198,39 @@ func (p *Panel) hint() (out []KeyHint, off []bool) {
 	return out, off
 }
 
+// labelText is the label as the title writes it: upper case, the name after
+// it as it is.
+func (p *Panel) labelText() string {
+	switch {
+	case p.Name == "":
+		return Upper(p.Label)
+	case p.Label == "":
+		return p.Name
+	}
+	return Upper(p.Label) + ": " + p.Name
+}
+
+// title is "[N] label", as the Space menu and the key reference write it.
+func (p *Panel) title(n int) string { return "[" + itoa(n) + "] " + p.labelText() }
+
 // capsules are the panel's [N] and its tabs (layout/panel, capsule chain):
 // [N] is a part of its own, always filled; of the tabs only the current one
-// is. On the first tab [N] and it meet with a space, no join: "[2] PODS",
-// as a panel without tabs looks.
+// is. On the first tab [N] and it meet with blank as wide as a join, no join
+// drawn, so the text does not move when the tab changes: "[2] PODS", as a
+// panel without tabs looks.
 func (p *Panel) capsules(n int) []Capsule {
 	num := "[" + itoa(n) + "]"
+	if len(p.Tabs) == 0 {
+		return []Capsule{{Text: num + " " + p.labelText(), Selected: true}}
+	}
 	if p.Tab == 0 {
-		caps := []Capsule{{Text: num + " " + Upper(p.Label), Selected: true}}
+		caps := []Capsule{{Text: num + Repeat(" ", PowerlineWidth()) + p.labelText(), Selected: true}}
 		for _, t := range p.Tabs {
 			caps = append(caps, Capsule{Text: Upper(t)})
 		}
 		return caps
 	}
-	caps := []Capsule{{Text: num, Selected: true}, {Text: Upper(p.Label)}}
+	caps := []Capsule{{Text: num, Selected: true}, {Text: p.labelText()}}
 	for i, t := range p.Tabs {
 		caps = append(caps, Capsule{Text: Upper(t), Selected: p.Tab == i+1})
 	}

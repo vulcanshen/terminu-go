@@ -710,7 +710,8 @@ func (a *App) openSpaceMenu() tea.Cmd {
 	}
 	sections = append(sections, MenuSection{Title: "panel operation", Actions: a.panelActions(p, PanelScope)})
 	global := Action{Label: "Global operation", Desc: "actions for the whole app", Do: a.openGlobal}
-	m := newMenu("["+itoa(s.focus+1)+"] "+p.Label, sections, []Action{global})
+	m := newMenu("", sections, []Action{global})
+	m.cased = p.title(s.focus + 1)
 	m.space = true
 	m.name = "Space menu"
 	m.run = func(a *App, act Action) tea.Cmd {
@@ -820,7 +821,6 @@ func (a *App) panelKeyRef(p *Panel) *noteView {
 		}
 		app = append(app, row(act))
 	}
-	title := "[" + itoa(s.focus+1) + "] " + p.Label
 	sections := []refSection{
 		{title: "item operation", rows: item},
 		{title: "panel operation", rows: panel},
@@ -832,7 +832,7 @@ func (a *App) panelKeyRef(p *Panel) *noteView {
 	for _, o := range p.OtherKeys {
 		sections = append(sections, refSection{title: o.Title, rows: o.Rows})
 	}
-	return keyReference(Upper(title), sections)
+	return keyReference(p.title(s.focus+1), sections)
 }
 
 // refTitle is a popup's name in the title of its key reference: upper case,

@@ -1933,6 +1933,54 @@ func TestListLocationRow(t *testing.T) {
 	}
 }
 
+// TestPanelName: the name of what a panel shows is kept as it is after its
+// label, in its title, Space menu and key reference; with no label it is the
+// whole label (components, upper case).
+func TestPanelName(t *testing.T) {
+	ta := newTestApp(t)
+	ta.pods.Name = "nginx-7d4f"
+	ta.resize(80, 20)
+	if !strings.Contains(ta.screenText(), "[1] PODS: nginx-7d4f") {
+		t.Errorf("title: %q", ta.screenText())
+	}
+	ta.press("Space")
+	ta.settle()
+	if !strings.Contains(ta.screenText(), "[1] PODS: nginx-7d4f") {
+		t.Errorf("Space menu title: %q", ta.screenText())
+	}
+	ta.press("Esc", "?")
+	ta.settle()
+	if !strings.Contains(ta.screenText(), "[1] PODS: nginx-7d4f KEYS") {
+		t.Errorf("key reference title: %q", ta.screenText())
+	}
+	ta.press("Esc")
+	ta.settle()
+	ta.pods.Label = ""
+	ta.pods.Name = "prod-web-01"
+	if !strings.Contains(ta.screenText(), "[1] prod-web-01") {
+		t.Errorf("the name alone: %q", ta.screenText())
+	}
+}
+
+// TestPanelTabSpaceIsAJoin: on the first tab [N] and the label meet with blank
+// as wide as a join, so the text does not move when the tab changes
+// (layout/panel, panel tabs).
+func TestPanelTabSpaceIsAJoin(t *testing.T) {
+	for _, pl := range []int{1, 2} {
+		withWidths(t, 1, pl)
+		p := &Panel{Label: "Pods", Tabs: []string{"Events"}}
+		first := StripStyles(drawChain(p.capsules(2), Blue, 80))
+		p.Tab = 1
+		second := StripStyles(drawChain(p.capsules(2), Blue, 80))
+		if a, b := Width(first[:strings.Index(first, "PODS")]), Width(second[:strings.Index(second, "PODS")]); a != b {
+			t.Errorf("powerline %d cells: PODS moves from %d to %d: %q %q", pl, a, b, first, second)
+		}
+		if !strings.Contains(first, "[2]"+Repeat(" ", pl)+"PODS") {
+			t.Errorf("powerline %d cells: %q", pl, first)
+		}
+	}
+}
+
 func TestPanelLoading(t *testing.T) {
 	ta := newTestApp(t)
 	ta.pods.Loading = true
