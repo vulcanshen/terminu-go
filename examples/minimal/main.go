@@ -15,7 +15,7 @@ var icon []byte // the app's mark, drawn by its splash (V)
 
 func main() {
 	app := terminu.New("todo")
-	list := &terminu.List{Columns: []terminu.Column{{Title: "Task"}}}
+	list := &terminu.List{Columns: []terminu.Column{{Title: "Task", Shrink: true}}}
 	list.SetRows([]terminu.Row{{ID: "1", Cells: []string{"Write the README"}}, {ID: "2", Cells: []string{"Tag v1.0.0"}}})
 	done := terminu.Action{Key: "x", Label: "Done", Desc: "this task", Scope: terminu.ItemScope, Hint: "done",
 		Do: func() tea.Cmd {

@@ -19,14 +19,20 @@ type Column struct {
 	// before 10). Text columns are left-aligned and sorted as text.
 	Number bool
 	// Flex did let the column give up room first when the panel is narrow. It
-	// does nothing since tdp v0.8.0: columns that do not fit are taken away
-	// whole (Drop), and then all narrowed in proportion.
+	// does nothing since tdp v0.8.0: mark a long column Shrink.
 	Flex bool
+	// Shrink marks a column of long values (a name, a URL, a line of text):
+	// the shrinkable columns share the width the others leave, cut each its
+	// own way when too long, down to MinWidth (12 cells when unset). The
+	// other columns, short values (a state, a number, a date), keep the width
+	// of their widest value (layout/panel).
+	Shrink   bool
+	MinWidth int
 	// Drop is when the column is taken away, whole and its header with it,
-	// while the columns do not fit: 1 first, then 2 and on; 0 never (the
-	// name). Only when the columns that are left still do not fit are they
-	// all narrowed, in proportion; as the panel grows the columns come back
-	// in order (layout/panel).
+	// when the columns do not fit even with the shrinkable ones at their
+	// MinWidth: 1 first, then 2 and on; 0 never (the name). As the panel
+	// grows they come back in order, and the shrinkable ones grow back
+	// (layout/panel).
 	Drop int
 	// Path cuts the column's values from the front ("…/.ssh/id_ed25519").
 	Path bool
@@ -519,10 +525,11 @@ func (l *List) headed() bool {
 	return len(l.Columns) > 1 || len(l.Columns) == 1 && l.Columns[0].Title != ""
 }
 
-// widths are the columns' widths in w cells, two cells apart: each as wide as
-// its widest value or title. While they do not fit, columns are taken away
-// whole in their Drop order (-1: not drawn); then the ones left are narrowed
-// in proportion (layout/panel).
+// widths are the columns' widths in w cells, two cells apart (layout/panel):
+// a column as wide as its widest value or title, but the shrinkable ones,
+// which share what the others leave, down to their MinWidth. While even that
+// does not fit, columns are taken away whole in their Drop order (-1: not
+// drawn).
 func (l *List) widths(w int) []int {
 	n := len(l.Columns)
 	if n == 0 {
@@ -535,10 +542,17 @@ func (l *List) widths(w int) []int {
 			ws[c] = max(ws[c], Width(l.cell(r, c)))
 		}
 	}
+	least := func(c int) int {
+		if !l.Columns[c].Shrink {
+			return ws[c]
+		}
+		return min(ws[c], cmpInt(l.Columns[c].MinWidth, 12))
+	}
+	// total is the shown columns at their least, and how many are shown.
 	total := func() (t, shown int) {
-		for _, x := range ws {
+		for c, x := range ws {
 			if x >= 0 {
-				t, shown = t+x, shown+1
+				t, shown = t+least(c), shown+1
 			}
 		}
 		return t + 2*(shown-1), shown
@@ -555,25 +569,59 @@ func (l *List) widths(w int) []int {
 		}
 		ws[pick] = -1
 	}
-	if t, shown := total(); t > w {
-		room := max(w-2*(shown-1), 0)
-		sum := t - 2*(shown-1)
-		left := room
-		for c := range n {
-			if ws[c] > 0 {
-				ws[c] = ws[c] * room / sum
-				left -= ws[c]
-			}
-		}
-		// What the rounding down left goes to the first columns, a cell each.
-		for c := 0; c < n && left > 0; c++ {
-			if ws[c] >= 0 {
-				ws[c]++
-				left--
-			}
+	// The shrinkable columns share what the others leave: each its least,
+	// then the rest in proportion to what more it would take.
+	room := w
+	var shrink []int
+	want := 0
+	for c, x := range ws {
+		switch {
+		case x < 0:
+		case l.Columns[c].Shrink:
+			shrink = append(shrink, c)
+			room -= 2
+			want += x
+		default:
+			room -= x + 2
 		}
 	}
+	room += 2
+	if want <= room || len(shrink) == 0 {
+		return ws
+	}
+	base, more := 0, 0
+	for _, c := range shrink {
+		base, more = base+least(c), more+ws[c]-least(c)
+	}
+	extra := max(room-base, 0)
+	left := room
+	for _, c := range shrink {
+		nw := least(c)
+		if more > 0 {
+			nw += (ws[c] - least(c)) * extra / more
+		}
+		if room < base {
+			nw = max(ws[c]*max(room, 0)/want, 1) // narrower than their least: the last resort
+		}
+		ws[c] = nw
+		left -= nw
+	}
+	for _, c := range shrink { // what rounding down left, a cell each
+		if left <= 0 {
+			break
+		}
+		ws[c]++
+		left--
+	}
 	return ws
+}
+
+// cmpInt is n, or def when n is 0.
+func cmpInt(n, def int) int {
+	if n == 0 {
+		return def
+	}
+	return n
 }
 
 // title is a column's header: upper case, with its sort order and arrow.

@@ -1742,7 +1742,7 @@ func TestListMarkColumn(t *testing.T) {
 }
 
 func TestListTruncate(t *testing.T) {
-	l := &List{Columns: []Column{{Title: "Name"}, {Title: "Kind"}}}
+	l := &List{Columns: []Column{{Title: "Name", Shrink: true}, {Title: "Kind"}}}
 	l.SetRows([]Row{{Cells: []string{"a-very-long-pod-name-that-does-not-fit", "Pod"}}})
 	row := covCPlain(l.Draw(60, 2, false)[1])
 	if !strings.Contains(row, "a-very-long-pod-name-that-does-not-fit  Pod") {
@@ -1752,12 +1752,12 @@ func TestListTruncate(t *testing.T) {
 	if !strings.Contains(row, "a-very") || !strings.Contains(row, "…") {
 		t.Errorf("a name cut from the end: %q", row)
 	}
-	m := &List{Columns: []Column{{Title: "Name", Middle: true}}}
+	m := &List{Columns: []Column{{Title: "Name", Middle: true, Shrink: true}}}
 	m.SetRows([]Row{{Cells: []string{"demo-app-7d4f9c8b66-gm72n"}}})
 	if row := strings.Trim(covCPlain(m.Draw(1+17+1, 2, false)[1]), " "+glyphHard); row != "demo-app…66-gm72n" {
 		t.Errorf("a pod name cut in the middle: %q", row)
 	}
-	p := &List{Columns: []Column{{Title: "Path", Path: true}}}
+	p := &List{Columns: []Column{{Title: "Path", Path: true, Shrink: true}}}
 	p.SetRows([]Row{{Cells: []string{"/tmp"}}, {Cells: []string{"/home/me/.ssh/keys/id_ed25519"}}})
 	row = strings.Trim(covCPlain(p.Draw(20, 3, false)[2]), " "+glyphHard)
 	if !strings.HasPrefix(row, "…") || !strings.HasSuffix(row, "/id_ed25519") {
@@ -1769,7 +1769,7 @@ func TestListTruncate(t *testing.T) {
 // header with them, in the app's order, the name never; then the rest narrow
 // in proportion; they come back as the panel grows (layout/panel).
 func TestListColumnsGiveWay(t *testing.T) {
-	l := &List{Columns: []Column{{Title: "Name"}, {Title: "Status", Drop: 2}, {Title: "Node", Drop: 1}}}
+	l := &List{Columns: []Column{{Title: "Name", Shrink: true}, {Title: "Status", Drop: 2}, {Title: "Node", Drop: 1}}}
 	l.SetRows([]Row{{Cells: []string{"web-0123456789", "Running", "worker-01"}}})
 	// header and row, in the text room of a w-cell body
 	draw := func(w int) (string, string) {
@@ -1797,11 +1797,34 @@ func TestListColumnsGiveWay(t *testing.T) {
 	if h := strings.Trim(covCPlain(every.Draw(1+10+1, 2, false)[0]), " "+glyphHard); h != "NAME" {
 		t.Errorf("one column always stays: %q", h)
 	}
-	// Nothing to take away: every column narrows in proportion.
-	p := &List{Columns: []Column{{Title: "A"}, {Title: "B"}}}
-	p.SetRows([]Row{{Cells: []string{strings.Repeat("a", 30), strings.Repeat("b", 10)}}})
-	if ws := p.widths(2 + 20); !slices.Equal(ws, []int{15, 5}) {
-		t.Errorf("in proportion: %v, want [15 5]", ws)
+	// The shrinkable columns share what the short ones leave, each at least
+	// its MinWidth, the rest as each would take more; the short ones keep
+	// their width (layout/panel).
+	p := &List{Columns: []Column{{Title: "A", Shrink: true}, {Title: "B"}, {Title: "C", Shrink: true}}}
+	p.SetRows([]Row{{Cells: []string{strings.Repeat("a", 30), strings.Repeat("b", 6), strings.Repeat("c", 20)}}})
+	if ws := p.widths(50); !slices.Equal(ws, []int{24, 6, 16}) {
+		t.Errorf("shared: %v, want [24 6 16]", ws)
+	}
+	if ws := p.widths(30 + 2 + 6 + 2 + 20 + 5); !slices.Equal(ws, []int{30, 6, 20}) {
+		t.Errorf("all fit: %v", ws)
+	}
+	q := &List{Columns: []Column{{Title: "Name", Shrink: true, MinWidth: 8}, {Title: "Ready", Drop: 1}, {Title: "Status"}}}
+	q.SetRows([]Row{{Cells: []string{strings.Repeat("n", 30), "1/1", "Running"}}})
+	if ws := q.widths(8 + 2 + 5 + 2 + 7); !slices.Equal(ws, []int{8, 5, 7}) {
+		t.Errorf("the name down to its MinWidth before a column goes: %v", ws)
+	}
+	if ws := q.widths(8 + 2 + 5 + 2 + 7 - 1); !slices.Equal(ws, []int{14, -1, 7}) {
+		t.Errorf("then Ready goes, the name grows back: %v", ws)
+	}
+	wide := &List{Columns: []Column{{Title: "Name", Shrink: true, MinWidth: 8}, {Title: "Status"}, {Title: "Node", Drop: 1}}}
+	wide.SetRows([]Row{{Cells: []string{strings.Repeat("n", 30), "CrashLoopBackOff", "worker-01"}}})
+	if ws := wide.widths(8 + 2 + 16 + 2 + 9 - 1); ws[1] != 16 || ws[2] != -1 {
+		t.Errorf("a short column counts at its whole width: %v", ws)
+	}
+	short := &List{Columns: []Column{{Title: "Name"}, {Title: "Age"}}}
+	short.SetRows([]Row{{Cells: []string{strings.Repeat("n", 30), "3d"}}})
+	if ws := short.widths(20); !slices.Equal(ws, []int{30, 3}) {
+		t.Errorf("no shrinkable column: none narrows (the row is cut): %v", ws)
 	}
 	// A list of one column with no title has no header (layout/panel).
 	one := &List{Columns: []Column{{}}}

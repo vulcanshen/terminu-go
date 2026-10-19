@@ -235,7 +235,7 @@ func newInputsScreen(s *showcase) *inputsScreen {
 	is.inputs.Actions = is.stateActions(is.inputs)
 
 	is.fileList = &terminu.List{
-		Columns:   []terminu.Column{{Title: "Name", Path: true}, {Title: "Size", Number: true, Drop: 2}, {Title: "Modified", Drop: 1}},
+		Columns:   []terminu.Column{{Title: "Name", Path: true, Shrink: true}, {Title: "Size", Number: true, Drop: 2}, {Title: "Modified", Drop: 1}},
 		EmptyFact: "No files here",
 		EmptyHint: "Press [Space] to see what you can do here",
 	}

@@ -278,7 +278,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | panel §一般清單 | lib：app 照 ID 設標記（`List.SetMarked`），篩選中沒顯示的列也勾得到 | P `[1] PODS` 的 `[m]ark` | `TestListMarkAndSelectByID` |
 | panel §一般清單 | Drag mode 拿著的那一列（進 Drag 的鍵由 app 決定）：照 cursor 畫，Subtext1 換成 Yellow 底、Base 粗體，箭頭也是 Yellow；標記欄畫 U+F04E2，放下後回到原本的標記；有 Drag 的 panel 每一列都保留標記欄；按鍵同 reorder 拿著時（`j\|k` 搬、到頭尾繞回，`Enter` 放下，`Esc` 放回）。lib：`List.Draggable`、`Hold`、`MoveHeld`、`Drop`，Drag mode 與它的鍵由 app 登記 | P `[1] PODS` 的 `[D]rag`（先 `m` 標記一列再拿起它） | `TestPanelDragHeldRow` |
 | panel §一般清單 | 截斷從尾端加 `…`；路徑、檔名可以從前面截；兩端都有意義的從中間截（`demo-app…66-gm72n`），從哪裡截由 app 替每一欄決定（lib：`Column.Path`、`Column.Middle`） | P `[1] PODS` 的長名字（從中間截）；I `[2] FILES` 的路徑 | `TestListTruncate`、`TestTruncateMiddle` |
-| panel §一般清單 | 欄放不下時先整欄收（表頭一起），照 app 標的順序，名稱欄不收；還放不下才照比例縮；變大時照順序回來（lib：`Column.Drop`） | P `[1] PODS` 把視窗縮窄：`AGE`、`RESTARTS`、`READY` 依序收掉 | `TestListColumnsGiveWay` |
+| panel §一般清單 | 欄的寬度：可以截短的欄（名稱、網址、一行文字）分剩下的寬度、照各自的截法截，其他短欄照最寬的值不縮；放不下先把可以截短的縮到最少寬度（app 定，預設 12），還放不下才照 app 標的順序整欄收（表頭一起），名稱欄不收；變大時欄照順序回來、可以截短的長回去（lib：`Column.Shrink`、`MinWidth`、`Drop`） | P `[1] PODS` 把視窗縮窄：名稱先縮到 12 格，再 `AGE`、`RESTARTS`、`READY` 依序收掉 | `TestListColumnsGiveWay` |
 | panel §一般清單 | 單欄的清單沒有欄名時不畫表頭 | K `[1] KINDS` | `TestListColumnsGiveWay` |
 | panel §位置列 | 清單上面一列寫目前的位置（要不要由 app 決定）：panel 內第一列、離框一格，在 panel filter 的打字列與表頭上面，固定不捲；Lavender、失焦跟著淡化；太長從前面截；只顯示：cursor 不停、捲動位置不算（lib：`List.Location`）；清單空了時照樣留著，空狀態只取代表頭與清單 | I `[2] FILES`（假的專案的目錄）；按 `/` 打字列在它下面 | `TestListLocationRow` |
 | panel §一般清單 | 排序的群：app 替每一列指定群、群的先後由 app 定，排序只在群裡，群之間不畫標題（lib：`Row.SortGroup`） | I `[2] FILES`：資料夾裡的檔在前、最上層的在後，各自照名稱排 | `TestListSortGroups` |

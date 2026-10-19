@@ -12,6 +12,11 @@ Each release names the version of terminu design (tdp) it implements.
 - A hotkey of several letters goes in place at the start of its label in either case too: `[go]to` on `Goto`
 - A form's key reference says what `Enter` does on the kinds of items the form has, not all of them (Rules M6)
 - A form button's `FormResult.Toast` is a Success toast: the action is done
+- A list's column widths follow tdp v0.8.2: `Column.Shrink` marks a column of long values, which with the other
+  shrinkable ones shares the width the short columns leave, cut its own way, down to `Column.MinWidth` (12 when
+  unset); short columns keep the width of their widest value. Only when the shrinkable ones are at their least are
+  columns taken away, in `Drop` order. Nothing narrows in proportion any more: a list with no `Shrink` column is
+  cut at its right edge (layout/panel)
 - A key reference folds a long description in its "what each row is" section in the right column, the name column
   blank under it; the sections of keys stay one line a key (components/dialog/note)
 - `App.CloseAll`'s comment says every popup plays its closing at once, as it does
