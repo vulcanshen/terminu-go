@@ -101,6 +101,56 @@ func TestViewerNoWrapNoNumbers(t *testing.T) {
 	}
 }
 
+// TestViewerNoWrapFollowsCursor: in a NoWrap viewer the selection's cursor
+// past the cut scrolls every line across to keep it in sight, as vim's
+// nowrap does, "…" where each is cut on either side; what is cut is still
+// selected and copied (G99, settled A; components/dialog/note).
+func TestViewerNoWrapFollowsCursor(t *testing.T) {
+	ta := newTestApp(t)
+	ta.resize(40, 20)
+	digits := strings.Repeat("0123456789", 6) // 60 characters
+	var got string
+	ta.Viewer(&Viewer{Title: "Table", NoWrap: true, NoNumbers: true, Lines: []string{digits, "short"},
+		Select: &Selection{Key: "v", Name: "Visual", Copy: func(s string) tea.Cmd { got = s; return nil }}})
+	ta.settle()
+	ta.press("v", "v", "$")
+	lines, _ := covFDraw(ta)
+	text := covFText(lines)
+	row := strings.TrimSuffix(strings.TrimPrefix(text[2], "┃ "), " ┃")
+	if !strings.HasPrefix(row, "…") || !strings.HasSuffix(row, "789") || Width(row) != ta.top().w-4 {
+		t.Errorf("scrolled to the cursor at the end, … at the start: %q", row)
+	}
+	if short := strings.TrimSuffix(strings.TrimPrefix(text[3], "┃ "), " ┃"); strings.Contains(short, "short") {
+		t.Errorf("every line goes along: %q", short)
+	}
+	ta.press("y")
+	if got != digits {
+		t.Errorf("all of it copied, the part cut too: %q", got)
+	}
+	// Back to the left: the cursor right after the "…" (scrolled the least).
+	ta.press("v", "$")
+	covFDraw(ta)
+	for range 33 {
+		ta.press("h")
+	}
+	lines, _ = covFDraw(ta)
+	if row := covFText(lines)[2]; !strings.HasPrefix(row, "┃ …6789") {
+		t.Errorf("the cursor (on 6) right after the …: %q", row)
+	}
+	ta.press("0")
+	lines, _ = covFDraw(ta)
+	if row := covFText(lines)[2]; !strings.HasPrefix(row, "┃ 0123") || !strings.HasSuffix(strings.TrimSuffix(row, " ┃"), "…") {
+		t.Errorf("back at the start, … at the end: %q", row)
+	}
+	ta.press("$")
+	covFDraw(ta)
+	ta.press("Esc")
+	lines, _ = covFDraw(ta)
+	if row := covFText(lines)[2]; !strings.HasPrefix(row, "┃ 0123") {
+		t.Errorf("out of the mode, back to the start: %q", row)
+	}
+}
+
 // TestViewerSearchHits: a search's hits are underlined in their own colours,
 // the current one drawn as the cursor block; no Yellow (components/dialog/note).
 func TestViewerSearchHits(t *testing.T) {

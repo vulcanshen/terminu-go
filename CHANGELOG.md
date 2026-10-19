@@ -146,7 +146,8 @@ Each release names the version of terminu design (tdp) it implements.
 - Every viewer has a selection mode: with no `Viewer.Select` it is `v`, Visual; with no `Copy`, `y` puts the text
   on the terminal's clipboard (`Clipboard`, OSC 52) and a Success toast says `Copied` (components/dialog/note)
 - `Viewer.NoWrap` keeps a long line on its row, cut with `…`; `Viewer.NoNumbers` leaves out the line numbers, for
-  a table the app lays out
+  a table the app lays out. In the selection mode every line scrolls across to keep the cursor in sight, as vim's
+  nowrap does, `…` where each is cut on either side; a terminal's selection mode does the same (G99)
 - `Viewer.Hits` and `Current` draw a search the app runs: every hit underlined in its own colours, the current
   one as the cursor block; `FindText` finds them (components/dialog/note)
 - A viewer's key reference lists its scroll keys only when its lines do not all fit

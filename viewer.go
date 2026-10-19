@@ -58,6 +58,9 @@ type Viewer struct {
 	// the cells of text a row holds, after the line numbers; numW the line
 	// numbers' column, as wide as it has been since it opened.
 	top, sub, visible, textW, numW int
+	// left is how many cells a NoWrap viewer is scrolled to the right, to
+	// keep the selection's cursor in sight.
+	left int
 	// colours caches the lines as drawn for the lines and Lang they are of.
 	colours viewerColours
 	// The selection mode (components/dialog/note): the first press of its
@@ -250,6 +253,60 @@ func (v *Viewer) maxTop() (line, sub int) {
 	return 0, 0
 }
 
+// followAcross scrolls a NoWrap viewer to the left or the right as little as
+// keeps the selection's cursor in sight, as vim's nowrap does: every line
+// goes along, the part cut on either side marked with "…". Out of the mode
+// it is back at the start (Rules K11: back to before).
+func (v *Viewer) followAcross() {
+	if !v.NoWrap || !v.inMode || v.line >= len(v.plain) {
+		v.left = 0
+		return
+	}
+	chars := v.plain[v.line]
+	cx, cw := 0, 1
+	for k, c := range chars {
+		w := Width(drawn(c, v.tabW))
+		if k == v.col {
+			cw = w
+			break
+		}
+		cx += w
+	}
+	full := 0
+	for _, c := range chars {
+		full += Width(drawn(c, v.tabW))
+	}
+	if from := v.left + btoi(v.left > 0); cx < from {
+		v.left = max(cx-1, 0) // "…" in the cell before it
+		if cx == 0 {
+			v.left = 0
+		}
+	}
+	more := btoi(full > cx+cw) // "…" after it when the line goes on
+	if cx+cw > v.left+v.textW-more {
+		v.left = cx + cw - v.textW + more
+	}
+	v.left = max(v.left, 0)
+}
+
+// nowrapRow is a styled line of a NoWrap viewer in w cells, from the cell
+// it is scrolled to: what is cut on either side is a "…".
+func (v *Viewer) nowrapRow(styled string, w int) string {
+	if v.left == 0 {
+		return Fit(styled, w)
+	}
+	from, to := v.left+1, v.left+w
+	tail := Width(styled) > to
+	if tail {
+		to--
+	}
+	s := "…" + Cut(styled, from, to)
+	if tail {
+		s += "…"
+	}
+	return Pad(s, w)
+}
+
 // clampTop keeps the first row in sight between the first row and maxTop.
 func (v *Viewer) clampTop() {
 	if v.top < 0 || len(v.Lines) == 0 {
@@ -316,6 +373,7 @@ func (vv *viewerView) draw(w, h int, layer Color) []string {
 		v.line = min(max(v.line, 0), max(len(v.Lines)-1, 0))
 		v.follow(v.line) // the view follows the cursor
 	}
+	v.followAcross()
 	v.clampTop()
 	// Each line's first row has its number, right-aligned, a space after it;
 	// the rows it folds onto leave the column blank. Numbers in Overlay0, the
@@ -347,9 +405,9 @@ func (vv *viewerView) draw(w, h int, layer Color) []string {
 				num = ""
 			}
 			if v.NoWrap {
-				// Too long, cut with "…" at the end (components/dialog/note).
-				// TODO(tdp G99): the selection cursor past the cut is not drawn.
-				body = append(body, " "+num+Fit(styled, v.textW)+" ")
+				// Too long, cut with "…" at the end; scrolled to the right,
+				// "…" at the start too (components/dialog/note).
+				body = append(body, " "+num+v.nowrapRow(styled, v.textW)+" ")
 				continue
 			}
 			to := from + v.textW // the last row: the cursor's cell on an empty line too

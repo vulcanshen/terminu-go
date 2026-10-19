@@ -297,11 +297,12 @@ func (t *Terminal) held(w, h int) []string {
 	v.readLines()
 	v.line = min(max(v.line, 0), max(len(v.Lines)-1, 0))
 	v.follow(v.line)
+	v.followAcross()
 	v.clampTop()
 	vv := &viewerView{v: v}
 	out := make([]string, 0, h)
 	for i := v.top; i < len(v.Lines) && len(out) < h; i++ {
-		out = append(out, Fit(vv.lineView(i, t.cursorColour), w))
+		out = append(out, v.nowrapRow(vv.lineView(i, t.cursorColour), w))
 	}
 	return Pad2(out, w, h)
 }

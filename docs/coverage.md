@@ -278,7 +278,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | panel §一般清單 | 截斷從尾端加 `…`；路徑、檔名可以從前面截；兩端都有意義的從中間截（`demo-app…66-gm72n`），從哪裡截由 app 替每一欄決定（lib：`Column.Path`、`Column.Middle`） | P `[1] PODS` 的長名字（從中間截）；I `[2] FILES` 的路徑 | `TestListTruncate`、`TestTruncateMiddle` |
 | panel §一般清單 | 欄放不下時先整欄收（表頭一起），照 app 標的順序，名稱欄不收；還放不下才照比例縮；變大時照順序回來（lib：`Column.Drop`） | P `[1] PODS` 把視窗縮窄：`AGE`、`RESTARTS`、`READY` 依序收掉 | `TestListColumnsGiveWay` |
 | panel §一般清單 | 單欄的清單沒有欄名時不畫表頭 | K `[1] KINDS` | `TestListColumnsGiveWay` |
-| panel §位置列 | 清單上面一列寫目前的位置（要不要由 app 決定）：panel 內第一列、離框一格，在 panel filter 的打字列與表頭上面，固定不捲；Lavender、失焦跟著淡化；太長從前面截；只顯示：cursor 不停、捲動位置不算（lib：`List.Location`）；清單空了時照樣留著（G98，暫時） | I `[2] FILES`（假的專案的目錄）；按 `/` 打字列在它下面 | `TestListLocationRow` |
+| panel §位置列 | 清單上面一列寫目前的位置（要不要由 app 決定）：panel 內第一列、離框一格，在 panel filter 的打字列與表頭上面，固定不捲；Lavender、失焦跟著淡化；太長從前面截；只顯示：cursor 不停、捲動位置不算（lib：`List.Location`）；清單空了時照樣留著，空狀態只取代表頭與清單（G98 定案 A） | I `[2] FILES`（假的專案的目錄）；按 `/` 打字列在它下面 | `TestListLocationRow` |
 | panel §一般清單 | 排序的群：app 替每一列指定群、群的先後由 app 定，排序只在群裡，群之間不畫標題（lib：`Row.SortGroup`） | I `[2] FILES`：資料夾裡的檔在前、最上層的在後，各自照名稱排 | `TestListSortGroups` |
 | panel §一般清單 | 清單的順序要固定：同一份資料每次排出來都一樣；沒有順序的資料先排（lib：`List.SortBy` 照名稱、數字照數值，排不出先後的照 `Row.ID`） | P `[1] PODS`、I `[2] FILES` 一打開就照名稱排 | `TestListFixedOrder` |
 | panel §一般清單 | 空的照空狀態 | `Empty` | `TestEmptyState` |
@@ -383,7 +383,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | 出處 | 規定 | 展示場 | 測試 |
 |---|---|---|---|
 | note §長相 | 留白一律有；標題 glyph（app 選）+ 顯示的東西（標題膠囊，`YAML — pod/nginx`）；捲動位置 `N-M of T`（viewer 的選取模式裡 `N of M`）；寬度：確定的照內容、viewer 用上限 | D「Note viewer」 | `TestNoteLayout` |
-| note §長相 | viewer 預設折行；要對齊的內容 app 可以讓它不折行：比框寬的截掉、行尾加 `…`（lib：`Viewer.NoWrap`；選取模式的游標走到截掉的部分時不畫，G99，暫時）；畫不畫行號由 app 決定（`Viewer.NoNumbers`），不畫時字離框一格 | D「Viewer: a table」 | `TestViewerNoWrapNoNumbers` |
+| note §長相 | viewer 預設折行；要對齊的內容 app 可以讓它不折行：比框寬的截掉、行尾加 `…`（lib：`Viewer.NoWrap`）；選取模式的游標走進截掉的部分時，整個畫面跟著左右捲到看得見（像 vim 的 nowrap），左邊捲掉的開頭也加 `…`，截掉的照樣選得到、複製得到（G99 定案 A；terminal 的選取模式同一套）；畫不畫行號由 app 決定（`Viewer.NoNumbers`），不畫時字離框一格 | D「Viewer: a table」（按 `v` 再 `$`） | `TestViewerNoWrapNoNumbers`、`TestViewerNoWrapFollowsCursor` |
 | note §長相 | viewer 的搜尋：命中的字全部加底線、保留原本的顏色；目前那一筆畫成 cursor 色塊；不另外加顏色（Yellow 只給選取）。lib：搜尋由 app 做（`/`、`n\|N`），把命中交給 `Viewer.Hits`、`Current`（`FindText` 找不分大小寫的） | D「Note viewer」按 `/` 打 `nginx`，再 `n`、`N` | `TestViewerSearchHits` |
 | note §viewer 的行號 | viewer（YAML、App Log、檔案內容）左邊有行號：每行第一列、靠右、後空一格、折下來的列空白；Overlay0，選取模式裡游標那行 Text；至少三位：行數固定的取 max(3, 位數)、打開後不變，串流的超過 999 行才跳寬；複製不含行號；`N of M` 跟行號同一套數字 | D「Note viewer」；P `[2] LOG` 按 `Enter`；I `[2] FILES` 的 `[V]iew` | `TestViewerLineNumbers`、`TestViewerLineNumbersStream`、`TestViewerCopyNoNumbers`、`TestViewerFoldedScroll` |
 | note §viewer 的行號 | 有 tab 的 viewer：行號欄照看過的頁裡最寬的，只變寬、不變窄（串流的頁也一樣） | D「Popup with tabs」、DevTools 切 tab | `TestViewerTabGutterOnlyGrows` |

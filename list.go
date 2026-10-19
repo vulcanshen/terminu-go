@@ -378,8 +378,8 @@ func (l *List) Draw(w, h int, focused bool) []string {
 		out = append(out, l.filterRow(w, focused))
 	}
 	if len(l.rows) == 0 {
-		// The location stays: an empty directory is still somewhere.
-		// TODO(tdp G98)
+		// The location stays: an empty directory is still somewhere (G98).
+
 		rest := EmptyState(w, h-len(out), l.EmptyFact, l.EmptyHint)
 		l.scroll = ""
 		return append(out, rest...)[:max(h, 0)]
