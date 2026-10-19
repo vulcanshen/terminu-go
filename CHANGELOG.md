@@ -2,7 +2,7 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.8.2
+## v0.2.1 — tdp v0.8.2
 
 - tdp v0.8.2 rewrites how a list's columns give way, reads file previews in the background and folds the "what each
   row is" section of a key reference; the library follows it below, with what the family found upgrading to v0.2.0
