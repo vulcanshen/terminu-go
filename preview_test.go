@@ -150,6 +150,22 @@ func TestFilePickerMetaDash(t *testing.T) {
 			t.Errorf("a link writes its target's %q:\n%s", want, l)
 		}
 	}
+	// A directory of one: 1 item.
+	one := filepath.Join(dir, "one")
+	if err := os.Mkdir(one, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, filepath.Join(one, "x"), nil, 0o600)
+	if l := previewText(fileInfo(one, 40, Blue)); !strings.Contains(l, "SIZE      1 item ") {
+		t.Errorf("one item:\n%s", l)
+	}
+	// Gone since it was listed: every row a dash, the four rows kept.
+	gone := strings.Split(previewText(fileInfo(filepath.Join(dir, "deleted.txt"), 40, Blue)), "\n")
+	for i, w := range []string{"TYPE      —", "SIZE      —", "MODIFIED  —", "MODE      —"} {
+		if i >= len(gone) || !strings.HasPrefix(gone[i], w) {
+			t.Errorf("a file gone, row %d: want %q in\n%s", i, w, strings.Join(gone, "\n"))
+		}
+	}
 	b := strings.Split(previewText(fileInfo(filepath.Join(dir, "broken"), 40, Blue)), "\n")
 	want := []string{"TYPE      link → gone.txt", "SIZE      —", "MODIFIED  —", "MODE      —"}
 	for i, w := range want {

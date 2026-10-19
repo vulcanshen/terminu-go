@@ -119,6 +119,8 @@ Each release names the version of terminu design (tdp) it implements.
   content stays bright (Rules T2)
 - While a terminal popup is open the footer is not drawn: the ends of the last row are blank, no footer words
   show beside the popup (components/dialog/terminal)
+- A file preview's metadata writes `1 item` for a directory of one, and a dash on every row for a file gone
+  since it was listed (components/input/file-picker)
 - `List.Location` is a list's location row, where the user is, in Lavender above its header, cut from the front
   (layout/panel)
 

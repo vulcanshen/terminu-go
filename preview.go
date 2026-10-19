@@ -83,8 +83,9 @@ func filePreview(p string, w, h int, hideSecrets bool, icon func(string, bool) (
 }
 
 // previewIn is filePreview of p in fsys (the local disk when nil); a text
-// file starts near line when it is set: a search's hit, two lines above it in
-// sight. TODO(tdp G97): where a preview from a line puts it.
+// file starts near line when it is set: a search's hit on the third row, the
+// two lines above it in sight, nothing else marked, the line numbers the
+// file's own (components/input/finder).
 func previewIn(fsys PreviewFS, p string, line, w, h int, hideSecrets bool, icon func(string, bool) (string, Color), tabW int) []string {
 	fsys = orLocal(fsys)
 	grey := func(s string) []string { return []string{Fg(Overlay0).Render(s)} }
@@ -578,7 +579,7 @@ func fileInfoIn(fsys PreviewFS, p string, w int, layer Color) []string {
 				rows[0][1] = "directory"
 			}
 			if entries, err := dirEntriesIn(fsys, p, false); err == nil {
-				rows[1][1] = strconv.Itoa(len(entries)) + " items"
+				rows[1][1] = items(len(entries))
 			} else {
 				rows[1][1] = "—" // it cannot be read: not 0 items, which reads as empty
 			}
@@ -596,8 +597,19 @@ func fileInfoIn(fsys PreviewFS, p string, w int, layer Color) []string {
 		}
 		rows[2][1] = st.ModTime().Format("2006-01-02 15:04")
 		rows[3][1] = st.Mode().String()
+	} else {
+		// Gone since it was listed (deleted, moved): nothing to tell of.
+		rows[0][1], rows[1][1], rows[2][1], rows[3][1] = "—", "—", "—", "—"
 	}
 	return infoRows(rows, w, layer)
+}
+
+// items is a directory's size: "12 items", "1 item".
+func items(n int) string {
+	if n == 1 {
+		return "1 item"
+	}
+	return strconv.Itoa(n) + " items"
 }
 
 func infoRows(rows [4][2]string, w int, layer Color) []string {
