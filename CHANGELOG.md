@@ -2,7 +2,11 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.7.4
+## Unreleased — tdp v0.8.0
+
+- tdp v0.8.0 settles the family's refactor; the library follows it in the third batch below. G96 is settled as
+  the library had it but for values: text on the screen draws a tab as `input_tab_width` spaces, a value on a
+  form or a panel as a red `\t`; G97 as the library had it (a preview from a line puts it on the third row)
 
 - tdp v0.7.3 writes down that text which is only shown (a confirm, a toast, an error popup, the splash) does not
   draw the space it breaks at, as the library already did (G95); the checklist now counts genes, which the library

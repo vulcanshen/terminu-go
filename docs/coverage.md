@@ -1,6 +1,6 @@
-# tdp v0.7.4 coverage
+# tdp v0.8.0 coverage
 
-tdp v0.7.4 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
+tdp v0.8.0 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
 （[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -251,7 +251,8 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | screen §畫面 chip 列 | 每個畫面一個膠囊、串的顏色 Blue（選中填 Blue 字 Base 粗體、沒選中字 Blue）；放不下先縮 `[P] [I] [D] [T]` 再收掉沒選中的 | 每個畫面；縮窄 | `TestScreenChips`、`TestScreenChipsShrink` |
 | screen §畫面 chip 列 | 右邊放 statusbar；下面全寬粗線 `━` Overlay0；長工作時從左填 Green 進度條、狀態文字 Green；terminal popup 開著時 chip 列與分隔線留著 | `Start task`；開 terminal popup 時再看一次 | `TestChipRowProgress` |
 | screen §statusbar | 不是 surface；label 有熱鍵就標；一組 `label: 值`、冒號後空一格，組與組之間兩格、不加分隔符號（展示場：app 畫的）；一般 Overlay0、你在哪 Lavender、進行中 Green、錯誤警告數 Red / Peach；寬度固定、截斷不折行 | statusbar：`[N]arrow: off  icon: 1  powerline: 1  errors: 3  warnings: 2`（有熱鍵、值 Lavender）、`[S]tart task` 進行中 `copying: 4%` Green | `TestStatusbar` |
-| screen §窄寬 | 放不下時只畫 focus 的 panel 佔滿寬、`Tab` 照換；門檻 app 定、不高於 80 | `[N]arrow layout`；或縮到 59 欄以下 | `TestScreenNarrow` |
+| screen §窄寬 | 放不下時只畫 focus 的 panel 佔滿寬、`Tab` 照換；門檻 app 定、不高於 80；窄寬只在最低尺寸以上才有 | `[N]arrow layout`；或縮到 59 欄以下 | `TestScreenNarrow` |
+| screen §zoom | 放大一個 panel 是 app 的功能；預設跟窄寬一樣只畫 focus 的那一個、`Tab`、數字鍵照換、換到的也是放大的（lib：`App.ForceNarrow` 就是這個預設） | `[N]arrow layout` | `TestScreenNarrow` |
 | screen §空狀態 | 置中一句事實 + 一句點名按鍵的提示，都 Overlay0，提示的鍵加方括號；panel 的 loading 與錯誤也用這個樣子；太長在空白處折行、每列置中、左右離框一格，不截斷 | P `[1] PODS` 的 `Empty`（把視窗縮窄） | `TestEmptyState`、`TestValuesEmptyState`（一列一個值的 panel：`Values.EmptyFact`、`EmptyHint`） |
 
 ## layout/panel

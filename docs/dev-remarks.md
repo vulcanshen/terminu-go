@@ -1,7 +1,7 @@
 # terminu-go 開發者備忘
 
 terminu-go 是 terminu design principle（tdp）的 Go 實作：給 app 呼叫的 lib，加上展示場 `examples/showcase`。遵循 terminu design
-principle，目前對應 tdp v0.7.4。這個 repo 的任務與規範的讀法見 [`CLAUDE.md`](../CLAUDE.md)。
+principle，目前對應 tdp v0.8.0。這個 repo 的任務與規範的讀法見 [`CLAUDE.md`](../CLAUDE.md)。
 
 ## 運作方式
 
@@ -63,9 +63,19 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   - 表單送出成功只關表單自己（`closeOnly`），不是關最上層：kamonu 在 `NEW KAMON` 的 Submit 裡開 `DRAW`，關最上層會關掉剛開的
     `DRAW`、留下表單。層色也改成只數底下開著的層，`DRAW` 從第一格就是第 1 層色，不會等表單收完才跳色。在收的那層不算一層，規範原本沒寫，G90 補進 tdp v0.6.10。
   - 打字列、模式、loading、下框的捲動位置先不做；要的時候用 optional method 加，`PopupBody` 不變。
-- **icon 與 powerline 符號各量各的**（tdp E5）：兩種寬度各自照「app 的變數 → 家族的變數 → 探測」決定
-  （`<APP>__ICON_WIDTH`／`TERMINU__ICON_WIDTH`、`<APP>__POWERLINE_WIDTH`／`TERMINU__POWERLINE_WIDTH`）；探測時印一個 file icon、
+- **icon 與 powerline 符號各量各的**（tdp E5）：兩種寬度各自照「app 的變數 → 家族的變數 → 隔著 ssh 帶過來的 → 探測」決定
+  （`<APP>__ICON_WIDTH`／`TERMINU__ICON_WIDTH`／`LC_TERMINU_ICON_WIDTH`，powerline 符號同一套）；探測時印一個 file icon、
   一個 powerline 符號，各問一次游標位置。有整列 cursor 的地方，右邊的留白跟箭頭一樣寬（layout/popup、layout/panel）。
+- **從 menu 跑的動作預設保留 menu**（tdp v0.8.0 的 T1）：lib 分不出動作是哪一種，只看它有沒有打開 popup —— 打開了就把 menu
+  留在底下（T1 的預設），什麼都沒打開就關掉 menu（它的事做完了）；清掉 source 要 app 標 `Action.Clear`。confirm 只是門，接受之後
+  照它後面的動作判。v0.1.13 以前預設是清掉，改用 lib 的 app 要替開 shell、換畫面、drill-down 的動作補 `Clear`。
+- **剪貼簿走終端機**（OSC 52）：viewer 預設的複製把字交給 `Clipboard`，跟著下一個畫面在同一次 write 送出（`screenOutput`），
+  不會插在畫面的 escape 序列中間；不呼叫系統的剪貼簿程式，隔著 ssh 也複製得到本機。
+- **viewer 的搜尋由 app 做**：terminu 給的兩條路（lib 自己做 `/`，或 app 標範圍、lib 照 S25 畫）選了後者。規範沒寫 viewer 搜尋的
+  打字列放哪，lib 自己做就得替規範決定；app 把命中交給 `Viewer.Hits`，打字用一般的 text input（`Search`），kbu、webu 原本的 `/`
+  與 `n|N` 照留。
+- **最低尺寸預設 80×40**（tdp L1）：用 lib 的 app 在比較小的終端機裡會只看到名稱與提示；版面在更小的畫面也畫得下的 app 自己調低
+  （`App.MinWidth`、`MinHeight`）。測試的 app 都調到 1×1，各自的測試照樣在小畫面上跑。
 
 ## 已否決，不要重提
 

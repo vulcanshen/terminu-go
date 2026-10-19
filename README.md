@@ -97,7 +97,7 @@ app reads them from its own and hands them over.
 
 ## Which terminu design
 
-terminu-go implements **tdp v0.7.4**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
+terminu-go implements **tdp v0.8.0**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
 
 ## Links
 
