@@ -251,4 +251,18 @@ func TestE5WidthOrder(t *testing.T) {
 	if r.PowerlineCells != 1 || r.PowerlineFrom != "SHOWCASE__POWERLINE_WIDTH" {
 		t.Errorf("the app's powerline variable first: %+v", r)
 	}
+	// Brought over ssh: after both, before the probe.
+	t.Setenv(RemoteIconWidth, "1")
+	t.Setenv(RemotePowerlineWidth, "2")
+	r = Probe("showcase")
+	if r.IconFrom != FamilyIconWidth || r.PowerlineFrom != "SHOWCASE__POWERLINE_WIDTH" {
+		t.Errorf("the ssh variables come after the app's and the family's: %+v", r)
+	}
+	t.Setenv(FamilyIconWidth, "")
+	t.Setenv("SHOWCASE__POWERLINE_WIDTH", "")
+	t.Setenv(FamilyPowerlineWidth, "")
+	r = Probe("showcase")
+	if r.IconCells != 1 || r.IconFrom != RemoteIconWidth || r.PowerlineCells != 2 || r.PowerlineFrom != RemotePowerlineWidth {
+		t.Errorf("then the ones brought over ssh: %+v", r)
+	}
 }

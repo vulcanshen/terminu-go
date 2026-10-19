@@ -24,6 +24,14 @@ const (
 	FamilyPowerlineWidth = "TERMINU__POWERLINE_WIDTH"
 )
 
+// The variables an app with ssh sends to the remote end when it connects, for
+// the family app that runs there: OpenSSH passes on only LANG and LC_* (tdp
+// E2, E5). Sending them is that app's; Probe reads them.
+const (
+	RemoteIconWidth      = "LC_TERMINU_ICON_WIDTH"
+	RemotePowerlineWidth = "LC_TERMINU_POWERLINE_WIDTH"
+)
+
 // ProbeResult is what Probe found out about the terminal.
 type ProbeResult struct {
 	IconCells      int // cells a Nerd Font icon takes
@@ -38,15 +46,16 @@ type ProbeResult struct {
 // and a powerline symbol take (tdp E5) and the terminal's 16 colours
 // (components/color, dimming). Each width comes from the app's variable
 // (<APP>__ICON_WIDTH, <APP>__POWERLINE_WIDTH), then the family's
-// (TERMINU__ICON_WIDTH, TERMINU__POWERLINE_WIDTH), then asking the terminal
-// where the cursor ended up after printing one (CPR, unix only). The palette
+// (TERMINU__ICON_WIDTH, TERMINU__POWERLINE_WIDTH), then the one brought over
+// ssh (LC_TERMINU_ICON_WIDTH, LC_TERMINU_POWERLINE_WIDTH), then asking the
+// terminal where the cursor ended up after printing one (CPR, unix only). The palette
 // is asked for with OSC 4 at the same time; colours the terminal does not
 // report stay xterm's. Probe sets the lib's widths and palette and reports
 // what it found.
 func Probe(app string) ProbeResult {
 	res := ProbeResult{IconCells: 1, PowerlineCells: 1, IconFrom: "default", PowerlineFrom: "default"}
-	iconSet := widthFromEnv(&res.IconCells, &res.IconFrom, EnvName(app, "icon width"), FamilyIconWidth)
-	plSet := widthFromEnv(&res.PowerlineCells, &res.PowerlineFrom, EnvName(app, "powerline width"), FamilyPowerlineWidth)
+	iconSet := widthFromEnv(&res.IconCells, &res.IconFrom, EnvName(app, "icon width"), FamilyIconWidth, RemoteIconWidth)
+	plSet := widthFromEnv(&res.PowerlineCells, &res.PowerlineFrom, EnvName(app, "powerline width"), FamilyPowerlineWidth, RemotePowerlineWidth)
 	ans, ok := askTerminal(!iconSet || !plSet)
 	if ok {
 		if !iconSet && ans.icon > 0 {

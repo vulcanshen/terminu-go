@@ -60,6 +60,9 @@ Each release names the version of terminu design (tdp) it implements.
 - A hotkey letter goes in place of the first such letter in its label in either case, written as the key is
   pressed: `[n]ew`, `D[e]lete`, `Ex[P]ort` for Shift-P, `[q]uit`; only a letter not in the label goes in front,
   `[x] Reset` (Rules M5)
+- An icon's and a powerline symbol's width are also read from `LC_TERMINU_ICON_WIDTH` and
+  `LC_TERMINU_POWERLINE_WIDTH`, which an app with ssh brings to the remote end (`RemoteIconWidth`,
+  `RemotePowerlineWidth`): after `<APP>__` and `TERMINU__`, before asking the terminal (Rules E5)
 
 ## v0.1.13 — tdp v0.7.2
 
