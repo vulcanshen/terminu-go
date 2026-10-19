@@ -72,6 +72,10 @@ type App struct {
 	ShiftTab bool
 	// OnMsg gets the messages the lib does not handle itself.
 	OnMsg func(tea.Msg) tea.Cmd
+	// OnResize runs when the terminal changes size, after the lib has laid
+	// the screen out again: the place to change what depends on the width
+	// (which columns a list shows; Rules L1).
+	OnResize func(w, h int) tea.Cmd
 	// ForceNarrow draws every screen narrow (for showing the narrow layout).
 	ForceNarrow bool
 	// Start runs when the program starts.
@@ -199,6 +203,9 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		a.w, a.h = msg.Width, msg.Height
 		a.relayout()
+		if a.OnResize != nil {
+			cmd = a.OnResize(a.w, a.h)
+		}
 	case animMsg:
 		cmd = a.stepAnimation()
 	case spinMsg:

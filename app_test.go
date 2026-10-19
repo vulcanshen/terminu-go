@@ -549,3 +549,22 @@ func TestE3TabsDrawnAsSpaces(t *testing.T) {
 		}
 	}
 }
+
+// TestOnResize: the app hears of a new terminal size after the lib has laid
+// the screen out again (Rules L1; kbu KB20).
+func TestOnResize(t *testing.T) {
+	ta := newTestApp(t)
+	var got [][2]int
+	ta.OnResize = func(w, h int) tea.Cmd {
+		if ta.w != w || ta.h != h {
+			t.Errorf("the lib had not taken the size: %dx%d, heard %dx%d", ta.w, ta.h, w, h)
+		}
+		got = append(got, [2]int{w, h})
+		return nil
+	}
+	ta.resize(100, 30)
+	ta.resize(60, 20)
+	if len(got) != 2 || got[0] != [2]int{100, 30} || got[1] != [2]int{60, 20} {
+		t.Errorf("heard %v", got)
+	}
+}
