@@ -27,6 +27,12 @@ type Popup struct {
 // ("Changes to kamonu are not saved."), "" for nothing. The quit flow's
 // confirm puts it last, in Peach, and asks first even when App.Quit is nil
 // (Rules K9: the quit flow is the app's).
+//
+// A body that scrolls may also have Scroll() string: its scroll position
+// ("3 of 40", "1-20 of 120"), "" when everything fits. The lib draws it on
+// the right of the bottom frame line in the layer colour and, when the popup
+// opens, makes it wide enough for it and the whole hint
+// (components/layout/popup, when the content does not fit).
 type PopupBody interface {
 	// Size is the inside on a sw × sh screen: w cells from frame line to
 	// frame line, h rows between the blank rows above and below. It is asked
@@ -75,6 +81,9 @@ func (v *appPopup) title() string { return popupTitle(v.p.Title, v.p.Subject) }
 func (v *appPopup) measure(sw, sh int) (int, int) {
 	w, h := v.p.Body.Size(sw, sh)
 	w = max(w+2, Width(titleCapsule(v.p.Glyph, v.title(), Base, 1<<20))+4, hintWidth(v.p.Body.Hint())+6)
+	if s := v.scroll(); s != "" {
+		w = max(w, scrollRoom(v.p.Body.Hint(), s))
+	}
 	return min(w, max(min(sw-2, 120), 1)), min(max(h, 0)+4, max(sh-2, 3))
 }
 
@@ -89,7 +98,15 @@ func (v *appPopup) draw(w, h int, layer Color) []string {
 			body[i] = Repeat(" ", inner)
 		}
 	}
-	return popupBox{color: layer, glyph: v.p.Glyph, title: v.title(), hint: v.p.Body.Hint()}.draw(w, body)
+	return popupBox{color: layer, glyph: v.p.Glyph, title: v.title(), hint: v.p.Body.Hint(), scroll: v.scroll()}.draw(w, body)
+}
+
+// scroll is the body's scroll position, when it has one.
+func (v *appPopup) scroll() string {
+	if s, ok := v.p.Body.(interface{ Scroll() string }); ok {
+		return s.Scroll()
+	}
+	return ""
 }
 
 func (v *appPopup) key(_ *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {

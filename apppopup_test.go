@@ -333,3 +333,30 @@ func TestK9QuitConfirmClosedUnder(t *testing.T) {
 		t.Error("Ctrl-C does not ask again")
 	}
 }
+
+// scrollBody is a test body that scrolls: it says where it is.
+type scrollBody struct {
+	testBody
+	at string
+}
+
+func (b *scrollBody) Scroll() string { return b.at }
+
+// TestAppPopupScroll: an app popup whose body scrolls has its scroll position
+// on the right of the bottom frame line, in the layer colour, and room for it
+// with the whole hint (components/layout/popup; kamonu KM9).
+func TestAppPopupScroll(t *testing.T) {
+	ta := newTestApp(t)
+	b := &scrollBody{testBody: testBody{w: 10, h: 3}, at: "3 of 40"}
+	ta.Popup(Popup{Title: "Draw", Body: b})
+	ta.settle()
+	l := ta.top()
+	bottom := StripStyles(ta.Frame()[l.y+l.h-1])
+	if !strings.Contains(bottom, "Esc:cancel") || !strings.Contains(bottom, " 3 of 40 ━┛") {
+		t.Errorf("bottom frame line %q", bottom)
+	}
+	b.at = ""
+	if bottom := StripStyles(ta.Frame()[l.y+l.h-1]); strings.Contains(bottom, "of 40") {
+		t.Errorf("everything fits, still a scroll position: %q", bottom)
+	}
+}
