@@ -126,7 +126,8 @@ func (c *confirmView) cancel() tea.Cmd { return run(c.ask.OnCancel) }
 
 func (c *confirmView) keyRef() []refSection {
 	secs := []refSection{{rows: []KeyRow{{Key: "Enter", Desc: c.ask.Verb}, {Key: "Esc", Desc: "cancel"}}}}
-	if len(c.ask.Details) > 0 {
+	if len(c.content) > c.visible {
+		// Only when the details do not all fit (Rules M6).
 		secs = append(secs, refSection{title: "move", rows: []KeyRow{{Key: "j|k", Desc: "scroll down, up"}}})
 	}
 	return secs

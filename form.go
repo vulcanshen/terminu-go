@@ -886,7 +886,8 @@ func (fv *formView) keyRef() []refSection {
 	return []refSection{
 		{rows: rows},
 		{title: "move", rows: []KeyRow{
-			{Key: "j|k", Desc: "next, previous in this area"},
+			{Key: "h|k", Desc: "previous in this area"},
+			{Key: "j|l", Desc: "next in this area"},
 			{Key: "u|d", Desc: "half a page up, down"},
 			{Key: "gg|G", Desc: "to the first, the last in this area"},
 		}},

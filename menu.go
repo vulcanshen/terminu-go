@@ -319,11 +319,7 @@ func (m *menuView) keyRef() []refSection {
 	} else {
 		rows = append(rows, KeyRow{Key: "Esc", Desc: esc})
 	}
-	return []refSection{{rows: rows}, {title: "move", rows: []KeyRow{
-		{Key: "j|k", Desc: "down, up"},
-		{Key: "u|d", Desc: "half a page up, down"},
-		{Key: "gg|G", Desc: "to the top, the bottom"},
-	}}}
+	return []refSection{{rows: rows}, {title: "move", rows: oneWayKeys()}}
 }
 
 func (m *menuView) typing() bool { return false }

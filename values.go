@@ -1,6 +1,8 @@
 package terminu
 
 import (
+	"slices"
+
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -32,6 +34,11 @@ type Field struct {
 	// OnChange runs when a radio or checkbox changes in place; it takes
 	// effect at once (there is no submit).
 	OnChange func() tea.Cmd
+	// Desc, when set, says what the row means, for the "what each row is"
+	// section first in the panel's key reference: the label is a word or
+	// two (layout/panel, components/dialog/note). Whether a panel has the
+	// section is the app's: it has it when a field has a Desc.
+	Desc string
 }
 
 func (f *Field) disabled() bool { return f.Disabled != nil && f.Disabled() }
@@ -213,7 +220,9 @@ func (v *Values) Draw(w, h int, focused bool) []string {
 	}
 	v.scroll = ""
 	if len(body) > room {
-		v.scroll = scrollText(true, v.cursor+1, 0, len(items))
+		// Counted in fields, as a form's: a radio's options are one
+		// (layout/panel, one value per row).
+		v.scroll = scrollText(true, slices.Index(v.Fields, items[v.cursor].field)+1, 0, len(v.Fields))
 	}
 	return Pad2(out, w, h)
 }
@@ -267,8 +276,21 @@ func (v *Values) fixCursor(items []valueItem, dir int) {
 // Scroll is "N of M" when the items do not all fit.
 func (v *Values) Scroll() string { return v.scroll }
 
-// MoveKeys are a one-dimensional list's (Rules K12).
+// MoveKeys are a one-dimensional list's (Rules K12); none with no fields,
+// nothing to move to (Rules M6).
 func (v *Values) MoveKeys() []KeyRow {
+	if len(v.Fields) == 0 {
+		return nil
+	}
+	return oneWayKeys()
+}
+
+// tabMoveKeys are its keys in a panel with tabs: h|l go to the tabs
+// (Rules K12).
+func (v *Values) tabMoveKeys() []KeyRow {
+	if len(v.Fields) == 0 {
+		return nil
+	}
 	return []KeyRow{
 		{Key: "j|k", Desc: "next, previous"},
 		{Key: "u|d", Desc: "half a page up, down"},

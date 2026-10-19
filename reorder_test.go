@@ -80,6 +80,28 @@ func TestReorderDrag(t *testing.T) {
 	}
 }
 
+// TestReorderOneWay: a reorder is a one-dimensional list: l and h move as j
+// and k do, the cursor and the held item (Rules K12).
+func TestReorderOneWay(t *testing.T) {
+	ta := newTestApp(t)
+	var got []int
+	ta.Reorder(testReorder(&got))
+	ta.settle()
+	rv := ta.topView().(*reorderView)
+	ta.press("l", "l", "h")
+	if rv.cursor != 1 {
+		t.Errorf("l, l, h: cursor %d", rv.cursor)
+	}
+	ta.press("D", "l")
+	if !slices.Equal(rv.order, []int{0, 2, 1, 3, 4}) || rv.cursor != 2 {
+		t.Errorf("l moves the held item down: %v, cursor %d", rv.order, rv.cursor)
+	}
+	ta.press("h")
+	if !slices.Equal(rv.order, []int{0, 1, 2, 3, 4}) || rv.cursor != 1 {
+		t.Errorf("h moves it up: %v, cursor %d", rv.order, rv.cursor)
+	}
+}
+
 // The held item wraps at the ends; the others move by one (Rules K12).
 func TestReorderDragWraps(t *testing.T) {
 	ta := newTestApp(t)
@@ -165,7 +187,7 @@ func TestReorderDragModeKeys(t *testing.T) {
 		t.Fatalf("? while holding is the Drag mode's keys: %T", ta.topView())
 	}
 	text := ta.screenText()
-	if !strings.Contains(text, "move it down, up") || strings.Contains(text, "apply the order") {
+	if !strings.Contains(text, "j|l    move it down") || !strings.Contains(text, "h|k    move it up") || strings.Contains(text, "apply the order") {
 		t.Errorf("the mode's key reference:\n%s", text)
 	}
 	ta.press("Esc", "Enter", "!")

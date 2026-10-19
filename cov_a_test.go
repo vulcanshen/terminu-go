@@ -861,9 +861,9 @@ func TestK6PopupKeysOnly(t *testing.T) {
 		open      []string
 		want, not []string
 	}{
-		{"Space menu", []string{"Space"}, []string{"Enter", "m", "x", "D", "/", "j|k", "Space|Esc"},
-			[]string{"Tab", "1–3", "q|Ctrl-C", "S", "O", "?", "h|l"}},
-		{"global operation popup", []string{"Space", "G", "Enter"}, []string{"Enter", "O", "S", "q", "Esc", "j|k"},
+		{"Space menu", []string{"Space"}, []string{"Enter", "m", "x", "D", "/", "h|k", "j|l", "Space|Esc"},
+			[]string{"Tab", "1–3", "q|Ctrl-C", "S", "O", "?", "h|l", "j|k"}},
+		{"global operation popup", []string{"Space", "G", "Enter"}, []string{"Enter", "O", "S", "q", "Esc", "h|k", "j|l"},
 			[]string{"m", "x", "Tab", "1–3", "Space|Esc", "?"}},
 		{"confirm", []string{"x"}, []string{"Enter", "Esc"}, []string{"Tab", "q|Ctrl-C", "m", "S", "?"}},
 	}

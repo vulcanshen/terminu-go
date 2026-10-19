@@ -74,8 +74,12 @@ func (t *Pager) Draw(w, h int, focused bool) []string {
 // Scroll is "N-M of T" when the lines do not all fit.
 func (t *Pager) Scroll() string { return t.scroll }
 
-// MoveKeys are the scrolling keys.
+// MoveKeys are the scrolling keys; none when every line fits, nothing to
+// scroll (Rules M6).
 func (t *Pager) MoveKeys() []KeyRow {
+	if len(t.lines) <= t.height {
+		return nil
+	}
 	return []KeyRow{
 		{Key: "j|k", Desc: "scroll down, up"},
 		{Key: "u|d", Desc: "half a page up, down"},

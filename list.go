@@ -679,8 +679,12 @@ func angleWidth() int { return Width(glyphTyping) + 1 }
 // Scroll is "N of M" when the rows do not all fit.
 func (l *List) Scroll() string { return l.scroll }
 
-// MoveKeys are the list's movement keys.
+// MoveKeys are the list's movement keys; none when nothing is shown,
+// nothing to move to (Rules M6).
 func (l *List) MoveKeys() []KeyRow {
+	if len(l.view) == 0 {
+		return nil
+	}
 	return []KeyRow{
 		{Key: "j|k", Desc: "down, up"},
 		{Key: "u|d", Desc: "half a page up, down"},

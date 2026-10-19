@@ -114,6 +114,9 @@ func fitRows(rows []string, h int) []string {
 type refSection struct {
 	title string
 	rows  []KeyRow
+	// names: the left column is the rows' names, in Text, not keys
+	// (components/dialog/note, what each row is).
+	names bool
 }
 
 // popupBox draws a popup frame (components/layout/popup): heavy line in

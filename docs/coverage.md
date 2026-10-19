@@ -98,7 +98,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | K11 | popup 裡的模式（reorder 的 Drag、viewer 的選取模式）也一樣：只有模式的鍵與上表的 core key 作用，app 自己的 core key 也不作用 | I 的 `Segments` 按 `D` 再按 `!`；D「Note viewer」按 `v` 再按 `!` | `TestReorderDragModeKeys`、`TestK11PopupModeCoreKeys` |
 | K12 | 不在打字的地方 `j k u d g G h l` 保留給移動，任何動作都不佔 | lib：登記時拒絕（panel 與 menu；popup 裡數字可以） | `TestK12HotkeyCannotTakeMovement`、`TestK12HotkeyCannotTakeMovementInMenu`、`TestK1DigitsFreeInPopups` |
 | K12 | 有左右結構：`h\|l` 左右（切 tab、跨側、日曆前後一天） | P `[1] PODS` 的 tab；I 的 `Meeting` | `TestK12HLSwitchTabs`、`TestDatetimePicker` |
-| K12 | 一維清單：`h\|k` 往前、`j\|l` 往後；在有 tab 的 panel 裡 `h\|l` 給 tab | D「Form: New host」；P `[3] SETTINGS`；I `[1] INPUTS` | `TestK12OneDimensional` |
+| K12 | 一維清單：`h\|k` 往前、`j\|l` 往後；在有 tab 的 panel 裡 `h\|l` 給 tab；reorder 也是（含 Drag）；key reference 照這樣寫（表單、沒有 tab 的一列一個值、menu、reorder 寫 `h\|k`、`j\|l`） | D「Form: New host」；P `[3] SETTINGS`；I `[1] INPUTS`；I 的 `Segments`；各處按 `?` | `TestK12OneDimensional`、`TestReorderOneWay`、`TestKeyReferenceMoveSection`、`TestK6PopupKeysOnly` |
 | K12 | `u\|d` 半頁、`gg\|G` 頭尾；單按 `g` 不作用，後面接沒登記成組合的鍵時當 `g` 沒按過（`g` 然後 `j` 往下一列）；其他 `g` 開頭可當熱鍵；不收 `Ctrl-U\|Ctrl-D` | P `[1] PODS`（40 列）；展示場登記一個 `[go]to` | `TestK12HalfPageAndEnds`、`TestK12SingleGNoop`、`TestK12NoCtrlUD` |
 | K12 | `Home`、`End` 只在打字列（游標到最前、最後）；清單、menu、viewer、textarea 的「移」都不作用 | 任一清單、menu、D「Note viewer」、I 的 `Comment` 上按 `Home`、`End` | `TestK12HomeEndOnlyTyping` |
 | K12 | 一步一步的移動（`j\|k`、`h\|l`、方向鍵、`Tab`）到頭尾繞回：panel 清單、一列一個值、menu、表單、finder／select／checkbox popup、panel 的 tab、picker 的欄與項目 | P `[1] PODS` 在最後一列按 `j`；tab 在最後一個按 `l`；每種清單各一次 | `TestK12StepWraps` |
@@ -127,6 +127,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | M5 | hint、footer 的鍵一色（Blue）、冒號與說明一色（Overlay0）；並列的 `\|` 用說明的顏色（Overlay0），key reference 的鍵欄也是 | 每個 hint、footer、`?` | `TestM5HintColors`、`TestM5KeysJoinedWithBar` |
 | M6 | 對象不存在：那一列（區）不出現；存在但現在不能：停用色、說明不變、cursor 跳過、熱鍵不作用 | P `[1] PODS` 的 `Disable` | `TestM6DisabledRow` |
 | M6 | key reference 照同一套（停用的鍵照列、停用色）；hint 與 footer 只列現在按得了的也可以（app 決定），例外是元件規定一定要拿掉的：表單的按鈕還在跑時、finder 沒有結果時、panel 的清單一項都沒有時 | `Disable` 之後按 `?`；hint：P `[1] PODS` 的 `m:mark` 變停用色，I `[2] FILES`（`HintPressableOnly`）的 `V:view` 不列；三個例外見 form §按鈕、finder §hint、panel §框 | `TestM6KeyReferenceDisabled`、`TestM6HintListsDisabled`、`TestFormActionWhileRunning`、`TestFinderHintNoResults`、`TestPanelHintNoItems`、`TestFormKeyReferenceFollowsFields`（表單的 `Space` 只在有 checkbox 選項時列、`e` 只在有欄位有問題時列）、`TestM6HiddenGlobalNotInKeyReference`（global 動作的對象不存在時，app-wide 段不列） |
+| M6 | 清單空了沒有東西可以移、內容整個放得下沒有東西可以捲，都算對象不存在：移動鍵、捲動鍵不列（List、Pager、Values、confirm、error popup 與其他 note） | P `[2] LOG` 只有幾行時按 `?`；I `[2] FILES` 的 `Empty` 後按 `?`；D「Confirm」上按 `?` | `TestKeyReferenceMoveSection`、`TestKeyReferenceScrollOnlyWhenItScrolls` |
 | M6 | key reference 裡講別的 surface 的段落照常顯示，排在最後（`app-wide` 之後） | T `[1] SHELL` 的 `?` 最後一段 `TERMINAL` | `TestM6OtherSurfaceSection` |
 | M7 | focus 在 panel 上時 `Space`、`?` 一定有反應；popup 上一定有反應的是 `?` | P `[2] LOG`（沒有 item）按 `Space` | `TestM7PanelEntriesRespond` |
 | M8 | 其他 menu 要分組時第一組是 cursor 相關；每一組都加標題，第一組也是（lib：`MenuSection.Title`） | D「Menu: Open with」 | `TestM8GroupedMenuOrder` |
@@ -287,6 +288,8 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | panel §一列一個值 | 沒有送出：確定的那一刻就生效；沒有動作區、沒有「改過了要先問」 | 同上 | `TestValuePanelAppliesNow` |
 | panel §明細 | 另一個 panel 的 cursor 一移動，明細立刻換成那一筆，label 寫那一筆的名字時一起換；不用 `Enter`，cursor 移動時 focus 不動；app 也可以讓清單上的 `Enter` 把 focus 送到明細（K3） | K `[1] KINDS` 上 `j\|k`，看 `[2]`；`Enter` 進 `[2]` | `TestPanelDetailsFollowCursor`、`TestValuesOnMove`、`TestFilePreviewPanel`、`TestFilePreviewPanelHidesSecrets`（預覽當明細：`FilePreview`） |
 | panel §一列一個值 | focus 色塊 Subtext1 底 Base 粗體、最右邊一格是箭頭，從項目開頭到 panel 內右緣；label 大寫，一般 Blue、停用 Surface2、出錯 Red；label 欄寬取最長的 label、與值之間兩格 | `[3] SETTINGS` 的 `Disable`（`Remote` 停用）、`Fail`（`Timeout` 的 label 變 Red） | `TestValuePanelFocusBlock`、`TestValuePanelLabels` |
+| panel §一列一個值 | 捲動位置照表單以欄位為單位：radio 的幾個選項算同一欄 | P `[3] SETTINGS` 縮矮 | `TestValuePanelScrollByField` |
+| panel §一列一個值 | `?` 最前面可以有「每一列」一節（`what each row is`）：設定的名稱用一般字色（Text）、右欄說明，按鍵的節接在後面；要不要有由 app 決定（lib：`Field.Desc`，有一欄有就有這一節） | P `[3] SETTINGS` 按 `?` | `TestKeyReferenceWhatEachRowIs` |
 | panel §一列一個值 | 表頭（`PROPERTY  VALUE`）Overlay0，不用 label 的 Blue；panel 失焦時跟著淡化（T2）；一般清單的表頭照舊 Blue | P `[3] SETTINGS` 的 `PROPERTY  VALUE`；I `[1] INPUTS` 的 `INPUT  VALUE` | `TestValuePanelHeader` |
 | panel §panel filter | `/` 在最上面出現打字列（清單有表頭時在表頭上面）、即時篩選、不開 popup；最前面 U+F105 離框一格（跟 finder 的打字列一樣）、空一格才接打的字，打字時框線色（Blue）、在清單時 Overlay0；右邊 `符合/總數`，Overlay0；打字列按鍵與比對同 finder；篩選後保持 panel 的排序 | P `[1] PODS` 按 `/` | `TestPanelFilter` |
 | panel §panel filter | 清單上 `Tab` 下一個 panel；清單上 `Esc` 清掉篩選；選了之後清單留著篩選、打字列變灰；清單上 `/` 回打字列接著打 | 同上 | `TestPanelFilterListKeys` |

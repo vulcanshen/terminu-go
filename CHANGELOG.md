@@ -121,6 +121,13 @@ Each release names the version of terminu design (tdp) it implements.
   show beside the popup (components/dialog/terminal)
 - A file preview's metadata writes `1 item` for a directory of one, and a dash on every row for a file gone
   since it was listed (components/input/file-picker)
+- A key reference lists movement and scrolling keys only where they move something: none for an empty list,
+  none to scroll content that all fits (a pager, a confirm, an error popup) (Rules M6)
+- A form, a menu, a value panel without tabs and a reorder are one-dimensional lists: their key references write
+  `h|k` previous and `j|l` next, and a reorder moves with `h|l` too, held or not (Rules K12)
+- A value panel's scroll position counts fields, a radio's options one, as a form's does (layout/panel)
+- `Field.Desc` says what a value panel's row means: its key reference starts with a "what each row is" section,
+  the names in the text colour (layout/panel)
 - `List.Location` is a list's location row, where the user is, in Lavender above its header, cut from the front
   (layout/panel)
 

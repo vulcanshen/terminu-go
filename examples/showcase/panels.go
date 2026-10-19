@@ -75,7 +75,8 @@ func newPanelsScreen(s *showcase) *panelsScreen {
 	name, pin, timeout := "showcase", "", "30"
 	a := s.app
 	ps.values.Fields = []*terminu.Field{
-		{Label: "Name", Value: func() string { return name }, Edit: func() tea.Cmd {
+		// Each row says what it is in the panel's ? (what each row is).
+		{Label: "Name", Desc: "the name in the splash and the window title", Value: func() string { return name }, Edit: func() tea.Cmd {
 			return a.Text(terminu.TextInput{Title: "Name", Glyph: glyphPencil, Prompt: "A name for this showcase", Verb: "rename", Old: name,
 				Check: func(v string) error {
 					if v == "" {
@@ -85,7 +86,7 @@ func newPanelsScreen(s *showcase) *panelsScreen {
 				},
 				Done: func(v string) tea.Cmd { name = v; return nil }})
 		}},
-		{Label: "PIN", Value: func() string {
+		{Label: "PIN", Desc: "asked for before the showcase quits", Value: func() string {
 			if pin == "" {
 				return ""
 			}
@@ -94,11 +95,11 @@ func newPanelsScreen(s *showcase) *panelsScreen {
 			return a.Password(terminu.PasswordInput{Title: "PIN", Glyph: glyphLock, Prompt: "Up to 12 digits", Verb: "set", Set: pin != "", Unlock: true, MaxLen: 12,
 				Done: func(v string, clear bool) tea.Cmd { pin = v; return nil }})
 		}},
-		{Label: "Layout", Options: []string{"row", "column"}},
-		{Label: "Notify", Options: []string{"on errors", "on success"}, Multi: true, Checked: []bool{true, false}},
-		{Label: "Remote", Value: func() string { return "ssh decides" }, Disabled: func() bool { return ps.disabled }},
+		{Label: "Layout", Desc: "how the panels share the screen", Options: []string{"row", "column"}},
+		{Label: "Notify", Desc: "when a toast tells of a job", Options: []string{"on errors", "on success"}, Multi: true, Checked: []bool{true, false}},
+		{Label: "Remote", Desc: "the host the jobs run on", Value: func() string { return "ssh decides" }, Disabled: func() bool { return ps.disabled }},
 		// Fail on this panel makes Timeout wrong: its label turns Red.
-		{Label: "Timeout", Value: func() string { return timeout }, Err: func() bool { return ps.settings.Fail != nil }, Edit: func() tea.Cmd {
+		{Label: "Timeout", Desc: "how long a job may run", Value: func() string { return timeout }, Err: func() bool { return ps.settings.Fail != nil }, Edit: func() tea.Cmd {
 			return a.Number(terminu.NumberInput{Title: "Timeout", Glyph: glyphTimer, Name: "Timeout", Prompt: "Seconds, 1-3600", Verb: "save",
 				Old: timeout, Min: 1, Max: 3600, Done: func(v string) tea.Cmd { timeout = v; return nil }})
 		}},

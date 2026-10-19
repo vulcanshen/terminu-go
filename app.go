@@ -836,7 +836,11 @@ func (a *App) panelKeyRef(p *Panel) *noteView {
 	}
 	var move []KeyRow
 	if p.Body != nil {
-		move = append(move, p.Body.MoveKeys()...)
+		keys := p.Body.MoveKeys()
+		if b, ok := p.Body.(interface{ tabMoveKeys() []KeyRow }); ok && len(p.Tabs) > 0 {
+			keys = b.tabMoveKeys() // h|l go to the tabs (Rules K12)
+		}
+		move = append(move, keys...)
 	}
 	if len(p.Tabs) > 0 {
 		move = append(move, KeyRow{Key: "h|l", Desc: "previous tab, next tab"})
@@ -867,13 +871,24 @@ func (a *App) panelKeyRef(p *Panel) *noteView {
 		}
 		app = append(app, row(act))
 	}
-	sections := []refSection{
+	var sections []refSection
+	if v, ok := p.Body.(*Values); ok {
+		// What each row is, first, when the app says (layout/panel).
+		var rows []KeyRow
+		for _, f := range v.Fields {
+			if f.Desc != "" {
+				rows = append(rows, KeyRow{Key: Upper(f.Label), Desc: f.Desc})
+			}
+		}
+		sections = append(sections, refSection{title: "what each row is", rows: rows, names: true})
+	}
+	sections = append(sections, []refSection{
 		{title: "item operation", rows: item},
 		{title: "panel operation", rows: panel},
 		{title: "move", rows: move},
 		{title: "core keys", rows: core},
 		{title: "app-wide", rows: app},
-	}
+	}...)
 	// A section about another surface goes last (components/dialog/note).
 	for _, o := range p.OtherKeys {
 		sections = append(sections, refSection{title: o.Title, rows: o.Rows})

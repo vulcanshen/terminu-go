@@ -2173,6 +2173,30 @@ func TestValuePanelAppliesNow(t *testing.T) {
 	}
 }
 
+// TestValuePanelScrollByField: a value panel's scroll position counts fields,
+// as a form's does: a radio's options are one (layout/panel).
+func TestValuePanelScrollByField(t *testing.T) {
+	v := &Values{Fields: []*Field{{Label: "Layout", Options: []string{"row", "column", "grid"}}}}
+	for i := range 9 {
+		v.Fields = append(v.Fields, &Field{Label: fmt.Sprintf("F%d", i), Value: func() string { return "x" }})
+	}
+	v.Draw(40, 4, true)
+	if got := v.Scroll(); got != "1 of 10" {
+		t.Errorf("on the radio's first option: %q", got)
+	}
+	v.Key("j", tea.KeyMsg{})
+	v.Key("j", tea.KeyMsg{})
+	v.Draw(40, 4, true)
+	if got := v.Scroll(); got != "1 of 10" {
+		t.Errorf("on its third option, still the first field: %q", got)
+	}
+	v.Key("j", tea.KeyMsg{})
+	v.Draw(40, 4, true)
+	if got := v.Scroll(); got != "2 of 10" {
+		t.Errorf("on the next field: %q", got)
+	}
+}
+
 func TestValuePanelFocusBlock(t *testing.T) {
 	c := covCValuesApp(t)
 	block := func(text string) {

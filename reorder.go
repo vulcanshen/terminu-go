@@ -143,9 +143,9 @@ func (rv *reorderView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {
 	}
 	half := max(rv.visible/2, 1)
 	switch key {
-	case "j", "↓":
+	case "j", "l", "↓", "→": // a one-dimensional list (Rules K12)
 		rv.cursor = (rv.cursor + 1) % n
-	case "k", "↑":
+	case "k", "h", "↑", "←":
 		rv.cursor = (rv.cursor + n - 1) % n
 	case "d", "PgDn":
 		rv.cursor = min(rv.cursor+half, n-1)
@@ -185,9 +185,9 @@ func (rv *reorderView) dragKey(key string) (bool, tea.Cmd) {
 	switch key {
 	case "?", "q", "Ctrl-C":
 		return false, nil // the mode's key reference, the quit flow (Rules K11)
-	case "j", "↓":
+	case "j", "l", "↓", "→":
 		rv.cursor = moveWrap(rv.order, rv.cursor, true)
-	case "k", "↑":
+	case "k", "h", "↑", "←":
 		rv.cursor = moveWrap(rv.order, rv.cursor, false)
 	case "Enter":
 		rv.held = false
@@ -251,7 +251,8 @@ func (rv *reorderView) keyRef() []refSection {
 	if rv.held {
 		// Only the mode's keys (Rules K11).
 		return []refSection{{title: "Drag", rows: []KeyRow{
-			{Key: "j|k", Desc: "move it down, up"},
+			{Key: "h|k", Desc: "move it up"},
+			{Key: "j|l", Desc: "move it down"},
 			{Key: "Enter", Desc: "drop it"},
 			{Key: "Esc", Desc: "put it back"},
 		}}}
@@ -262,11 +263,18 @@ func (rv *reorderView) keyRef() []refSection {
 			{Key: "D", Desc: "pick up the item to move it (Drag)"},
 			{Key: "Esc", Desc: "cancel (asks first when the order changed)"},
 		}},
-		{title: "move", rows: []KeyRow{
-			{Key: "j|k", Desc: "next, previous"},
-			{Key: "u|d", Desc: "half a page up, down"},
-			{Key: "gg|G", Desc: "to the first, the last"},
-		}},
+		{title: "move", rows: oneWayKeys()},
+	}
+}
+
+// oneWayKeys are the movement keys of a one-dimensional list: a form, a
+// value panel without tabs, a menu, a reorder (Rules K12, K6).
+func oneWayKeys() []KeyRow {
+	return []KeyRow{
+		{Key: "h|k", Desc: "previous"},
+		{Key: "j|l", Desc: "next"},
+		{Key: "u|d", Desc: "half a page up, down"},
+		{Key: "gg|G", Desc: "to the first, the last"},
 	}
 }
 

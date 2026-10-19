@@ -863,10 +863,115 @@ func TestKeyReferenceMoveSection(t *testing.T) {
 	if move := covEKeys(plain)["MOVE"]; !slices.Equal(move, []string{"j|k", "u|d", "gg|G", "h|l"}) {
 		t.Errorf("a list with tabs moves with j|k u|d gg|G and switches tabs with h|l: %v", move)
 	}
+	// Three lines that fit: nothing to scroll, no move section (Rules M6).
 	ta.press("Esc", "2", "?")
+	_, plain = covEPopup(ta)
+	if move, ok := covEKeys(plain)["MOVE"]; ok {
+		t.Errorf("lines that all fit list scroll keys: %v", move)
+	}
+	ta.press("Esc")
+	pager := ta.Screen().Panels[1].Body.(*Pager)
+	pager.SetLines(make([]string, 100))
+	ta.Frame()
+	ta.press("?")
 	_, plain = covEPopup(ta)
 	if move := covEKeys(plain)["MOVE"]; slices.Contains(move, "h|l") || !slices.Contains(move, "j|k") {
 		t.Errorf("without tabs there is no h|l: %v", move)
+	}
+	// A value panel without tabs is a one-dimensional list: h|k, j|l (Rules K12).
+	ta.press("Esc", "3", "?")
+	_, plain = covEPopup(ta)
+	if move := covEKeys(plain)["MOVE"]; !slices.Equal(move, []string{"h|k", "j|l", "u|d", "gg|G"}) {
+		t.Errorf("a value panel: %v", move)
+	}
+	// With tabs, h|l are the tabs' and it moves with j|k.
+	ta.press("Esc")
+	ta.Screen().Panels[2].Tabs = []string{"More"}
+	ta.press("?")
+	_, plain = covEPopup(ta)
+	if move := covEKeys(plain)["MOVE"]; !slices.Equal(move, []string{"j|k", "u|d", "gg|G", "h|l"}) {
+		t.Errorf("a value panel with tabs: %v", move)
+	}
+	// An empty list: nothing to move to, no move section.
+	ta.press("Esc", "1")
+	ta.list.SetRows(nil)
+	ta.press("?")
+	_, plain = covEPopup(ta)
+	if move := covEKeys(plain)["MOVE"]; slices.Contains(move, "j|k") {
+		t.Errorf("an empty list lists moving keys: %v", move)
+	}
+}
+
+// TestKeyReferenceScrollOnlyWhenItScrolls: a confirm's or a note's key
+// reference lists its scroll keys only when its content does not all fit
+// (Rules M6).
+func TestKeyReferenceScrollOnlyWhenItScrolls(t *testing.T) {
+	ta := newTestApp(t)
+	ta.Confirm(Ask{Title: "Delete", Question: "Delete it?", Verb: "delete", Details: []string{"one", "two"}}, nil)
+	ta.settle()
+	ta.Frame() // drawn, as every update is
+	ta.press("?")
+	if keys := covAKeys(covARef(t, ta)); keys["j|k"] {
+		t.Error("two details that fit: no j|k")
+	}
+	ta.covBCloseAll()
+	ta.Confirm(Ask{Title: "Delete", Question: "Delete them?", Verb: "delete", Details: make([]string, 80)}, nil)
+	ta.settle()
+	ta.Frame() // drawn, as every update is
+	ta.press("?")
+	if keys := covAKeys(covARef(t, ta)); !keys["j|k"] {
+		t.Error("80 details: j|k")
+	}
+	ta.covBCloseAll()
+	ta.Error("Fetch", "connection refused")
+	ta.settle()
+	ta.Frame() // drawn, as every update is
+	ta.press("?")
+	if keys := covAKeys(covARef(t, ta)); keys["j|k"] || keys["gg|G"] {
+		t.Error("a short error popup: no scroll keys")
+	}
+	ta.covBCloseAll()
+	ta.Error("Fetch", strings.Repeat("connection refused by the server at the far end of the line; ", 80))
+	ta.settle()
+	ta.Frame() // drawn, as every update is
+	ta.press("?")
+	if keys := covAKeys(covARef(t, ta)); !keys["j|k"] {
+		t.Error("a long error popup: j|k")
+	}
+}
+
+// TestKeyReferenceWhatEachRowIs: a value panel's key reference may start with
+// what each row is, the setting's name in Text, not a key's Blue
+// (layout/panel, components/dialog/note).
+func TestKeyReferenceWhatEachRowIs(t *testing.T) {
+	ta := newTestApp(t)
+	vals := ta.Screen().Panels[2].Body.(*Values)
+	ta.press("3", "?")
+	_, plain := covEPopup(ta)
+	if _, ok := covEKeys(plain)["WHAT EACH ROW IS"]; ok {
+		t.Error("no Desc, no section")
+	}
+	ta.press("Esc")
+	vals.Fields[0].Desc = "the name shown in the title"
+	ta.press("?")
+	styled, plain := covEPopup(ta)
+	keys := covEKeys(plain)
+	if !slices.Equal(keys["WHAT EACH ROW IS"], []string{"NAME"}) {
+		t.Errorf("the section: %v", keys)
+	}
+	first := -1
+	for i, l := range plain {
+		if strings.Contains(l, "WHAT EACH ROW IS") && first < 0 {
+			first = i
+		}
+		if strings.Contains(l, "ITEM OPERATION") && first < 0 {
+			t.Error("it comes first")
+		}
+	}
+	for i, l := range plain {
+		if on := strings.SplitN(Fg(Text).Render("x"), "x", 2)[0]; strings.Contains(l, "the name shown in the title") && !strings.Contains(styled[i], on+"NAME") {
+			t.Errorf("the name in Text: %q", styled[i])
+		}
 	}
 }
 
@@ -900,7 +1005,7 @@ func TestKeyReferenceKeys(t *testing.T) {
 	for _, k := range covEKeys(plain) {
 		keys = append(keys, k...)
 	}
-	for _, k := range []string{"Enter", "m", "x", "D", "z", "j|k", "u|d", "gg|G"} {
+	for _, k := range []string{"Enter", "m", "x", "D", "z", "h|k", "j|l", "u|d", "gg|G"} {
 		if !slices.Contains(keys, k) {
 			t.Errorf("the Space menu's key reference lacks %s: %v", k, keys)
 		}

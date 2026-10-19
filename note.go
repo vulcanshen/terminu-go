@@ -124,11 +124,16 @@ func (n *noteView) keyRef() []refSection {
 	default:
 		rows = append(rows, KeyRow{Key: "Esc", Desc: "close"})
 	}
-	return []refSection{{rows: rows}, {title: "move", rows: []KeyRow{
-		{Key: "j|k", Desc: "scroll down, up"},
-		{Key: "u|d", Desc: "half a page up, down"},
-		{Key: "gg|G", Desc: "to the top, the bottom"},
-	}}}
+	secs := []refSection{{rows: rows}}
+	if len(n.lines) > n.visible {
+		// Only when it does not all fit (Rules M6).
+		secs = append(secs, refSection{title: "move", rows: []KeyRow{
+			{Key: "j|k", Desc: "scroll down, up"},
+			{Key: "u|d", Desc: "half a page up, down"},
+			{Key: "gg|G", Desc: "to the top, the bottom"},
+		}})
+	}
+	return secs
 }
 
 // typing: the typing note takes what is typed on it, so the app's own core
@@ -158,6 +163,9 @@ func keyReference(title string, sections []refSection) *noteView {
 		}
 		for _, r := range s.rows {
 			key, desc := Pad(renderKey(r.Key, Fg(Blue), Overlay0), keyW), Fg(Text).Render(r.Desc)
+			if s.names {
+				key = Fg(Text).Render(Pad(r.Key, keyW))
+			}
 			if r.Disabled {
 				key, desc = Fg(Surface2).Render(Pad(r.Key, keyW)), Fg(Surface2).Render(r.Desc)
 			}
