@@ -124,13 +124,16 @@ func (s *showcase) status(w int) string {
 	if s.app.ForceNarrow {
 		narrow = "on "
 	}
+	// Each group label: value, a space after the colon; two spaces between
+	// groups, no other mark (components, spacing). Each value keeps its
+	// width (Rules L2) but the last, which pushes nothing.
 	text := grey.Render("[N]arrow: ") + terminu.Fg(terminu.Lavender).Render(narrow) +
-		grey.Render("  icon ") + terminu.Fg(terminu.Lavender).Render(fmt.Sprint(terminu.IconWidth())) +
-		grey.Render("  powerline ") + terminu.Fg(terminu.Lavender).Render(fmt.Sprint(terminu.PowerlineWidth())) +
-		terminu.Fg(terminu.Red).Render(fmt.Sprintf("%3d", s.panels.errors)) + grey.Render(" err") +
-		terminu.Fg(terminu.Peach).Render(fmt.Sprintf("%3d", s.panels.warnings)) + grey.Render(" warn")
+		grey.Render("  icon: ") + terminu.Fg(terminu.Lavender).Render(fmt.Sprint(terminu.IconWidth())) +
+		grey.Render("  powerline: ") + terminu.Fg(terminu.Lavender).Render(fmt.Sprint(terminu.PowerlineWidth())) +
+		grey.Render("  errors: ") + terminu.Fg(terminu.Red).Render(fmt.Sprintf("%-3d", s.panels.errors)) +
+		grey.Render("  warnings: ") + terminu.Fg(terminu.Peach).Render(fmt.Sprintf("%-3d", s.panels.warnings))
 	if s.taskOn {
-		text += grey.Render("  ·  ") + terminu.Fg(terminu.Green).Render(fmt.Sprintf("copying %3d%%", int(s.task*100)))
+		text += grey.Render("  copying: ") + terminu.Fg(terminu.Green).Render(fmt.Sprintf("%d%%", int(s.task*100)))
 	}
 	return terminu.Truncate(text, w)
 }

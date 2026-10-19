@@ -137,7 +137,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | 出處 | 規定 | 展示場 | 測試 |
 |---|---|---|---|
 | L1 | 80 × 40 能完成所有核心任務；放不下所有 panel 時照 screen 的窄寬 | 終端機開 80 × 40 走一遍；`Narrow layout` | `TestL1Core80x40`、`TestScreenNarrow`、`TestOnResize`（lib：`App.OnResize`，app 照寬度重排） |
-| L2 | 標題、statusbar、chip 等動態文字固定寬度 | statusbar 的 `[S]tart task` 進度文字（`copying  4%` 到 `100%` 同寬）、錯誤與警告數；panel 標題換 tab | `TestL2FixedWidthChrome` |
+| L2 | 標題、statusbar、chip 等動態文字固定寬度；一列裡最後一個動態欄位可以不補空白 | statusbar 的錯誤與警告數（`%-3d`，固定寬）、最後的 `copying: 4%`（不補）；panel 標題換 tab | `TestL2FixedWidthChrome` |
 | L3 | footer、statusbar、tab 列列數鎖死；放不下截斷或從尾端捨，不折行 | 縮到 30 欄 | `TestL3ChromeRowsFixed` |
 | L4 | 每一列剛好等於終端機寬度 | 每個畫面、每種 popup，多種尺寸（含 5 列以下與 1×1：popup 被截掉、不 panic），icon 一格與兩格；app 的文字裡有 Tab 時一樣 | `TestL4EveryRowFullWidth`、`TestE3TabsDrawnAsSpaces` |
 | L5 | focus 不只靠顏色（粗線與細線）；切換 focus 內容不位移 | `Tab` 換 panel；Drag 模式裡照樣看得出 focus | `TestL5FocusNotColorOnly`、`TestL5NoShift` |
@@ -246,7 +246,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | screen §footer | terminal popup 開著時 footer 整列不畫：最後一列兩端是空白，不露出 footer 的字 | T 的 terminal popup | `TestTerminalPopupSize` |
 | screen §畫面 chip 列 | 每個畫面一個膠囊、串的顏色 Blue（選中填 Blue 字 Base 粗體、沒選中字 Blue）；放不下先縮 `[P] [I] [D] [T]` 再收掉沒選中的 | 每個畫面；縮窄 | `TestScreenChips`、`TestScreenChipsShrink` |
 | screen §畫面 chip 列 | 右邊放 statusbar；下面全寬粗線 `━` Overlay0；長工作時從左填 Green 進度條、狀態文字 Green；terminal popup 開著時 chip 列與分隔線留著 | `Start task`；開 terminal popup 時再看一次 | `TestChipRowProgress` |
-| screen §statusbar | 不是 surface；label 有熱鍵就標；一般 Overlay0、你在哪 Lavender、進行中 Green、錯誤警告數 Red / Peach；寬度固定、截斷不折行 | statusbar：`[N]arrow: off`（有熱鍵、值 Lavender）、`icon` 與 `powerline` 的格數、錯誤數 Red、警告數 Peach、`[S]tart task` 進行中 Green | `TestStatusbar` |
+| screen §statusbar | 不是 surface；label 有熱鍵就標；一組 `label: 值`、冒號後空一格，組與組之間兩格、不加分隔符號（展示場：app 畫的）；一般 Overlay0、你在哪 Lavender、進行中 Green、錯誤警告數 Red / Peach；寬度固定、截斷不折行 | statusbar：`[N]arrow: off  icon: 1  powerline: 1  errors: 3  warnings: 2`（有熱鍵、值 Lavender）、`[S]tart task` 進行中 `copying: 4%` Green | `TestStatusbar` |
 | screen §窄寬 | 放不下時只畫 focus 的 panel 佔滿寬、`Tab` 照換；門檻 app 定、不高於 80 | `[N]arrow layout`；或縮到 59 欄以下 | `TestScreenNarrow` |
 | screen §空狀態 | 置中一句事實 + 一句點名按鍵的提示，都 Overlay0，提示的鍵加方括號；panel 的 loading 與錯誤也用這個樣子；太長在空白處折行、每列置中、左右離框一格，不截斷 | P `[1] PODS` 的 `Empty`（把視窗縮窄） | `TestEmptyState`、`TestValuesEmptyState`（一列一個值的 panel：`Values.EmptyFact`、`EmptyHint`） |
 
