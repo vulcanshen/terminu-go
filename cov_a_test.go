@@ -547,7 +547,8 @@ func TestK3InputUnchangedNoWrite(t *testing.T) {
 	ta := newTestApp(t)
 	calls := 0
 	done := func(string) tea.Cmd { calls++; return nil }
-	for _, keys := range [][]string{{"Enter"}, {"Tab", "Enter"}, {"a", "s", "s", "e", "t", "s", "Enter"}} {
+	for _, keys := range [][]string{{"Enter"}, {"Tab", "Enter"}, {"a", "s", "s", "e", "t", "s", "Enter"},
+		{"Backspace", "a", "s", "s", "e", "t", "s", "Enter"}} {
 		ta.Text(TextInput{Title: "Rename", Old: "assets", Done: done})
 		ta.settle()
 		ta.press(keys...)
@@ -555,11 +556,36 @@ func TestK3InputUnchangedNoWrite(t *testing.T) {
 			t.Errorf("%v: the same value was written (%d) or the popup stayed", keys, calls)
 		}
 	}
-	ta.Number(NumberInput{Title: "Port", Old: "22", Min: 1, Max: 65535, Done: done})
-	ta.settle()
-	ta.press("2", "2", "Enter")
-	if calls != 0 || ta.top() != nil {
-		t.Error("a number: the same value was written")
+	// With no old value it opened empty: empty again is the same value, so
+	// it is not checked either.
+	for _, keys := range [][]string{{"Enter"}, {"a", "b", "Backspace", "Backspace", "Enter"}} {
+		ta.Text(TextInput{Title: "New name", Check: func(v string) error {
+			if v == "" {
+				return ErrEmpty
+			}
+			return nil
+		}, Done: done})
+		ta.settle()
+		ta.press(keys...)
+		if calls != 0 || ta.top() != nil {
+			t.Errorf("no old value, %v: written (%d) or the popup stayed", keys, calls)
+		}
+	}
+	for _, c := range []struct {
+		old  string
+		keys []string
+	}{
+		{"22", []string{"2", "2", "Enter"}},
+		{"22", []string{"Backspace", "2", "2", "Enter"}},
+		{"", []string{"2", "Backspace", "Enter"}},
+	} {
+		ta.Number(NumberInput{Title: "Port", Old: c.old, Min: 1, Max: 65535, Done: done})
+		ta.settle()
+		ta.press(c.keys...)
+		if calls != 0 || ta.top() != nil {
+			t.Errorf("a number, old %q, %v: the same value was written", c.old, c.keys)
+		}
+		ta.covBCloseAll()
 	}
 	day := time.Date(2026, 10, 15, 0, 0, 0, 0, time.Local)
 	ta.PickDate(DatePicker{Title: "Due", Value: day, Done: func(time.Time) tea.Cmd { calls++; return nil }})

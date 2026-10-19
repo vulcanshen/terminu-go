@@ -760,10 +760,10 @@ func TestErrorRowChangesOnCheckOnly(t *testing.T) {
 		}
 		return nil
 	}
-	ta.Text(TextInput{Title: "Rename", Prompt: "New name", Check: check})
+	ta.Text(TextInput{Title: "Rename", Prompt: "New name", Old: "assets", Check: check})
 	ta.settle()
 	errRow := func() string { return covDTop(ta)[6] }
-	ta.press("Enter")
+	ta.press("Backspace", "Enter") // the old value thrown away: empty is a new value
 	if !strings.Contains(errRow(), "can't be empty") {
 		t.Fatalf("Enter checks: %q", errRow())
 	}

@@ -96,7 +96,6 @@ type lineInput struct {
 	old          string // the suggestion; for a password, whether one is set
 	hasOld       bool
 	dropOld      bool // Backspace on an empty value threw the suggestion away
-	touched      bool
 	maxLen       int
 	unlock       bool
 	ed           *lineEditor
@@ -348,7 +347,6 @@ func (li *lineInput) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 	case "Tab":
 		if li.kind != kindPassword && li.showingOld() {
 			li.ed.set(li.old)
-			li.touched = true
 		}
 		return true, nil
 	case "Backspace":
@@ -356,7 +354,7 @@ func (li *lineInput) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 		case li.kind == kindPassword && !li.ed.empty():
 			li.ed.set("")
 		case li.ed.empty() && li.hasOld:
-			li.dropOld, li.touched = true, true
+			li.dropOld = true
 		default:
 			li.ed.key(key, msg)
 		}
@@ -382,14 +380,12 @@ func (li *lineInput) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 			return true, nil
 		}
 		li.ed.insert(string(kept), false)
-		li.touched = true
 		return true, nil
 	}
 	if li.kind == kindPassword && (msg.Type == tea.KeyRunes || msg.Paste || key == "Space") && li.maxLen > 0 && len(li.ed.g) >= li.maxLen {
 		return true, nil
 	}
 	if li.ed.key(key, msg) {
-		li.touched = true
 		if li.maxLen > 0 && len(li.ed.g) > li.maxLen {
 			li.ed.g = li.ed.g[:li.maxLen]
 			li.ed.pos = min(li.ed.pos, li.maxLen)
@@ -429,6 +425,9 @@ func (li *lineInput) confirm(a *App) tea.Cmd {
 		return nil
 	}
 	v := strings.TrimFunc(li.ed.value(), unicode.IsSpace)
+	if v == li.old {
+		return a.closeTop() // the value it opened with: nothing to write back (Rules K3)
+	}
 	if li.check != nil {
 		if err := li.check(v); err != nil {
 			li.err = err.Error()
@@ -436,12 +435,6 @@ func (li *lineInput) confirm(a *App) tea.Cmd {
 		}
 	}
 	li.err = ""
-	if v == li.old && li.hasOld && !li.dropOld {
-		return a.closeTop()
-	}
-	if !li.hasOld && v == "" && !li.touched {
-		return a.closeTop()
-	}
 	return tea.Batch(a.closeTop(), li.done(v, false))
 }
 
