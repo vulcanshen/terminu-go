@@ -1209,3 +1209,38 @@ func TestM6HiddenGlobalNotInKeyReference(t *testing.T) {
 		ta.press("Esc")
 	}
 }
+
+// TestValuesEnterInMenuAndKeys: what Enter does on a one-value-per-row panel
+// is in its Space menu and its key reference too, from the same place as the
+// hint; on a disabled field in the disabled colour; an Enter the app
+// registered itself is the only one (Rules M3, M6, K6; ccdrawu CD19).
+func TestValuesEnterInMenuAndKeys(t *testing.T) {
+	ta := newTestApp(t)
+	ta.press("3", "?")
+	if text := StripStyles(strings.Join(ta.topView().(*noteView).lines, "\n")); !strings.Contains(text, "Enter") ||
+		!strings.Contains(text, "Edit") || !strings.Contains(text, "this value") {
+		t.Errorf("the key reference has no Enter:\n%s", text)
+	}
+	ta.press("Esc", "Space")
+	if m := ta.topView().(*menuView); m.rows[m.cursor].label != MarkLabel("Enter", "Edit") {
+		t.Fatalf("the Space menu starts on %q", m.rows[m.cursor].label)
+	}
+	ta.press("Enter")
+	if !slices.Equal(ta.ran, []string{"edit name"}) || ta.top() != nil {
+		t.Errorf("Edit from the Space menu ran %v", ta.ran)
+	}
+	// The field under the cursor turns disabled: the row is there, in the
+	// disabled colour.
+	ta.press("gg")
+	ta.values.Fields[0].Disabled = func() bool { return true }
+	acts := ta.panelActions(ta.Screen().Focused(), ItemScope)
+	if len(acts) != 1 || acts[0].Key != "Enter" || !acts[0].disabled() {
+		t.Errorf("on a disabled field: %+v", acts)
+	}
+	// The app's own Enter: no second one.
+	ta.Screen().Focused().Actions = append(ta.Screen().Focused().Actions,
+		Action{Key: "Enter", Label: "Open", Desc: "the setting", Scope: ItemScope, Do: ta.record("open")})
+	if acts := ta.panelActions(ta.Screen().Focused(), ItemScope); len(acts) != 1 || acts[0].Label != "Open" {
+		t.Errorf("with the app's own Enter: %+v", acts)
+	}
+}

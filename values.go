@@ -329,6 +329,30 @@ func (v *Values) Key(key string, _ tea.KeyMsg) (bool, tea.Cmd) {
 	return true, nil
 }
 
+// Actions are the panel's own item operation: what Enter does on the item
+// under the cursor, so the Space menu and ? have it as the hint does (Rules
+// M3, K6); in the disabled colour on a field that cannot be used now (M6).
+func (v *Values) Actions() []Action {
+	items := v.itemList()
+	if v.cursor >= len(items) {
+		return nil
+	}
+	f := items[v.cursor].field
+	var label, desc string
+	switch {
+	case len(f.Options) > 0 && f.Multi:
+		label, desc = "Toggle", "this option"
+	case len(f.Options) > 0:
+		label, desc = "Choose", "this option"
+	case f.Edit != nil:
+		label, desc = "Edit", "this value"
+	default:
+		return nil
+	}
+	return []Action{{Key: "Enter", Label: label, Desc: desc, Scope: ItemScope, Disabled: f.disabled,
+		Do: func() tea.Cmd { _, cmd := v.Key("Enter", tea.KeyMsg{Type: tea.KeyEnter}); return cmd }}}
+}
+
 // EnterHint is what Enter does on the item under the cursor, for the panel's
 // hint: edit a value, choose a radio option, toggle a checkbox.
 func (v *Values) EnterHint() string {

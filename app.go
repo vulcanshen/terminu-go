@@ -622,14 +622,17 @@ func cmpOr(s, def string) string {
 
 func (a *App) panelActions(p *Panel, scope Scope) []Action {
 	var out []Action
+	own := map[string]bool{}
 	for _, act := range p.Actions {
+		own[act.Key] = true
 		if act.Scope == scope {
 			out = append(out, act)
 		}
 	}
+	// The body's own come after; a key the app registered itself is the app's.
 	if b, ok := p.Body.(interface{ Actions() []Action }); ok {
 		for _, act := range b.Actions() {
-			if act.Scope == scope {
+			if act.Scope == scope && (act.Key == "" || !own[act.Key]) {
 				out = append(out, act)
 			}
 		}
