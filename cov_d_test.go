@@ -975,7 +975,7 @@ func TestMenuWraps(t *testing.T) {
 	}
 	// The global popup's first row is the current screen, disabled: skipped.
 	ta.press("G", "Enter", "k")
-	if got := covDCursor(ta); !strings.Contains(got, "[q] Quit") {
+	if got := covDCursor(ta); !strings.Contains(got, "[q]uit") {
 		t.Errorf("k from the first usable row goes round to the last: %q", got)
 	}
 	ta.press("j")

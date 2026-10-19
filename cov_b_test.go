@@ -326,7 +326,7 @@ func TestM4GlobalPopup(t *testing.T) {
 			labels = append(labels, r.label)
 		}
 	}
-	if want := []string{"[P]anels", "[O]ther", "[S]tart", "[q] Quit"}; !slices.Equal(labels, want) {
+	if want := []string{"[P]anels", "[O]ther", "[S]tart", "[q]uit"}; !slices.Equal(labels, want) {
 		t.Errorf("rows %q, want every global operation %q", labels, want)
 	}
 	if !strings.Contains(ta.screenText(), "GLOBAL OPERATION") {
@@ -440,7 +440,12 @@ func TestM5HotkeyMarking(t *testing.T) {
 		{"D", "Delete", "[D]elete"},
 		{"A", "Add", "[A]dd"},
 		{"L", "URL", "UR[L]"},
-		{"n", "New", "[n] New"},
+		{"n", "New", "[n]ew"},
+		{"e", "Delete", "D[e]lete"},
+		{"P", "Export", "Ex[P]ort"},
+		{"x", "Reset", "[x] Reset"},
+		{"Alt-T", "Alterm", "Al[Alt-T]erm"},
+		{"Alt-x", "term", "[Alt-x] term"},
 		{"Alt-t", "term", "[Alt-t]erm"},
 		{"go", "goto", "[go]to"},
 		{"3", "Favorites", "[3] Favorites"},

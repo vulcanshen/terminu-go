@@ -119,7 +119,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | M4 | global 熱鍵在 panel 上直接按（沒有 popup 時）；跟 panel 熱鍵撞鍵時 panel 的優先、那個 panel 的 key reference 不列被蓋掉的 global 鍵；數字的 global 熱鍵只在 popup 裡；模式裡不作用 | P `[1] PODS` 的 `[D]rag` 蓋掉 global 的 `[D]ialogs` | `TestM4GlobalHotkeyOnPanel`、`TestM4PanelKeyWins` |
 | M4 | key reference 唯讀、可捲、沒游標、不能執行 | 任一處按 `?` | `TestKeyReferenceReadOnly` |
 | M5 | 每一列：左邊動作名稱、右邊一句單行說明 | Space menu | `TestMenuRowLayout` |
-| M5 | 熱鍵標記：首字母原地 `[r]ename`；中間 `UR[L]`；不在 label 裡放前面 `[n] New`；modifier `[Alt-t]erm`；多字元 `[go]to`；數字放前面 `[3] Favorites`；core key 放前面 `[Enter] Edit`；沒熱鍵不加 | 展示場的登記各用到一次（見下面「熱鍵標記」） | `TestM5HotkeyMarking` |
+| M5 | 熱鍵標記：字母出現在 label 裡（不分大小寫）原地包第一個，括號裡照鍵寫、label 照原本的大小寫：`[r]ename`、`[n]ew`、`D[e]lete`、`UR[L]`、`Ex[P]ort`；不在 label 裡放前面 `[x] Reset`；modifier 照同一套 `[Alt-t]erm`；多字元 `[go]to`；數字放前面 `[3] Favorites`；core key 放前面 `[Enter] Edit`；沒熱鍵不加 | 展示場的登記各用到一次（見下面「熱鍵標記」） | `TestM5HotkeyMarking` |
 | M5 | 括號裡印的就是要按的鍵（大小寫算數）；label 已寫出鍵的不再括；不只靠顏色或 glyph 暗示 | 同上 | `TestM5HotkeyMarking` |
 | M5 | 鍵名：鍵帽名、大駝峰（`Esc` `Tab` `Enter` `Space` `Backspace` `Delete` `Home` `End` `PgUp` `PgDn`、`↑↓←→`）；`Ctrl` 後字母大寫；`-` 連 modifier；幾個鍵做同一件事用 `\|` 並列（不用 `/`）、`–` 範圍 | lib：鍵名由一個函式產生 | `TestM5KeyNames` |
 | M5 | 依位置：label 用括號；句子裡鍵加方括號；hint、footer `鍵:說明`、項目間一格；key reference 兩欄、不加括號冒號 | 空狀態、toast、hint、footer、`?` | `TestM5WritingByPosition` |
@@ -463,7 +463,8 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | 情境 | 展示場的登記 |
 |---|---|
 | 首字母 | `[m]ark`、`[D]rag`、`[V]iew` |
-| 在 label 中間 | `UR[L]`（I `[2] FILES` 的 copy URL） |
+| 首字母，大小寫跟 label 不同 | `[v]im`、`[e]xport`（D「Menu: Open with」、「Menu: long descriptions」） |
+| 在 label 中間 | `Copy UR[L]`（I `[2] FILES`）、`He[x] view`（D「Menu: Open with」） |
 | 字母不在 label 裡 | `[x] Delete` |
 | 含 modifier | `[Alt-t]erm` |
 | 多字元 | `[go]to` |

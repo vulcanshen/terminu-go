@@ -57,6 +57,9 @@ Each release names the version of terminu design (tdp) it implements.
 - A `Success` toast says an action is done: `SUCCESS` in Green, 2200ms (components/dialog/toast)
 - A toast has as many lines as it needs, no longer three at most; `App.ToastLines` caps them, the last one kept
   ending in `…`
+- A hotkey letter goes in place of the first such letter in its label in either case, written as the key is
+  pressed: `[n]ew`, `D[e]lete`, `Ex[P]ort` for Shift-P, `[q]uit`; only a letter not in the label goes in front,
+  `[x] Reset` (Rules M5)
 
 ## v0.1.13 — tdp v0.7.2
 

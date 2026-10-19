@@ -70,34 +70,44 @@ func modifierKey(key string) (mod, rest string, ok bool) {
 	return "", "", false
 }
 
-// MarkLabel writes a hotkey into its label the way Rules M5 says: in place
-// when it is the label's first letter ("[r]ename") or a letter inside it
-// ("UR[L]"), in front otherwise ("[n] New"); a modifier key in place of the
-// letter it ends with ("[Alt-t]erm"), several letters in place ("[go]to"), a
-// digit, a core key or a symbol always in front ("[3] Favorites",
-// "[Enter] Edit", "[/] Search"). The case counts: "[A]dd" is Shift-A. A label
-// that already shows its key, and a row with no key, are left as they are.
+// MarkLabel writes a hotkey into its label the way Rules M5 says. A letter
+// that is in the label, in either case, goes in place of the first one, written
+// as the key is pressed ("[r]ename", "[n]ew", "D[e]lete", "Ex[P]ort": Shift-P);
+// one that is not goes in front ("[x] Reset"). A modifier key goes in place of
+// the letter it ends with the same way ("[Alt-t]erm"), several letters in place
+// at the start ("[go]to"), a digit, a core key or a symbol always in front
+// ("[3] Favorites", "[Enter] Edit", "[/] Search"). The label keeps its own
+// case. A label that already shows its key, and a row with no key, are left as
+// they are.
 func MarkLabel(key, label string) string {
 	if key == "" || strings.Contains(label, "["+key+"]") {
 		return label
 	}
-	if mod, rest, ok := modifierKey(key); ok && utf8.RuneCountInString(rest) == 1 && isLetters(rest) {
-		if strings.HasPrefix(label, rest) {
-			return "[" + mod + rest + "]" + label[len(rest):]
+	mod, letter := "", key
+	if m, rest, ok := modifierKey(key); ok {
+		mod, letter = m, rest
+	}
+	if utf8.RuneCountInString(letter) == 1 && isLetters(letter) {
+		if i := indexFold(label, letter); i >= 0 {
+			_, n := utf8.DecodeRuneInString(label[i:])
+			return label[:i] + "[" + mod + letter + "]" + label[i+n:]
 		}
 		return "[" + key + "] " + label
 	}
-	if isLetters(key) {
-		if strings.HasPrefix(label, key) {
-			return "[" + key + "]" + label[len(key):]
-		}
-		if utf8.RuneCountInString(key) == 1 {
-			if i := strings.Index(label, key); i >= 0 {
-				return label[:i] + "[" + key + "]" + label[i+len(key):]
-			}
-		}
+	if mod == "" && isLetters(key) && strings.HasPrefix(label, key) {
+		return "[" + key + "]" + label[len(key):]
 	}
 	return "[" + key + "] " + label
+}
+
+// indexFold is where the letter first is in s, in either case; -1 if nowhere.
+func indexFold(s, letter string) int {
+	for i, r := range s {
+		if strings.EqualFold(string(r), letter) {
+			return i
+		}
+	}
+	return -1
 }
 
 // Upper writes text in upper case for a capsule, a title, a header or a
