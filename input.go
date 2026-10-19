@@ -42,6 +42,10 @@ type TextInput struct {
 	Search bool
 	// Done gets the new value. It is not called when the value did not change.
 	Done func(string) tea.Cmd
+	// OnCancel runs when it closes with no answer: Esc, or the popup it is
+	// over closing it, so whoever waits for the answer (a web page's prompt,
+	// ssh's askpass) hears it was cancelled (Rules F6).
+	OnCancel func() tea.Cmd
 }
 
 // PasswordInput is a masked input (components/input/password).
@@ -62,6 +66,10 @@ type PasswordInput struct {
 	Check  func(string) error
 	// Done gets the new password; "" with clear true when it was removed.
 	Done func(value string, clear bool) tea.Cmd
+	// OnCancel runs when it closes with no answer: Esc, or the popup it is
+	// over closing it, so whoever waits for the answer (a web page's prompt,
+	// ssh's askpass) hears it was cancelled (Rules F6).
+	OnCancel func() tea.Cmd
 }
 
 // NumberInput is a number (components/input/number).
@@ -79,6 +87,10 @@ type NumberInput struct {
 	Decimal  bool // "." may be typed
 	Check    func(string) error
 	Done     func(string) tea.Cmd
+	// OnCancel runs when it closes with no answer: Esc, or the popup it is
+	// over closing it, so whoever waits for the answer (a web page's prompt,
+	// ssh's askpass) hears it was cancelled (Rules F6).
+	OnCancel func() tea.Cmd
 }
 
 type inputKind int
@@ -101,6 +113,7 @@ type lineInput struct {
 	hasOld       bool
 	dropOld      bool // Backspace on an empty value threw the suggestion away
 	search       bool // only searched for: control characters are not held back
+	onCancel     func() tea.Cmd
 	maxLen       int
 	unlock       bool
 	ed           *lineEditor
@@ -148,7 +161,7 @@ func then(written func(), cmd tea.Cmd) tea.Cmd {
 func (in TextInput) open(a *App, written func()) tea.Cmd {
 	return a.open(&lineInput{
 		kind: kindText, title: in.Title, name: cmpOr(in.Name, in.Title), subject: in.Subject, glyph: in.Glyph, prompt: in.Prompt, verb: cmpOr(in.Verb, "save"),
-		old: in.Old, hasOld: in.Old != "", maxLen: in.MaxLen, ed: newEditor(""), check: in.Check, search: in.Search,
+		old: in.Old, hasOld: in.Old != "", maxLen: in.MaxLen, ed: newEditor(""), check: in.Check, search: in.Search, onCancel: in.OnCancel,
 		done: func(v string, _ bool) tea.Cmd { return then(written, run2(in.Done, v)) },
 	})
 }
@@ -156,7 +169,7 @@ func (in TextInput) open(a *App, written func()) tea.Cmd {
 func (in PasswordInput) open(a *App, written func()) tea.Cmd {
 	return a.open(&lineInput{
 		kind: kindPassword, title: in.Title, name: cmpOr(in.Name, in.Title), subject: in.Subject, glyph: in.Glyph, prompt: in.Prompt, verb: cmpOr(in.Verb, "save"),
-		hasOld: in.Set, maxLen: in.MaxLen, unlock: in.Unlock, ed: newEditor(""), check: in.Check,
+		hasOld: in.Set, maxLen: in.MaxLen, unlock: in.Unlock, ed: newEditor(""), check: in.Check, onCancel: in.OnCancel,
 		done: func(v string, clear bool) tea.Cmd {
 			if in.Done == nil {
 				return then(written, nil)
@@ -169,7 +182,7 @@ func (in PasswordInput) open(a *App, written func()) tea.Cmd {
 func (in NumberInput) open(a *App, written func()) tea.Cmd {
 	li := &lineInput{
 		kind: kindNumber, title: in.Title, name: cmpOr(in.Name, in.Title), subject: in.Subject, glyph: in.Glyph, prompt: in.Prompt, verb: cmpOr(in.Verb, "save"),
-		old: in.Old, hasOld: in.Old != "", ed: newEditor(""),
+		old: in.Old, hasOld: in.Old != "", ed: newEditor(""), onCancel: in.OnCancel,
 		done: func(v string, _ bool) tea.Cmd { return then(written, run2(in.Done, v)) },
 	}
 	li.allow = func(r rune) bool {
@@ -420,9 +433,9 @@ func (li *lineInput) confirm(a *App) tea.Cmd {
 	if li.kind == kindPassword {
 		switch {
 		case li.ed.empty() && li.showingOld():
-			return a.closeTop() // nothing typed: the old password stays
+			return a.answer() // nothing typed: the old password stays
 		case li.ed.empty():
-			return tea.Batch(a.closeTop(), li.done("", true))
+			return tea.Batch(a.answer(), li.done("", true))
 		}
 		if li.ed.hasControl() {
 			li.err = cmpOr(li.name, "The value") + " can't have control characters"
@@ -435,10 +448,10 @@ func (li *lineInput) confirm(a *App) tea.Cmd {
 				return nil
 			}
 		}
-		return tea.Batch(a.closeTop(), li.done(v, false))
+		return tea.Batch(a.answer(), li.done(v, false))
 	}
 	if li.showingOld() {
-		return a.closeTop() // nothing touched: no change
+		return a.answer() // nothing touched: no change
 	}
 	if li.ed.hasControl() && !li.search {
 		li.err = cmpOr(li.name, "The value") + " can't have control characters"
@@ -446,7 +459,7 @@ func (li *lineInput) confirm(a *App) tea.Cmd {
 	}
 	v := strings.TrimFunc(li.ed.value(), unicode.IsSpace)
 	if v == li.old {
-		return a.closeTop() // the value it opened with: nothing to write back (Rules K3)
+		return a.answer() // the value it opened with: nothing to write back (Rules K3)
 	}
 	if li.check != nil {
 		if err := li.check(v); err != nil {
@@ -455,10 +468,12 @@ func (li *lineInput) confirm(a *App) tea.Cmd {
 		}
 	}
 	li.err = ""
-	return tea.Batch(a.closeTop(), li.done(v, false))
+	return tea.Batch(a.answer(), li.done(v, false))
 }
 
 func (li *lineInput) surface() string { return li.title }
+
+func (li *lineInput) cancel() tea.Cmd { return run(li.onCancel) }
 
 // keyRef: the typing row takes ?, so a one-line input's key reference never
 // opens; its hint lists every key (Rules M3).

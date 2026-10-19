@@ -40,13 +40,14 @@ func animTick() tea.Cmd { return tea.Tick(frameTime, func(time.Time) tea.Msg { r
 
 // layer is one popup on the stack.
 type layer struct {
-	view    popupView
-	w, h    int
-	x, y    int
-	frame   int // 1–9 while opening, 9 when open, counting down while closing
-	closing bool
-	toast   bool
-	loading bool // it was loading at the last update
+	view     popupView
+	w, h     int
+	x, y     int
+	frame    int // 1–9 while opening, 9 when open, counting down while closing
+	closing  bool
+	toast    bool
+	loading  bool // it was loading at the last update
+	answered bool // closed on its answer: not cancelled (OnCancel)
 	// below runs when the layer is gone, the one under it on top again.
 	below func() tea.Cmd
 }

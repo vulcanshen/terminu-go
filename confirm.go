@@ -122,6 +122,8 @@ func (c *confirmView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {
 
 func (c *confirmView) surface() string { return c.ask.Title }
 
+func (c *confirmView) cancel() tea.Cmd { return run(c.ask.OnCancel) }
+
 func (c *confirmView) keyRef() []refSection {
 	secs := []refSection{{rows: []KeyRow{{Key: "Enter", Desc: c.ask.Verb}, {Key: "Esc", Desc: "cancel"}}}}
 	if len(c.ask.Details) > 0 {

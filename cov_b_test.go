@@ -1613,3 +1613,55 @@ func TestInputShortScreenKeepsTypingRow(t *testing.T) {
 		}
 	}
 }
+
+// TestOnCancel: a confirm or an input closed with no answer, by Esc or by the
+// popup under it closing, runs its OnCancel, once; an answer does not, even
+// one that leaves the value as it was (Rules F6; webu WB3, sshu SS8).
+func TestOnCancel(t *testing.T) {
+	ta := newTestApp(t)
+	cases := []struct {
+		name string
+		open func()
+		keys []string
+		want []string
+	}{
+		{"confirm, Esc", func() {
+			ta.Confirm(Ask{Title: "Delete", Question: "Delete it?", Verb: "delete", OnCancel: ta.record("cancel")}, ta.record("yes"))
+		}, []string{"Esc"}, []string{"cancel"}},
+		{"confirm, Enter", func() {
+			ta.Confirm(Ask{Title: "Delete", Question: "Delete it?", Verb: "delete", OnCancel: ta.record("cancel")}, ta.record("yes"))
+		}, []string{"Enter"}, []string{"yes"}},
+		{"text, Esc", func() { ta.Text(TextInput{Title: "Name", OnCancel: ta.record("cancel")}) }, []string{"a", "Esc"}, []string{"cancel"}},
+		{"text, Enter unchanged", func() { ta.Text(TextInput{Title: "Name", Old: "a", OnCancel: ta.record("cancel")}) }, []string{"Enter"}, nil},
+		{"password, Esc", func() { ta.Password(PasswordInput{Title: "Password", OnCancel: ta.record("cancel")}) }, []string{"Esc"}, []string{"cancel"}},
+		{"number, Esc", func() { ta.Number(NumberInput{Title: "Port", OnCancel: ta.record("cancel")}) }, []string{"Esc"}, []string{"cancel"}},
+		{"select, Esc", func() {
+			ta.Select(Select{Title: "Pick", Options: []string{"a", "b"}, Selected: 0, OnCancel: ta.record("cancel")})
+		}, []string{"Esc"}, []string{"cancel"}},
+		{"select, Enter", func() {
+			ta.Select(Select{Title: "Pick", Options: []string{"a", "b"}, Selected: 0, OnCancel: ta.record("cancel")})
+		}, []string{"Enter"}, nil},
+		{"textarea, discarded", func() { ta.Textarea(Textarea{Title: "Notes", Old: "a", OnCancel: ta.record("cancel")}) },
+			[]string{"b", "Esc", "Esc", "Enter"}, []string{"cancel"}},
+	}
+	for _, c := range cases {
+		ta.ran = nil
+		c.open()
+		ta.settle()
+		ta.press(c.keys...)
+		if !slices.Equal(ta.ran, c.want) || ta.top() != nil {
+			t.Errorf("%s: ran %v, want %v; %T still open", c.name, ta.ran, c.want, ta.topView())
+		}
+		ta.covBCloseAll()
+	}
+	// The popup under it closes: an input over it is cancelled too.
+	ta.ran = nil
+	b := &testBody{w: 10, h: 3}
+	ta.Popup(Popup{Title: "Draw", Body: b})
+	ta.Text(TextInput{Title: "Name", OnCancel: ta.record("cancel")})
+	ta.settle()
+	ta.ClosePopup(b)
+	if !slices.Equal(ta.ran, []string{"cancel"}) {
+		t.Errorf("closed from under: ran %v", ta.ran)
+	}
+}

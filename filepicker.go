@@ -41,6 +41,10 @@ type FilePicker struct {
 	// Done gets the chosen file (or directory). It is not called when it did
 	// not change.
 	Done func(path string) tea.Cmd
+	// OnCancel runs when it closes with no answer: Esc, or the popup it is
+	// over closing it, so whoever waits for the answer (a web page's prompt,
+	// ssh's askpass) hears it was cancelled (Rules F6).
+	OnCancel func() tea.Cmd
 }
 
 func (p FilePicker) typed() bool { return false }
@@ -62,7 +66,7 @@ func (p FilePicker) open(a *App, written func()) tea.Cmd {
 	if abs, err := filepath.Abs(fp.dir); err == nil {
 		fp.dir = abs
 	}
-	fv := &finderView{kind: findFiles, glyph: p.Glyph, name: p.Title, ed: newEditor(""), onList: true, written: written}
+	fv := &finderView{kind: findFiles, glyph: p.Glyph, name: p.Title, ed: newEditor(""), onList: true, written: written, onCancel: p.OnCancel}
 	fv.rows = func() []finderRow { return fp.list(fv.ed.value()) }
 	fv.words = func(typed string) string {
 		switch {
@@ -115,10 +119,10 @@ func (p FilePicker) open(a *App, written func()) tea.Cmd {
 			return nil
 		}
 		if filepath.Clean(r.path) == value || p.Done == nil {
-			return a.closeTop()
+			return a.answer()
 		}
 		fv.wrote()
-		return tea.Batch(a.closeTop(), p.Done(r.path))
+		return tea.Batch(a.answer(), p.Done(r.path))
 	}
 	fv.preview = func(r finderRow, w, h int) (string, []string) {
 		return filepath.Base(r.path), filePreview(r.path, w, h, a.HideSecretsInPreview, p.Icon, a.inputTabWidth())

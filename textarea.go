@@ -26,6 +26,10 @@ type Textarea struct {
 	Check func(string) error
 	// Done gets the new text. It is not called when it did not change.
 	Done func(string) tea.Cmd
+	// OnCancel runs when it closes with no answer: Esc, or the popup it is
+	// over closing it, so whoever waits for the answer (a web page's prompt,
+	// ssh's askpass) hears it was cancelled (Rules F6).
+	OnCancel func() tea.Cmd
 }
 
 func (t Textarea) typed() bool { return true }
@@ -504,7 +508,7 @@ func (tv *textareaView) moveKey(a *App, key string) (bool, tea.Cmd) {
 		}
 		v := tv.value()
 		if v == tv.t.Old {
-			return true, a.closeTop()
+			return true, a.answer()
 		}
 		if tv.t.Check != nil {
 			if err := tv.t.Check(v); err != nil {
@@ -514,9 +518,9 @@ func (tv *textareaView) moveKey(a *App, key string) (bool, tea.Cmd) {
 		}
 		tv.err = ""
 		if tv.t.Done == nil {
-			return true, a.closeTop()
+			return true, a.answer()
 		}
-		return true, tea.Batch(a.closeTop(), then(tv.written, tv.t.Done(v)))
+		return true, tea.Batch(a.answer(), then(tv.written, tv.t.Done(v)))
 	case "Esc":
 		if tv.value() == tv.t.Old {
 			return true, a.closeTop()
@@ -533,6 +537,8 @@ func (tv *textareaView) moveKey(a *App, key string) (bool, tea.Cmd) {
 }
 
 func (tv *textareaView) surface() string { return tv.t.Title }
+
+func (tv *textareaView) cancel() tea.Cmd { return run(tv.t.OnCancel) }
 
 func (tv *textareaView) keyRef() []refSection {
 	return []refSection{

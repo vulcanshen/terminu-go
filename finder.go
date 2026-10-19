@@ -58,6 +58,10 @@ type Select struct {
 	// Done gets the chosen option. It is not called when the value did not
 	// change.
 	Done func(int) tea.Cmd
+	// OnCancel runs when it closes with no answer: Esc, or the popup it is
+	// over closing it, so whoever waits for the answer (a web page's prompt,
+	// ssh's askpass) hears it was cancelled (Rules F6).
+	OnCancel func() tea.Cmd
 }
 
 // Checks picks several values (components/input/checkbox, the checkbox
@@ -81,6 +85,10 @@ type Checks struct {
 	Loading bool
 	// Done gets the new set. It is not called when nothing changed.
 	Done func([]bool) tea.Cmd
+	// OnCancel runs when it closes with no answer: Esc, or the popup it is
+	// over closing it, so whoever waits for the answer (a web page's prompt,
+	// ssh's askpass) hears it was cancelled (Rules F6).
+	OnCancel func() tea.Cmd
 }
 
 type finderKind int
@@ -144,6 +152,7 @@ type finderView struct {
 	filtered string
 	checked  []bool // the checkbox popup's checks, on screen
 	written  func()
+	onCancel func() tea.Cmd // a select's, a checkbox popup's or a file-picker's OnCancel
 }
 
 // Find opens a finder.
@@ -202,19 +211,20 @@ func (s *Select) view(written func(), live bool) *finderView {
 	}
 	fv := &finderView{
 		kind: findSelect, glyph: s.Glyph, name: s.Title, ed: newEditor(""), known: !live, onList: true,
-		title:   func(int) string { return popupTitle(s.Title, s.Subject) },
-		rows:    listRows,
-		loading: func() bool { return live && s.Loading },
-		green:   func(i int, _ finderRow) bool { return i == s.Selected },
-		verb:    func(finderRow) string { return "choose" },
-		written: written,
+		title:    func(int) string { return popupTitle(s.Title, s.Subject) },
+		rows:     listRows,
+		loading:  func() bool { return live && s.Loading },
+		onCancel: s.OnCancel,
+		green:    func(i int, _ finderRow) bool { return i == s.Selected },
+		verb:     func(finderRow) string { return "choose" },
+		written:  written,
 	}
 	fv.enter = func(a *App, i int, _ finderRow) tea.Cmd {
 		if i == s.Selected || s.Done == nil {
-			return a.closeTop()
+			return a.answer()
 		}
 		fv.wrote()
-		return tea.Batch(a.closeTop(), s.Done(i))
+		return tea.Batch(a.answer(), s.Done(i))
 	}
 	fv.refilter()
 	if k := slices.Index(fv.shown, s.Selected); k >= 0 {
@@ -240,10 +250,11 @@ func (c *Checks) view(written func(), live bool) *finderView {
 	var rows []finderRow
 	fv := &finderView{
 		kind: findChecks, glyph: c.Glyph, name: c.Title, ed: newEditor(""), known: !live, onList: true,
-		title:   func(int) string { return popupTitle(c.Title, c.Subject) },
-		verb:    func(finderRow) string { return "apply" },
-		loading: func() bool { return live && c.Loading },
-		written: written,
+		title:    func(int) string { return popupTitle(c.Title, c.Subject) },
+		verb:     func(finderRow) string { return "apply" },
+		loading:  func() bool { return live && c.Loading },
+		onCancel: c.OnCancel,
+		written:  written,
 	}
 	fv.rows = func() []finderRow {
 		for i := len(rows); i < len(c.Options); i++ {
@@ -259,10 +270,10 @@ func (c *Checks) view(written func(), live bool) *finderView {
 		was := make([]bool, len(fv.checked))
 		copy(was, c.Checked)
 		if slices.Equal(was, fv.checked) || c.Done == nil {
-			return a.closeTop()
+			return a.answer()
 		}
 		fv.wrote()
-		return tea.Batch(a.closeTop(), c.Done(slices.Clone(fv.checked)))
+		return tea.Batch(a.answer(), c.Done(slices.Clone(fv.checked)))
 	}
 	fv.refilter()
 	if k := slices.Index(fv.shown, c.Cursor); k >= 0 {
@@ -659,3 +670,5 @@ func (f *finderView) keyRef() []refSection {
 func (f *finderView) typing() bool { return !f.onList }
 
 func (f *finderView) isLoading() bool { return f.loading != nil && f.loading() }
+
+func (f *finderView) cancel() tea.Cmd { return run(f.onCancel) }

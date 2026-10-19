@@ -65,4 +65,8 @@ type Ask struct {
 	Verb     string   // Enter:<verb> in the hint: "delete"
 	Details  []string // what to read before answering, above the question
 	Warn     []int    // which lines of Details are warnings (Peach)
+	// OnCancel runs when it closes with no answer: Esc, or the popup it is
+	// over closing it, so whoever waits for the answer (a web page's prompt,
+	// ssh's askpass) hears it was cancelled (Rules F6).
+	OnCancel func() tea.Cmd
 }

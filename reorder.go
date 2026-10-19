@@ -19,6 +19,10 @@ type Reorder struct {
 	// ([2 0 1]: the third first). It is not called when the order did not
 	// change.
 	Done func(order []int) tea.Cmd
+	// OnCancel runs when it closes with no answer: Esc, or the popup it is
+	// over closing it, so whoever waits for the answer (a web page's prompt,
+	// ssh's askpass) hears it was cancelled (Rules F6).
+	OnCancel func() tea.Cmd
 }
 
 func (r Reorder) typed() bool { return false }
@@ -126,7 +130,7 @@ func (rv *reorderView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {
 	if n == 0 {
 		switch key {
 		case "Enter":
-			return true, a.closeTop()
+			return true, a.answer()
 		case "Space", "D":
 			return true, nil
 		}
@@ -150,9 +154,9 @@ func (rv *reorderView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {
 		rv.held, rv.from, rv.before = true, rv.cursor, slices.Clone(rv.order)
 	case "Enter":
 		if !rv.moved() || rv.r.Done == nil {
-			return true, a.closeTop()
+			return true, a.answer()
 		}
-		return true, tea.Batch(a.closeTop(), then(rv.written, rv.r.Done(slices.Clone(rv.order))))
+		return true, tea.Batch(a.answer(), then(rv.written, rv.r.Done(slices.Clone(rv.order))))
 	case "Esc":
 		if !rv.changed {
 			return true, a.closeTop()
@@ -225,6 +229,8 @@ func moveWrap[T any](s []T, i int, down bool) int {
 		return i - 1
 	}
 }
+
+func (rv *reorderView) cancel() tea.Cmd { return run(rv.r.OnCancel) }
 
 func (rv *reorderView) surface() string {
 	if rv.held {

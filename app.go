@@ -390,16 +390,29 @@ func (a *App) closeLayer(l *layer) tea.Cmd {
 	if l.frame > openFrames {
 		l.frame = openFrames
 	}
-	gone(l)
-	return a.animate()
+	return tea.Batch(gone(l), a.animate())
 }
 
 // gone tells a popup that wants to know it is closing: a form stops what
 // still runs for it.
-func gone(l *layer) {
+func gone(l *layer) tea.Cmd {
 	if c, ok := l.view.(interface{ closed() }); ok {
 		c.closed()
 	}
+	// A popup that closes with no answer was cancelled (OnCancel).
+	if c, ok := l.view.(interface{ cancel() tea.Cmd }); ok && !l.answered {
+		l.answered = true
+		return c.cancel()
+	}
+	return nil
+}
+
+// answer closes the top popup on its answer, so it is not cancelled.
+func (a *App) answer() tea.Cmd {
+	if l := a.top(); l != nil {
+		l.answered = true
+	}
+	return a.closeTop()
 }
 
 // closeView closes v's popup and every one above it, those at once, as
@@ -410,6 +423,7 @@ func (a *App) closeView(v popupView) tea.Cmd {
 		return nil
 	}
 	kept := a.stack[:i+1]
+	var cmds []tea.Cmd
 	for _, l := range a.stack[i+1:] {
 		if l.closing {
 			kept = append(kept, l)
@@ -417,11 +431,11 @@ func (a *App) closeView(v popupView) tea.Cmd {
 			if a.isQuitConfirm(l) {
 				a.quitting = false
 			}
-			gone(l)
+			cmds = append(cmds, gone(l))
 		}
 	}
 	a.stack = kept
-	return a.closeTop()
+	return tea.Batch(append(cmds, a.closeTop())...)
 }
 
 // closeAll closes every popup: the top one animates, the rest go at once
@@ -432,16 +446,17 @@ func (a *App) closeAll() tea.Cmd {
 		return nil
 	}
 	kept := a.stack[:0]
+	var cmds []tea.Cmd
 	for _, l := range a.stack {
 		if l == t || l.closing {
 			kept = append(kept, l)
 		} else {
-			gone(l)
+			cmds = append(cmds, gone(l))
 		}
 	}
 	a.stack = kept
 	a.quitting = false
-	return a.closeTop()
+	return tea.Batch(append(cmds, a.closeTop())...)
 }
 
 func (a *App) relayout() {
@@ -523,7 +538,12 @@ func run(f func() tea.Cmd) tea.Cmd {
 	return f()
 }
 
-func (a *App) acceptConfirm(c *confirmView) tea.Cmd { return run(c.accept) }
+func (a *App) acceptConfirm(c *confirmView) tea.Cmd {
+	if l := a.top(); l != nil && l.view == c {
+		l.answered = true
+	}
+	return run(c.accept)
+}
 
 // runAction runs an action (Rules F6: asking first when it asks). From a menu,
 // it closes the menu and what is under it.

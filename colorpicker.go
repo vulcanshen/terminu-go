@@ -17,6 +17,10 @@ type ColorPicker struct {
 	Value   Color
 	// Done gets the new colour. It is not called when it did not change.
 	Done func(Color) tea.Cmd
+	// OnCancel runs when it closes with no answer: Esc, or the popup it is
+	// over closing it, so whoever waits for the answer (a web page's prompt,
+	// ssh's askpass) hears it was cancelled (Rules F6).
+	OnCancel func() tea.Cmd
 }
 
 func (c ColorPicker) typed() bool { return false }
@@ -147,9 +151,9 @@ func (cv *colorView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {
 	case "Enter":
 		if cv.focus == colorChoose {
 			if cv.rgb == cv.c.Value.RGB || cv.c.Done == nil {
-				return true, a.closeTop()
+				return true, a.answer()
 			}
-			return true, tea.Batch(a.closeTop(), then(cv.written, cv.c.Done(Color{RGB: cv.rgb, Set: true})))
+			return true, tea.Batch(a.answer(), then(cv.written, cv.c.Done(Color{RGB: cv.rgb, Set: true})))
 		}
 		ch := cv.focus
 		opts := make([]string, 256)
@@ -168,6 +172,8 @@ func (cv *colorView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {
 }
 
 func (cv *colorView) surface() string { return cv.c.Title }
+
+func (cv *colorView) cancel() tea.Cmd { return run(cv.c.OnCancel) }
 
 func (cv *colorView) keyRef() []refSection {
 	return []refSection{{rows: []KeyRow{

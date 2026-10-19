@@ -26,6 +26,10 @@ type DatePicker struct {
 	SundayFirst bool
 	// Done gets the new value. It is not called when it did not change.
 	Done func(time.Time) tea.Cmd
+	// OnCancel runs when it closes with no answer: Esc, or the popup it is
+	// over closing it, so whoever waits for the answer (a web page's prompt,
+	// ssh's askpass) hears it was cancelled (Rules F6).
+	OnCancel func() tea.Cmd
 }
 
 func (d DatePicker) typed() bool { return false }
@@ -268,9 +272,9 @@ func (dv *dateView) confirm(a *App) tea.Cmd {
 		old = old.Truncate(time.Minute)
 	}
 	if v.Equal(old) || dv.d.Done == nil {
-		return a.closeTop()
+		return a.answer()
 	}
-	return tea.Batch(a.closeTop(), then(dv.written, dv.d.Done(v)))
+	return tea.Batch(a.answer(), then(dv.written, dv.d.Done(v)))
 }
 
 func (dv *dateView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {
@@ -338,6 +342,8 @@ func (dv *dateView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {
 }
 
 func (dv *dateView) surface() string { return dv.d.Title }
+
+func (dv *dateView) cancel() tea.Cmd { return run(dv.d.OnCancel) }
 
 func (dv *dateView) keyRef() []refSection {
 	rows := []KeyRow{
