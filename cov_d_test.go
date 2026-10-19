@@ -290,11 +290,30 @@ func TestPopupHintDrop(t *testing.T) {
 	ta.press("Space")
 	l := ta.top()
 	bottom := covDTop(ta)[l.h-1]
-	if keys := covDHintKeys(ta, l); fmt.Sprint(keys) != "[Enter]" || !strings.Contains(bottom, "Enter:run ") {
-		t.Errorf("Esc:close does not fit: the whole pair goes, Enter:run stays whole: %q", bottom)
+	if keys := covDHintKeys(ta, l); fmt.Sprint(keys) != "[Esc]" || !strings.Contains(bottom, "Esc:close ") {
+		t.Errorf("both do not fit: the pair before Esc goes whole, Esc:close stays: %q", bottom)
 	}
 	if !strings.HasSuffix(bottom, " 1 of 7 ━┛") {
 		t.Errorf("the scroll position stays: %q", bottom)
+	}
+	// One pair at a time from the one before Esc (components/layout/popup).
+	pairs := []KeyHint{{"Enter", "install"}, {"Tab", "actions"}, {"Esc", "cancel"}}
+	for _, c := range []struct {
+		w    int
+		want string
+	}{
+		{40, "Enter:install Tab:actions Esc:cancel"},
+		{30, "Enter:install Esc:cancel"},
+		{15, "Esc:cancel"},
+		{5, ""},
+	} {
+		if got := StripStyles(renderHints(pairs, c.w, Fg(Blue), Overlay0)); got != c.want {
+			t.Errorf("in %d cells: %q, want %q", c.w, got, c.want)
+		}
+	}
+	// A hint that does not end in Esc drops from the end (a panel's, the footer).
+	if got := StripStyles(renderHints([]KeyHint{{"Space", "menu"}, {"?", "help"}, {"q", "quit"}}, 18, Fg(Blue), Overlay0)); got != "Space:menu ?:help" {
+		t.Errorf("no Esc: %q", got)
 	}
 }
 

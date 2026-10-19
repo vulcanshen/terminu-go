@@ -71,7 +71,8 @@ func shrunk(text string) string {
 // most maxW cells: slanted ends, selected parts filled, joins U+E0B0 where the
 // colour changes and U+E0B1 where it does not. When it does not fit,
 // unselected parts shrink to their first character, then are folded away from
-// the end behind a "…"; the selected ones always stay. The ends and joins are
+// the end behind a "…"; the selected ones always stay, and one still too long
+// is cut from the end with "…", its slanted ends drawn. The ends and joins are
 // coloured as in Powerline: the left part's ground over the right part's, an
 // unselected part's ground taken as Base (layout/panel, capsule chain).
 func drawChain(caps []Capsule, color Color, maxW int) string {
@@ -132,7 +133,17 @@ func drawChain(caps []Capsule, color Color, maxW int) string {
 			return s
 		}
 	}
-	return Cut(draw(parts, len(parts) < len(caps)), 0, maxW)
+	folded := len(parts) < len(caps)
+	for j := len(parts) - 1; j >= 0; j-- {
+		over := Width(draw(parts, folded)) - maxW
+		if over <= 0 {
+			break
+		}
+		if t := parts[j].Text; Width(t) > 1 {
+			parts[j].Text = Truncate(t, max(Width(t)-over, 1))
+		}
+	}
+	return Cut(draw(parts, folded), 0, maxW)
 }
 
 // titleCapsule is a popup's title: glyph and text, upper case, in a capsule

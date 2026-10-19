@@ -1096,6 +1096,29 @@ func TestEmptyState(t *testing.T) {
 	if above, below := fr-3, 37-hr; above-below > 1 || below-above > 1 {
 		t.Errorf("not in the middle: %d rows above, %d below", above, below)
 	}
+	// Too long: it folds at its spaces, each line centred, one cell from the
+	// frame; nothing cut (layout/screen, empty states).
+	lines := EmptyState(20, 9, "No pods in this namespace yet", "Press [A] to add a pod")
+	var text []string
+	for _, l := range lines {
+		if Width(l) != 20 {
+			t.Errorf("%q is %d wide", l, Width(l))
+		}
+		if p := StripStyles(l); strings.TrimSpace(p) != "" {
+			if p[0] != ' ' || p[len(p)-1] != ' ' {
+				t.Errorf("not one cell from the frame: %q", p)
+			}
+			text = append(text, strings.TrimSpace(p))
+		}
+	}
+	if got := strings.Join(text, " "); got != "No pods in this namespace yet Press [A] to add a pod" || len(text) < 4 || strings.Contains(got, "…") {
+		t.Errorf("folded, not cut: %q", text)
+	}
+	for _, l := range EmptyState(20, 5, "Kubernetes namespace", "") {
+		if p := StripStyles(l); strings.TrimSpace(p) != "" && (p[0] != ' ' || p[len(p)-1] != ' ') {
+			t.Errorf("a line as wide as the panel is folded too: %q", p)
+		}
+	}
 }
 
 // --- layout/panel -----------------------------------------------------------------------
@@ -1245,8 +1268,8 @@ func TestPanelModeLabelKeptWhenNarrow(t *testing.T) {
 	if !strings.HasSuffix(top, "┫Drag┣━┓") {
 		t.Errorf("the mode name is gone: %q", top)
 	}
-	if strings.Contains(top, "[1] PODS") || !strings.Contains(top, "[1]") {
-		t.Errorf("the title is not the one cut: %q", top)
+	if strings.Contains(top, "[1] PODS") || !strings.Contains(top, glyphSlantLeft+"…"+glyphHard) || !strings.Contains(top, "━┫Drag") {
+		t.Errorf("the title is the one cut, with …, its slants drawn, a segment before the mode: %q", top)
 	}
 	if Width(top) != 14 {
 		t.Errorf("the top border is %d wide", Width(top))
@@ -1486,8 +1509,19 @@ func TestCapsuleChainShrink(t *testing.T) {
 			t.Errorf("%d cells: %q, want %q", c.w, covCPlain(got), c.want)
 		}
 	}
-	if got := drawChain(caps, Blue, 6); Width(got) > 6 || !strings.HasPrefix(covCPlain(got), sl+"[1]") {
-		t.Errorf("6 cells: the chosen part stays, cut: %q", covCPlain(got))
+	// The chosen part alone too long: its text cut from the end with …, its
+	// slanted ends drawn (layout/panel, capsule chain).
+	if got := covCPlain(drawChain(caps, Blue, 7)); got != sl+"[1]…"+h+"…" {
+		t.Errorf("7 cells: the chosen part cut, its ends drawn: %q", got)
+	}
+	if got := covCPlain(drawChain([]Capsule{{"[2] DEPLOYMENTS", true}}, Blue, 10)); got != sl+"[2] DEP…"+h {
+		t.Errorf("10 cells: %q", got)
+	}
+	ta0 := newTestApp(t)
+	ta0.pods.Label, ta0.pods.Tabs = "Deployments of the cluster", nil
+	ta0.resize(40, 20)
+	if top := covCPlain(ta0.Frame()[2]); !strings.Contains(top, "…"+h+"━┓") {
+		t.Errorf("a segment of line stays before the corner: %q", top)
 	}
 	// Chosen parts in the middle stay; the others go from the end.
 	mid := []Capsule{{"[1]", true}, {"PODS", false}, {"EVENTS", true}, {"YAML", false}}

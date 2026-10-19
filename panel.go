@@ -251,7 +251,8 @@ func (p *Panel) draw(n, w, h int, focused bool) []string {
 		color, mode = Yellow, p.mode.Name
 	}
 	b := box{width: w, lines: lines, color: color, hintKey: Fg(Blue)}
-	b.head = drawChain(p.capsules(n), color, max(w-2-modeRoom(mode), 1))
+	// A line segment stays before the top-right corner (or the mode's name).
+	b.head = drawChain(p.capsules(n), color, max(w-3-modeRoom(mode), 1))
 	if p.Loading {
 		b.after = Fg(color).Render(loadingFrame()) // the frame's colour (components/layout/popup)
 	}
@@ -267,9 +268,9 @@ func (p *Panel) draw(n, w, h int, focused bool) []string {
 	if empty, ok := p.Body.(interface{ Empty() bool }); ok && empty.Empty() {
 		switch {
 		case p.Loading && p.LoadingText != "":
-			body = emptyState(inner, ih, Fg(Overlay0).Render(loadingFrame()+" "+p.LoadingText), "")
+			body = emptyState(inner, ih, loadingFrame()+" "+p.LoadingText, Fg(Overlay0), "", Style{})
 		case p.Fail != nil:
-			body = emptyState(inner, ih, Fg(Red).Render(p.Fail.Fact), Fg(Overlay0).Render(bracketKeys(p.Fail.Hint)))
+			body = emptyState(inner, ih, p.Fail.Fact, Fg(Red), bracketKeys(p.Fail.Hint), Fg(Overlay0))
 		}
 	}
 	b.body = body
@@ -303,17 +304,26 @@ func blankLines(w, h int) []string {
 }
 
 // emptyState is a sentence and a hint centred in w × h (layout/screen, empty
-// states), with a blank line between them.
-func emptyState(w, h int, fact, hint string) []string {
+// states), with a blank line between them. Too long, each folds at its spaces
+// (components, wrapping), every line centred one cell from the frame: never
+// cut.
+func emptyState(w, h int, fact string, factStyle Style, hint string, hintStyle Style) []string {
 	out := blankLines(w, h)
-	lines := []string{fact}
+	room := max(w-2, 1)
+	var lines []string
+	for _, l := range Wrap(fact, room) {
+		lines = append(lines, factStyle.Render(l))
+	}
 	if hint != "" {
-		lines = append(lines, "", hint)
+		lines = append(lines, "")
+		for _, l := range Wrap(hint, room) {
+			lines = append(lines, hintStyle.Render(l))
+		}
 	}
 	top := max((h-len(lines))/2, 0)
 	for i, l := range lines {
 		if top+i < h {
-			out[top+i] = Center(Truncate(l, w), w)
+			out[top+i] = Center(l, w) // folded at w-2: a cell either side at least
 		}
 	}
 	return out
@@ -323,7 +333,7 @@ func emptyState(w, h int, fact, hint string) []string {
 // naming keys, both in Overlay0 (layout/screen); keys written as [A] in the
 // hint stay as they are.
 func EmptyState(w, h int, fact, hint string) []string {
-	return emptyState(w, h, Fg(Overlay0).Render(fact), Fg(Overlay0).Render(hint))
+	return emptyState(w, h, fact, Fg(Overlay0), hint, Fg(Overlay0))
 }
 
 // bracketKeys leaves a sentence as it is: keys in sentences are already

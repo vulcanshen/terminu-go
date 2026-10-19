@@ -79,6 +79,12 @@ Each release names the version of terminu design (tdp) it implements.
   whole label, `[1] prod-web-01`; its Space menu and key reference write it so too
 - On a panel's first tab the blank between `[N]` and the label is as wide as a join, so the text does not move
   when the tab changes where a powerline symbol takes two cells (layout/panel)
+- A popup's hint that does not fit keeps its last `Esc` pair, the pairs before it going first:
+  `Enter:install Esc:cancel`, then `Esc:cancel` (components/layout/popup)
+- A capsule whose own text is too long is cut from the end with `…`, its slanted ends drawn and a segment of
+  line kept before the corner: `┏[2] DEPLOYM…━┓` (layout/panel)
+- An empty state too long for its panel folds at its spaces, every line centred one cell from the frame, instead
+  of being cut (layout/screen)
 - `List.Location` is a list's location row, where the user is, in Lavender above its header, cut from the front
   (layout/panel)
 

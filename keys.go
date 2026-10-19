@@ -1,6 +1,7 @@
 package terminu
 
 import (
+	"slices"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -158,7 +159,8 @@ func renderKey(key string, keyStyle Style, words Color) string {
 
 // renderHints writes pairs as "Key:desc Key:desc", keys in keyStyle and the
 // colon and words in Overlay0, dropping whole pairs from the end until they fit
-// in w cells (components/layout/popup, hint).
+// in w cells; a last pair that closes with Esc stays, the ones before it going
+// (components/layout/popup, hint).
 func renderHints(pairs []KeyHint, w int, keyStyle Style, words Color) string {
 	return renderHintsOff(pairs, nil, w, keyStyle, words)
 }
@@ -166,14 +168,28 @@ func renderHints(pairs []KeyHint, w int, keyStyle Style, words Color) string {
 // renderHintsOff is renderHints with the pairs that cannot be pressed now
 // (off) all in the disabled colour (Rules M6).
 func renderHintsOff(pairs []KeyHint, off []bool, w int, keyStyle Style, words Color) string {
+	if len(pairs) == 0 {
+		return ""
+	}
+	last := len(pairs) - 1
+	keepEsc := slices.Contains(strings.Split(pairs[last].Key, "|"), "Esc")
 	for n := len(pairs); n > 0; n-- {
-		parts := make([]string, n)
-		width := n - 1
-		for i, p := range pairs[:n] {
+		idx := make([]int, 0, n)
+		for i := range n {
+			idx = append(idx, i)
+		}
+		if keepEsc && n <= last {
+			// The Esc pair stays: the pairs before it go first.
+			idx = append(idx[:max(n-1, 0)], last)
+		}
+		parts := make([]string, len(idx))
+		width := len(idx) - 1
+		for k, i := range idx {
+			p := pairs[i]
 			if i < len(off) && off[i] {
-				parts[i] = renderKey(p.Key, Fg(Surface2), Surface2) + Fg(Surface2).Render(":"+p.Desc)
+				parts[k] = renderKey(p.Key, Fg(Surface2), Surface2) + Fg(Surface2).Render(":"+p.Desc)
 			} else {
-				parts[i] = renderKey(p.Key, keyStyle, words) + Fg(words).Render(":"+p.Desc)
+				parts[k] = renderKey(p.Key, keyStyle, words) + Fg(words).Render(":"+p.Desc)
 			}
 			width += Width(p.Key) + 1 + Width(p.Desc)
 		}
