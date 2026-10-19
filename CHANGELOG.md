@@ -2,8 +2,11 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.8.0
+## Unreleased — tdp v0.8.1
 
+- tdp v0.8.1 writes down G98 and G99 as the library does them (a list's location row stays when it is empty; an
+  unwrapped viewer scrolls across under the selection cursor); its Windows cache folder and item-by-item moves are
+  the app's
 - tdp v0.8.0 settles the family's refactor; the library follows it in the third batch below. G96 is settled as
   the library had it but for values: text on the screen draws a tab as `input_tab_width` spaces, a value on a
   form or a panel as a red `\t`; G97 as the library had it (a preview from a line puts it on the third row)
