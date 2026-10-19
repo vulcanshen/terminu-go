@@ -479,13 +479,23 @@ func (a *App) Confirm(ask Ask, accept func() tea.Cmd) tea.Cmd {
 
 // Error opens an error popup over the top popup (components/dialog/note): an
 // action failed.
-func (a *App) Error(title, message string) tea.Cmd {
-	return a.open(errorPopup(title, message, a.w))
+func (a *App) Error(title, message string) tea.Cmd { return a.ErrorAbout(title, "", message) }
+
+// ErrorAbout is Error naming what failed: subject goes after ": " in the
+// title, kept as it is, RENAME FAILED: notes.md (components/dialog/note).
+func (a *App) ErrorAbout(title, subject, message string) tea.Cmd {
+	return a.open(errorPopup(title, subject, message, a.w))
 }
 
 // Menu opens a menu of sections (Rules M8); running a row closes the menu
 // and everything under it.
 func (a *App) Menu(title string, sections ...MenuSection) tea.Cmd {
+	return a.MenuAbout(title, "", sections...)
+}
+
+// MenuAbout is Menu for one thing: subject goes after ": " in the title,
+// kept as it is, OPEN WITH: notes.md (components, upper case).
+func (a *App) MenuAbout(title, subject string, sections ...MenuSection) tea.Cmd {
 	for _, s := range sections {
 		for _, act := range s.Actions {
 			if err := checkPopupKey(act.Key); err != nil {
@@ -494,6 +504,7 @@ func (a *App) Menu(title string, sections ...MenuSection) tea.Cmd {
 		}
 	}
 	m := newMenu(title, sections, nil)
+	m.subject = subject
 	m.run = func(a *App, act Action) tea.Cmd { return a.runAction(act, true) }
 	return a.open(m)
 }

@@ -149,7 +149,7 @@ func keyReference(title string, sections []refSection) *noteView {
 
 // errorPopup is a popup's action failing (components/dialog/note, error
 // popup): Red frame and text, the fire glyph, Enter or Esc to close.
-func errorPopup(title, message string, sw int) *noteView {
+func errorPopup(title, subject, message string, sw int) *noteView {
 	red := Red
 	w := min(max(Width(message), 20), max(min(sw-2, 120)-4, 1))
 	var lines []string
@@ -157,7 +157,7 @@ func errorPopup(title, message string, sw int) *noteView {
 		lines = append(lines, Fg(Red).Render(l))
 	}
 	return &noteView{
-		glyph: glyphError, title: Upper(title), lines: lines, known: true, color: &red, enterCloses: true,
+		glyph: glyphError, title: popupTitle(title, subject), lines: lines, known: true, color: &red, enterCloses: true,
 		hint: []KeyHint{{"Enter|Esc", "close"}}, name: title,
 	}
 }

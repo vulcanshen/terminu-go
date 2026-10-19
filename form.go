@@ -254,7 +254,7 @@ func (fv *formView) buttonHint(it formItem) string {
 // title, the name after ": " as it is (components/layout/popup, title).
 func (fv *formView) failed(a *App, it formItem, err error) tea.Cmd {
 	label, subject := fv.buttonParts(it)
-	n := errorPopup(label+" failed", err.Error(), a.w)
+	n := errorPopup(label+" failed", "", err.Error(), a.w)
 	n.title = popupTitle(label+" failed", subject)
 	return a.open(n)
 }

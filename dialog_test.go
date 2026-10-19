@@ -391,3 +391,21 @@ func TestKeyReferenceTitleKeepsName(t *testing.T) {
 		t.Errorf("title %q", ta.topView().(*noteView).title)
 	}
 }
+
+// TestPopupSubjectErrorMenu: an error popup and a menu about one thing keep
+// its name as it is after ": " in the title (components, upper case;
+// components/dialog/note; sshu SS33, filu FL14).
+func TestPopupSubjectErrorMenu(t *testing.T) {
+	ta := newTestApp(t)
+	ta.ErrorAbout("Rename failed", "notes.md", "a file called notes.md is already there")
+	ta.settle()
+	if n, ok := ta.topView().(*noteView); !ok || n.title != "RENAME FAILED: notes.md" {
+		t.Errorf("error popup title %q", n.title)
+	}
+	ta.covBCloseAll()
+	ta.MenuAbout("Open with", "notes.md", MenuSection{Actions: []Action{{Label: "Editor", Desc: "edit it"}}})
+	ta.settle()
+	if text := ta.screenText(); !strings.Contains(text, "OPEN WITH: notes.md") {
+		t.Errorf("menu title:\n%s", text)
+	}
+}
