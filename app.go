@@ -562,8 +562,12 @@ func (a *App) runAction(act Action, fromMenu bool) tea.Cmd {
 		}
 		return cmd
 	}
-	if act.Ask != nil {
-		c := newConfirm(*act.Ask, nil)
+	ask := act.Ask
+	if act.AskFor != nil {
+		ask = act.AskFor()
+	}
+	if ask != nil {
+		c := newConfirm(*ask, nil)
 		c.accept = func() tea.Cmd { return tea.Batch(a.closeAll(), do()) }
 		return a.open(c)
 	}

@@ -30,6 +30,12 @@ type Action struct {
 	Hint string
 	// Ask, when set, asks first (Rules F6): every time.
 	Ask *Ask
+	// AskFor, when set, is asked when the action runs, after Hidden and
+	// Disabled, for the question it asks then (the name of the item under the
+	// cursor); nil asks nothing (a step that turns out to need no asking). It
+	// wins over Ask. Run from a menu, the confirm opens over the menu, so Esc
+	// on it goes back to the menu (Rules T1).
+	AskFor func() *Ask
 	// Hidden reports that its object does not exist now: the row is not
 	// shown at all (Rules M6).
 	Hidden func() bool

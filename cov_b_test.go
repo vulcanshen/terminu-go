@@ -1665,3 +1665,54 @@ func TestOnCancel(t *testing.T) {
 		t.Errorf("closed from under: ran %v", ta.ran)
 	}
 }
+
+// TestF6AskFor: an action can make its question when it runs, after Hidden
+// and Disabled, or ask nothing; from the Space menu its confirm opens over
+// the menu, and Esc goes back to it (Rules F6, T1; kamonu KM12, filu FL15,
+// sshu SS29, webu WB15).
+func TestF6AskFor(t *testing.T) {
+	ta := newTestApp(t)
+	var order []string
+	ask := true
+	ta.pods.Actions = append(ta.pods.Actions, Action{Key: "R", Label: "Restart", Desc: "this pod", Scope: ItemScope,
+		Disabled: func() bool { order = append(order, "disabled"); return false },
+		AskFor: func() *Ask {
+			order = append(order, "ask")
+			if !ask {
+				return nil
+			}
+			r, _ := ta.list.Current()
+			return &Ask{Title: "Restart", Question: "Restart " + r.ID + "?", Verb: "restart"}
+		}, Do: ta.record("restart")})
+	r, _ := ta.list.Current()
+	ta.press("R")
+	c, ok := ta.topView().(*confirmView)
+	if !ok || c.ask.Question != "Restart "+r.ID+"?" {
+		t.Fatalf("the confirm: %T %+v", ta.topView(), c)
+	}
+	if i := slices.Index(order, "ask"); i < 1 || order[i-1] != "disabled" {
+		t.Errorf("asked before Disabled: %v", order)
+	}
+	ta.press("Esc")
+	if len(ta.ran) != 0 {
+		t.Errorf("ran %v after Esc", ta.ran)
+	}
+	ask = false
+	ta.press("R")
+	if !slices.Equal(ta.ran, []string{"restart"}) || ta.top() != nil {
+		t.Errorf("with no question: ran %v, %T open", ta.ran, ta.topView())
+	}
+	// From the Space menu: Esc on the confirm goes back to the menu.
+	ask = true
+	ta.press("Space")
+	m := ta.topView().(*menuView)
+	m.cursor = slices.IndexFunc(m.rows, func(r menuRow) bool { return r.action.Label == "Restart" })
+	ta.press("Enter")
+	if _, ok := ta.topView().(*confirmView); !ok {
+		t.Fatalf("from the menu: %T", ta.topView())
+	}
+	ta.press("Esc")
+	if ta.topView() != m {
+		t.Errorf("Esc on the confirm went to %T, not back to the menu", ta.topView())
+	}
+}
