@@ -17,7 +17,7 @@ Each release names the version of terminu design (tdp) it implements.
 - `ErrEmpty` in an error row names the value: `Name can't be empty`
 - A truncated styled line draws its `…` in the style of the text it stands for, not the terminal's default colour;
   `TruncateLeft` too, and plain text gets no reset
-- A tab in the text of a panel or a popup (a pager, a list, values, a menu, a select…) is drawn as `InputTabWidth`
+- A tab in the text of a panel or a popup (a pager, a list, a menu, a select…) is drawn as `InputTabWidth`
   spaces, as in the viewer, and `Width` counts it so; it was sent to the terminal and pushed the row past the frame
 - A terminal resized while its program ends no longer races the reader closing its PTY (`go test -race`)
 - A file preview's tree draws its second level two cells in, under the first level's name
@@ -98,6 +98,8 @@ Each release names the version of terminu design (tdp) it implements.
 - A colour picker for no colour yet (`Value` not `Set`) shows `none` in grey and no swatch for old, starts new from
   `#000000`, and always writes back on Choose, `#000000` too, which used to count as no change
   (components/input/color-picker)
+- A value on a form or a panel writes its control characters as their red names, `\n`, `\x1b`, and a tab as
+  `\t`, as a typing row does, the app's own colours kept (components/input/README, Rules E3)
 - `List.Location` is a list's location row, where the user is, in Lavender above its header, cut from the front
   (layout/panel)
 

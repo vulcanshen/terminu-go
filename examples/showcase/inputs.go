@@ -122,6 +122,8 @@ func newInputsScreen(s *showcase) *inputsScreen {
 				PausedUntil: func() time.Time { return pausedUntil },
 				Done:        func(string, bool) tea.Cmd { return a.Toast(terminu.Success, "Unlocked") }})
 		}},
+		// A control character in a value is written by name, in Red: a tab too.
+		{Label: "Separator", Value: func() string { return "\t" }},
 		// A new thing with a name the app proposes: Enter takes it.
 		{Label: "Archive", Value: func() string { return archive }, Empty: "not packed", Edit: func() tea.Cmd {
 			return a.Text(terminu.TextInput{Title: "Pack", Name: "Name", Glyph: glyphPencil, Prompt: "The archive to pack the files into", Verb: "pack",

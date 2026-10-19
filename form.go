@@ -432,7 +432,7 @@ func (fv *formView) draw(w, h int, layer Color) []string {
 			if f.Path {
 				fit = FitLeft
 				if f.Value != nil && f.Value() != "" {
-					value = Fg(Text).Render(homeShort(f.Value()))
+					value = valueText(homeShort(f.Value()), Fg(Text))
 				}
 			}
 			if fv.focus == (formItem{itemField, f, -1}) {
@@ -518,7 +518,7 @@ func (fv *formView) value(f *FormField) string {
 	if v == "" {
 		return Fg(Overlay0).Render(f.Empty)
 	}
-	return Fg(Text).Render(v)
+	return valueText(v, Fg(Text))
 }
 
 func (fv *formView) option(f *FormField, i int) string {

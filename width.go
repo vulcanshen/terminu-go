@@ -17,10 +17,11 @@ import (
 var (
 	iconCells      = 1 // a Nerd Font icon
 	powerlineCells = 1 // a powerline symbol: capsule ends, joins, the cursor arrow (tdp E5)
-	// tabCells is input_tab_width (Rules E3): a tab in text is drawn as that
-	// many spaces, as in a viewer, never sent to the terminal, so a row holding
-	// one keeps its width (Rules L4). App.Run sets it. TODO(tdp G96): E3 names
-	// only the viewer and the file preview.
+	// tabCells is input_tab_width (Rules E3): a tab in text on the screen (a
+	// viewer, a file preview, a list, a menu) is drawn as that many spaces,
+	// never sent to the terminal, so a row holding one keeps its width (Rules
+	// L4); a value on a form or a panel draws it as a red \t instead
+	// (valueText). App.Run sets it.
 	tabCells = 4
 )
 

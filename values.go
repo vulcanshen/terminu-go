@@ -244,9 +244,9 @@ func (v *Values) valueText(f *Field, k int) string {
 		return Fg(Overlay0).Render(f.Empty)
 	}
 	if f.Path {
-		return Fg(Text).Render(homeShort(val))
+		return valueText(homeShort(val), Fg(Text))
 	}
-	return Fg(Text).Render(val)
+	return valueText(val, Fg(Text))
 }
 
 // fixCursor moves the cursor off a disabled item, going by dir.

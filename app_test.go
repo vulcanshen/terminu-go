@@ -550,6 +550,38 @@ func TestE3TabsDrawnAsSpaces(t *testing.T) {
 	}
 }
 
+// TestValueControlChars: a value on a form or a panel writes its control
+// characters as their red names, a tab too (\t), as on a typing row; the
+// app's own colours stay (components/input/README, Rules E3).
+func TestValueControlChars(t *testing.T) {
+	v := "a\tb\nc\x1bd"
+	want := Fg(Text).Render("a") + Fg(Red).Render(`\t`) + Fg(Text).Render("b") + Fg(Red).Render(`\n`) +
+		Fg(Text).Render("c") + Fg(Red).Render(`\x1b`) + Fg(Text).Render("d")
+	if got := valueText(v, Fg(Text)); got != want {
+		t.Errorf("valueText = %q, want %q", got, want)
+	}
+	swatch := ColorText(Hex("#2A2A3C"))
+	if got := StripStyles(valueText(swatch, Fg(Text))); got != "███ #2A2A3C" {
+		t.Errorf("the app's colours are not control characters: %q", got)
+	}
+	ta := newTestApp(t)
+	vals := &Values{Fields: []*Field{{Label: "Command", Value: func() string { return "make\tcheck" }}}}
+	ta.Screen().Panels[1].Body = vals
+	ta.press("2")
+	if text := ta.screenText(); !strings.Contains(text, `make\tcheck`) {
+		t.Errorf("a panel value: %q", text)
+	}
+	ta.Form(&Form{Title: "Run", Fields: []*FormField{{Label: "Command", Value: func() string { return "go\ttest" }}}, Button: "Run"})
+	ta.settle()
+	if text := ta.screenText(); !strings.Contains(text, `go\ttest`) {
+		t.Errorf("a form value: %q", text)
+	}
+	// Text that is only read keeps its tab as spaces (Rules E3).
+	if got := Pad("make\tcheck", 20); !strings.Contains(got, "make    check") {
+		t.Errorf("text on the screen: %q", got)
+	}
+}
+
 // TestOnResize: the app hears of a new terminal size after the lib has laid
 // the screen out again (Rules L1; kbu KB20).
 func TestOnResize(t *testing.T) {

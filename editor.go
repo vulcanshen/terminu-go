@@ -135,6 +135,37 @@ func cellText(c string, plain Style) string {
 	return plain.Render(c)
 }
 
+// valueText is a value on a form or a panel in style: a control character in
+// it, a tab too, written as its red name (\n, \t, \x1b), as on a typing row;
+// not dropped, not a space (components/input/README, how a value is shown).
+// The app's own colours in it stay.
+func valueText(v string, style Style) string {
+	var b, run strings.Builder
+	flush := func() {
+		if run.Len() > 0 {
+			b.WriteString(style.Render(run.String()))
+			run.Reset()
+		}
+	}
+	walk(v, func(seq string, cells int) {
+		if cells == 0 && !strings.HasPrefix(seq, "\x1b[") && !strings.HasPrefix(seq, "\x1b]") {
+			// Not a style: each control character in it by name.
+			for _, r := range seq {
+				if name, ok := ctrlName(string(r)); ok {
+					flush()
+					b.WriteString(Fg(Red).Render(name))
+				} else {
+					run.WriteRune(r)
+				}
+			}
+			return
+		}
+		run.WriteString(seq)
+	})
+	flush()
+	return b.String()
+}
+
 // greyText is s as the user did not type it (the old value offered): through
 // the same filter as a paste, all of it grey (components/input/README).
 func greyText(s string) string {
