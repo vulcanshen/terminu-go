@@ -26,6 +26,11 @@ type DatePicker struct {
 	SundayFirst bool
 	// Done gets the new value. It is not called when it did not change.
 	Done func(time.Time) tea.Cmd
+	// Commit, when set, writes a changed value back when Enter takes it, on
+	// the update loop, before Done: an error keeps the popup open with the
+	// value in it and opens an error popup over it, "RENAME FAILED"
+	// (components/layout/popup, the action failing; Rules F4).
+	Commit func(time.Time) error
 	// OnCancel runs when it closes with no answer: Esc, or the popup it is
 	// over closing it, so whoever waits for the answer (a web page's prompt,
 	// ssh's askpass) hears it was cancelled (Rules F6).
@@ -271,10 +276,13 @@ func (dv *dateView) confirm(a *App) tea.Cmd {
 	} else if !old.IsZero() {
 		old = old.Truncate(time.Minute)
 	}
-	if v.Equal(old) || dv.d.Done == nil {
+	if v.Equal(old) || dv.d.Done == nil && dv.d.Commit == nil {
 		return a.answer()
 	}
-	return tea.Batch(a.answer(), then(dv.written, dv.d.Done(v)))
+	if err := runCommit(dv.d.Commit, v); err != nil {
+		return a.commitFailed(dv.d.Title, dv.d.Subject, err)
+	}
+	return tea.Batch(a.answer(), then(dv.written, runDone(dv.d.Done, v)))
 }
 
 func (dv *dateView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {

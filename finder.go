@@ -58,6 +58,11 @@ type Select struct {
 	// Done gets the chosen option. It is not called when the value did not
 	// change.
 	Done func(int) tea.Cmd
+	// Commit, when set, writes a changed value back when Enter takes it, on
+	// the update loop, before Done: an error keeps the popup open with the
+	// value in it and opens an error popup over it, "RENAME FAILED"
+	// (components/layout/popup, the action failing; Rules F4).
+	Commit func(int) error
 	// OnCancel runs when it closes with no answer: Esc, or the popup it is
 	// over closing it, so whoever waits for the answer (a web page's prompt,
 	// ssh's askpass) hears it was cancelled (Rules F6).
@@ -85,6 +90,11 @@ type Checks struct {
 	Loading bool
 	// Done gets the new set. It is not called when nothing changed.
 	Done func([]bool) tea.Cmd
+	// Commit, when set, writes a changed value back when Enter takes it, on
+	// the update loop, before Done: an error keeps the popup open with the
+	// value in it and opens an error popup over it, "RENAME FAILED"
+	// (components/layout/popup, the action failing; Rules F4).
+	Commit func([]bool) error
 	// OnCancel runs when it closes with no answer: Esc, or the popup it is
 	// over closing it, so whoever waits for the answer (a web page's prompt,
 	// ssh's askpass) hears it was cancelled (Rules F6).
@@ -220,11 +230,14 @@ func (s *Select) view(written func(), live bool) *finderView {
 		written:  written,
 	}
 	fv.enter = func(a *App, i int, _ finderRow) tea.Cmd {
-		if i == s.Selected || s.Done == nil {
+		if i == s.Selected || s.Done == nil && s.Commit == nil {
 			return a.answer()
 		}
+		if err := runCommit(s.Commit, i); err != nil {
+			return a.commitFailed(s.Title, s.Subject, err)
+		}
 		fv.wrote()
-		return tea.Batch(a.answer(), s.Done(i))
+		return tea.Batch(a.answer(), runDone(s.Done, i))
 	}
 	fv.refilter()
 	if k := slices.Index(fv.shown, s.Selected); k >= 0 {
@@ -269,11 +282,14 @@ func (c *Checks) view(written func(), live bool) *finderView {
 	fv.enter = func(a *App, _ int, _ finderRow) tea.Cmd {
 		was := make([]bool, len(fv.checked))
 		copy(was, c.Checked)
-		if slices.Equal(was, fv.checked) || c.Done == nil {
+		if slices.Equal(was, fv.checked) || c.Done == nil && c.Commit == nil {
 			return a.answer()
 		}
+		if err := runCommit(c.Commit, slices.Clone(fv.checked)); err != nil {
+			return a.commitFailed(c.Title, c.Subject, err)
+		}
 		fv.wrote()
-		return tea.Batch(a.answer(), c.Done(slices.Clone(fv.checked)))
+		return tea.Batch(a.answer(), runDone(c.Done, slices.Clone(fv.checked)))
 	}
 	fv.refilter()
 	if k := slices.Index(fv.shown, c.Cursor); k >= 0 {

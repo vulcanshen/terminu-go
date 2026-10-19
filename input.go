@@ -42,6 +42,11 @@ type TextInput struct {
 	Search bool
 	// Done gets the new value. It is not called when the value did not change.
 	Done func(string) tea.Cmd
+	// Commit, when set, writes a changed value back when Enter takes it, on
+	// the update loop, before Done: an error keeps the popup open with the
+	// value in it and opens an error popup over it, "RENAME FAILED"
+	// (components/layout/popup, the action failing; Rules F4).
+	Commit func(string) error
 	// OnCancel runs when it closes with no answer: Esc, or the popup it is
 	// over closing it, so whoever waits for the answer (a web page's prompt,
 	// ssh's askpass) hears it was cancelled (Rules F6).
@@ -66,6 +71,11 @@ type PasswordInput struct {
 	Check  func(string) error
 	// Done gets the new password; "" with clear true when it was removed.
 	Done func(value string, clear bool) tea.Cmd
+	// Commit, when set, writes a changed value back when Enter takes it, on
+	// the update loop, before Done: an error keeps the popup open with the
+	// value in it and opens an error popup over it, "RENAME FAILED"
+	// (components/layout/popup, the action failing; Rules F4).
+	Commit func(value string, clear bool) error
 	// OnCancel runs when it closes with no answer: Esc, or the popup it is
 	// over closing it, so whoever waits for the answer (a web page's prompt,
 	// ssh's askpass) hears it was cancelled (Rules F6).
@@ -87,6 +97,11 @@ type NumberInput struct {
 	Decimal  bool // "." may be typed
 	Check    func(string) error
 	Done     func(string) tea.Cmd
+	// Commit, when set, writes a changed value back when Enter takes it, on
+	// the update loop, before Done: an error keeps the popup open with the
+	// value in it and opens an error popup over it, "RENAME FAILED"
+	// (components/layout/popup, the action failing; Rules F4).
+	Commit func(string) error
 	// OnCancel runs when it closes with no answer: Esc, or the popup it is
 	// over closing it, so whoever waits for the answer (a web page's prompt,
 	// ssh's askpass) hears it was cancelled (Rules F6).
@@ -114,6 +129,7 @@ type lineInput struct {
 	dropOld      bool // Backspace on an empty value threw the suggestion away
 	search       bool // only searched for: control characters are not held back
 	onCancel     func() tea.Cmd
+	commit       func(v string, clear bool) error // nil without Commit
 	maxLen       int
 	unlock       bool
 	ed           *lineEditor
@@ -162,7 +178,8 @@ func (in TextInput) open(a *App, written func()) tea.Cmd {
 	return a.open(&lineInput{
 		kind: kindText, title: in.Title, name: cmpOr(in.Name, in.Title), subject: in.Subject, glyph: in.Glyph, prompt: in.Prompt, verb: cmpOr(in.Verb, "save"),
 		old: in.Old, hasOld: in.Old != "", maxLen: in.MaxLen, ed: newEditor(""), check: in.Check, search: in.Search, onCancel: in.OnCancel,
-		done: func(v string, _ bool) tea.Cmd { return then(written, run2(in.Done, v)) },
+		commit: func(v string, _ bool) error { return runCommit(in.Commit, v) },
+		done:   func(v string, _ bool) tea.Cmd { return then(written, run2(in.Done, v)) },
 	})
 }
 
@@ -170,6 +187,12 @@ func (in PasswordInput) open(a *App, written func()) tea.Cmd {
 	return a.open(&lineInput{
 		kind: kindPassword, title: in.Title, name: cmpOr(in.Name, in.Title), subject: in.Subject, glyph: in.Glyph, prompt: in.Prompt, verb: cmpOr(in.Verb, "save"),
 		hasOld: in.Set, maxLen: in.MaxLen, unlock: in.Unlock, ed: newEditor(""), check: in.Check, onCancel: in.OnCancel,
+		commit: func(v string, clear bool) error {
+			if in.Commit == nil {
+				return nil
+			}
+			return in.Commit(v, clear)
+		},
 		done: func(v string, clear bool) tea.Cmd {
 			if in.Done == nil {
 				return then(written, nil)
@@ -183,7 +206,8 @@ func (in NumberInput) open(a *App, written func()) tea.Cmd {
 	li := &lineInput{
 		kind: kindNumber, title: in.Title, name: cmpOr(in.Name, in.Title), subject: in.Subject, glyph: in.Glyph, prompt: in.Prompt, verb: cmpOr(in.Verb, "save"),
 		old: in.Old, hasOld: in.Old != "", ed: newEditor(""), onCancel: in.OnCancel,
-		done: func(v string, _ bool) tea.Cmd { return then(written, run2(in.Done, v)) },
+		commit: func(v string, _ bool) error { return runCommit(in.Commit, v) },
+		done:   func(v string, _ bool) tea.Cmd { return then(written, run2(in.Done, v)) },
 	}
 	li.allow = func(r rune) bool {
 		return r >= '0' && r <= '9' || r == '-' && in.Negative || r == '.' && in.Decimal
@@ -435,7 +459,7 @@ func (li *lineInput) confirm(a *App) tea.Cmd {
 		case li.ed.empty() && li.showingOld():
 			return a.answer() // nothing typed: the old password stays
 		case li.ed.empty():
-			return tea.Batch(a.answer(), li.done("", true))
+			return li.write(a, "", true)
 		}
 		if li.ed.hasControl() {
 			li.err = cmpOr(li.name, "The value") + " can't have control characters"
@@ -448,7 +472,7 @@ func (li *lineInput) confirm(a *App) tea.Cmd {
 				return nil
 			}
 		}
-		return tea.Batch(a.answer(), li.done(v, false))
+		return li.write(a, v, false)
 	}
 	if li.showingOld() {
 		return a.answer() // nothing touched: no change
@@ -468,7 +492,15 @@ func (li *lineInput) confirm(a *App) tea.Cmd {
 		}
 	}
 	li.err = ""
-	return tea.Batch(a.answer(), li.done(v, false))
+	return li.write(a, v, false)
+}
+
+// write writes a value Enter took back: Commit first, then Done.
+func (li *lineInput) write(a *App, v string, clear bool) tea.Cmd {
+	if err := li.commit(v, clear); err != nil {
+		return a.commitFailed(li.title, li.subject, err)
+	}
+	return tea.Batch(a.answer(), li.done(v, clear))
 }
 
 func (li *lineInput) surface() string { return li.title }

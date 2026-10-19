@@ -407,6 +407,29 @@ func gone(l *layer) tea.Cmd {
 	return nil
 }
 
+// commitFailed is a popup's write-back failing: an error popup over it,
+// the popup and its value staying (components/layout/popup, the action
+// failing).
+func (a *App) commitFailed(title, subject string, err error) tea.Cmd {
+	return a.open(errorPopup(title+" failed", subject, err.Error(), a.w))
+}
+
+// runCommit runs a popup's Commit, when it has one.
+func runCommit[T any](f func(T) error, v T) error {
+	if f == nil {
+		return nil
+	}
+	return f(v)
+}
+
+// runDone runs a popup's Done, when it has one.
+func runDone[T any](f func(T) tea.Cmd, v T) tea.Cmd {
+	if f == nil {
+		return nil
+	}
+	return f(v)
+}
+
 // answer closes the top popup on its answer, so it is not cancelled.
 func (a *App) answer() tea.Cmd {
 	if l := a.top(); l != nil {

@@ -26,6 +26,11 @@ type Textarea struct {
 	Check func(string) error
 	// Done gets the new text. It is not called when it did not change.
 	Done func(string) tea.Cmd
+	// Commit, when set, writes a changed value back when Enter takes it, on
+	// the update loop, before Done: an error keeps the popup open with the
+	// value in it and opens an error popup over it, "RENAME FAILED"
+	// (components/layout/popup, the action failing; Rules F4).
+	Commit func(string) error
 	// OnCancel runs when it closes with no answer: Esc, or the popup it is
 	// over closing it, so whoever waits for the answer (a web page's prompt,
 	// ssh's askpass) hears it was cancelled (Rules F6).
@@ -517,10 +522,13 @@ func (tv *textareaView) moveKey(a *App, key string) (bool, tea.Cmd) {
 			}
 		}
 		tv.err = ""
-		if tv.t.Done == nil {
+		if err := runCommit(tv.t.Commit, v); err != nil {
+			return true, a.commitFailed(tv.t.Title, tv.t.Subject, err)
+		}
+		if tv.t.Done == nil && tv.t.Commit == nil {
 			return true, a.answer()
 		}
-		return true, tea.Batch(a.answer(), then(tv.written, tv.t.Done(v)))
+		return true, tea.Batch(a.answer(), then(tv.written, runDone(tv.t.Done, v)))
 	case "Esc":
 		if tv.value() == tv.t.Old {
 			return true, a.closeTop()

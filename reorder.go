@@ -19,6 +19,11 @@ type Reorder struct {
 	// ([2 0 1]: the third first). It is not called when the order did not
 	// change.
 	Done func(order []int) tea.Cmd
+	// Commit, when set, writes a changed value back when Enter takes it, on
+	// the update loop, before Done: an error keeps the popup open with the
+	// value in it and opens an error popup over it, "RENAME FAILED"
+	// (components/layout/popup, the action failing; Rules F4).
+	Commit func(order []int) error
 	// OnCancel runs when it closes with no answer: Esc, or the popup it is
 	// over closing it, so whoever waits for the answer (a web page's prompt,
 	// ssh's askpass) hears it was cancelled (Rules F6).
@@ -153,10 +158,13 @@ func (rv *reorderView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {
 	case "D":
 		rv.held, rv.from, rv.before = true, rv.cursor, slices.Clone(rv.order)
 	case "Enter":
-		if !rv.moved() || rv.r.Done == nil {
+		if !rv.moved() || rv.r.Done == nil && rv.r.Commit == nil {
 			return true, a.answer()
 		}
-		return true, tea.Batch(a.answer(), then(rv.written, rv.r.Done(slices.Clone(rv.order))))
+		if err := runCommit(rv.r.Commit, slices.Clone(rv.order)); err != nil {
+			return true, a.commitFailed(rv.r.Title, rv.r.Subject, err)
+		}
+		return true, tea.Batch(a.answer(), then(rv.written, runDone(rv.r.Done, slices.Clone(rv.order))))
 	case "Esc":
 		if !rv.changed {
 			return true, a.closeTop()

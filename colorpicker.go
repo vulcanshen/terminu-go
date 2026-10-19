@@ -17,6 +17,11 @@ type ColorPicker struct {
 	Value   Color
 	// Done gets the new colour. It is not called when it did not change.
 	Done func(Color) tea.Cmd
+	// Commit, when set, writes a changed value back when Enter takes it, on
+	// the update loop, before Done: an error keeps the popup open with the
+	// value in it and opens an error popup over it, "RENAME FAILED"
+	// (components/layout/popup, the action failing; Rules F4).
+	Commit func(Color) error
 	// OnCancel runs when it closes with no answer: Esc, or the popup it is
 	// over closing it, so whoever waits for the answer (a web page's prompt,
 	// ssh's askpass) hears it was cancelled (Rules F6).
@@ -150,10 +155,14 @@ func (cv *colorView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {
 		}
 	case "Enter":
 		if cv.focus == colorChoose {
-			if cv.rgb == cv.c.Value.RGB || cv.c.Done == nil {
+			if cv.rgb == cv.c.Value.RGB || cv.c.Done == nil && cv.c.Commit == nil {
 				return true, a.answer()
 			}
-			return true, tea.Batch(a.answer(), then(cv.written, cv.c.Done(Color{RGB: cv.rgb, Set: true})))
+			v := Color{RGB: cv.rgb, Set: true}
+			if err := runCommit(cv.c.Commit, v); err != nil {
+				return true, a.commitFailed(cv.c.Title, cv.c.Subject, err)
+			}
+			return true, tea.Batch(a.answer(), then(cv.written, runDone(cv.c.Done, v)))
 		}
 		ch := cv.focus
 		opts := make([]string, 256)

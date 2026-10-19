@@ -1105,3 +1105,57 @@ func TestLoadSelectAndChecks(t *testing.T) {
 		t.Errorf("applied %v", got)
 	}
 }
+
+// TestCommitFailureKeepsPopup: a write-back that fails opens an error popup
+// over the input, which stays with its value; closing it goes back there
+// (components/layout/popup, the action failing; Rules F4; ccdrawu CD24,
+// filu FL18, sshu SS33, locku LK10).
+func TestCommitFailureKeepsPopup(t *testing.T) {
+	ta := newTestApp(t)
+	taken := errors.New("a file called backup is already there")
+	ta.Text(TextInput{Title: "Rename", Subject: "notes.md", Old: "notes.md",
+		Commit: func(v string) error {
+			if v == "backup" {
+				return taken
+			}
+			return nil
+		}, Done: func(v string) tea.Cmd { ta.ran = append(ta.ran, "done "+v); return nil }})
+	ta.settle()
+	li := ta.topView().(*lineInput)
+	ta.press("b", "a", "c", "k", "u", "p", "Enter")
+	ta.settle()
+	if n, ok := ta.topView().(*noteView); !ok || n.title != "RENAME FAILED: notes.md" {
+		t.Fatalf("no error popup over the input: %T", ta.topView())
+	}
+	ta.press("Esc")
+	ta.settle()
+	if ta.topView() != li || li.ed.value() != "backup" || len(ta.ran) != 0 {
+		t.Fatalf("back to %T with %q, ran %v", ta.topView(), li.ed.value(), ta.ran)
+	}
+	ta.press("Backspace", "Backspace", "Enter")
+	if !slices.Equal(ta.ran, []string{"done back"}) || ta.top() != nil {
+		t.Errorf("a write-back that works: ran %v", ta.ran)
+	}
+	// A select and a textarea go the same way.
+	ta.Select(Select{Title: "Profile", Options: []string{"a", "b"}, Selected: 0, Commit: func(int) error { return taken }})
+	ta.settle()
+	sv := ta.topView()
+	ta.press("j", "Enter", "Esc")
+	ta.settle()
+	if ta.topView() != sv {
+		t.Errorf("the select did not stay: %T", ta.topView())
+	}
+	ta.covBCloseAll()
+	ta.Textarea(Textarea{Title: "Notes", Old: "a", Commit: func(string) error { return taken }})
+	ta.settle()
+	tv := ta.topView()
+	ta.press("b", "Esc", "Enter")
+	ta.settle()
+	if _, ok := ta.topView().(*noteView); !ok {
+		t.Fatalf("the textarea: no error popup, %T", ta.topView())
+	}
+	ta.press("Esc")
+	if ta.topView() != tv {
+		t.Errorf("the textarea did not stay: %T", ta.topView())
+	}
+}

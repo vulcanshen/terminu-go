@@ -41,6 +41,11 @@ type FilePicker struct {
 	// Done gets the chosen file (or directory). It is not called when it did
 	// not change.
 	Done func(path string) tea.Cmd
+	// Commit, when set, writes a changed value back when Enter takes it, on
+	// the update loop, before Done: an error keeps the popup open with the
+	// value in it and opens an error popup over it, "RENAME FAILED"
+	// (components/layout/popup, the action failing; Rules F4).
+	Commit func(path string) error
 	// OnCancel runs when it closes with no answer: Esc, or the popup it is
 	// over closing it, so whoever waits for the answer (a web page's prompt,
 	// ssh's askpass) hears it was cancelled (Rules F6).
@@ -118,11 +123,14 @@ func (p FilePicker) open(a *App, written func()) tea.Cmd {
 			}
 			return nil
 		}
-		if filepath.Clean(r.path) == value || p.Done == nil {
+		if filepath.Clean(r.path) == value || p.Done == nil && p.Commit == nil {
 			return a.answer()
 		}
+		if err := runCommit(p.Commit, r.path); err != nil {
+			return a.commitFailed(p.Title, "", err)
+		}
 		fv.wrote()
-		return tea.Batch(a.answer(), p.Done(r.path))
+		return tea.Batch(a.answer(), runDone(p.Done, r.path))
 	}
 	fv.preview = func(r finderRow, w, h int) (string, []string) {
 		return filepath.Base(r.path), filePreview(r.path, w, h, a.HideSecretsInPreview, p.Icon, a.inputTabWidth())
