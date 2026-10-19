@@ -133,6 +133,10 @@ Each release names the version of terminu design (tdp) it implements.
   panels, and a screen whose panels got fewer no longer panics
 - `App.QuitFlow` makes the quit flow an action of the app's own, a menu of ways to leave; a second `Ctrl-C`
   during it still leaves at once (Rules K9)
+- An app has a least size, 80 × 40 unless `App.MinWidth` and `MinHeight` say less (never more): on a smaller
+  terminal only its name and `needs a terminal of at least W×H` are drawn in the middle, no key acts nor reaches
+  a PTY but `Ctrl-C` twice, which leaves, and all comes back as the terminal grows (Rules L1). Apps that work in
+  a smaller terminal set their own
 - `List.Location` is a list's location row, where the user is, in Lavender above its header, cut from the front
   (layout/panel)
 

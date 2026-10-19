@@ -329,7 +329,7 @@ func TestFilePreviewPanel(t *testing.T) {
 func TestFilePreviewPanelHidesSecrets(t *testing.T) {
 	key := filepath.Join(t.TempDir(), "id_ed25519")
 	writeFile(t, key, []byte("-----BEGIN OPENSSH PRIVATE KEY-----\nsecret\n"), 0o600)
-	ta := &testApp{App: New("test")}
+	ta := &testApp{App: anySize(New("test"))}
 	ta.AddScreen(&Screen{Name: "Files", Key: "F", Panels: []*Panel{{Label: "Key", Body: &FilePreview{Path: key}}}})
 	ta.resize(80, 20)
 	if text := ta.screenText(); !strings.Contains(text, "secret") {

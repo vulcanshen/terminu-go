@@ -237,7 +237,7 @@ func TestM2HeadingAlways(t *testing.T) {
 		t.Error("the panel section alone keeps its title")
 	}
 	// A panel with item operations only.
-	tb := &testApp{App: New("t")}
+	tb := &testApp{App: anySize(New("t"))}
 	l := &List{Columns: []Column{{Title: "Name"}}}
 	l.SetRows([]Row{{ID: "a", Cells: []string{"a"}}})
 	tb.AddScreen(&Screen{Name: "Hosts", Key: "H", Panels: []*Panel{{Label: "Hosts", Body: l,

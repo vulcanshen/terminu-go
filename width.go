@@ -288,6 +288,10 @@ func TruncateMiddle(s string, w int) string {
 	return truncated(s, b.String())
 }
 
+// clip keeps the first w cells of plain text, nothing put in place of the
+// rest.
+func clip(s string, w int) string { return strings.TrimSuffix(Cut(s, 0, w), ansi.ResetStyle) }
+
 // Fit pads or truncates (with "…") one line to exactly w cells.
 func Fit(s string, w int) string { return Pad(Truncate(s, w), w) }
 

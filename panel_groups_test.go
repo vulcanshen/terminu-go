@@ -124,7 +124,7 @@ func TestPanelListGroupsFilter(t *testing.T) {
 // other panel's cursor at once, its label too, in the same frame; the focus
 // stays (components/layout/panel, details).
 func TestPanelDetailsFollowCursor(t *testing.T) {
-	ta := &testApp{App: New("test")}
+	ta := &testApp{App: anySize(New("test"))}
 	kinds := groupList()
 	details := &Panel{Body: &Pager{}}
 	var moves []string
@@ -178,7 +178,7 @@ func TestValuesOnMove(t *testing.T) {
 // panel, on the items the app says (Rules K3, components/layout/panel,
 // details).
 func TestK3EnterToDetails(t *testing.T) {
-	ta := &testApp{App: New("test")}
+	ta := &testApp{App: anySize(New("test"))}
 	kinds := groupList()
 	details := &Panel{Label: "Details", Body: &Pager{}}
 	ran := 0

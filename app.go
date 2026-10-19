@@ -120,6 +120,12 @@ type App struct {
 	// Splash is the family's easter egg, opened with V on a panel (Rules S).
 	// Every app has one: Run refuses an app without it.
 	Splash Splash
+	// MinWidth and MinHeight are the app's least size (Rules L1): 80 × 40 when
+	// unset, the most they may be. On a smaller terminal only the app's name
+	// and "needs a terminal of at least W×H" are drawn, in the middle; every
+	// key is ignored, the PTY's too, but Ctrl-C pressed twice, which leaves.
+	// What the app was showing comes back as the terminal grows.
+	MinWidth, MinHeight int
 	// CoreKeys are core keys of the app's own (Rules K1): each means the same
 	// on every panel and popup, but on a typing row, in a PTY and in a mode;
 	// no hotkey may take one.
@@ -142,6 +148,46 @@ type App struct {
 	splashOn    bool
 	splashFrame int
 	splashID    int
+
+	tinyCtrlC bool // Ctrl-C pressed once on a terminal under the least size
+}
+
+// minSize is the least size: the app's, 80 × 40 at most (Rules L1).
+func (a *App) minSize() (w, h int) {
+	w, h = 80, 40
+	if a.MinWidth > 0 {
+		w = min(a.MinWidth, 80)
+	}
+	if a.MinHeight > 0 {
+		h = min(a.MinHeight, 40)
+	}
+	return w, h
+}
+
+// tooSmall reports a terminal under the app's least size.
+func (a *App) tooSmall() bool {
+	mw, mh := a.minSize()
+	return a.w < mw || a.h < mh
+}
+
+// tinyScreen is all that is drawn under the least size: the app's name in
+// Blue bold and, under it, what size it needs in Overlay0, in the middle;
+// with one row, or no room for the second, the name alone (components/layout/
+// screen, smaller than the least size).
+func (a *App) tinyScreen(w, h int) []string {
+	mw, mh := a.minSize()
+	need := "needs a terminal of at least " + itoa(mw) + "×" + itoa(mh)
+	// As much of the name as fits, nothing put in its place.
+	rows := []string{Fg(Blue).Bolded().Render(clip(a.Name, w))}
+	if h >= 2 && Width(need) <= w {
+		rows = append(rows, Fg(Overlay0).Render(need))
+	}
+	out := blankLines(w, h)
+	top := (h - len(rows)) / 2
+	for i, r := range rows {
+		out[top+i] = Center(r, w)
+	}
+	return out
 }
 
 // New makes an app called name.
@@ -975,6 +1021,16 @@ func (a *App) modeKeyRef(p *Panel) *noteView {
 
 func (a *App) handleKey(msg tea.KeyMsg) tea.Cmd {
 	key := KeyName(msg)
+	// Under the least size nothing can be seen: no key acts, none goes to a
+	// PTY; only Ctrl-C twice leaves at once (Rules L1, K9).
+	if a.tooSmall() {
+		if key == "Ctrl-C" && a.tinyCtrlC {
+			return tea.Quit
+		}
+		a.tinyCtrlC = key == "Ctrl-C"
+		return nil
+	}
+	a.tinyCtrlC = false
 	// Any key only closes the splash, Ctrl-C too (Rules S3).
 	if a.splashOn {
 		a.splashOn = false
@@ -1274,6 +1330,9 @@ func (a *App) Frame() []string {
 	w, h := a.w, a.h
 	if w <= 0 || h <= 0 {
 		return nil
+	}
+	if a.tooSmall() {
+		return a.tinyScreen(w, h)
 	}
 	// The splash takes the whole screen: nothing of the screen is drawn (Rules S).
 	if a.splashOn {

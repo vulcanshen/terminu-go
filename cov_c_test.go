@@ -864,7 +864,7 @@ func TestScreenRows(t *testing.T) {
 		t.Errorf("the other screen's panel: %q", covCPlain(ta.Frame()[2]))
 	}
 	// One screen: no chips; a statusbar when the app has one.
-	one := &testApp{App: New("one")}
+	one := &testApp{App: anySize(New("one"))}
 	one.AddScreen(&Screen{Name: "Main", Panels: []*Panel{{Label: "A", Body: &Pager{}}, {Label: "B", Body: &Pager{}}}})
 	one.resize(60, 10)
 	lines = one.Frame()
@@ -1063,7 +1063,7 @@ func TestStatusbar(t *testing.T) {
 		}
 	}
 	// One screen: the top row; too long, it is cut, never wrapped.
-	one := &testApp{App: New("one")}
+	one := &testApp{App: anySize(New("one"))}
 	one.AddScreen(&Screen{Name: "Main", Panels: []*Panel{{Label: "A", Body: &Pager{}}}})
 	one.Status = func(int) string { return strings.Repeat("status ", 30) }
 	one.resize(60, 10)
@@ -1320,7 +1320,7 @@ func TestPanelNoHintWhileFiltering(t *testing.T) {
 // empty to begin with, the hint leaves out Enter and the keys on an item and
 // keeps those on the whole panel (components/layout/panel, hint).
 func TestPanelHintNoItems(t *testing.T) {
-	ta := &testApp{App: New("test")}
+	ta := &testApp{App: anySize(New("test"))}
 	l := groupList()
 	p := &Panel{Label: "Kinds", Body: l, Actions: []Action{
 		{Key: "Enter", Label: "Open", Desc: "this kind", Scope: ItemScope, Hint: "open", Do: ta.record("open")},
@@ -2080,7 +2080,7 @@ type covCValues struct {
 
 func covCValuesApp(t *testing.T, tabs ...string) *covCValues {
 	t.Helper()
-	c := &covCValues{testApp: &testApp{App: New("covc")}, name: "web"}
+	c := &covCValues{testApp: &testApp{App: anySize(New("covc"))}, name: "web"}
 	changed := func() tea.Cmd { c.changes++; return nil }
 	c.vals = &Values{Fields: []*Field{
 		{Label: "Name", Value: func() string { return c.name }, Edit: func() tea.Cmd {

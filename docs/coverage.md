@@ -139,6 +139,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | 出處 | 規定 | 展示場 | 測試 |
 |---|---|---|---|
 | L1 | 80 × 40 能完成所有核心任務；放不下所有 panel 時照 screen 的窄寬 | 終端機開 80 × 40 走一遍；`Narrow layout` | `TestL1Core80x40`、`TestScreenNarrow`、`TestOnResize`（lib：`App.OnResize`，app 照寬度重排） |
+| L1 | 最低尺寸預設 80×40、app 可以調低不能高於（lib：`App.MinWidth`、`MinHeight`）；比它小時只在正中央畫名稱（Blue 粗體）與 `needs a terminal of at least W×H`（Overlay0），放不下先拿掉提示、名稱畫得下多少畫多少，到 1×1 不當掉；按鍵都不作用、不送進 PTY，只有連按兩次 `Ctrl-C` 立刻離開；狀態保留，拉大回到原本的畫面 | 展示場的最低尺寸是 60×20：把視窗縮到比它小 | `TestL1LeastSize` |
 | L2 | 標題、statusbar、chip 等動態文字固定寬度；一列裡最後一個動態欄位可以不補空白 | statusbar 的錯誤與警告數（`%-3d`，固定寬）、最後的 `copying: 4%`（不補）；panel 標題換 tab | `TestL2FixedWidthChrome` |
 | L3 | footer、statusbar、tab 列列數鎖死；放不下截斷或從尾端捨，不折行 | 縮到 30 欄 | `TestL3ChromeRowsFixed` |
 | L4 | 每一列剛好等於終端機寬度 | 每個畫面、每種 popup，多種尺寸（含 5 列以下與 1×1：popup 被截掉、不 panic），icon 一格與兩格；app 的文字裡有 Tab 時一樣 | `TestL4EveryRowFullWidth`、`TestE3TabsDrawnAsSpaces` |
