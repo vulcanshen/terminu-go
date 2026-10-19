@@ -187,3 +187,29 @@ func TestToastPositionOverTerminal(t *testing.T) {
 		t.Error("in a PTY Esc goes to the program, the toast waits for its time")
 	}
 }
+
+// TestTerminalResizeWhileExiting: drawn at a new size while its program ends,
+// before the update loop hears of it, a terminal resizes the PTY its reader
+// is closing; the two are kept apart (sshu SS10, go test -race).
+func TestTerminalResizeWhileExiting(t *testing.T) {
+	term := &Terminal{Command: []string{"sh", "-c", "exit 0"}}
+	term.Start()
+	if term.Exited() {
+		t.Skip("no PTY here")
+	}
+	ch := term.out
+	for i := 0; ; i++ {
+		term.resize(80+i%2, 24)
+		select {
+		case _, ok := <-ch:
+			if !ok {
+				term.resize(90, 30) // a draw after the PTY closed
+				return
+			}
+		case <-time.After(time.Millisecond):
+		}
+		if i > 5000 {
+			t.Fatal("the program did not end")
+		}
+	}
+}
