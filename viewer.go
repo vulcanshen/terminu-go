@@ -35,8 +35,23 @@ type Viewer struct {
 	OnTab func(tab int) tea.Cmd
 	// Keys are the viewer's own hotkeys, first in its hint.
 	Keys []ViewerKey
-	// Select, when set, gives it a selection mode (Rules K11).
+	// Select is its selection mode (Rules K11): every viewer has one
+	// (components/dialog/note). Unset, it is v, Visual, y copying to the
+	// terminal's clipboard with a Success toast.
 	Select *Selection
+	// NoWrap keeps a line too long on its row, cut with "…" at the end, for
+	// content that lines up (columns side by side, a table); lines fold by
+	// default (components/dialog/note).
+	NoWrap bool
+	// NoNumbers leaves out the line numbers, for a table the app lays out
+	// itself, where they mean nothing (components/dialog/note).
+	NoNumbers bool
+	// Hits are what a search the app runs found (its own / and n|N): each
+	// underlined in its own colours, Hits[Current] drawn as the cursor block,
+	// "you are here" (components/dialog/note, the viewer's search; FindText
+	// finds them). No new colour: Yellow is the selection's.
+	Hits    []TextMatch
+	Current int
 
 	// top is the line the first row in sight belongs to and sub that row
 	// among the rows the line folds onto; visible the rows of text; textW
@@ -60,6 +75,30 @@ type Viewer struct {
 	tabW int
 }
 
+// TextMatch is a stretch of a viewer's line: its characters From to To, To
+// not in, counted as the selection mode's cursor counts them.
+type TextMatch struct{ Line, From, To int }
+
+// FindText is every place q is in the lines, in either case, for the app's
+// search (Hits).
+func (v *Viewer) FindText(q string) []TextMatch {
+	want := graphemes(strings.ToLower(q))
+	if len(want) == 0 {
+		return nil
+	}
+	var out []TextMatch
+	for i, l := range v.Lines {
+		chars := v.chars(l)
+		for k := 0; k+len(want) <= len(chars); k++ {
+			if strings.ToLower(strings.Join(chars[k:k+len(want)], "")) == strings.Join(want, "") {
+				out = append(out, TextMatch{i, k, k + len(want)})
+				k += len(want) - 1
+			}
+		}
+	}
+	return out
+}
+
 // ViewerKey is one of a viewer's own hotkeys.
 type ViewerKey struct {
 	Key, Desc string
@@ -74,7 +113,9 @@ type Selection struct {
 	Key     string // "v"
 	Name    string // the mode's name on the frame: "Visual"
 	CopyKey string // "y" when unset
-	Copy    func(text string) tea.Cmd
+	// Copy takes the text copied. Unset, it goes on the terminal's
+	// clipboard and a Success toast says so (components/dialog/note).
+	Copy func(text string) tea.Cmd
 }
 
 func (s *Selection) copyKey() string { return cmpOr(s.CopyKey, "y") }
@@ -82,6 +123,15 @@ func (s *Selection) copyKey() string { return cmpOr(s.CopyKey, "y") }
 // Viewer opens a viewer.
 func (a *App) Viewer(v *Viewer) tea.Cmd {
 	v.numW, v.tabW = 0, a.inputTabWidth()
+	if v.Select == nil {
+		v.Select = &Selection{Key: "v", Name: "Visual"}
+	}
+	if v.Select.Copy == nil {
+		v.Select.Copy = func(text string) tea.Cmd {
+			Clipboard(text)
+			return a.Toast(Success, "Copied")
+		}
+	}
 	return a.open(&viewerView{v: v})
 }
 
@@ -147,17 +197,28 @@ func (vv *viewerView) measure(sw, sh int) (int, int) {
 // so the column keeps its width; lines that stream in widen it past 999; a
 // tab with more lines widens it, and going back to one with fewer keeps it.
 func (v *Viewer) numWidth() int {
+	if v.NoNumbers {
+		return 0
+	}
 	v.numW = max(v.numW, len(strconv.Itoa(len(v.Lines))), 3)
 	return v.numW
 }
 
 // textWidth is how many cells of text a row holds in inner cells: one cell
 // of padding either side, the line numbers and the space after them.
-func (v *Viewer) textWidth(inner int) int { return max(inner-3-v.numWidth(), 1) }
+func (v *Viewer) textWidth(inner int) int {
+	if v.NoNumbers {
+		return max(inner-2, 1)
+	}
+	return max(inner-3-v.numWidth(), 1)
+}
 
 // wrap is where line i's rows start, in cells: a line too long for a row
 // folds onto the rows under it at a space, as components' wrapping says.
 func (v *Viewer) wrap(i int) []int {
+	if v.NoWrap {
+		return []int{0} // one row, cut
+	}
 	line := v.plain[i]
 	cells, space := make([]int, len(line)), make([]bool, len(line))
 	for k, c := range line {
@@ -274,19 +335,28 @@ func (vv *viewerView) draw(w, h int, layer Color) []string {
 				whole = false
 				break
 			}
-			num := Repeat(" ", numW)
+			num := Repeat(" ", numW) + " "
 			if r == 0 {
 				style := Fg(Overlay0)
 				if v.inMode && i == v.line {
 					style = Fg(Text)
 				}
-				num = style.Render(PadLeft(strconv.Itoa(i+1), numW))
+				num = style.Render(PadLeft(strconv.Itoa(i+1), numW)) + " "
+			}
+			if v.NoNumbers {
+				num = ""
+			}
+			if v.NoWrap {
+				// Too long, cut with "…" at the end (components/dialog/note).
+				// TODO(tdp G99): the selection cursor past the cut is not drawn.
+				body = append(body, " "+num+Fit(styled, v.textW)+" ")
+				continue
 			}
 			to := from + v.textW // the last row: the cursor's cell on an empty line too
 			if r+1 < len(starts) {
 				to = starts[r+1]
 			}
-			body = append(body, " "+num+" "+Fit(Cut(styled, from, to), v.textW)+" ")
+			body = append(body, " "+num+Fit(Cut(styled, from, to), v.textW)+" ")
 		}
 		last = i
 	}
@@ -427,6 +497,20 @@ func (vv *viewerView) lineView(i int, layer Color) string {
 	if v.inMode && i == v.line {
 		cx = v.col
 	}
+	// A search's hits on this line: each underlined, the current one the
+	// cursor block (components/dialog/note).
+	hit := make([]int, len(chars)) // 0 none, 1 a hit, 2 the current one
+	for n, m := range v.Hits {
+		if m.Line != i {
+			continue
+		}
+		for k := max(m.From, 0); k < min(m.To, len(chars)); k++ {
+			hit[k] = 1
+			if n == v.Current {
+				hit[k] = 2
+			}
+		}
+	}
 	sel, cur := Style{Fg: Base, Bg: Yellow}, On(layer)
 	var b strings.Builder
 	cell, plainFrom := 0, -1 // plainFrom: where the run of untouched characters began, in cells
@@ -444,6 +528,12 @@ func (vv *viewerView) lineView(i int, layer Color) string {
 		case k >= from && k < to:
 			flush()
 			b.WriteString(sel.Render(drawn(c, v.tabW)))
+		case hit[k] == 2:
+			flush()
+			b.WriteString(cur.Render(drawn(c, v.tabW)))
+		case hit[k] == 1:
+			flush()
+			b.WriteString(underlined(Cut(line, cell, cell+Width(drawn(c, v.tabW)))))
 		default:
 			if plainFrom < 0 {
 				plainFrom = cell
@@ -459,6 +549,14 @@ func (vv *viewerView) lineView(i int, layer Color) string {
 		b.WriteString(sel.Render(" "))
 	}
 	return b.String()
+}
+
+// underlined is s, its own styles kept, with a line under it.
+func underlined(s string) string {
+	const on = "\x1b[4m"
+	s = strings.ReplaceAll(s, "\x1b[0m", "\x1b[0m"+on)
+	s = strings.ReplaceAll(s, "\x1b[m", "\x1b[m"+on)
+	return on + s + "\x1b[24m"
 }
 
 // selected is the text from where the selection started to the cursor, the
@@ -715,10 +813,14 @@ func (vv *viewerView) keyRef() []refSection {
 		rows = append(rows, KeyRow{Key: v.Select.Key, Desc: "select text (" + cmpOr(v.Select.Name, "Select") + ")"})
 	}
 	rows = append(rows, KeyRow{Key: "Esc", Desc: "close"})
-	move = []KeyRow{
-		{Key: "j|k", Desc: "scroll down, up"},
-		{Key: "u|d", Desc: "half a page up, down"},
-		{Key: "gg|G", Desc: "to the top, the bottom"},
+	move = nil
+	if t, s := v.maxTop(); t > 0 || s > 0 {
+		// Only when it does not all fit (Rules M6).
+		move = []KeyRow{
+			{Key: "j|k", Desc: "scroll down, up"},
+			{Key: "u|d", Desc: "half a page up, down"},
+			{Key: "gg|G", Desc: "to the top, the bottom"},
+		}
 	}
 	if len(v.Tabs) > 0 {
 		move = append([]KeyRow{{Key: "h|l", Desc: "the tab before, after"}}, move...)

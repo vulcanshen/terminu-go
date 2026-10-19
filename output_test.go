@@ -30,3 +30,21 @@ func TestE5OutputDropsEraseRight(t *testing.T) {
 		t.Errorf("wrote %q, want %q", got, want)
 	}
 }
+
+// TestClipboardGoesWithTheNextFrame: a copy goes to the terminal's clipboard
+// (OSC 52) in the same write as the next frame, before it.
+func TestClipboardGoesWithTheNextFrame(t *testing.T) {
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer r.Close()
+	Clipboard("kubectl get pods")
+	screenOutput{w}.Write([]byte("frame\x1b[K"))
+	screenOutput{w}.Write([]byte("next"))
+	w.Close()
+	got, _ := io.ReadAll(r)
+	if want := "\x1b]52;c;a3ViZWN0bCBnZXQgcG9kcw==\aframenext"; string(got) != want {
+		t.Errorf("wrote %q, want %q", got, want)
+	}
+}

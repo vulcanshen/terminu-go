@@ -23,6 +23,11 @@ var eraseRight = []byte("\x1b[K")
 type screenOutput struct{ *os.File }
 
 func (o screenOutput) Write(p []byte) (int, error) {
+	if clip := takeClipboard(); clip != nil {
+		// What a copy put on the clipboard goes first, in the same write.
+		_, err := o.File.Write(append(clip, bytes.ReplaceAll(p, eraseRight, nil)...))
+		return len(p), err
+	}
 	if !bytes.Contains(p, eraseRight) {
 		return o.File.Write(p)
 	}

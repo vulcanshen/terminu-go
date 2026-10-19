@@ -107,8 +107,9 @@ func (ds *dialogsScreen) scenarios() []scenario {
 			return a.Form(ds.hostForm(nil, true))
 		}},
 		{"Form: with actions", "form", "more buttons: [Test] and [Scan] keep the form open, [Save As] submits too, [Connect] takes long; Host bad-… fails", ds.actionsForm},
-		{"Note viewer", "note", "its own keys [/] [y]; [v] then [v] again selects text", ds.yaml},
+		{"Note viewer", "note", "its own keys [/] [n] [N] [y]; [v] then [v] again selects text", ds.yaml},
 		{"Popup with tabs", "note", "tabs after the title; [h]|[l] switch", ds.devtools},
+		{"Viewer: a table", "note", "lines kept on their rows and cut, no line numbers", ds.table},
 		{"Loading popup", "note", "lines arriving: the loading icon turns", ds.loadingPopup},
 		{"Popup: long title", "note", "a title too long is cut with …", func() tea.Cmd {
 			return a.Viewer(&terminu.Viewer{Title: "File", Glyph: glyphYaml,
@@ -523,24 +524,36 @@ status:
 func (ds *dialogsScreen) yaml() tea.Cmd {
 	a := ds.s.app
 	v := &terminu.Viewer{Title: "YAML", Subject: "pod/nginx-7d4f", Glyph: glyphYaml, Lines: yamlLines, Lang: "yaml"}
+	// The app's own search: the lib underlines every hit and draws the
+	// current one as the cursor block (Viewer.Hits).
+	step := func(by int) func() tea.Cmd {
+		return func() tea.Cmd {
+			if len(v.Hits) == 0 {
+				return nil
+			}
+			v.Current = (v.Current + by + len(v.Hits)) % len(v.Hits)
+			v.ScrollTo(v.Hits[v.Current].Line)
+			return nil
+		}
+	}
 	v.Keys = []terminu.ViewerKey{
-		{Key: "y", Desc: "copy", Do: func() tea.Cmd { return a.Toast(terminu.Info, "Copied the YAML") }},
+		{Key: "y", Desc: "copy", Do: func() tea.Cmd { return a.Toast(terminu.Success, "Copied the YAML") }},
 		{Key: "/", Desc: "search", Do: func() tea.Cmd {
-			return a.Text(terminu.TextInput{Title: "Search", Glyph: glyphSearch, Prompt: "Find in the YAML", Verb: "find",
+			return a.Text(terminu.TextInput{Title: "Search", Glyph: glyphSearch, Prompt: "Find in the YAML", Verb: "find", Search: true,
 				Done: func(s string) tea.Cmd {
-					for i, l := range v.Lines {
-						if terminu.Matches(l, s) {
-							v.ScrollTo(i)
-							return nil
-						}
+					v.Hits, v.Current = v.FindText(s), 0
+					if len(v.Hits) == 0 {
+						return a.Toast(terminu.Info, "No line has "+s)
 					}
-					return a.Toast(terminu.Warning, "No line has "+s)
+					v.ScrollTo(v.Hits[0].Line)
+					return nil
 				}})
 		}},
+		{Key: "n", Desc: "next", Do: step(1)},
+		{Key: "N", Desc: "previous", Do: step(-1)},
 	}
-	v.Select = &terminu.Selection{Key: "v", Name: "Visual", Copy: func(text string) tea.Cmd {
-		return a.Toast(terminu.Info, fmt.Sprintf("Copied %d characters", len([]rune(text))))
-	}}
+	// No Select: the selection mode every viewer has, copying to the
+	// terminal's clipboard (components/dialog/note).
 	return a.Viewer(v)
 }
 
@@ -553,10 +566,24 @@ func (ds *dialogsScreen) devtools() tea.Cmd {
 		return nil
 	}
 	// h|l switch the tabs, and move the cursor in the selection mode (Rules K12).
+	// A Copy of the app's own takes the text instead of the clipboard.
 	v.Select = &terminu.Selection{Key: "v", Name: "Visual", Copy: func(text string) tea.Cmd {
-		return ds.s.app.Toast(terminu.Info, fmt.Sprintf("Copied %d characters", len([]rune(text))))
+		return ds.s.app.Toast(terminu.Success, fmt.Sprintf("Copied %d characters", len([]rune(text))))
 	}}
 	return ds.s.app.Viewer(v)
+}
+
+// table is a viewer of a table the app lays out: lines kept on their rows,
+// cut at the end, and no line numbers (components/dialog/note).
+func (ds *dialogsScreen) table() tea.Cmd {
+	return ds.s.app.Viewer(&terminu.Viewer{Title: "Info", Subject: "assets/photo-large.png", Glyph: glyphList, NoWrap: true, NoNumbers: true,
+		Lines: []string{
+			"TYPE      image",
+			"SIZE      1.2 MB",
+			"MODIFIED  2026-10-19 14:02",
+			"MODE      -rw-r--r--",
+			"EXIF      Camera Fujifilm X100V · 23mm · f/2 · 1/250s · ISO 160 · taken in the afternoon by the river",
+		}})
 }
 
 func (ds *dialogsScreen) loadingPopup() tea.Cmd {

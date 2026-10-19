@@ -3,6 +3,7 @@ package terminu
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
 
@@ -55,6 +56,76 @@ func testViewer() *Viewer {
 		lines = append(lines, fmt.Sprintf("key%d: value %d", i, i))
 	}
 	return &Viewer{Title: "YAML", Subject: "pod/nginx", Lines: lines}
+}
+
+// TestViewerSelectsByDefault: every viewer has a selection mode; with no
+// Copy of the app's, y puts the text on the terminal's clipboard and a
+// Success toast says so (components/dialog/note).
+func TestViewerSelectsByDefault(t *testing.T) {
+	ta := newTestApp(t)
+	takeClipboard()
+	ta.Viewer(testViewer())
+	ta.settle()
+	if h := StripStyles(ta.rowWith("Esc:close")); !strings.Contains(h, "v:visual Esc:close") {
+		t.Errorf("v in its hint: %q", h)
+	}
+	ta.press("v", "v", "l", "l", "y")
+	if got := string(takeClipboard()); got != "\x1b]52;c;a2V5\a" { // "key"
+		t.Errorf("on the clipboard: %q", got)
+	}
+	if ta.toast == nil || ta.toast.view.(*toastView).kind != Success || ta.toast.view.(*toastView).text != "Copied" {
+		t.Error("a Success toast says it is copied")
+	}
+}
+
+// TestViewerNoWrapNoNumbers: an app may keep a viewer's long lines on one row,
+// cut with … at the end, and leave out its line numbers (components/dialog/note).
+func TestViewerNoWrapNoNumbers(t *testing.T) {
+	ta := newTestApp(t)
+	ta.resize(60, 20)
+	long := strings.Repeat("column  ", 20)
+	ta.Viewer(&Viewer{Title: "Info", Lines: []string{"NAME    SIZE", long, "end"}, NoWrap: true, NoNumbers: true})
+	ta.settle()
+	lines, _ := covFDraw(ta)
+	text := covFText(lines)
+	if !strings.HasPrefix(text[2], "┃ NAME    SIZE") {
+		t.Errorf("no line numbers, the text one cell in: %q", text[2])
+	}
+	if !strings.HasSuffix(strings.TrimRight(strings.TrimSuffix(text[3], "┃"), " "), "…") || !strings.HasPrefix(text[4], "┃ end") {
+		t.Errorf("the long line cut on its row, the next line under it: %q / %q", text[3], text[4])
+	}
+	// Three lines that fit: no scroll keys in its key reference (Rules M6).
+	ta.press("?")
+	if keys := covAKeys(covARef(t, ta)); keys["j|k"] {
+		t.Error("lines that fit list j|k")
+	}
+}
+
+// TestViewerSearchHits: a search's hits are underlined in their own colours,
+// the current one drawn as the cursor block; no Yellow (components/dialog/note).
+func TestViewerSearchHits(t *testing.T) {
+	ta := newTestApp(t)
+	v := &Viewer{Title: "YAML", Lines: []string{"name: Nginx", "image: nginx:1.27"}, Lang: "yaml"}
+	v.Hits = v.FindText("NGINX")
+	if want := []TextMatch{{0, 6, 11}, {1, 7, 12}}; !slices.Equal(v.Hits, want) {
+		t.Fatalf("FindText: %v, want %v", v.Hits, want)
+	}
+	if got := (&Viewer{Lines: []string{"aaaa"}}).FindText("aa"); !slices.Equal(got, []TextMatch{{0, 0, 2}, {0, 2, 4}}) {
+		t.Errorf("hits do not overlap: %v", got)
+	}
+	v.Current = 1
+	ta.Viewer(v)
+	ta.settle()
+	first, second := ta.rowWith("name: Nginx"), ta.rowWith("image: nginx")
+	if !strings.Contains(first, "\x1b[4m") || strings.Contains(first, sgrRGB(false, Yellow.RGB)) {
+		t.Errorf("a hit underlined, no Yellow: %q", first)
+	}
+	if !strings.Contains(second, On(LayerColor(1)).Render("n")) {
+		t.Errorf("the current hit is the cursor block: %q", second)
+	}
+	if strings.Contains(StripStyles(first), "\x1b") {
+		t.Error("no stray escapes")
+	}
 }
 
 // rowWith is the styled screen row whose text holds s.

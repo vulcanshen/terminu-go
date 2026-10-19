@@ -139,6 +139,13 @@ Each release names the version of terminu design (tdp) it implements.
   a smaller terminal set their own
 - `App.PlaySplash` plays a splash of the app's own accord, any splash it has; the reveal now keeps to the time
   since it opened, so ticks that come late no longer put the text off
+- Every viewer has a selection mode: with no `Viewer.Select` it is `v`, Visual; with no `Copy`, `y` puts the text
+  on the terminal's clipboard (`Clipboard`, OSC 52) and a Success toast says `Copied` (components/dialog/note)
+- `Viewer.NoWrap` keeps a long line on its row, cut with `…`; `Viewer.NoNumbers` leaves out the line numbers, for
+  a table the app lays out
+- `Viewer.Hits` and `Current` draw a search the app runs: every hit underlined in its own colours, the current
+  one as the cursor block; `FindText` finds them (components/dialog/note)
+- A viewer's key reference lists its scroll keys only when its lines do not all fit
 - `List.Location` is a list's location row, where the user is, in Lavender above its header, cut from the front
   (layout/panel)
 
