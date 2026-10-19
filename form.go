@@ -453,7 +453,7 @@ func (fv *formView) draw(w, h int, layer Color) []string {
 		fv.top = min(fv.top, top)
 	}
 	fv.top = min(max(fv.top, 0), max(len(rows)-area, 0))
-	body := make([]string, 0, h-4)
+	body := make([]string, 0, max(h-4, 0))
 	for i := fv.top; i < fv.top+area; i++ {
 		if i < len(rows) {
 			body = append(body, rows[i])

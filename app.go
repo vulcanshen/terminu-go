@@ -1180,6 +1180,7 @@ func (a *App) panelArea(w, h int) []string {
 
 // Pad2 makes lines exactly w × h.
 func Pad2(lines []string, w, h int) []string {
+	h = max(h, 0) // a popup shorter than its frame has no body rows
 	out := make([]string, h)
 	for i := range h {
 		if i < len(lines) {

@@ -42,7 +42,7 @@ func (n *noteView) draw(w, h int, layer Color) []string {
 		color = *n.color
 	}
 	inner := w - 2
-	n.visible = h - 4
+	n.visible = max(h-4, 0)
 	n.top = min(max(n.top, 0), max(len(n.lines)-n.visible, 0))
 	body := make([]string, 0, n.visible)
 	for i := n.top; i < n.top+n.visible; i++ {

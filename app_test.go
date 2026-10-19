@@ -401,9 +401,11 @@ func TestF2NoKeysWhileOpening(t *testing.T) {
 
 // TestL4EveryRowFullWidth draws every screen and popup at many sizes, with an
 // icon one cell and two, and checks that every row is exactly the terminal's
-// width and the screen exactly its height (Rules L4, E5).
+// width and the screen exactly its height (Rules L4, E5). Some are shorter
+// than a popup's frame: a popup is cut off there, never a panic.
 func TestL4EveryRowFullWidth(t *testing.T) {
-	sizes := [][2]int{{80, 40}, {120, 40}, {100, 30}, {60, 20}, {30, 12}, {200, 50}}
+	sizes := [][2]int{{80, 40}, {120, 40}, {100, 30}, {60, 20}, {30, 12}, {200, 50},
+		{20, 6}, {40, 5}, {40, 4}, {20, 3}, {10, 2}, {1, 1}}
 	opens := map[string][]string{
 		"none":     nil,
 		"space":    {"Space"},

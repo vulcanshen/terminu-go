@@ -85,7 +85,7 @@ func (rv *reorderView) measure(sw, sh int) (int, int) {
 
 func (rv *reorderView) draw(w, h int, layer Color) []string {
 	inner := w - 2
-	n := h - 4
+	n := max(h-4, 0)
 	rv.visible = n
 	rv.top = scrollWindow(rv.top, rv.cursor, n, len(rv.order))
 	arrow := Width(glyphHard)

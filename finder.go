@@ -401,7 +401,7 @@ func (f *finderView) drawInfo(w, h int, layer Color) []string {
 	if _, r, ok := f.at(); ok {
 		rows = f.info(r, inner-2, layer)
 	}
-	body := make([]string, 0, h-4)
+	body := make([]string, 0, max(h-4, 0))
 	for i := range max(h-4, 0) {
 		if i < len(rows) {
 			body = append(body, padRow(rows[i], inner))

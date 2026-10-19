@@ -200,7 +200,7 @@ func (dv *dateView) draw(w, h int, layer Color) []string {
 	}
 	dv.hTop = scrollWindow(dv.hTop, dv.hour, 8, 24)
 	dv.mTop = scrollWindow(dv.mTop, dv.minute, 8, 12)
-	body := make([]string, 0, h-4)
+	body := make([]string, 0, 8)
 	for i := range 8 {
 		line := Pad(cal[i], calW)
 		if dv.d.Time {

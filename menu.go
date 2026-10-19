@@ -172,7 +172,7 @@ func hintWidth(pairs []KeyHint) int {
 func (m *menuView) draw(w, h int, color Color) []string {
 	inner := w - 2
 	m.inner = inner
-	n := h - 4
+	n := max(h-4, 0)
 	m.visible = n
 	m.top = scrollWindow(m.top, m.cursor, n, len(m.rows))
 	body := make([]string, 0, n)
