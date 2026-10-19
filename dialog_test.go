@@ -376,3 +376,18 @@ func TestPopupTitleCutKeepsCapsule(t *testing.T) {
 		t.Errorf("Truncate added a style to plain text: %q", got)
 	}
 }
+
+// TestKeyReferenceTitleKeepsName: the key reference of a viewer upper-cases
+// what it shows and "keys", not the name of the thing (components, upper
+// case; components/dialog/note).
+func TestKeyReferenceTitleKeepsName(t *testing.T) {
+	ta := newTestApp(t)
+	v := testViewer()
+	v.Title, v.Subject = "First page", "Pride and Prejudice"
+	ta.Viewer(v)
+	ta.settle()
+	ta.press("?")
+	if n, ok := ta.topView().(*noteView); !ok || n.title != "FIRST PAGE — Pride and Prejudice KEYS" {
+		t.Errorf("title %q", ta.topView().(*noteView).title)
+	}
+}

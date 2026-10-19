@@ -112,11 +112,13 @@ func (n *noteView) keyRef() []refSection {
 
 func (n *noteView) typing() bool { return false }
 
-// keyReference builds the key reference of a surface (components/dialog/note):
+// keyReference builds the key reference of a surface (components/dialog/note),
+// title its name cased as a title is (a name in it as it is, components'
+// upper case), "KEYS" after it:
 // a section title is a hexagon and upper case, one cell from the frame; every
 // row is two cells in, its key padded to the widest key, two cells, then what
 // it does.
-func keyReference(surface string, sections []refSection) *noteView {
+func keyReference(title string, sections []refSection) *noteView {
 	keyW := 0
 	for _, s := range sections {
 		for _, r := range s.rows {
@@ -140,8 +142,8 @@ func keyReference(surface string, sections []refSection) *noteView {
 		}
 	}
 	return &noteView{
-		glyph: glyphKeys, title: Upper(surface + " keys"), lines: lines, known: true, helpCloses: true,
-		hint: []KeyHint{{"?|Esc", "close"}}, name: surface + " keys",
+		glyph: glyphKeys, title: title + " KEYS", lines: lines, known: true, helpCloses: true,
+		hint: []KeyHint{{"?|Esc", "close"}}, name: title + " keys",
 	}
 }
 

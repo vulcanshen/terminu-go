@@ -747,7 +747,17 @@ func (a *App) panelKeyRef(p *Panel) *noteView {
 	for _, o := range p.OtherKeys {
 		sections = append(sections, refSection{title: o.Title, rows: o.Rows})
 	}
-	return keyReference(title, sections)
+	return keyReference(Upper(title), sections)
+}
+
+// refTitle is a popup's name in the title of its key reference: upper case,
+// as a title is; a viewer or a terminal keeps the name of what it shows as
+// it is (components, upper case).
+func refTitle(v popupView) string {
+	if t, ok := v.(interface{ refTitle() string }); ok {
+		return t.refTitle()
+	}
+	return Upper(v.surface())
 }
 
 // modeKeyRef is a mode's key reference (Rules K11).
@@ -758,7 +768,7 @@ func (a *App) modeKeyRef(p *Panel) *noteView {
 	}
 	rows = append(rows, KeyRow{Key: "Esc", Desc: cmpOr(p.mode.Exit, "leave") + ", back to before " + p.mode.Name})
 	core := []KeyRow{{Key: "?", Desc: "this list"}, {Key: "q|Ctrl-C", Desc: "quit"}}
-	return keyReference(p.mode.Name, []refSection{{title: p.mode.Name, rows: rows}, {title: "core keys", rows: core}})
+	return keyReference(Upper(p.mode.Name), []refSection{{title: p.mode.Name, rows: rows}, {title: "core keys", rows: core}})
 }
 
 // --- keys --------------------------------------------------------------------
@@ -823,7 +833,7 @@ func (a *App) popupKey(l *layer, key string, msg tea.KeyMsg) tea.Cmd {
 	case "Esc":
 		return a.closeTop()
 	case "?":
-		return a.open(keyReference(l.view.surface(), l.view.keyRef()))
+		return a.open(keyReference(refTitle(l.view), l.view.keyRef()))
 	case "q":
 		return a.startQuit()
 	}

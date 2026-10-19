@@ -681,7 +681,8 @@ func run2tab(f func(int) tea.Cmd, i int) tea.Cmd {
 	return f(i)
 }
 
-func (vv *viewerView) surface() string { return vv.title() }
+func (vv *viewerView) surface() string  { return vv.title() }
+func (vv *viewerView) refTitle() string { return vv.title() }
 
 // inMode reports the selection mode, where the app's own core keys do not
 // work (Rules K11).
