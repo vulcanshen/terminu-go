@@ -128,6 +128,9 @@ Each release names the version of terminu design (tdp) it implements.
 - A value panel's scroll position counts fields, a radio's options one, as a form's does (layout/panel)
 - `Field.Desc` says what a value panel's row means: its key reference starts with a "what each row is" section,
   the names in the text colour (layout/panel)
+- `App.Focus` moves the focus to a panel, switching to its screen, and `App.ShowScreen` switches screens, for an
+  action the user expects to move them (Rules K3). The focus stays on its panel when the app adds or takes away
+  panels, and a screen whose panels got fewer no longer panics
 - `List.Location` is a list's location row, where the user is, in Lavender above its header, cut from the front
   (layout/panel)
 

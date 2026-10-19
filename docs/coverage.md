@@ -63,8 +63,9 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | K2 | 只有一塊的 input popup：有灰字提議時接受提議，沒有時不作用 | I 的 `Name`（有舊值）與 `Nickname`（空的） | `TestInputSuggestionTab`、`TestInputNoSuggestionTabNoop` |
 | K2 | 多行文字寫入狀態：`Tab` 是縮排；PTY 裡屬於子程序 | I 的 `Comment`（textarea）；T `[1] SHELL` | `TestTextarea`、`TestK10KeysToChild` |
 | K3 | `Enter` 做 app 登記的那個動作；同一種項目同一個動作；panel 沒有項目時對整個 panel | P `[1] PODS` `Enter` 開 log；P `[2] LOG` `Enter` 開 viewer（整個 panel 一個動作） | `TestK3EnterRunsRegistered`、`TestK3EnterOnContentPanel` |
-| K3 | `Enter` 不移動 focus（表單送出失敗跳到第一個問題欄位是寫明的例外） | D「Form: New host」；P `[3] SETTINGS` | `TestK3EnterKeepsFocus` |
+| K3 | `Enter` 原則上不移動 focus（元件寫死的：表單送出失敗跳到第一個問題欄位、打字列到清單、明細） | D「Form: New host」；P `[3] SETTINGS` | `TestK3EnterKeepsFocus` |
 | K3 | 唯一可以用 `Enter` 換 panel 的是明細：列出項目的 panel 上，`Enter` 可以把 focus 移到顯示那一項明細的 panel；要不要、在哪些項目上由 app 決定。lib：只有 `Enter`、而且 panel 的 `Details` 是同一個畫面的另一個 panel 才收 | K `[1] KINDS` 在 namespaced 的種類上 `Enter` 進 `[2]`；cluster 層級的（`nodes`、`namespaces`…）不進去 | `TestK3EnterToDetails`、`TestK3ToDetailsOnlyEnter` |
+| K3 | focus 只在使用者預期會換的時候換：app 的動作（含 `Enter`）可以移動 focus 或換畫面；背景發生的事不可以。lib：`App.Focus`、`App.ShowScreen` 給 app 在動作裡用；增減 panel 時 focus 留在同一個 panel，focus 的 panel 拿掉時給現在在它位置上的 | global 的 `[J]ump to the log` | `TestAppMovesFocus` |
 | K3 | 新增一項之後 cursor 移到新的那一項、捲到看得到（lib：`List.Select`，回報那一列看不看得到） | P `[1] PODS` 的 `[n]ew` | `TestListMarkAndSelectByID` |
 | K3 | input popup：確定寫回並關；不合格不寫回、錯誤列、不關；值跟打開時一樣、而且打開時就合格才不寫回直接關：打開時是空的、又不能空的，什麼都沒打（或打了又刪光）按 `Enter` 照不合格處理；有建議值時用建議值 | I 的 `Port`（打 `0`）；I 的 `Archive` 按 `Backspace` 再 `Enter` | `TestK3InputConfirm`、`TestK3InputInvalidStays`、`TestK3InputUnchangedNoWrite`、`TestTextareaCheck`（textarea 也一樣：`Textarea.Check`） |
 | K3 | 多行文字：寫入狀態 `Enter` 換行，離開寫入後才確定 | I 的 `Comment` | `TestTextarea` |

@@ -30,6 +30,7 @@ type Screen struct {
 	NarrowBelow int
 
 	focus int
+	held  *Panel // the panel with the focus, kept when panels come and go
 }
 
 // Focused is the panel with the focus.
@@ -37,7 +38,22 @@ func (s *Screen) Focused() *Panel {
 	if len(s.Panels) == 0 {
 		return nil
 	}
-	return s.Panels[s.focus]
+	return s.Panels[s.at()]
+}
+
+// at is the place of the panel with the focus. The focus stays on the same
+// panel when the app adds or takes away panels; when that panel itself goes,
+// the one now in its place has it.
+func (s *Screen) at() int {
+	if i := slices.Index(s.Panels, s.held); i >= 0 {
+		s.focus = i
+		return i
+	}
+	s.focus = min(max(s.focus, 0), max(len(s.Panels)-1, 0))
+	if len(s.Panels) > 0 {
+		s.held = s.Panels[s.focus]
+	}
+	return s.focus
 }
 
 // App is the whole terminal UI: screens of panels, the popups over them,
@@ -757,7 +773,7 @@ func (a *App) openSpaceMenu() tea.Cmd {
 	sections = append(sections, MenuSection{Title: "panel operation", Actions: a.panelActions(p, PanelScope)})
 	global := Action{Label: "Global operation", Desc: "actions for the whole app", Do: a.openGlobal}
 	m := newMenu("", sections, []Action{global})
-	m.cased = p.title(s.focus + 1)
+	m.cased = p.title(s.at() + 1)
 	m.space = true
 	m.name = "Space menu"
 	m.run = func(a *App, act Action) tea.Cmd {
@@ -808,6 +824,26 @@ func (a *App) switchScreen(i int) tea.Cmd {
 	a.cur = i
 	a.focusChanged()
 	return nil
+}
+
+// Focus moves the focus to p, on whichever screen it is, switching to that
+// screen. The app does it where the user expects the focus to move: after
+// what they pressed, never on something that happened in the background (a
+// load done, a job ended; Rules K3). A panel on no screen is left alone.
+func (a *App) Focus(p *Panel) tea.Cmd {
+	for i, s := range a.screens {
+		if j := slices.Index(s.Panels, p); j >= 0 {
+			cmd := a.switchScreen(i)
+			return tea.Batch(cmd, a.focusPanel(s, j))
+		}
+	}
+	return nil
+}
+
+// ShowScreen switches to s, as its chip's key does (Rules K3: when the user
+// expects it).
+func (a *App) ShowScreen(s *Screen) tea.Cmd {
+	return a.switchScreen(slices.Index(a.screens, s))
 }
 
 // --- the key reference -------------------------------------------------------
@@ -893,7 +929,7 @@ func (a *App) panelKeyRef(p *Panel) *noteView {
 	for _, o := range p.OtherKeys {
 		sections = append(sections, refSection{title: o.Title, rows: o.Rows})
 	}
-	return keyReference(p.title(s.focus+1), sections)
+	return keyReference(p.title(s.at()+1), sections)
 }
 
 // refTitle is a popup's name in the title of its key reference: upper case,
@@ -1055,10 +1091,10 @@ func (a *App) panelKey(key string, msg tea.KeyMsg) tea.Cmd {
 	case "q":
 		return a.startQuit()
 	case "Tab":
-		return a.focusPanel(s, (s.focus+1)%len(s.Panels))
+		return a.focusPanel(s, (s.at()+1)%len(s.Panels))
 	case "Shift-Tab":
 		if a.ShiftTab {
-			return a.focusPanel(s, (s.focus-1+len(s.Panels))%len(s.Panels))
+			return a.focusPanel(s, (s.at()-1+len(s.Panels))%len(s.Panels))
 		}
 	case "Esc":
 		if l, ok := p.Body.(*List); ok && l.Filtering() {
@@ -1163,7 +1199,7 @@ func (a *App) modeKey(p *Panel, key string, msg tea.KeyMsg) tea.Cmd {
 		}
 		s := a.Screen()
 		if key == "Tab" {
-			return a.focusPanel(s, (s.focus+1)%len(s.Panels))
+			return a.focusPanel(s, (s.at()+1)%len(s.Panels))
 		}
 		if n := int(key[0] - '1'); n < len(s.Panels) {
 			return a.focusPanel(s, n)
@@ -1194,10 +1230,10 @@ func (a *App) toDetails() {
 
 // focusPanel moves the focus to panel i of s.
 func (a *App) focusPanel(s *Screen, i int) tea.Cmd {
-	if i == s.focus {
+	if i == s.at() {
 		return nil
 	}
-	s.focus = i
+	s.focus, s.held = i, s.Panels[i]
 	a.focusChanged()
 	return nil
 }
@@ -1340,7 +1376,7 @@ func (a *App) panelArea(w, h int) []string {
 		return area
 	}
 	if a.narrow(s) {
-		return Pad2(s.Focused().draw(s.focus+1, w, h, true), w, h)
+		return Pad2(s.Focused().draw(s.at()+1, w, h, true), w, h)
 	}
 	var rects []Rect
 	if s.Layout != nil {
@@ -1364,7 +1400,7 @@ func (a *App) panelArea(w, h int) []string {
 		if fp, ok := p.Body.(*FilePreview); ok {
 			fp.hide = a.HideSecretsInPreview // the app's setting, as a file-picker's preview has it
 		}
-		Composite(area, p.draw(i+1, r.W, r.H, i == s.focus), r.X, r.Y, w)
+		Composite(area, p.draw(i+1, r.W, r.H, i == s.at()), r.X, r.Y, w)
 	}
 	return area
 }

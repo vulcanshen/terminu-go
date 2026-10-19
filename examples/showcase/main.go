@@ -100,6 +100,9 @@ func newShowcase() *showcase {
 			}},
 		{Key: "S", Label: "Start task", Desc: "a long job: the bar under the screen chips", Scope: terminu.GlobalScope,
 			Do: s.startTask},
+		// The app moves the focus where the user asked for it (App.Focus).
+		{Key: "J", Label: "Jump to the log", Desc: "the Panels screen's log, from anywhere", Scope: terminu.GlobalScope,
+			Do: func() tea.Cmd { return a.Focus(s.panels.log) }},
 		{Label: "Hide secrets in preview", Desc: "the setting hide_secrets_in_preview, on or off", Scope: terminu.GlobalScope,
 			Do: func() tea.Cmd {
 				a.HideSecretsInPreview = !a.HideSecretsInPreview

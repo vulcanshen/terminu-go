@@ -604,6 +604,42 @@ func TestSpinning(t *testing.T) {
 	}
 }
 
+// TestAppMovesFocus: the app moves the focus or the screen where the user
+// expects it (Rules K3); the focus stays on its panel when panels come and
+// go, and a screen whose panels got fewer does not panic (sshu SS3).
+func TestAppMovesFocus(t *testing.T) {
+	ta := newTestApp(t)
+	s := ta.Screen()
+	logs, settings := s.Panels[1], s.Panels[2]
+	ta.press("3")
+	if s.Focused() != settings {
+		t.Fatal("3 focuses [3]")
+	}
+	s.Panels = s.Panels[:2]
+	if p := s.Focused(); p != logs {
+		t.Errorf("[3] gone: the focus is on the panel now last, not out of range: %v", p)
+	}
+	ta.Frame()
+	extra := &Panel{Label: "Extra", Body: &Pager{}}
+	s.Panels = []*Panel{extra, s.Panels[0], s.Panels[1]}
+	if s.Focused() != logs || !strings.Contains(ta.screenText(), "[3] LOG") {
+		t.Errorf("a panel added in front: the focus stays on LOG, now [3]")
+	}
+	other := ta.screens[1]
+	ta.Focus(other.Panels[0])
+	if ta.Screen() != other || other.Focused() != other.Panels[0] {
+		t.Error("Focus switches to the panel's screen")
+	}
+	ta.ShowScreen(s)
+	if ta.Screen() != s || s.Focused() != logs {
+		t.Error("ShowScreen goes back, the focus where it was")
+	}
+	ta.Focus(&Panel{Label: "Nowhere"})
+	if ta.Screen() != s || s.Focused() != logs {
+		t.Error("a panel on no screen changes nothing")
+	}
+}
+
 // TestOnResize: the app hears of a new terminal size after the lib has laid
 // the screen out again (Rules L1; kbu KB20).
 func TestOnResize(t *testing.T) {
