@@ -1176,3 +1176,36 @@ func TestFormKeyReferenceFollowsFields(t *testing.T) {
 		t.Errorf("on a checkbox option: %v", k)
 	}
 }
+
+// TestK6ShiftTabInKeyReference: with Shift-Tab going to the previous panel,
+// the panel's key reference says so with Tab (Rules K6; filu FL7).
+func TestK6ShiftTabInKeyReference(t *testing.T) {
+	for _, on := range []bool{false, true} {
+		ta := newTestApp(t)
+		ta.ShiftTab = on
+		ta.press("?")
+		text := StripStyles(strings.Join(ta.topView().(*noteView).lines, "\n"))
+		if got := strings.Contains(text, "Tab|Shift-Tab  next panel, previous panel"); got != on {
+			t.Errorf("ShiftTab %v: the key reference says Shift-Tab %v:\n%s", on, got, text)
+		}
+	}
+}
+
+// TestM6HiddenGlobalNotInKeyReference: a global action whose object does not
+// exist now is not in the app-wide section of a panel's key reference (Rules
+// M6; sshu SS36).
+func TestM6HiddenGlobalNotInKeyReference(t *testing.T) {
+	ta := newTestApp(t)
+	hidden := true
+	ta.Global = append(ta.Global, Action{Key: "Z", Label: "Zap", Desc: "the cache", Scope: GlobalScope,
+		Hidden: func() bool { return hidden }, Do: ta.record("zap")})
+	for _, want := range []bool{false, true} {
+		hidden = !want
+		ta.press("?")
+		text := StripStyles(strings.Join(ta.topView().(*noteView).lines, "\n"))
+		if got := strings.Contains(text, "Zap"); got != want {
+			t.Errorf("hidden %v: Zap in the key reference %v", hidden, got)
+		}
+		ta.press("Esc")
+	}
+}

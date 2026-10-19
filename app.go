@@ -715,7 +715,11 @@ func (a *App) panelKeyRef(p *Panel) *noteView {
 	}
 	core := []KeyRow{{Key: "Space", Desc: "what you can do here"}, {Key: "?", Desc: "this list"}}
 	if len(s.Panels) > 1 {
-		core = append(core, KeyRow{Key: "Tab", Desc: "next panel"}, KeyRow{Key: "1–" + itoa(len(s.Panels)), Desc: "jump to panel N"})
+		tab := KeyRow{Key: "Tab", Desc: "next panel"}
+		if a.ShiftTab {
+			tab = KeyRow{Key: "Tab|Shift-Tab", Desc: "next panel, previous panel"} // Rules K6
+		}
+		core = append(core, tab, KeyRow{Key: "1–" + itoa(len(s.Panels)), Desc: "jump to panel N"})
 	}
 	if l, ok := p.Body.(*List); ok && l.Filtering() {
 		core = append(core, KeyRow{Key: "Esc", Desc: "clear the filter"})
@@ -730,7 +734,7 @@ func (a *App) panelKeyRef(p *Panel) *noteView {
 	for _, act := range a.globalActions() {
 		// On a panel a digit jumps to a panel: a global one works only in the
 		// global operation popup (Rules K1), so it is not a key here.
-		if act.Key == "" || act.Key == "q" || isDigit(act.Key) || own[act.Key] {
+		if act.Key == "" || act.Key == "q" || isDigit(act.Key) || own[act.Key] || act.hidden() {
 			continue
 		}
 		app = append(app, row(act))
