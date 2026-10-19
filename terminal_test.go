@@ -43,6 +43,20 @@ func termWithHistory(t *testing.T) (*testApp, *Terminal, *bytes.Buffer) {
 	return ta, term, sent
 }
 
+// TestTerminalEmptyUntilItSpeaks: started, it is empty until its program
+// prints, so the panel's LoadingText shows in its middle (layout/panel).
+func TestTerminalEmptyUntilItSpeaks(t *testing.T) {
+	ta, term, _ := ptyApp(t)
+	ta.Screen().Panels[0].Loading, ta.Screen().Panels[0].LoadingText = true, "connecting to web-01…"
+	if !term.Empty() || !strings.Contains(ta.screenText(), "connecting to web-01…") {
+		t.Errorf("started, nothing printed: empty, LoadingText shown: %v", term.Empty())
+	}
+	term.spoke = true
+	if term.Empty() || strings.Contains(ta.screenText(), "connecting to web-01…") {
+		t.Error("once it prints, its screen")
+	}
+}
+
 // TestTerminalHistoryMode: PgUp goes into the History mode; its keys scroll
 // back, Esc goes back to the live screen, any other key leaves it and goes to
 // the program, q too (components/dialog/terminal, Rules K11).

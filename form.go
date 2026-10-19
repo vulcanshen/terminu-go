@@ -84,6 +84,10 @@ type Form struct {
 	// on its button doing nothing until it ends. ctx ends when the form
 	// closes first; what it returns then is dropped (components/dialog/form).
 	SubmitLong func(ctx context.Context) (tea.Cmd, error)
+	// OnCancel runs when it closes without being submitted: Esc, its discard
+	// confirm, or the popup it is over closing it, as an Ask's and an input's
+	// do (Rules F6).
+	OnCancel func() tea.Cmd
 }
 
 // FormButton is a button of a form's action area besides the main submit
@@ -804,6 +808,7 @@ func (m formRan) done(a *App) tea.Cmd {
 		fv.focus = m.at
 		return fv.failed(a, m.at, m.err)
 	case m.submit:
+		fv.answered(a)
 		return tea.Batch(a.closeView(fv), m.cmd)
 	}
 	if m.res.Apply != nil {
@@ -818,7 +823,7 @@ func (m formRan) done(a *App) tea.Cmd {
 		label, subject := fv.buttonParts(m.at)
 		return a.Viewer(&Viewer{Title: label, Subject: subject, Lines: m.res.Lines})
 	case m.res.Toast != "":
-		return a.Toast(Info, m.res.Toast)
+		return a.Toast(Success, m.res.Toast) // the action is done (components/dialog/toast)
 	}
 	return nil
 }
@@ -852,11 +857,13 @@ func (fv *formView) submit(a *App, it formItem, do func() (tea.Cmd, error)) tea.
 	if !fv.check(fv.f.Fields) {
 		return nil
 	}
+	fv.answered(a)
 	if do == nil {
-		return a.closeTop()
+		return a.closeOnly(fv)
 	}
 	cmd, err := do()
 	if err != nil {
+		fv.unanswered(a)
 		return fv.failed(a, it, err)
 	}
 	// Only the form closes: a popup the submit opened stays over it.
@@ -865,11 +872,55 @@ func (fv *formView) submit(a *App, it formItem, do func() (tea.Cmd, error)) tea.
 
 func (fv *formView) surface() string { return fv.f.Title }
 
+// enterDesc is what Enter does on this form, naming only the kinds of items
+// it has (Rules M6: what is not there is not listed).
+func (fv *formView) enterDesc() string {
+	var edit, choose, toggle bool
+	for _, f := range fv.f.Fields {
+		switch {
+		case len(f.Options) > 0 && f.Multi:
+			toggle = true
+		case len(f.Options) > 0:
+			choose = true
+		case f.Edit != nil:
+			edit = true
+		}
+	}
+	var parts []string
+	if edit {
+		parts = append(parts, "edit the field")
+	}
+	if choose {
+		parts = append(parts, "choose the option")
+	}
+	if toggle {
+		parts = append(parts, "toggle the checkbox")
+	}
+	return strings.Join(append(parts, "press the button"), ", ")
+}
+
+// cancel is the form closed without being submitted (OnCancel).
+func (fv *formView) cancel() tea.Cmd { return run(fv.f.OnCancel) }
+
+// answered marks the form submitted, so closing it is not a cancel;
+// unanswered takes that back when the submit fails.
+func (fv *formView) answered(a *App) { fv.setAnswered(a, true) }
+
+func (fv *formView) unanswered(a *App) { fv.setAnswered(a, false) }
+
+func (fv *formView) setAnswered(a *App, on bool) {
+	for _, l := range a.stack {
+		if l.view == fv {
+			l.answered = on
+		}
+	}
+}
+
 // keyRef lists Space only when the form has checkbox options and e only when
 // a field is wrong; either is in the disabled colour when it does nothing
 // where the focus is (Rules M6).
 func (fv *formView) keyRef() []refSection {
-	rows := []KeyRow{{Key: "Enter", Desc: "edit the field, choose or toggle the option, press the button"}}
+	rows := []KeyRow{{Key: "Enter", Desc: fv.enterDesc()}}
 	if slices.ContainsFunc(fv.f.Fields, func(f *FormField) bool { return f.Multi && len(f.Options) > 0 }) {
 		it := fv.focus
 		rows = append(rows, KeyRow{Key: "Space", Desc: "toggle the checkbox option",

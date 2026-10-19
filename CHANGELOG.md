@@ -2,6 +2,18 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.8.2
+
+- `TextInput.Unchanged`, `PasswordInput.Unchanged` and `NumberInput.Unchanged` run when `Enter` takes the value the
+  input opened with: nothing is written back and `Done` is not called, but a flow can end (`CloseTop`) and a page
+  waiting for an answer gets the value it offered (Rules K3, F6)
+- `Form.OnCancel` runs when a form closes without being submitted, as an `Ask`'s and an input's do (Rules F6)
+- `Terminal.Empty` reports a program that has printed nothing yet, so the panel's `LoadingText` shows meanwhile
+- A hotkey of several letters goes in place at the start of its label in either case too: `[go]to` on `Goto`
+- A form's key reference says what `Enter` does on the kinds of items the form has, not all of them (Rules M6)
+- A form button's `FormResult.Toast` is a Success toast: the action is done
+- `App.CloseAll`'s comment says every popup plays its closing at once, as it does
+
 ## v0.2.0 — tdp v0.8.1
 
 - tdp v0.8.1 writes down G98 and G99 as the library does them (a list's location row stays when it is empty; an

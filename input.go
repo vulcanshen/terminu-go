@@ -63,6 +63,11 @@ type TextInput struct {
 	// over closing it, so whoever waits for the answer (a web page's prompt,
 	// ssh's askpass) hears it was cancelled (Rules F6).
 	OnCancel func() tea.Cmd
+	// Unchanged, when set, runs when Enter takes the value it opened with, so
+	// nothing is written back and Done is not called: a step of a flow ends
+	// the flow (CloseTop), a page waiting for an answer gets the value it
+	// offered (Rules K3, F6).
+	Unchanged func() tea.Cmd
 }
 
 // PasswordInput is a masked input (components/input/password).
@@ -104,6 +109,11 @@ type PasswordInput struct {
 	// over closing it, so whoever waits for the answer (a web page's prompt,
 	// ssh's askpass) hears it was cancelled (Rules F6).
 	OnCancel func() tea.Cmd
+	// Unchanged, when set, runs when Enter takes the value it opened with, so
+	// nothing is written back and Done is not called: a step of a flow ends
+	// the flow (CloseTop), a page waiting for an answer gets the value it
+	// offered (Rules K3, F6).
+	Unchanged func() tea.Cmd
 }
 
 // NumberInput is a number (components/input/number).
@@ -145,6 +155,11 @@ type NumberInput struct {
 	// over closing it, so whoever waits for the answer (a web page's prompt,
 	// ssh's askpass) hears it was cancelled (Rules F6).
 	OnCancel func() tea.Cmd
+	// Unchanged, when set, runs when Enter takes the value it opened with, so
+	// nothing is written back and Done is not called: a step of a flow ends
+	// the flow (CloseTop), a page waiting for an answer gets the value it
+	// offered (Rules K3, F6).
+	Unchanged func() tea.Cmd
 }
 
 type inputKind int
@@ -172,6 +187,7 @@ type lineInput struct {
 	pause        time.Time // until when it takes no value
 	search       bool      // only searched for: control characters are not held back
 	onCancel     func() tea.Cmd
+	unchanged    func() tea.Cmd // Enter on the value it opened with
 	commit       func(v string, clear bool) error // nil without Commit
 	stay         bool                             // a step of a flow: Enter leaves it open under the next
 	maxLen       int
@@ -221,7 +237,7 @@ func then(written func(), cmd tea.Cmd) tea.Cmd {
 func (in TextInput) open(a *App, written func()) tea.Cmd {
 	return a.open(&lineInput{
 		kind: kindText, title: in.Title, name: cmpOr(in.Name, in.Title), subject: in.Subject, glyph: in.Glyph, prompt: in.Prompt, verb: cmpOr(in.Verb, "save"),
-		old: in.Old, hasOld: in.Old != "", suggest: proposal(in.Old, in.Suggest), maxLen: in.MaxLen, ed: newEditor(""), check: in.Check, search: in.Search, onCancel: in.OnCancel, stay: in.Stay,
+		old: in.Old, hasOld: in.Old != "", suggest: proposal(in.Old, in.Suggest), maxLen: in.MaxLen, ed: newEditor(""), check: in.Check, search: in.Search, onCancel: in.OnCancel, unchanged: in.Unchanged, stay: in.Stay,
 		commit: func(v string, _ bool) error { return runCommit(in.Commit, v) },
 		done:   func(v string, _ bool) tea.Cmd { return then(written, run2(in.Done, v)) },
 	})
@@ -230,7 +246,7 @@ func (in TextInput) open(a *App, written func()) tea.Cmd {
 func (in PasswordInput) open(a *App, written func()) tea.Cmd {
 	li := &lineInput{
 		kind: kindPassword, title: in.Title, name: cmpOr(in.Name, in.Title), subject: in.Subject, glyph: in.Glyph, prompt: in.Prompt, verb: cmpOr(in.Verb, "save"),
-		hasOld: in.Set, maxLen: in.MaxLen, unlock: in.Unlock, ed: newEditor(""), check: in.Check, onCancel: in.OnCancel, stay: in.Stay, pausedUntil: in.PausedUntil,
+		hasOld: in.Set, maxLen: in.MaxLen, unlock: in.Unlock, ed: newEditor(""), check: in.Check, onCancel: in.OnCancel, unchanged: in.Unchanged, stay: in.Stay, pausedUntil: in.PausedUntil,
 		commit: func(v string, clear bool) error {
 			if in.Commit == nil {
 				return nil
@@ -250,7 +266,7 @@ func (in PasswordInput) open(a *App, written func()) tea.Cmd {
 func (in NumberInput) open(a *App, written func()) tea.Cmd {
 	li := &lineInput{
 		kind: kindNumber, title: in.Title, name: cmpOr(in.Name, in.Title), subject: in.Subject, glyph: in.Glyph, prompt: in.Prompt, verb: cmpOr(in.Verb, "save"),
-		old: in.Old, hasOld: in.Old != "", suggest: proposal(in.Old, in.Suggest), unit: in.Unit, ed: newEditor(""), onCancel: in.OnCancel, stay: in.Stay,
+		old: in.Old, hasOld: in.Old != "", suggest: proposal(in.Old, in.Suggest), unit: in.Unit, ed: newEditor(""), onCancel: in.OnCancel, unchanged: in.Unchanged, stay: in.Stay,
 		commit: func(v string, _ bool) error { return runCommit(in.Commit, v) },
 		done:   func(v string, _ bool) tea.Cmd { return then(written, run2(in.Done, v)) },
 	}
@@ -562,7 +578,7 @@ func (li *lineInput) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 func (li *lineInput) confirm(a *App) tea.Cmd {
 	if li.kind == kindPassword {
 		if li.ed.empty() && li.showingOld() {
-			return a.answer() // nothing typed: the old password stays
+			return li.same(a) // nothing typed: the old password stays
 		}
 		if li.ed.hasControl() {
 			li.err = cmpOr(li.name, "The value") + " can't have control characters"
@@ -576,12 +592,12 @@ func (li *lineInput) confirm(a *App) tea.Cmd {
 		case v == "" && li.hasOld:
 			return li.write(a, "", true) // Backspace threw the old one away
 		case v == "":
-			return a.answer() // empty it opened, empty it closes
+			return li.same(a) // empty it opened, empty it closes
 		}
 		return li.write(a, v, false)
 	}
 	if li.showingOld() && li.suggest == "" {
-		return a.answer() // nothing touched: no change
+		return li.same(a) // nothing touched: no change
 	}
 	if li.ed.hasControl() && !li.search {
 		li.err = cmpOr(li.name, "The value") + " can't have control characters"
@@ -595,10 +611,14 @@ func (li *lineInput) confirm(a *App) tea.Cmd {
 		return nil
 	}
 	if v == li.old {
-		return a.answer() // the value it opened with: nothing to write back (Rules K3)
+		return li.same(a) // the value it opened with: nothing to write back (Rules K3)
 	}
 	return li.write(a, v, false)
 }
+
+// same is Enter on the value it opened with: closed, nothing written back,
+// the app told when it wants to be (Unchanged).
+func (li *lineInput) same(a *App) tea.Cmd { return tea.Batch(a.answer(), run(li.unchanged)) }
 
 // checked runs the value's check: its error goes on the error row, or the
 // row is cleared.

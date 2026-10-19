@@ -121,6 +121,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | M4 | global 熱鍵在 panel 上直接按（沒有 popup 時）；跟 panel 熱鍵撞鍵時 panel 的優先、那個 panel 的 key reference 不列被蓋掉的 global 鍵；數字的 global 熱鍵只在 popup 裡；模式裡不作用 | P `[1] PODS` 的 `[D]rag` 蓋掉 global 的 `[D]ialogs` | `TestM4GlobalHotkeyOnPanel`、`TestM4PanelKeyWins` |
 | M4 | key reference 唯讀、可捲、沒游標、不能執行 | 任一處按 `?` | `TestKeyReferenceReadOnly` |
 | M5 | 每一列：左邊動作名稱、右邊一句單行說明 | Space menu | `TestMenuRowLayout` |
+| M5 | 熱鍵標記：多字元的熱鍵碰上 label 開頭也不分大小寫（`go` 加 `Goto` → `[go]to`） | 測試驗 | `TestM5HotkeyMarking` |
 | M5 | 熱鍵標記：字母出現在 label 裡（不分大小寫）原地包第一個，括號裡照鍵寫、label 照原本的大小寫：`[r]ename`、`[n]ew`、`D[e]lete`、`UR[L]`、`Ex[P]ort`；不在 label 裡放前面 `[x] Reset`；modifier 照同一套 `[Alt-t]erm`；多字元 `[go]to`；數字放前面 `[3] Favorites`；core key 放前面 `[Enter] Edit`；沒熱鍵不加 | 展示場的登記各用到一次（見下面「熱鍵標記」） | `TestM5HotkeyMarking` |
 | M5 | 括號裡印的就是要按的鍵（大小寫算數）；label 已寫出鍵的不再括；不只靠顏色或 glyph 暗示 | 同上 | `TestM5HotkeyMarking` |
 | M5 | 鍵名：鍵帽名、大駝峰（`Esc` `Tab` `Enter` `Space` `Backspace` `Delete` `Home` `End` `PgUp` `PgDn`、`↑↓←→`）；`Ctrl` 後字母大寫；`-` 連 modifier；幾個鍵做同一件事用 `\|` 並列（不用 `/`）、`–` 範圍 | lib：鍵名由一個函式產生 | `TestM5KeyNames` |
@@ -166,6 +167,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | F4 | 從 A 開 B，A 留著；取消 B 回 A；多層一樣 | D 的疊法情境 | `TestF4KeepSource`、`TestInputSteps`（多步驟的 input：`Stay`，`Esc` 退一步、值都在） |
 | F5 | 錯誤立刻出現（toast 或 popup）、`Esc` 可關、不阻塞 app；有沒有錯誤歷史由 app 決定 | P `[1] PODS` 的 `Fail`；D「Error popup」 | `TestF5ErrorNonBlocking` |
 | F6 | 要不要 confirm 由 app 決定，決定了每次都問；經 picker 明確選的可算已確認 | lib：動作登記「先問」 | `TestF6ConfirmEveryTime`、`TestF6AskFor`（`Action.AskFor`：問句執行時才產生、回 nil 不問；從 menu 跑時 `Esc` 回 menu）、`TestOnCancel`（`OnCancel`：沒回答就關掉時告訴 app） |
+| F6 | 沒有回答就關掉時讓 app 知道：表單也有 `OnCancel`（`Esc`、捨棄的 confirm、底下的 popup 關掉）；input 沒改值就按 `Enter` 時 app 聽得到（`Unchanged`：多步流程收整串、等回答的 prompt 回答原值），K3 的「不寫回」照舊 | D「Form: New host」按 `Esc`（測試驗 `OnCancel`） | `TestFormOnCancel`、`TestInputUnchangedHeard` |
 | F6 | `Enter` 接受、`Esc` 取消，回答只有這兩個鍵（沒有 `y`、`n`）；寫出接受會做的事；不能被誤觸完成 | D「Confirm」 | `TestConfirmKeys`（`y`、`n` 不作用，`?` 只列 `Enter`、`Esc`） |
 | F7 | 寬度兩種：內容確定 = 最寬列 + 4、至少放得下標題與 hint、最多 `min(寬 − 2, 120)`；不確定 = `min(寬 − 2, 120)`；水平置中；開著不變；有整列 cursor 的，右邊的留白跟箭頭一樣寬（powerline 符號寬）；寬度至少 hint + 6（PIN 43 格） | 每種 popup；寬 200 的終端機看 120 上限 | `TestF7WidthKnown`、`TestF7WidthKnownUnlockContent`、`TestF7WidthUnknown`、`TestF7WidthCap120` |
 | F7 | 高度打開時定、最高畫面高 − 2（chip 列或 statusbar 與 footer 看得到，chip 列下面的分隔線可以被蓋住），超過捲；打開時不知道會多高的（有預覽的 finder、textarea）一律取最高；loading 期間與使用者操作造成的改變可以變；畫面太矮時 popup 也不超過自己的高度（框裡的空白列先讓，terminal 例外） | D「Menu: long」；I `[/] Find` 打字篩選；把視窗縮到 10 列開表單 | `TestF7HeightFixed`、`TestF7HeightMax`、`TestF7ShortScreenKeepsFooter` |
@@ -287,6 +289,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | panel §分組 | cursor 跳過分組標題：`j\|k` 越過它、`gg\|G` 到第一個與最後一個項目、`N of M` 只算項目；捲到一組的第一個項目時，這組的標題也留在畫面裡 | K `[1] KINDS`（把終端機拉矮再捲） | `TestPanelListGroupsCursor` |
 | panel §分組 | 沒有項目的組不畫標題（panel filter 篩掉的組、app 給的空組） | K `[1] KINDS` 按 `/` 打 `sec` | `TestPanelListGroupsFilter` |
 | panel §loading 與錯誤 | loading：icon 在整串膠囊後、用框線色（focus Blue、失焦 Surface2）；沒內容時中間寫一句（`󰪞 loading pods…`）；重新載入舊內容留著 | `Loading`（空的時候與有內容時各一次） | `TestPanelLoading`、`TestPanelLoadingIconAfterChain`（顏色） |
+| panel §loading 與錯誤 | PTY 的 panel：子程序開了還沒輸出時算空的，`LoadingText` 畫在中間（lib：`Terminal.Empty`） | T `[1] SHELL` 的 `Slow start` | `TestTerminalEmptyUntilItSpeaks` |
 | panel §loading 與錯誤 | 錯誤：置中兩句，事實 Red、提示 Overlay0；舊內容在就留著、錯誤用 toast 報 | `Fail`（空的時候與有內容時各一次） | `TestPanelError` |
 | panel §一列一個值 | 照表單：項目逐一移動（有 tab 時 `h\|l` 給 tab）；`Enter` 開 input popup，radio、checkbox 原地選；確定後 focus 留在同一列 | P `[3] SETTINGS`；I `[1] INPUTS` | `TestValuePanelMoves`、`TestValuePanelEnter` |
 | panel §一列一個值 | 沒有送出：確定的那一刻就生效；沒有動作區、沒有「改過了要先問」 | 同上 | `TestValuePanelAppliesNow` |
@@ -348,6 +351,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | form §`Enter` | 欄位：開 input popup 疊在表單上，確定寫回 focus 留原欄，`Esc` 值不變；checkbox popup：`Space` 勾、`Enter` 寫回、`Esc` 取消 | 同上的 `Name`、`Namespaces` | `TestFormEnterField` |
 | form §`Enter` | radio 選項：選它；checkbox 選項：原地翻（`Space` 也能翻）；都不開 popup、focus 不動、馬上生效；按鈕：按下它（送出或做它的動作） | 同上 | `TestFormEnterOption`、`TestFormEnterButton`、`TestFormCheckboxSpace` |
 | form §送出 | 只有送出按鈕的 `Enter`；`Tab` 第一次就停在主要的送出；不用字母熱鍵；`Esc` 不把 focus 移到動作區 | 同上 | `TestFormSubmitOnlyButton` |
+| form §按鍵 | `?` 裡 `Enter` 的說明照表單實際有的欄位種類寫（沒有選項就不寫 choose、toggle） | D「Form: New profile」按 `?` | `TestFormEnterDescribesItsFields` |
 | form §在欄位上打字 | 要打字的欄位上按表單操作鍵以外的可列印字元（含數字、`q`）跳說明 note：標題是欄位名、`Enter`／`Esc` 關、focus 不動；其他項目上不跳 | D「Form: New host」的 `Name` 上打 `s` | `TestFormTypingNote` |
 | form §在欄位上打字 | note 只收 `Enter`、`Esc`：其他可以打的字（含 `q`、`?`、app 的 core key）都接住、不作用，`Ctrl-C` 照樣有效（K9）；很窄時折行、不截斷 | 同上，接著打 `q` `?`；把視窗縮窄 | `TestFormTypingNote` |
 | form §動作區 | 按鈕能在表單上開 popup（例：terminal popup 跑 `ssh-copy-id`），表單留在底下；那個 popup 關掉、回到表單時 app 重讀表單的值，算改過（lib：`FormButton.Open`、`Back`） | D「Form: with actions」的 `Copy key`（跑完 Auth 變成 privatekey） | `TestFormButtonOpens` |

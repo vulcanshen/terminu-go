@@ -115,6 +115,91 @@ func TestFinderMatchesWhatTheAppSays(t *testing.T) {
 	}
 }
 
+// TestInputUnchangedHeard: Enter on the value it opened with writes nothing
+// back, but the app hears of it when it asks (Unchanged): a flow ends, a
+// waiting page gets its answer (Rules K3, F6).
+func TestInputUnchangedHeard(t *testing.T) {
+	ta := newTestApp(t)
+	same, done := 0, 0
+	heard := func() tea.Cmd { same++; return nil }
+	ta.Text(TextInput{Title: "Prompt", Old: "yes", Unchanged: heard, Done: func(string) tea.Cmd { done++; return nil }})
+	ta.settle()
+	ta.press("Enter")
+	ta.Number(NumberInput{Title: "Port", Old: "22", Min: 1, Max: 65535, Unchanged: heard, Done: func(string) tea.Cmd { done++; return nil }})
+	ta.settle()
+	ta.press("2", "2", "Enter")
+	ta.Password(PasswordInput{Title: "PIN", Set: true, Unchanged: heard, Done: func(string, bool) tea.Cmd { done++; return nil }})
+	ta.settle()
+	ta.press("Enter")
+	if same != 3 || done != 0 || ta.top() != nil {
+		t.Errorf("unchanged three times: heard %d, written %d", same, done)
+	}
+	ta.Text(TextInput{Title: "Prompt", Old: "yes", Unchanged: heard, Done: func(string) tea.Cmd { done++; return nil }})
+	ta.settle()
+	ta.press("n", "o", "Enter")
+	if same != 3 || done != 1 {
+		t.Errorf("a change is written, not heard as unchanged: %d %d", same, done)
+	}
+}
+
+// TestFormOnCancel: a form closed without being submitted tells the app, as
+// an Ask and an input do (Rules F6).
+func TestFormOnCancel(t *testing.T) {
+	ta := newTestApp(t)
+	cancelled := 0
+	f := testForm(&formResult{name: "web"})
+	f.OnCancel = func() tea.Cmd { cancelled++; return nil }
+	ta.Form(f)
+	ta.settle()
+	ta.press("Esc")
+	ta.settle()
+	if cancelled != 1 {
+		t.Errorf("Esc: %d", cancelled)
+	}
+	g := testForm(&formResult{name: "web"})
+	g.OnCancel = func() tea.Cmd { cancelled++; return nil }
+	g.Submit = func() (tea.Cmd, error) { return nil, nil }
+	ta.Form(g)
+	ta.settle()
+	ta.press("Tab", "Enter")
+	ta.settle()
+	if cancelled != 1 || ta.top() != nil {
+		t.Errorf("submitted, not cancelled: %d, open %v", cancelled, ta.top() != nil)
+	}
+	h := testForm(&formResult{name: "web"})
+	h.OnCancel = func() tea.Cmd { cancelled++; return nil }
+	h.Submit = func() (tea.Cmd, error) { return nil, errors.New("hosts.yaml changed") }
+	ta.Form(h)
+	ta.settle()
+	ta.press("Tab", "Enter")
+	ta.settle()
+	ta.press("Esc", "Esc")
+	ta.settle()
+	if cancelled != 2 || ta.top() != nil {
+		t.Errorf("a submit that failed and then Esc is a cancel: %d", cancelled)
+	}
+}
+
+// TestFormEnterDescribesItsFields: the key reference says what Enter does on
+// the kinds of items this form has (Rules M6).
+func TestFormEnterDescribesItsFields(t *testing.T) {
+	ta := newTestApp(t)
+	ta.Form(testForm(nil))
+	ta.settle()
+	ta.press("?")
+	if text := StripStyles(ta.screenText()); !strings.Contains(text, "edit the field, choose the option, toggle the checkbox, press") {
+		t.Errorf("text, radio and checkbox fields: %q", text)
+	}
+	ta.covBCloseAll()
+	ta.Form(&Form{Title: "Rename", Button: "Save", Fields: []*FormField{{Label: "Name", Value: func() string { return "x" },
+		Edit: func() Input { return TextInput{Title: "Name"} }}}})
+	ta.settle()
+	ta.press("?")
+	if text := StripStyles(ta.screenText()); !strings.Contains(text, "edit the field, press the button") || strings.Contains(text, "toggle") {
+		t.Errorf("only a text field: %q", text)
+	}
+}
+
 type formResult struct {
 	name, port string
 	submitted  int

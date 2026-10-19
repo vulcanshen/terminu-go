@@ -74,8 +74,8 @@ func (a *App) ClosePopup(b PopupBody) tea.Cmd {
 	return nil
 }
 
-// CloseAll closes every popup, the lib's and the app's: the top one
-// animates, the rest go at once, as when what was done ends the whole
+// CloseAll closes every popup, the lib's and the app's, each playing its own
+// closing at the same time (Rules F2), as when what was done ends the whole
 // stack (Rules T1; a long session started from a viewer). A confirm or an
 // input closed this way is cancelled (OnCancel).
 func (a *App) CloseAll() tea.Cmd { return a.closeAll() }

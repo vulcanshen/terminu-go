@@ -95,8 +95,8 @@ func MarkLabel(key, label string) string {
 		}
 		return "[" + key + "] " + label
 	}
-	if mod == "" && isLetters(key) && strings.HasPrefix(label, key) {
-		return "[" + key + "]" + label[len(key):]
+	if mod == "" && isLetters(key) && len(label) >= len(key) && strings.EqualFold(label[:len(key)], key) {
+		return "[" + key + "]" + label[len(key):] // several letters, in either case: [go]to on Goto
 	}
 	return "[" + key + "] " + label
 }
