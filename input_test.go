@@ -1,6 +1,7 @@
 package terminu
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -1164,5 +1165,36 @@ func TestInputErrEmptyNamesValue(t *testing.T) {
 			t.Errorf("Name %q: the error row is %q, want %q", c.name, li.err, c.want)
 		}
 		ta.covBCloseAll()
+	}
+}
+
+// TestTextareaCheck: a textarea with a check holds back a changed text that
+// fails it, the error row naming the text, the popup open; an unchanged
+// text closes unchecked (Rules K3; hostu, sshu SS19).
+func TestTextareaCheck(t *testing.T) {
+	ta := newTestApp(t)
+	got, calls := "", 0
+	short := func(v string) error {
+		if len(v) > 3 {
+			return errors.New("Notes must be three letters at most")
+		}
+		return nil
+	}
+	ta.Textarea(Textarea{Title: "Notes", Old: "ab", Check: short, Done: func(v string) tea.Cmd { got = v; calls++; return nil }})
+	ta.settle()
+	tv := ta.topView().(*textareaView)
+	ta.press("c", "d", "Esc", "Enter")
+	if calls != 0 || ta.top() == nil || tv.err != "Notes must be three letters at most" {
+		t.Fatalf("a text that fails: written %d, error %q", calls, tv.err)
+	}
+	ta.press("a", "Backspace", "Esc", "Enter")
+	if calls != 1 || got != "abc" || ta.top() != nil {
+		t.Errorf("a text that passes: written %d %q", calls, got)
+	}
+	ta.Textarea(Textarea{Title: "Notes", Old: "abcdef", Check: short, Done: func(v string) tea.Cmd { calls++; return nil }})
+	ta.settle()
+	ta.press("Esc", "Enter")
+	if calls != 1 || ta.top() != nil {
+		t.Errorf("unchanged: checked or written (%d)", calls)
 	}
 }

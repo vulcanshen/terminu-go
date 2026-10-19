@@ -21,6 +21,9 @@ type Textarea struct {
 	// on an "Edit"); left unset, the title names it (components/input/README).
 	Name string
 	Old  string
+	// Check, when set, judges a changed text on Enter: an error keeps it
+	// open and is written in the error row, as on a one-line input (Rules K3).
+	Check func(string) error
 	// Done gets the new text. It is not called when it did not change.
 	Done func(string) tea.Cmd
 }
@@ -494,13 +497,23 @@ func (tv *textareaView) moveKey(a *App, key string) (bool, tea.Cmd) {
 	case "Enter":
 		// A control character is not saved: the error row names the value,
 		// as on a one-line input (components/input/textarea).
+		name := cmpOr(tv.t.Name, cmpOr(tv.t.Title, "The text"))
 		if tv.hasControl() {
-			tv.err = cmpOr(tv.t.Name, cmpOr(tv.t.Title, "The text")) + " can't have control characters"
+			tv.err = name + " can't have control characters"
 			return true, nil
 		}
-		tv.err = ""
 		v := tv.value()
-		if v == tv.t.Old || tv.t.Done == nil {
+		if v == tv.t.Old {
+			return true, a.closeTop()
+		}
+		if tv.t.Check != nil {
+			if err := tv.t.Check(v); err != nil {
+				tv.err = checkMessage(name, err)
+				return true, nil
+			}
+		}
+		tv.err = ""
+		if tv.t.Done == nil {
 			return true, a.closeTop()
 		}
 		return true, tea.Batch(a.closeTop(), then(tv.written, tv.t.Done(v)))
