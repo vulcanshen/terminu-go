@@ -1,6 +1,6 @@
-# tdp v0.9.0 coverage
+# tdp v0.9.1 coverage
 
-tdp v0.9.0 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
+tdp v0.9.1 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
 （[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -207,9 +207,10 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 |---|---|---|---|
 | E1 | 展示場：`showcase version`（`--version`、`-v`）印版號；`showcase help`（`-h`、`--help`）印命令列用法；lib 不適用 | 執行四種寫法 | `TestE1VersionHelp` |
 | E2 | 變數名 `<APP>__<NAME>`；lib 讀的變數掛在 app 的名字底下；`TERMINU__ICON_WIDTH`、`TERMINU__POWERLINE_WIDTH` 給子程序 | lib 提供變數名的函式；展示場只讀 `SHOWCASE__…` | `TestE2EnvNames` |
-| E3 | 設定與資料的位置（v0.6.4 補了 Windows）：lib 不適用，展示場不存東西；file-picker 的 `~/` 是使用者的家目錄（`os.UserHomeDir`，Windows 上就是 `%USERPROFILE%`）；家族共用的設定 key `hide_secrets_in_preview`（預設 `false`）、`input_tab_width`（預設 `4`）由 app 讀，交給 lib 的 `App.HideSecretsInPreview`、`App.InputTabWidth`；畫在畫面上的內容裡的 Tab（viewer、檔案預覽、清單、menu……）畫成 `input_tab_width` 格空白，表單與 panel 上的值、輸入框的打字列例外：畫成紅色的 `\t` | 展示場的 global `Hide secrets in preview`；I 的 `Separator` | `TestFilePreviewHidesSecrets`、`TestTextarea`、`TestE3TabsDrawnAsSpaces`、`TestValueControlChars` |
+| E3 | 設定與資料的位置（v0.6.4 補了 Windows）：lib 不適用，展示場不存東西；file-picker 的 `~/` 是使用者的家目錄（`os.UserHomeDir`，Windows 上就是 `%USERPROFILE%`）；家族共用的設定 key `hide_secrets_in_preview`（預設 `false`）、`input_tab_width`（預設 `4`）由 app 讀，交給 lib 的 `App.HideSecretsInPreview`、`App.InputTabWidth`；拿來讀的內容裡的 Tab（viewer、檔案預覽、panel 上的 log、`Column.Line` 的欄）畫成 `input_tab_width` 格空白，名字與短字（表單與 panel 上的值、清單的格子、menu……）與輸入框的打字列裡畫成紅色的 `\t`；只有 App Log 的 app 照預設（v0.9.1，lib 不用改） | 展示場的 global `Hide secrets in preview`；I 的 `Separator` | `TestFilePreviewHidesSecrets`、`TestTextarea`、`TestE3TabsDrawnAsSpaces`、`TestValueControlChars` |
 | E3 | `input_tab_width` 沒走 `Run` 時也照 app 的設定（app 自己的測試） | lib | `TestTabWidthWithoutRun` |
 | E3 | 讀不了時：app 自己的設定、狀態、資料讀不了，開 `MOVE ASIDE` confirm（路徑與原因）、hint `Enter:move Esc:quit`；`Enter` 改名成 `.bak`（已經有就 `.bak.1`、`.bak.2`……，不蓋掉，問句寫實際的名字）、照常開始；`Esc` 離開 app，`Run` 回傳路徑與原因給 main 寫到 stderr（lib：`App.MoveAside`） | D「Move aside: a file it can’t read」 | `TestMoveAside`、`TestMoveAsideNeverOverAnother` |
+| E3 | 讀不了時，資料是一筆一個檔：讀不了的那一筆按 `Enter` 只改名成 `.bak`、不另外建，其他照常讀；問句 `Move it to <檔名>.bak and go on without it?`（lib：`App.MoveAsideRecord`，app 的 `reread` 只是重讀） | D「Move aside: a record it can’t read」 | `TestMoveAsideRecord` |
 | E4 | 需要 Nerd Font 與 truecolor（lib 的 README 寫明）；PUA glyph 在程式碼裡寫成 code point | 看 README；掃原始碼找不到 PUA 字元 | `TestE4NoLiteralPUA` |
 | E5 | 量的是游標實際前進幾格；所有量寬度的地方走同一個函式（含疊 popup）；畫到終端機用 bubbletea v1 的 renderer（紀錄 C1） | `SHOWCASE__ICON_WIDTH=2`；`proto/c1/tmux-check.sh` 的作法 | `TestL4EveryRowFullWidth`（icon 兩格）、`TestE5OutputDropsEraseRight`（renderer 補的「清到行尾」拿掉，紀錄 C1）、`TestVTWideCharacters`（PTY 裡的字也照同一個寬度放） |
 | E5 | icon 與 powerline 符號（U+E0A0–U+E0D7）各量各的；啟動時 CPR 探測（unix）；順序 `<APP>__ICON_WIDTH` → `TERMINU__ICON_WIDTH` → `LC_TERMINU_ICON_WIDTH`（隔著 ssh 帶過來的）→ 探測，powerline 照 `<APP>__POWERLINE_WIDTH` → `TERMINU__POWERLINE_WIDTH` → `LC_TERMINU_POWERLINE_WIDTH` → 探測；Windows 預設一格 | 在 icon 佔兩格的 tmux 裡啟動看 statusbar（寫出兩種寬度） | `TestE5WidthOrder`、`TestE5ProbeCPR` |
@@ -246,6 +247,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | §大寫 | 不改：值、menu 的 label 與說明、hint 與 footer 的說明、按鍵名、模式名、app 的內容 | 同上 | `TestUppercaseLeavesContent` |
 | components §控制字元 | 名字與短字（表單與 panel 上的值、清單的格子與位置列、menu、popup 的標題、toast、confirm、error popup、選項、說明列、錯誤列、空狀態、statusbar、tab 的名稱、finder 的項目）裡每個控制字元，連 Tab、`\n`、顏色碼的 ESC，都畫成紅色的名字，不丟、不換成空白、不送給終端機；色塊上 Red 底 Base 字（lib：`Escape`；app 要上色的另外給 `Span`：`Row.Styled`、`Field.Styled`、`FormField.Styled`、`App.Status`） | 任何地方：展示場的資料沒有控制字元，靠測試 | `TestControlCharsNamesAndShortTexts`、`TestControlCharsOnABlock`、`TestSpansStyled`；tdptest 的 `TestTrickyValuesEverywhere` |
 | components §控制字元 | 拿來讀的內容（viewer、panel 上的 log、檔案預覽、finder 的預覽）照終端機的樣子畫，見 note 的「viewer 裡的 Tab 與控制字元」；app 自己畫的 body 用 `Reading` | P `[2] LOG`（彩色的等級） | `TestReadingContent`、`TestReadingForAppBodies` |
+| components §控制字元 | 名字與短字的例外：app 標成「一行文字」的清單欄（原始碼、log 的一行）裡，Tab 畫成 `input_tab_width` 格空白，其他控制字元照舊畫成紅色的名字（lib：`Column.Line`，`Styled` 的字也一樣） | I `[2] FILES` 的 `Lines` 分頁：`main.go` 一行一列，`Text` 欄的縮排 | `TestControlCharsLineColumn` |
 
 ## layout/screen
 

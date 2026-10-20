@@ -95,6 +95,7 @@ program's output — never reaches the terminal as it is:
   options, the statusbar) draw every control character by its name in Red: a tab is `\t`, a colour code is `\x1b`
   then `[31m`. To colour one yourself, give spans: `Row.Styled`, `Field.Styled`, `FormField.Styled`, and
   `App.Status` returns them. On a `Canvas` or in a popup of your own, `Escape` draws text from outside the same way.
+  A list column of lines of text — a line of source code, of a log — is marked `Column.Line`: a tab in it is spaces.
 - **What is read** (a viewer, a panel's log, previews) is drawn as a terminal would: colour codes colour, `\n` starts
   a line, a progress bar's `\r` leaves its last state, anything else is its name in Red. A body of your own that
   shows a log draws its lines with `Reading`.
@@ -110,7 +111,8 @@ in the background — from any goroutine. While errors or warnings came in unsee
 When the app can't read its settings, state or data — a bad format, a broken file, no permission — call
 `app.MoveAside(path, err, startFresh)` at the start. The user is asked to move the file aside: `Enter` renames it to
 `.bak` (never over another) and runs `startFresh`, `Esc` leaves, `Run` returning the path and the reason for `main`
-to print.
+to print. When the data is kept one record per file, call `app.MoveAsideRecord(path, err, reread)` for the record
+that can't be read: `Enter` only moves that one aside and runs `reread`, which reads the rest.
 
 ## Settings
 
@@ -184,7 +186,7 @@ in whenever it is due.
 
 ## Which terminu design
 
-terminu-go implements **tdp v0.9.0**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
+terminu-go implements **tdp v0.9.1**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
 
 ## Links
 

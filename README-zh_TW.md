@@ -86,6 +86,7 @@ go run github.com/vulcanshen/terminu-go/examples/showcase@latest
 - **名字與短字**（清單的格子、表單與 panel 上的值、menu 的 label、標題、toast、confirm、選項、statusbar）：每個控制字元都畫成
   紅色的名字，Tab 是 `\t`，顏色碼是 `\x1b` 接著 `[31m`。要自己上色時另外給 span：`Row.Styled`、`Field.Styled`、
   `FormField.Styled`，`App.Status` 也回 span。在 `Canvas` 或自己的 popup 裡畫外面來的字時，用 `Escape` 照同一套畫。
+  清單裡放一行一行文字的欄（原始碼的一行、log 的一行）標成 `Column.Line`：裡面的 Tab 畫成空白。
 - **拿來讀的內容**（viewer、panel 上的 log、預覽）：照終端機會畫的樣子，顏色碼照著上色、`\n` 換行、進度列的 `\r` 只留最後的
   狀態，其他畫成紅色的名字。自己畫的 body 要顯示 log 時，用 `Reading` 畫它的每一行。
 
@@ -99,7 +100,8 @@ go run github.com/vulcanshen/terminu-go/examples/showcase@latest
 
 app 讀不了自己的設定、狀態或資料（格式錯、檔案壞掉、沒有權限）時，在啟動時叫 `app.MoveAside(path, err, startFresh)`。
 使用者會被問要不要把檔移開：`Enter` 改名成 `.bak`（一律不蓋掉別的）再跑 `startFresh`，`Esc` 離開，`Run` 回傳路徑與原因，
-交給 `main` 印出來。
+交給 `main` 印出來。資料是一筆一個檔時，讀不了的那一筆改叫 `app.MoveAsideRecord(path, err, reread)`：`Enter` 只把那一筆移開，
+再跑 `reread` 讀其他的。
 
 ## 設定
 
@@ -167,7 +169,7 @@ return app.Tick(300*time.Millisecond, func(time.Time) tea.Msg { return searchNow
 
 ## 實作哪一版 terminu design
 
-terminu-go 實作 **tdp v0.9.0**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
+terminu-go 實作 **tdp v0.9.1**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
 
 ## 相關連結
 

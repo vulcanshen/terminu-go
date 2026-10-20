@@ -61,7 +61,8 @@ cd ~/Documents/sideproj/terminu-go && go build -o /tmp/showcase ./examples/showc
   - **`~/` 開頭的路徑是你真的家目錄**，預覽會畫出真的檔案（包括私鑰）。要試 `~/`、又要截圖時，先在 Global operation 打開
     `Hide secrets in preview`。
 - `[2] FILES`：`/` 開有預覽的 finder，每一種檔各一個（文字、圖、超過 1 MB 的圖、PDF、沒有文字的 PDF、壓縮檔、二進位、symlink、讀不到的檔）；
-  `S` 是結果慢慢進來的搜尋；`V` 用 viewer 開檔案（這個 panel 把 `V` 拿去用了）。
+  `S` 是結果慢慢進來的搜尋；`V` 用 viewer 開檔案（這個 panel 把 `V` 拿去用了）。`h|l` 換到 `LINES` tab：`main.go` 一行一列，
+  `Text` 欄是一行一行的文字，`fmt.Println` 那行的 Tab 畫成空白的縮排，不是紅色的 `\t`。
 
 **D — Dialogs**：每一種 dialog 與疊法。
 - `[1] DIALOGS` 每一列是一個情境，`Enter` 打開：各種 menu（分組、兩步、工作清單、很長）、confirm、表單、viewer（選取模式按 `v` 兩次）、
@@ -75,6 +76,8 @@ cd ~/Documents/sideproj/terminu-go && go build -o /tmp/showcase ./examples/showc
 - 「Popup: the app’s own」是展示場自己畫的 popup（`DRAW: icon`）：框裡的格子與按鍵是展示場的，框、動畫、淡化是 lib 的。`hjkl` 移、
   `Enter` 或 `Space` 畫一格，`Tab` 到 `Save`、再按回格子；`q` 不作用。畫過一格之後 `Esc` 先問要不要放棄，`Ctrl-C` 的離開 confirm
   多一句 Peach 的 `Changes to icon are not saved.`；`?` 只列它自己的鍵。
+- 「Move aside」兩列是讀不了自己的檔時的 confirm：`a file` 是設定檔，`Enter` 移到 `.bak`、開新的；`a record` 是一筆一個檔的資料，
+  問句寫 `go on without it`，`Enter` 只把壞的那一筆移開、讀其他的。兩個都是 `Esc` 直接離開展示場。
 - 每一層看：只有最上層亮、底下淡化一次，`Esc` 一次關一層。
 
 **t — terminal**：PTY。

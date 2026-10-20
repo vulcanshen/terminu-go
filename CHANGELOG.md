@@ -2,6 +2,15 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.9.1
+
+- `App.MoveAsideRecord` (Rules E3, when a file cannot be read): for data kept one record per file, `Enter` only
+  renames the record that cannot be read to `.bak` and runs the app's reread, nothing new made in its place; the
+  question is `Move it to <name>.bak and go on without it?` (kamonu KM18)
+- `Column.Line` marks a list column of lines of text (a line of source code, of a log): a Tab in it is drawn as
+  `input_tab_width` spaces, other control characters still by name in Red (components, control characters; webu
+  WB21)
+
 ## v0.4.1 — tdp v0.9.0
 
 - tdptest: `App.Tricky` says the data `Seed` puts in has tricky values (`Tricky`): `Check` then leaves a colour code
