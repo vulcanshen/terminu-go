@@ -22,6 +22,7 @@ type inputsScreen struct {
 	inputs   *terminu.Panel
 	files    *terminu.Panel
 	fileList *terminu.List
+	tab      int // the Files panel's: its files, or main.go's lines
 	disabled bool
 	index    *terminu.Finder // the slow index, while it fills
 	grepping string          // what Find in files searches for now
@@ -244,7 +245,7 @@ func newInputsScreen(s *showcase) *inputsScreen {
 	is.inputs.Actions = is.stateActions(is.inputs)
 
 	is.fileList = &terminu.List{
-		Columns:   []terminu.Column{{Title: "Name", Path: true, Shrink: true}, {Title: "Size", Number: true, Drop: 2}, {Title: "Modified", Drop: 1}},
+		Columns:   fileColumns,
 		EmptyFact: "No files here",
 		EmptyHint: "Press [Space] to see what you can do here",
 	}
@@ -253,7 +254,7 @@ func newInputsScreen(s *showcase) *inputsScreen {
 	is.fileList.Location = projectDir // where the files are (layout/panel, location row)
 	// This panel's hint lists only what can be pressed now (Rules M6: the
 	// app's choice): View, disabled, leaves it.
-	is.files = &terminu.Panel{Label: "Files", Body: is.fileList, HintPressableOnly: true}
+	is.files = &terminu.Panel{Label: "Files", Tabs: []string{"Lines"}, Body: is.fileList, HintPressableOnly: true, OnTab: is.switchTab}
 	is.files.Actions = append([]terminu.Action{
 		{Key: "/", Label: "Find", Desc: "search the files, with a preview", Scope: terminu.PanelScope, Hint: "find", Do: is.find},
 		{Key: "S", Label: "Slow index", Desc: "a search whose results keep arriving", Scope: terminu.PanelScope, Do: is.slowIndex},
@@ -269,6 +270,39 @@ func newInputsScreen(s *showcase) *inputsScreen {
 	is.screen = &terminu.Screen{Name: "Inputs", Key: "I", Desc: "every kind of input",
 		Panels: []*terminu.Panel{is.inputs, is.files}, NarrowBelow: 60, Layout: halves}
 	return is
+}
+
+var (
+	fileColumns = []terminu.Column{{Title: "Name", Path: true, Shrink: true}, {Title: "Size", Number: true, Drop: 2}, {Title: "Modified", Drop: 1}}
+	// A line's text is a column of lines (Column.Line): the Tab that indents
+	// it is spaces, not a name.
+	lineColumns = []terminu.Column{{Title: "Line", Number: true}, {Title: "Text", Line: true, Shrink: true}}
+)
+
+// switchTab shows the project's files, or main.go a line a row.
+func (is *inputsScreen) switchTab(tab int) tea.Cmd {
+	is.tab = tab
+	is.fileList.Columns, is.fileList.Location = fileColumns, projectDir
+	if tab == 1 {
+		is.fileList.Columns, is.fileList.Location = lineColumns, filepath.Join(projectDir, "main.go")
+	}
+	is.fileList.SetRows(is.rows())
+	is.fileList.SortBy(terminu.SortKey{Col: 0})
+	return nil
+}
+
+// rows are the rows of the Files panel's tab.
+func (is *inputsScreen) rows() []terminu.Row {
+	if is.tab == 0 {
+		return fileRows()
+	}
+	p := filepath.Join(projectDir, "main.go")
+	b, _ := os.ReadFile(p)
+	var rows []terminu.Row
+	for i, l := range strings.Split(strings.TrimRight(string(b), "\n"), "\n") {
+		rows = append(rows, terminu.Row{ID: fmt.Sprintf("%s#%d", p, i+1), Cells: []string{fmt.Sprint(i + 1), l}})
+	}
+	return rows
 }
 
 // halves puts two panels side by side.
@@ -310,7 +344,7 @@ func (is *inputsScreen) stateActions(p *terminu.Panel) []terminu.Action {
 			Hidden: func() bool { return p != is.files },
 			Do: func() tea.Cmd {
 				if is.fileList.Empty() {
-					is.fileList.SetRows(fileRows())
+					is.fileList.SetRows(is.rows())
 				} else {
 					is.fileList.SetRows(nil)
 				}
@@ -342,16 +376,18 @@ func (is *inputsScreen) view() tea.Cmd {
 	if !ok {
 		return nil
 	}
-	b, err := os.ReadFile(row.ID)
+	path, _, _ := strings.Cut(row.ID, "#") // a line's row: its file
+	b, err := os.ReadFile(path)
 	if err != nil {
 		return is.s.app.Error("View", err.Error())
 	}
 	lines := strings.Split(strings.TrimRight(string(b), "\n"), "\n")
-	lang := row.ID // coloured as the file's name says, as in the preview
+	lang := path // coloured as the file's name says, as in the preview
 	if bytes.IndexByte(b, 0) >= 0 {
 		lines, lang = []string{"(binary)"}, ""
 	}
-	return is.s.app.Viewer(&terminu.Viewer{Title: "File", Subject: row.Cells[0], Glyph: glyphYaml, Lines: lines, Lang: lang})
+	rel, _ := filepath.Rel(projectDir, path)
+	return is.s.app.Viewer(&terminu.Viewer{Title: "File", Subject: rel, Glyph: glyphYaml, Lines: lines, Lang: lang})
 }
 
 func (is *inputsScreen) find() tea.Cmd {

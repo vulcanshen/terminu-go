@@ -99,6 +99,36 @@ func TestControlCharsNamesAndShortTexts(t *testing.T) {
 	}
 }
 
+// TestControlCharsLineColumn: in a list column marked a line of text (Line)
+// a Tab is input_tab_width spaces, its layout; any other control character
+// is still its name in Red, and a column not marked keeps the Tab's name
+// (components, control characters: components-29; webu WB21).
+func TestControlCharsLineColumn(t *testing.T) {
+	ta := newTestApp(t)
+	ta.resize(160, 40)
+	ta.list.Columns = []Column{{Title: "Text", Line: true, Shrink: true}, {Title: "Name"}}
+	ta.list.SetRows([]Row{{ID: "1", Cells: []string{"first", "x"}},
+		{ID: "2", Cells: []string{"x\ty\x1b[31m {", "a\tb"}},
+		{ID: "3", Cells: []string{"z", "c"}, Styled: [][]Span{{{Text: "\treturn", Style: Fg(Green)}}}}})
+	frame := strings.Join(ta.Frame(), "\n")
+	text := StripStyles(frame)
+	for _, want := range []string{`x    y\x1b[31m {`, `a\tb`, "    return"} {
+		if !strings.Contains(text, want) {
+			t.Errorf("%q is not shown:\n%s", want, ta.screenText())
+		}
+	}
+	if !strings.Contains(frame, nameSGR+`\x1b`) || strings.Contains(frame, "\x1b[31m") || !strings.Contains(frame, Fg(Green).Render("    return")) {
+		t.Errorf("the ESC is not a red name, or the spans lost their style: %q", frame)
+	}
+	if got := ta.list.rows[2].Styled[0][0].Text; got != "\treturn" {
+		t.Errorf("the app's spans were changed: %q", got)
+	}
+	ta.InputTabWidth = 2
+	if text := ta.screenText(); !strings.Contains(text, "x  y") || strings.Contains(text, "x    y") {
+		t.Errorf("a tab is not input_tab_width: %s", text)
+	}
+}
+
 // TestControlCharsOnABlock: a name under a cursor is Red under Base, as a
 // typing row's cursor on a control character.
 func TestControlCharsOnABlock(t *testing.T) {

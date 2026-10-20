@@ -38,6 +38,11 @@ type Column struct {
 	// Middle cuts the column's values in the middle, for a value whose two
 	// ends both matter ("demo-app…66-gm72n").
 	Middle bool
+	// Line marks a column of lines of text, for reading (a line of source
+	// code, of a log): a Tab in it is drawn as input_tab_width spaces, its
+	// layout; any other control character is still its name in Red
+	// (components, control characters).
+	Line bool
 }
 
 // Row is one item of a List.
@@ -354,11 +359,23 @@ func (l *List) cell(row, col int) string {
 	return ""
 }
 
-// shown is a cell as it is drawn: its spans, or its text escaped.
+// shown is a cell as it is drawn: its spans, or its text escaped; in a Line
+// column its tabs are spaces first.
 func (l *List) shown(row, col int) string {
 	r := &l.rows[row]
+	line := col < len(l.Columns) && l.Columns[col].Line
 	if col < len(r.Styled) && r.Styled[col] != nil {
-		return spansText(r.Styled[col])
+		spans := r.Styled[col]
+		if line {
+			spans = slices.Clone(spans)
+			for i := range spans {
+				spans[i].Text = expandTabs(spans[i].Text)
+			}
+		}
+		return spansText(spans)
+	}
+	if line {
+		return Escape(expandTabs(l.cell(row, col)))
 	}
 	return Escape(l.cell(row, col))
 }
