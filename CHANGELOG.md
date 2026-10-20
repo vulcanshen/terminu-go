@@ -12,11 +12,15 @@ Each release names the version of terminu design (tdp) it implements.
   - The app's commands run as in the program; `WaitFor` waits for a slow one. `tea.Batch` and `tea.Sequence` are
     run as Bubble Tea runs them, a quit is noted; a command that panics fails the test
   - `EachIconWidth` runs a test with icons and powerline symbols one cell wide, icons two, both two (tdp E5)
-  - `Check` launches the app as for the first time on many terminal sizes and icon widths, in a sandbox, and walks the
-    `Space` menu, the global operation popup and `?` on every screen and panel, each closed one layer an `Esc` (tdp
-    K4), then a terminal under the least size and back (tdp L1)
+  - `Check` launches the app as for the first time on many terminal sizes and icon widths, each launch in a new
+    sandbox (`Env` gets its `HOME`), and walks the `Space` menu, the global operation popup and `?` on every screen
+    and panel, each closed one layer an `Esc` (tdp K4), then a terminal under the least size and back (tdp L1); with
+    `go test -short`, the least size and 80×24 only
+  - A failure says the size, the keys pressed, what `Note` added and the screen; a control character reaching the
+    terminal is shown in its row
   - `Tricky`, `Sizes` and `Mashes` (with `Driver.Mash`): values, terminal sizes and fast keys that have broken screens
-- `App.Tick` is `tea.Tick` on the app's clock: under a test that drives the app, the test moves its time
+- `App.Tick` is `tea.Tick` on the app's clock: under a test that drives the app, the test moves its time. An app's own
+  timers are made with it to be tested (README, "Timers: `App.Tick`")
 - Characters that come in one key are characters, however many: typed fast, `end` is three letters, not the End
   key, and `ctrl+c` does not quit (Rules M5)
 - An escape sequence in a viewer's line that is not a style is shown, not obeyed: its ESC drawn by name in Red, the

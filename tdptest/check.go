@@ -22,8 +22,9 @@ type App struct {
 	// New makes the app, all but Run. Check calls it once for each launch,
 	// in a new sandbox.
 	New func() *terminu.App
-	// Env is more variables for each launch.
-	Env map[string]string
+	// Env is more variables for each launch; home is the sandbox's HOME, for
+	// a value that points into it (a file Seed put there).
+	Env func(home string) map[string]string
 	// Seed puts files in the sandbox before New runs; home is its HOME.
 	Seed func(home string)
 }
@@ -33,21 +34,31 @@ type App struct {
 // walks what every app has: on each screen and each panel, the Space menu,
 // the global operation popup and the key reference (`?`), each closed one
 // layer an Esc (tdp K4); then a terminal under the least size and back
-// (tdp L1). Every frame is checked for tdp L4 on the way.
+// (tdp L1). Every frame is checked for tdp L4 on the way. With go test
+// -short it launches on the least size and 80×24 only, icons one cell.
 //
-// Each launch is in a sandbox of its own: HOME, the XDG directories and
-// Windows' profile directories in a new directory under /tmp (short, so a
-// path on the screen is as long on every machine), the app's own variables
-// and the family's (<NAME>__…, TERMINU__…, LC_TERMINU_…) cleared. Check
-// sets variables, so its test does not run in parallel.
+// Each launch is a first one, in a sandbox of its own: a new directory
+// under /tmp (short, so a path on the screen is as long on every machine)
+// as HOME, the XDG directories and Windows' profile directories in it, the
+// app's own variables and the family's (<NAME>__…, TERMINU__…,
+// LC_TERMINU_…) cleared, then Env and Seed. Check sets variables, so its
+// test does not run in parallel.
 func Check(t *testing.T, app App) {
 	t.Helper()
 	if app.Name == "" || app.New == nil {
 		t.Fatal("tdptest: Check needs the app's Name and New")
 	}
 	mw, mh := testhook.MinSize(launch(t, app))
-	EachIconWidth(t, func(t *testing.T) {
-		for _, s := range scanSizes(mw, mh) {
+	sizes, each := scanSizes(mw, mh), EachIconWidth
+	if testing.Short() {
+		sizes = [][2]int{{mw, mh}}
+		if mw != 80 || mh != 24 {
+			sizes = append(sizes, [2]int{80, 24})
+		}
+		each = func(t *testing.T, f func(t *testing.T)) { t.Run("icon1_powerline1", f) }
+	}
+	each(t, func(t *testing.T) {
+		for _, s := range sizes {
 			t.Run(fmt.Sprintf("%dx%d", s[0], s[1]), func(t *testing.T) {
 				a := launch(t, app)
 				d := Start(t, a, s[0], s[1])
@@ -92,8 +103,10 @@ func contains(sizes [][2]int, s [2]int) bool {
 func launch(t *testing.T, app App) *terminu.App {
 	t.Helper()
 	home := sandbox(t, app.Name)
-	for k, v := range app.Env {
-		t.Setenv(k, v)
+	if app.Env != nil {
+		for k, v := range app.Env(home) {
+			t.Setenv(k, v)
+		}
 	}
 	if app.Seed != nil {
 		app.Seed(home)

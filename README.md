@@ -123,22 +123,36 @@ func TestFirstLaunch(t *testing.T) {
   `Type` types text a key at a time, `Burst` sends it all at once, `Paste` pastes it. `Resize` changes the terminal's
   size, `Send` sends a message of the app's own, `Do` runs code where the app may be changed (`app.Focus`).
 - **Time is the test's**: after each input the popups' animations play to their end; `Advance` moves the time on (a
-  toast going, a timer); with `d.Auto = false`, `Step` plays one frame at a time. A timer of the app's own follows the
-  test's time when it is made with `App.Tick`; one made with `tea.Tick` runs on the real clock.
+  toast going, a timer); with `d.Auto = false`, `Step` plays one frame at a time. The app's own timers follow it when
+  they are made with `App.Tick` (below).
 - **Commands** run as they do in the program. One that takes long (a file read, a program's output) comes back with a
   later input; `WaitFor` waits for it.
 - **What is on the screen**: `Screen` is the rows as text, `Styled` with their colours, `Has` looks for text, `Quit`
-  reports that the app asked to quit, `Clipboard` is what it copied.
+  reports that the app asked to quit, `Clipboard` is what it copied. A failure says the size, the keys pressed and the
+  screen; `Note` adds more to it (which of `Tricky` the app was given).
 - **`EachIconWidth`** runs a test once with icons and powerline symbols one cell wide, once with icons two, once with
   both two.
 - **`Check`** launches the app as for the first time on terminals of many sizes and every icon width, each in a new
   sandbox (`HOME` and the XDG directories under `/tmp`, the app's own variables cleared), and opens the `Space` menu,
   the global operation popup and `?` on every screen and panel, closing each with `Esc`; then it shrinks the terminal
-  under the app's least size and back.
+  under the app's least size and back. `Env` gets the sandbox's `HOME`, so a variable can point to a file `Seed` put
+  there. With `go test -short` it launches on the least size and 80×24 only, icons one cell wide.
 - **`Tricky`, `Sizes` and `Mashes`** are values that have broken screens: control characters, escape sequences, wide
   and joined characters, very long values; odd terminal sizes; keys pressed faster than the animations (`Mash`).
 
 The widths of icons are the whole test program's, so a test that drives an app does not run in parallel with another.
+
+### Timers: `App.Tick`
+
+Make the app's own timers with `App.Tick` instead of `tea.Tick`; it takes the same arguments:
+
+```go
+return app.Tick(300*time.Millisecond, func(time.Time) tea.Msg { return searchNow{} }) // was tea.Tick
+```
+
+In the program it is `tea.Tick`. Under a test it waits for the test's time, so `Advance` fires it and nothing fires on
+its own. A timer made with `tea.Tick` runs on the real clock there too: the test cannot move it, and what it does comes
+in whenever it is due.
 
 ## Which terminu design
 

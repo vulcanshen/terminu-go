@@ -116,17 +116,30 @@ func TestFirstLaunch(t *testing.T) {
   `Burst` 一次送進一串，`Paste` 貼上。`Resize` 改終端機大小，`Send` 送 app 自己的 message，`Do` 在可以改 app 的地方跑程式
   （`app.Focus`）。
 - **時間由測試決定**：每次輸入之後，popup 的動畫播到完；`Advance` 讓時間往前走（toast 消失、計時器到時）；設 `d.Auto = false`
-  時用 `Step` 一格一格播。app 自己的計時器用 `App.Tick` 做的才跟著測試的時間走；用 `tea.Tick` 做的照真的時間跑。
+  時用 `Step` 一格一格播。app 自己的計時器要用 `App.Tick` 做，才跟著測試的時間走（見下面）。
 - **命令**照程式裡那樣跑。跑得久的（讀檔、程式的輸出）在之後的輸入時回來；`WaitFor` 等它。
 - **畫面上有什麼**：`Screen` 是每一列的文字，`Styled` 帶顏色，`Has` 找字，`Quit` 回報 app 要離開了沒，`Clipboard` 是它複製了什麼。
+  失敗時會寫出尺寸、按過的鍵與整個畫面；`Note` 再多寫一句（例：給 app 的是 `Tricky` 的哪一個）。
 - **`EachIconWidth`** 把一個測試跑三次：icon 與 powerline 符號都佔一格、icon 佔兩格、兩種都佔兩格。
 - **`Check`** 在好幾種終端機尺寸、每一種 icon 寬度下，像第一次那樣啟動 app，每次都在新的沙盒裡（`HOME` 與 XDG 目錄放在 `/tmp`
   底下，app 自己的環境變數清掉）；在每個畫面、每個 panel 打開 `Space` menu、global operation popup 與 `?`，再用 `Esc` 一層層關掉；
-  最後把終端機縮到比 app 的最低尺寸小，再放回來。
+  最後把終端機縮到比 app 的最低尺寸小，再放回來。`Env` 拿得到沙盒的 `HOME`，環境變數可以指到 `Seed` 放進去的檔。
+  `go test -short` 時只在最低尺寸與 80×24 啟動，icon 只用一格。
 - **`Tricky`、`Sizes` 與 `Mashes`** 是弄壞過畫面的值：控制字元、escape sequence、寬字與組合字、很長的值；奇怪的終端機尺寸；
   比動畫還快的連按（`Mash`）。
 
 icon 的寬度是整個測試程式共用的，所以操作 app 的測試不跟別的測試平行跑。
+
+### 計時器：`App.Tick`
+
+app 自己的計時器用 `App.Tick` 做，不用 `tea.Tick`；參數一樣：
+
+```go
+return app.Tick(300*time.Millisecond, func(time.Time) tea.Msg { return searchNow{} }) // 原本是 tea.Tick
+```
+
+在程式裡它就是 `tea.Tick`。在測試裡它等測試的時間，`Advance` 推到了才觸發，不會自己跑。用 `tea.Tick` 做的計時器在測試裡也照
+真的時間跑：測試推不動它，它做的事在時間到的時候才進來。
 
 ## 實作哪一版 terminu design
 

@@ -17,10 +17,12 @@ func TestSandbox(t *testing.T) {
 	var seeded string
 	got := map[string]string{}
 	t.Run("launch", func(t *testing.T) {
-		launch(t, App{Name: "tiny", Env: map[string]string{"TINY__THEME": "dark"},
+		launch(t, App{Name: "tiny", Env: func(home string) map[string]string {
+			return map[string]string{"TINY__THEME": "dark", "TINY__HOSTS_FILE": filepath.Join(home, "hosts")}
+		},
 			Seed: func(h string) { seeded = h },
 			New: func() *terminu.App {
-				for _, k := range []string{"HOME", "XDG_CONFIG_HOME", "XDG_CACHE_HOME", "TINY__THEME"} {
+				for _, k := range []string{"HOME", "XDG_CONFIG_HOME", "XDG_CACHE_HOME", "TINY__THEME", "TINY__HOSTS_FILE"} {
 					got[k] = os.Getenv(k)
 				}
 				for _, k := range []string{"TINY__CONFIG", "TERMINU__ICON_WIDTH"} {
@@ -40,8 +42,8 @@ func TestSandbox(t *testing.T) {
 	if got["XDG_CONFIG_HOME"] != filepath.Join(got["HOME"], ".config") || got["XDG_CACHE_HOME"] != filepath.Join(got["HOME"], ".cache") {
 		t.Errorf("XDG: %v", got)
 	}
-	if got["TINY__THEME"] != "dark" {
-		t.Error("Env is not set")
+	if got["TINY__THEME"] != "dark" || got["TINY__HOSTS_FILE"] != filepath.Join(got["HOME"], "hosts") {
+		t.Errorf("Env is not set, into the sandbox: %v", got)
 	}
 	if v, ok := got["TINY__CONFIG"]; ok {
 		t.Errorf("the app's own variable is still there: %q", v)
@@ -58,5 +60,25 @@ func TestSandbox(t *testing.T) {
 }
 
 func TestCheckTiny(t *testing.T) {
-	Check(t, App{Name: "tiny", New: func() *terminu.App { return newTiny().App }})
+	var homes []string
+	seen := map[string]bool{}
+	Check(t, App{Name: "tiny", New: func() *terminu.App { return newTiny().App },
+		Seed: func(home string) {
+			homes = append(homes, home)
+			if seen[home] {
+				t.Errorf("a launch in the sandbox of another: %s", home)
+			}
+			seen[home] = true
+			if entries, _ := os.ReadDir(home); len(entries) != 0 {
+				t.Errorf("a first launch with something in its HOME already: %v", entries)
+			}
+			_ = os.WriteFile(filepath.Join(home, "launched"), nil, 0o600)
+		}})
+	want := 1 + 3*len(scanSizes(30, 12))
+	if testing.Short() {
+		want = 1 + 2 // the least size and 80x24, icons one cell
+	}
+	if len(homes) != want {
+		t.Errorf("%d launches, want %d: one for the least size, then each size with each icon width", len(homes), want)
+	}
 }

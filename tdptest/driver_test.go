@@ -249,9 +249,10 @@ func TestL4ReportedWithWhere(t *testing.T) {
 	if len(ft.errs) != 0 {
 		t.Fatalf("a frame that is right was reported: %v", ft.errs)
 	}
+	d.Note("Tricky[8]")
 	d.Press("w")
-	if len(ft.errs) != 1 || !strings.Contains(ft.errs[0], `row 3 sends '\a' to the terminal`) ||
-		!strings.Contains(ft.errs[0], "after Start(40×12) w") {
+	if len(ft.errs) != 1 || !strings.Contains(ft.errs[0], `row 3 sends '\a' to the terminal: "\a      `) ||
+		!strings.Contains(ft.errs[0], "after Start(40×12) w") || !strings.Contains(ft.errs[0], "with Tricky[8]") {
 		t.Errorf("reports: %q", ft.errs)
 	}
 	for range 5 {

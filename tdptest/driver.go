@@ -6,8 +6,10 @@
 // The App runs on the test's clock: its animations, a toast's stay and the
 // loading icon move only when the test moves the time (Advance, Step), and
 // by default each input plays the animations to their end (Driver.Auto).
-// The App's own commands run as they do in the program; one that takes long
-// comes back with a later input, or WaitFor.
+// The app's own timers follow the test's clock when they are made with
+// App.Tick; one made with tea.Tick runs on the real clock and comes back
+// whenever it is due. The App's own commands run as they do in the
+// program; one that takes long comes back with a later input, or WaitFor.
 //
 // The lib's widths are the whole process's: a test that drives an App does
 // not run in parallel with another (EachIconWidth sets them).
@@ -55,6 +57,7 @@ type Driver struct {
 	stop   chan struct{}
 	quit   bool
 	trail  []string
+	notes  []string
 	copied []string
 	broke  int
 }
@@ -114,6 +117,10 @@ func Start(t testing.TB, app *terminu.App, w, h int) *Driver {
 	d.settle()
 	return d
 }
+
+// Note adds what a failure is to name besides the keys pressed: which of
+// Tricky the app was given, say.
+func (d *Driver) Note(text string) { d.notes = append(d.notes, text) }
 
 // Now is the test's time, the App's clock.
 func (d *Driver) Now() time.Time { return d.now }
@@ -511,7 +518,7 @@ func rowsProblem(lines []string, w, h int) string {
 			return fmt.Sprintf("row %d is %d cells wide on a terminal %d wide", i+1, n, w)
 		}
 		if r, ok := control(l); ok {
-			return fmt.Sprintf("row %d sends %q to the terminal", i+1, r)
+			return fmt.Sprintf("row %d sends %q to the terminal: %q", i+1, r, withoutSGR(l))
 		}
 	}
 	return ""
@@ -531,6 +538,20 @@ func control(row string) (rune, bool) {
 		i += size
 	}
 	return 0, false
+}
+
+// withoutSGR is row without its SGR sequences, the control characters in it
+// kept.
+func withoutSGR(row string) string {
+	var b strings.Builder
+	for i := 0; i < len(row); i++ {
+		if n := sgrLen(row[i:]); n > 0 {
+			i += n - 1
+			continue
+		}
+		b.WriteByte(row[i])
+	}
+	return b.String()
 }
 
 // sgrLen is the length of the SGR sequence s starts with, ESC [ digits ; :
@@ -555,8 +576,12 @@ func sgrLen(s string) int {
 // the screen.
 func (d *Driver) where() string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "\n  on %d×%d, icon %d, powerline %d, after %s\n  screen:\n",
+	fmt.Fprintf(&b, "\n  on %d×%d, icon %d, powerline %d, after %s\n",
 		d.w, d.h, terminu.IconWidth(), terminu.PowerlineWidth(), strings.Join(d.trail, " "))
+	for _, n := range d.notes {
+		fmt.Fprintf(&b, "  with %s\n", n)
+	}
+	b.WriteString("  screen:\n")
 	for i, l := range d.Screen() {
 		fmt.Fprintf(&b, "  %3d|%s|\n", i+1, l)
 	}
