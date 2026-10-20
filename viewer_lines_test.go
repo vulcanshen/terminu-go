@@ -397,3 +397,29 @@ func TestViewerSyntaxColours(t *testing.T) {
 		}
 	}
 }
+
+// An escape sequence in a viewer line that is not a style is shown, not
+// obeyed: its ESC and BEL by name in Red, the rest as it is; a style stays
+// a style (components/dialog/note).
+func TestViewerEscapeSequencesShown(t *testing.T) {
+	ta := newTestApp(t)
+	v := &Viewer{Title: "Log", Lines: []string{"\x1b[2J\x1b[Hclear", "\x1b]0;t\x07x", Fg(Peach).Render("styled")}}
+	ta.Viewer(v)
+	ta.settle()
+	text := ta.screenText()
+	for _, want := range []string{"\\x1b[2J\\x1b[Hclear", "\\x1b]0;t\\x07x", "styled"} {
+		if !strings.Contains(text, want) {
+			t.Errorf("%q is not on the screen", want)
+		}
+	}
+	frame := strings.Join(ta.Frame(), "\n")
+	if strings.Contains(frame, "\x1b[2J") || strings.Contains(frame, "\x1b]0") || strings.Contains(frame, "\x07") {
+		t.Error("an escape sequence reached the terminal")
+	}
+	if !strings.Contains(frame, Fg(Red).Render("\\x1b")) || !strings.Contains(frame, "\x1b["+Fg(Peach).sgr()+"m") {
+		t.Error("the ESC is not in Red, or the style is gone")
+	}
+	if got := strings.Join(v.chars(v.Lines[0]), ""); got != "\x1b[2J\x1b[Hclear" {
+		t.Errorf("the cursor goes through %q, not the characters", got)
+	}
+}

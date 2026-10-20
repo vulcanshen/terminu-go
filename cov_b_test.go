@@ -500,6 +500,14 @@ func TestM5KeyNames(t *testing.T) {
 		{runes("z", true), "Alt-z"},
 		{runes("q", false), "q"},
 		{runes("A", false), "A"},
+		// Characters that come at once are characters, even when they spell
+		// a key: typed fast, "end" is not End, "ctrl+c" is not Ctrl-C.
+		{runes("end", false), "end"},
+		{runes("backspace", false), "backspace"},
+		{runes("ctrl+c", false), "ctrl+c"},
+		{runes("alt+x", false), "alt+x"},
+		{runes("up", true), "Alt-up"},
+		{runes(" ", false), "Space"},
 	} {
 		if got := KeyName(c.msg); got != c.want {
 			t.Errorf("KeyName(%v) = %q, want %q", c.msg, got, c.want)

@@ -183,14 +183,41 @@ func drawn(c string, tabW int) string {
 	return c
 }
 
-// visibleText is a line as drawn gives it, the escape sequences that style
-// it kept.
+// visibleText is a line as drawn gives it, the SGR sequences that style it
+// kept; any other escape sequence is characters, its ESC drawn by name, so
+// it is shown, not obeyed (components/dialog/note).
 func visibleText(s string, tabW int) string {
 	if !strings.ContainsFunc(s, func(r rune) bool { return r < 0x20 || r >= 0x7f && r <= 0x9f }) {
 		return s
 	}
 	var b strings.Builder
-	walk(s, func(seq string, _ int) { b.WriteString(drawn(seq, tabW)) })
+	walk(s, func(seq string, cells int) {
+		if cells == 0 && !isSGR(seq) {
+			for _, c := range graphemes(seq) {
+				b.WriteString(drawn(c, tabW))
+			}
+			return
+		}
+		b.WriteString(drawn(seq, tabW))
+	})
+	return b.String()
+}
+
+// isSGR reports whether seq is one SGR sequence: a style.
+func isSGR(seq string) bool { return sgrAt.FindString(seq) == seq }
+
+// stripSGR is s without its SGR sequences: the characters of a line that
+// may carry styles, every other escape sequence among them.
+func stripSGR(s string) string {
+	if !strings.Contains(s, "\x1b[") {
+		return s
+	}
+	var b strings.Builder
+	walk(s, func(seq string, cells int) {
+		if cells > 0 || !isSGR(seq) {
+			b.WriteString(seq)
+		}
+	})
 	return b.String()
 }
 

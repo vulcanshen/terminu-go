@@ -49,6 +49,7 @@ func (t Textarea) open(a *App, written func()) tea.Cmd {
 	}
 	tv.line = len(tv.lines) - 1
 	tv.col = len(tv.lines[tv.line])
+	tv.old = tv.value()
 	return a.open(tv)
 }
 
@@ -74,6 +75,7 @@ func graphemes(s string) []string {
 
 type textareaView struct {
 	t         Textarea
+	old       string // the text as it opened: Old with its line breaks read
 	lines     [][]string
 	line, col int
 	writing   bool
@@ -512,7 +514,7 @@ func (tv *textareaView) moveKey(a *App, key string) (bool, tea.Cmd) {
 			return true, nil
 		}
 		v := tv.value()
-		if v == tv.t.Old {
+		if v == tv.old {
 			return true, a.answer()
 		}
 		if tv.t.Check != nil {
@@ -530,7 +532,7 @@ func (tv *textareaView) moveKey(a *App, key string) (bool, tea.Cmd) {
 		}
 		return true, tea.Batch(a.answer(), then(tv.written, runDone(tv.t.Done, v)))
 	case "Esc":
-		if tv.value() == tv.t.Old {
+		if tv.value() == tv.old {
 			return true, a.closeTop()
 		}
 		return true, a.Confirm(Ask{Title: "Discard", Question: "Discard changes to " + tv.t.Title + "?", Verb: "discard"},

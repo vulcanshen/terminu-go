@@ -940,6 +940,27 @@ func TestTextarea(t *testing.T) {
 	}
 }
 
+// A line break written as \r or \r\n in Old is no change: Esc closes without
+// asking and Enter writes nothing back (components/input/textarea).
+func TestTextareaOldLineBreaksNoChange(t *testing.T) {
+	for _, old := range []string{"one\rtwo", "one\r\ntwo"} {
+		ta := newTestApp(t)
+		done := false
+		ta.Textarea(Textarea{Title: "Comment", Old: old, Done: func(string) tea.Cmd { done = true; return nil }})
+		ta.settle()
+		ta.press("Esc", "Esc")
+		if ta.top() != nil {
+			t.Errorf("%q: Esc asked to discard what was not changed", old)
+		}
+		ta.Textarea(Textarea{Title: "Comment", Old: old, Done: func(string) tea.Cmd { done = true; return nil }})
+		ta.settle()
+		ta.press("Esc", "Enter")
+		if done || ta.top() != nil {
+			t.Errorf("%q: Enter wrote back what was not changed: %v", old, done)
+		}
+	}
+}
+
 func TestTextareaWrapAndNumbers(t *testing.T) {
 	ta := newTestApp(t)
 	ta.resize(40, 20)

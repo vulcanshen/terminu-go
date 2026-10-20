@@ -463,7 +463,7 @@ func (v *Viewer) coloured() []string {
 	if lexer := lexerFor(v.Lang); lexer != nil {
 		plain := make([]string, len(v.Lines))
 		for i, l := range v.Lines {
-			l, _ = crlf(StripStyles(l))
+			l, _ = crlf(stripSGR(l))
 			plain[i] = visibleText(l, v.tabW)
 		}
 		for i, l := range colourise(lexer, plain) {
@@ -475,7 +475,7 @@ func (v *Viewer) coloured() []string {
 		return c.out
 	}
 	for i, l := range v.Lines {
-		if k := strings.LastIndex(l, "\r"); k >= 0 && strings.HasSuffix(StripStyles(l), "\r") {
+		if k := strings.LastIndex(l, "\r"); k >= 0 && strings.HasSuffix(stripSGR(l), "\r") {
 			l = l[:k] + l[k+1:]
 		}
 		c.out[i] = redNames(onText(visibleText(l, v.tabW)), v.chars(v.Lines[i]), v.tabW)
@@ -486,7 +486,7 @@ func (v *Viewer) coloured() []string {
 // chars is the plain characters of line l as the cursor moves through them,
 // without the \r of a CRLF line break.
 func (v *Viewer) chars(l string) []string {
-	l, _ = crlf(StripStyles(l))
+	l, _ = crlf(stripSGR(l))
 	return graphemes(l)
 }
 
@@ -516,7 +516,7 @@ func lexerFor(lang string) chroma.Lexer {
 func (v *Viewer) readLines() {
 	v.plain, v.crlf = v.plain[:0], v.crlf[:0]
 	for _, l := range v.Lines {
-		_, cr := crlf(StripStyles(l))
+		_, cr := crlf(stripSGR(l))
 		v.plain, v.crlf = append(v.plain, v.chars(l)), append(v.crlf, cr)
 	}
 }

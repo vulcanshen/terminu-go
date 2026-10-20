@@ -18,6 +18,18 @@ func KeyName(msg tea.KeyMsg) string {
 	if msg.Paste {
 		return ""
 	}
+	if msg.Type == tea.KeyRunes {
+		// Characters are their own name, however many come at once: "end"
+		// typed fast is three letters, not the End key.
+		name := string(msg.Runes)
+		if name == " " {
+			name = "Space"
+		}
+		if msg.Alt {
+			return "Alt-" + name
+		}
+		return name
+	}
 	s := msg.String()
 	alt := strings.HasPrefix(s, "alt+")
 	s = strings.TrimPrefix(s, "alt+")
@@ -29,8 +41,6 @@ func KeyName(msg tea.KeyMsg) string {
 		name = "Ctrl-" + strings.ToUpper(s[len("ctrl+"):])
 	case named[s] != "":
 		name = named[s]
-	case msg.Type == tea.KeyRunes:
-		name = string(msg.Runes)
 	default:
 		name = s
 	}
