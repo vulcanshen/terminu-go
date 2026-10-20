@@ -11,8 +11,11 @@ import (
 // Enter accepts, Esc cancels, and nothing else answers it (no y, n: Rules
 // F6); Space does nothing.
 type confirmView struct {
-	ask     Ask
-	accept  func() tea.Cmd
+	ask    Ask
+	accept func() tea.Cmd
+	// quit, when set, is Esc: it leaves the app instead of cancelling, the
+	// one confirm that does (Rules E3, MoveAside; components/dialog/confirm).
+	quit    func() tea.Cmd
 	content []string // wrapped, coloured
 	quest   []string
 	top     int
@@ -24,7 +27,15 @@ func newConfirm(ask Ask, accept func() tea.Cmd) *confirmView {
 }
 
 func (c *confirmView) hint() []KeyHint {
-	return []KeyHint{{"Enter", c.ask.Verb}, {"Esc", "cancel"}}
+	return []KeyHint{{"Enter", c.ask.Verb}, {"Esc", c.escVerb()}}
+}
+
+// escVerb is what Esc does: cancel, or quit (MoveAside).
+func (c *confirmView) escVerb() string {
+	if c.quit != nil {
+		return "quit"
+	}
+	return "cancel"
 }
 
 func (c *confirmView) wrapTo(w int) {
@@ -108,6 +119,11 @@ func (c *confirmView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {
 	switch key {
 	case "Enter":
 		return true, a.acceptConfirm(c)
+	case "Esc":
+		if c.quit != nil {
+			return true, c.quit()
+		}
+		return false, nil
 	case "Space":
 		return true, nil
 	case "j", "↓":
@@ -125,7 +141,7 @@ func (c *confirmView) surface() string { return c.ask.Title }
 func (c *confirmView) cancel() tea.Cmd { return run(c.ask.OnCancel) }
 
 func (c *confirmView) keyRef() []refSection {
-	secs := []refSection{{rows: []KeyRow{{Key: "Enter", Desc: c.ask.Verb}, {Key: "Esc", Desc: "cancel"}}}}
+	secs := []refSection{{rows: []KeyRow{{Key: "Enter", Desc: c.ask.Verb}, {Key: "Esc", Desc: c.escVerb()}}}}
 	if len(c.content) > c.visible {
 		// Only when the details do not all fit (Rules M6).
 		secs = append(secs, refSection{title: "move", rows: []KeyRow{{Key: "j|k", Desc: "scroll down, up"}}})

@@ -5,12 +5,27 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	terminu "github.com/vulcanshen/terminu-go"
 )
+
+// moveAside breaks a pretend settings file and asks what to do with it, as
+// an app does when it cannot read a file of its own (Rules E3).
+func (ds *dialogsScreen) moveAside() tea.Cmd {
+	a := ds.s.app
+	path := filepath.Join(dataDir(), "settings.yaml")
+	if err := os.MkdirAll(dataDir(), 0o755); err == nil {
+		err = os.WriteFile(path, []byte("theme: [dark\n"), 0o600)
+	}
+	return a.MoveAside(path, errors.New("line 1: did not find expected ',' or ']'"), func() tea.Cmd {
+		_ = os.WriteFile(path, []byte("theme: dark\n"), 0o600)
+		return a.Toast(terminu.Info, "A new settings.yaml, the old one moved aside")
+	})
+}
 
 // dialogsScreen is [D]IALOGS: every kind of dialog and how they stack. Each
 // row of [1] DIALOGS is one scenario; Enter opens it.
@@ -128,6 +143,7 @@ func (ds *dialogsScreen) scenarios() []scenario {
 		}},
 		{"Popup: the app’s own", "app’s own", "the app draws the inside, the lib the frame: draw on the grid, [Tab] to Save; Esc and Ctrl-C say when changed", ds.draw},
 		{"Quit: the app’s own flow", "menu", "the next [q] opens a menu of ways to leave; Ctrl-C again leaves at once", ds.quitFlow},
+		{"Move aside: a file it can’t read", "confirm", "its settings broken: Enter moves the file to .bak and starts a new one, Esc quits the showcase", ds.moveAside},
 		{"Toast", "toast", "a short message on the third row from the bottom", toast("Copied 3 paths")},
 		{"Toast over a popup", "toast", "a popup, then a toast: Esc takes the toast first", func() tea.Cmd {
 			return tea.Batch(ds.yaml(), ds.s.app.Tick(600*time.Millisecond, func(time.Time) tea.Msg {

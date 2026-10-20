@@ -156,7 +156,8 @@ type App struct {
 	shown       Splash    // the splash on the screen: the app's, or one it plays
 	splashStart time.Time // when it opened
 
-	tinyCtrlC bool // Ctrl-C pressed once on a terminal under the least size
+	tinyCtrlC bool  // Ctrl-C pressed once on a terminal under the least size
+	exitErr   error // what Run returns once the program ends (MoveAside's Esc)
 
 	logs appLog // the App Log (applog.go)
 
@@ -275,7 +276,9 @@ func (a *App) Screen() *Screen {
 func (a *App) Size() (w, h int) { return a.w, a.h }
 
 // Run asks the terminal how wide an icon is and what its colours are, then
-// runs the app in the alternate screen.
+// runs the app in the alternate screen. When the user leaves on MoveAside's
+// Esc it returns the path that cannot be read and why, for main to write to
+// stderr (Rules E3).
 func (a *App) Run() error {
 	if err := a.checkSplash(); err != nil {
 		return err
@@ -286,6 +289,9 @@ func (a *App) Run() error {
 	Probe(a.Name)
 	tabCells = a.inputTabWidth()
 	_, err := tea.NewProgram(a, tea.WithAltScreen(), tea.WithOutput(screenOutput{os.Stdout})).Run()
+	if err == nil {
+		err = a.exitErr
+	}
 	return err
 }
 
