@@ -48,7 +48,8 @@ type Driver struct {
 	// (\x1b[31m drawn by its name): the lib draws names and short texts as
 	// text, so a colour of the app's own left in a cell or a value shows
 	// that way; it goes in spans (Row.Styled, Field.Styled,
-	// FormField.Styled). Check sets it; a test feeding Tricky does not.
+	// FormField.Styled). Check sets it, but when its App says the seeded data
+	// is Tricky; a test feeding Tricky leaves it off.
 	ColourCodes bool
 
 	t      testing.TB

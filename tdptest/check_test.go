@@ -2,6 +2,7 @@ package tdptest
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -57,6 +58,40 @@ func TestSandbox(t *testing.T) {
 	if _, err := os.Stat(seeded); !os.IsNotExist(err) {
 		t.Errorf("the sandbox stays after the test: %v", err)
 	}
+}
+
+// colouredApp is the small app with a colour of its own left in a cell,
+// not in Styled.
+func colouredApp() *terminu.App {
+	ty := newTiny()
+	ty.list.SetRows([]terminu.Row{{ID: "1", Cells: []string{terminu.Fg(terminu.Red).Render("red")}}})
+	return ty.App
+}
+
+// TestCheckFindsColourCodes: Check fails an app with a colour code left in a
+// cell; it runs in a child test process, which must fail.
+func TestCheckFindsColourCodes(t *testing.T) {
+	if os.Getenv("TDPTEST_CHILD") == "coloured" {
+		Check(t, App{Name: "tiny", New: colouredApp})
+		return
+	}
+	cmd := exec.Command(os.Args[0], "-test.run=^TestCheckFindsColourCodes$", "-test.short")
+	cmd.Env = append(os.Environ(), "TDPTEST_CHILD=coloured")
+	out, err := cmd.CombinedOutput()
+	if err == nil || !strings.Contains(string(out), "shows the colour code") {
+		t.Errorf("Check did not fail on a colour left in a cell: %v\n%s", err, out)
+	}
+}
+
+// TestCheckTrickySeed: seeded data with a colour code in a name, drawn as
+// text as it should be, is not taken for a colour left out of spans when the
+// App says it is Tricky (locku LK21).
+func TestCheckTrickySeed(t *testing.T) {
+	Check(t, App{Name: "tiny", Tricky: true, New: func() *terminu.App {
+		ty := newTiny()
+		ty.list.SetRows([]terminu.Row{{ID: "1", Cells: []string{"\x1b[31mred\x1b[0m"}}})
+		return ty.App
+	}})
 }
 
 func TestCheckTiny(t *testing.T) {

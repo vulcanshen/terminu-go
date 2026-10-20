@@ -163,7 +163,7 @@ func TestFirstLaunch(t *testing.T) {
   sandbox (`HOME` and the XDG directories under `/tmp`, the app's own variables cleared), and opens the `Space` menu,
   the global operation popup, the App Log and `?` on every screen and panel, closing each with `Esc`; then it shrinks the terminal
   under the app's least size and back. A colour code drawn as text — one left in a cell or a value instead of
-  `Styled` — fails it. `Env` gets the sandbox's `HOME`, so a variable can point to a file `Seed` put
+  `Styled` — fails it, unless `Tricky` says the seeded data has tricky values, colour codes among them. `Env` gets the sandbox's `HOME`, so a variable can point to a file `Seed` put
   there. With `go test -short` it launches on the least size and 80×24 only, icons one cell wide.
 - **`Tricky`, `Sizes` and `Mashes`** are values that have broken screens: control characters, escape sequences, wide
   and joined characters, very long values; odd terminal sizes; keys pressed faster than the animations (`Mash`).

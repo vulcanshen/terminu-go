@@ -27,6 +27,11 @@ type App struct {
 	Env func(home string) map[string]string
 	// Seed puts files in the sandbox before New runs; home is its HOME.
 	Seed func(home string)
+	// Tricky says Seed's data has tricky values in it (Tricky): a colour
+	// code in a name there is the data's, rightly drawn as text, so Check
+	// does not take one on the screen for a colour of the app's own left out
+	// of its spans (Driver.ColourCodes).
+	Tricky bool
 }
 
 // Check launches the app as for the first time on terminals of many sizes,
@@ -62,7 +67,7 @@ func Check(t *testing.T, app App) {
 			t.Run(fmt.Sprintf("%dx%d", s[0], s[1]), func(t *testing.T) {
 				a := launch(t, app)
 				d := Start(t, a, s[0], s[1])
-				d.ColourCodes = true
+				d.ColourCodes = !app.Tricky
 				if s[0] >= mw && s[1] >= mh {
 					scan(t, d, a)
 					shrink(t, d, mw, mh)

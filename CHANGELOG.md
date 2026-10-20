@@ -2,6 +2,11 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.9.0
+
+- tdptest: `App.Tricky` says the data `Seed` puts in has tricky values (`Tricky`): `Check` then leaves a colour code
+  drawn as text alone, the data's, not a colour of the app's own left out of its spans (locku LK21)
+
 ## v0.4.0 — tdp v0.9.0
 
 tdp v0.9.0 settles how control characters are drawn (G100), gives every app an App Log and a way out of a file it
