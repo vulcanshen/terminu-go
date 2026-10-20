@@ -2,7 +2,7 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.9.0
+## v0.4.0 — tdp v0.9.0
 
 tdp v0.9.0 settles how control characters are drawn (G100), gives every app an App Log and a way out of a file it
 cannot read, and keeps History and the selection for interactive terminals. Upgrading: see "Changes to make" below.
