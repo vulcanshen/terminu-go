@@ -124,9 +124,12 @@ type FormButton struct {
 
 // FormResult is what came of a form's action (components/dialog/form): Err
 // opens an error popup, the focus on the button so that Enter tries again;
-// else Lines open a note to read; else Toast says it in one sentence.
+// else Lines open a note to read; else Toast says it in one sentence, a
+// Success toast, or Info when Info is set: which one a thing done is, is the
+// app's (components/dialog/toast).
 type FormResult struct {
 	Toast string
+	Info  bool
 	Lines []string
 	Err   error
 	// Apply, when set, runs on the update loop as it ends, before the result
@@ -833,6 +836,8 @@ func (m formRan) done(a *App) tea.Cmd {
 	case len(m.res.Lines) > 0:
 		label, subject := fv.buttonParts(m.at)
 		return a.Viewer(&Viewer{Title: label, Subject: subject, Lines: m.res.Lines})
+	case m.res.Toast != "" && m.res.Info:
+		return a.Toast(Info, m.res.Toast)
 	case m.res.Toast != "":
 		return a.Toast(Success, m.res.Toast) // the action is done (components/dialog/toast)
 	}

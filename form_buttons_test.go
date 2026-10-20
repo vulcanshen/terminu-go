@@ -201,8 +201,14 @@ func TestFormActionRun(t *testing.T) {
 	if b.ran != 1 || fv.isLoading() || ta.topView() != fv || buttonAt(fv) != "Test" {
 		t.Fatalf("it ran, the form stays, the focus on Test: ran %d, top %T, on %s", b.ran, ta.topView(), buttonAt(fv))
 	}
-	if !strings.Contains(ta.screenText(), "Connected to web-01") {
-		t.Error("success says so in a toast")
+	if !strings.Contains(ta.screenText(), "Connected to web-01") || ta.toast.view.(*toastView).kind != Success {
+		t.Error("success says so in a Success toast")
+	}
+	// Success or Info is the app's (components/dialog/toast, toast-16).
+	b.res = FormResult{Toast: "Tested web-01", Info: true}
+	ta.deliver(ta.press("Enter"))
+	if tv := ta.toast.view.(*toastView); tv.text != "Tested web-01" || tv.kind != Info {
+		t.Errorf("an Info toast for a thing done: %q %v", tv.text, tv.kind)
 	}
 	if len(fv.errs) != 0 || strings.Contains(ta.screenText(), "Host is required") {
 		t.Error("the errors stand until the next check: this one passed")
