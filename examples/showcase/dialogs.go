@@ -64,7 +64,8 @@ func newDialogsScreen(s *showcase) *dialogsScreen {
 	ds.list = &terminu.List{Columns: []terminu.Column{{Title: "Scenario"}, {Title: "Kind", Drop: 2}, {Title: "What it shows", Shrink: true, Drop: 1}}}
 	rows := make([]terminu.Row, len(scenarios))
 	for i, sc := range scenarios {
-		rows[i] = terminu.Row{ID: sc.name, Cells: []string{sc.name, sc.kind, terminu.Fg(terminu.Overlay0).Render(sc.desc)}}
+		rows[i] = terminu.Row{ID: sc.name, Cells: []string{sc.name, sc.kind, sc.desc},
+			Styled: [][]terminu.Span{2: {{Text: sc.desc, Style: terminu.Fg(terminu.Overlay0)}}}}
 	}
 	ds.list.SetRows(rows)
 	panel := &terminu.Panel{Label: "Dialogs", Body: ds.list, Actions: []terminu.Action{

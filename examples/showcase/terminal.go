@@ -83,7 +83,15 @@ func newTerminalScreen(s *showcase) *terminalScreen {
 }
 
 func (ts *terminalScreen) newShell() *terminu.Terminal {
-	return &terminu.Terminal{Title: "Shell", Interactive: true}
+	t := &terminu.Terminal{Title: "Shell", Interactive: true}
+	// Alt-l gives every key to the shell (a family app running inside takes
+	// Alt-v and PgUp itself) and takes them back (components/dialog/terminal).
+	t.Keys = []terminu.TerminalKey{{Key: "Alt-l", Desc: "lock", Do: func() tea.Cmd {
+		t.AllKeys = !t.AllKeys
+		t.Keys[0].Desc = map[bool]string{true: "unlock", false: "lock"}[t.AllKeys]
+		return nil
+	}}}
+	return t
 }
 
 // slowStart is a shell that takes a while to connect: until then only
@@ -131,15 +139,17 @@ func (ts *terminalScreen) session(name string) *terminu.Terminal {
 func (ts *terminalScreen) refresh() {
 	rows := make([]terminu.Row, len(sessions))
 	for i, s := range sessions {
-		status := terminu.Fg(terminu.Overlay0).Render("not started")
+		// The status in its colour: a cell's colours come as spans.
+		status, style := "not started", terminu.Fg(terminu.Overlay0)
 		if t := ts.sessions[s.name]; t != nil {
 			if t.Exited() {
-				status = terminu.Fg(terminu.Overlay0).Render("ended")
+				status = "ended"
 			} else {
-				status = terminu.Fg(terminu.Green).Render("live")
+				status, style = "live", terminu.Fg(terminu.Green)
 			}
 		}
-		rows[i] = terminu.Row{ID: s.name, Cells: []string{s.name, status, s.what}}
+		rows[i] = terminu.Row{ID: s.name, Cells: []string{s.name, status, s.what},
+			Styled: [][]terminu.Span{nil, {{Text: status, Style: style}}}}
 	}
 	ts.list.SetRows(rows)
 }

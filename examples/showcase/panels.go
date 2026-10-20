@@ -133,21 +133,23 @@ func podRows() []terminu.Row {
 	for i, n := range podNames {
 		st := statuses[i%len(statuses)]
 		ready := "1/1"
-		cell := st
+		var style terminu.Style
 		switch st {
 		case "CrashLoopBackOff":
-			ready, cell = "0/1", terminu.Fg(terminu.Red).Render(st)
+			ready, style = "0/1", terminu.Fg(terminu.Red)
 		case "Pending":
-			ready, cell = "0/2", terminu.Fg(terminu.Peach).Render(st)
+			ready, style = "0/2", terminu.Fg(terminu.Peach)
 		case "Completed":
-			ready, cell = "0/1", terminu.Fg(terminu.Overlay0).Render(st)
+			ready, style = "0/1", terminu.Fg(terminu.Overlay0)
 		}
 		restarts := (i * 7) % 13
 		age := time.Duration((i*37)%400+1) * time.Hour / 3
 		rows[i] = terminu.Row{
 			ID:    n,
-			Cells: []string{n, ready, cell, fmt.Sprint(restarts), shortAge(age)},
-			Sort:  []string{n, ready, st, fmt.Sprint(restarts), fmt.Sprint(int(age.Seconds()))},
+			Cells: []string{n, ready, st, fmt.Sprint(restarts), shortAge(age)},
+			// The status in its colour: a cell's colours come as spans.
+			Styled: [][]terminu.Span{2: {{Text: st, Style: style}}},
+			Sort:   []string{n, ready, st, fmt.Sprint(restarts), fmt.Sprint(int(age.Seconds()))},
 		}
 	}
 	return rows
