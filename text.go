@@ -122,6 +122,23 @@ func readingRows(lines []string) []string {
 	return out
 }
 
+// Reading is lines of reading content (a log, a program's output) as a
+// terminal draws them, the way the lib's viewer and Pager draw theirs
+// (components, control characters): a line with \n in it is two rows, a \r
+// inside a line leaves its last state, the \r of a CRLF goes, colour codes
+// colour, a tab is input_tab_width spaces, any other control character or
+// escape sequence is its name in Red. For a body of the app's own that shows
+// what is read (a container's log behind a prefix, folded): each string it
+// gives back is one row's text, to fold or cut as the app does; Width,
+// Truncate and Cut measure it right.
+func Reading(lines ...string) []string {
+	rows := readingRows(lines)
+	for i, r := range rows {
+		rows[i] = readingLine(cutCR(r), tabCells)
+	}
+	return rows
+}
+
 // cutCR is line without the \r it ends with, its styles kept.
 func cutCR(line string) string {
 	if k := strings.LastIndex(line, "\r"); k >= 0 && strings.HasSuffix(stripSGR(line), "\r") {

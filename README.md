@@ -96,7 +96,8 @@ program's output — never reaches the terminal as it is:
   then `[31m`. To colour one yourself, give spans: `Row.Styled`, `Field.Styled`, `FormField.Styled`, and
   `App.Status` returns them. On a `Canvas` or in a popup of your own, `Escape` draws text from outside the same way.
 - **What is read** (a viewer, a panel's log, previews) is drawn as a terminal would: colour codes colour, `\n` starts
-  a line, a progress bar's `\r` leaves its last state, anything else is its name in Red.
+  a line, a progress bar's `\r` leaves its last state, anything else is its name in Red. A body of your own that
+  shows a log draws its lines with `Reading`.
 
 ## The App Log
 
@@ -161,7 +162,8 @@ func TestFirstLaunch(t *testing.T) {
 - **`Check`** launches the app as for the first time on terminals of many sizes and every icon width, each in a new
   sandbox (`HOME` and the XDG directories under `/tmp`, the app's own variables cleared), and opens the `Space` menu,
   the global operation popup, the App Log and `?` on every screen and panel, closing each with `Esc`; then it shrinks the terminal
-  under the app's least size and back. `Env` gets the sandbox's `HOME`, so a variable can point to a file `Seed` put
+  under the app's least size and back. A colour code drawn as text — one left in a cell or a value instead of
+  `Styled` — fails it. `Env` gets the sandbox's `HOME`, so a variable can point to a file `Seed` put
   there. With `go test -short` it launches on the least size and 80×24 only, icons one cell wide.
 - **`Tricky`, `Sizes` and `Mashes`** are values that have broken screens: control characters, escape sequences, wide
   and joined characters, very long values; odd terminal sizes; keys pressed faster than the animations (`Mash`).

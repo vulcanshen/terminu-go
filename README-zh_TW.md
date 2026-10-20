@@ -87,7 +87,7 @@ go run github.com/vulcanshen/terminu-go/examples/showcase@latest
   紅色的名字，Tab 是 `\t`，顏色碼是 `\x1b` 接著 `[31m`。要自己上色時另外給 span：`Row.Styled`、`Field.Styled`、
   `FormField.Styled`，`App.Status` 也回 span。在 `Canvas` 或自己的 popup 裡畫外面來的字時，用 `Escape` 照同一套畫。
 - **拿來讀的內容**（viewer、panel 上的 log、預覽）：照終端機會畫的樣子，顏色碼照著上色、`\n` 換行、進度列的 `\r` 只留最後的
-  狀態，其他畫成紅色的名字。
+  狀態，其他畫成紅色的名字。自己畫的 body 要顯示 log 時，用 `Reading` 畫它的每一行。
 
 ## App Log
 
@@ -145,7 +145,8 @@ func TestFirstLaunch(t *testing.T) {
 - **`EachIconWidth`** 把一個測試跑三次：icon 與 powerline 符號都佔一格、icon 佔兩格、兩種都佔兩格。
 - **`Check`** 在好幾種終端機尺寸、每一種 icon 寬度下，像第一次那樣啟動 app，每次都在新的沙盒裡（`HOME` 與 XDG 目錄放在 `/tmp`
   底下，app 自己的環境變數清掉）；在每個畫面、每個 panel 打開 `Space` menu、global operation popup、App Log 與 `?`，再用 `Esc` 一層層關掉；
-  最後把終端機縮到比 app 的最低尺寸小，再放回來。`Env` 拿得到沙盒的 `HOME`，環境變數可以指到 `Seed` 放進去的檔。
+  最後把終端機縮到比 app 的最低尺寸小，再放回來。畫面上出現被畫成字的顏色碼（留在格子或值裡、沒改成 `Styled` 的）也會失敗。
+  `Env` 拿得到沙盒的 `HOME`，環境變數可以指到 `Seed` 放進去的檔。
   `go test -short` 時只在最低尺寸與 80×24 啟動，icon 只用一格。
 - **`Tricky`、`Sizes` 與 `Mashes`** 是弄壞過畫面的值：控制字元、escape sequence、寬字與組合字、很長的值；奇怪的終端機尺寸；
   比動畫還快的連按（`Mash`）。

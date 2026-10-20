@@ -73,15 +73,15 @@ func (s Slider) open(a *App, written func()) tea.Cmd {
 	}.open(a, written)
 }
 
-// SliderTrack draws a value on a track of width cells in color, then the
-// number (components/input/slider): a heavy line with a dot where the value
-// is.
-func SliderTrack(value, bottom, top float64, width int, color Color) string {
+// SliderSpans is a value on a track of width cells in color, then the number
+// (components/input/slider): a heavy line with a dot where the value is. For
+// Styled, the number in Value.
+func SliderSpans(value, bottom, top float64, width int, color Color) []Span {
 	at := 0
 	if top > bottom && width > 1 {
 		at = int(math.Round((value - bottom) / (top - bottom) * float64(width-1)))
 		at = min(max(at, 0), width-1)
 	}
 	track := Repeat("━", at) + "●" + Repeat("━", max(width-at-1, 0))
-	return Fg(color).Render(track) + " " + Fg(Text).Render(strconv.FormatFloat(value, 'f', -1, 64))
+	return []Span{{Text: track, Style: Fg(color)}, {Text: " "}, {Text: strconv.FormatFloat(value, 'f', -1, 64), Style: Fg(Text)}}
 }

@@ -208,6 +208,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | E1 | 展示場：`showcase version`（`--version`、`-v`）印版號；`showcase help`（`-h`、`--help`）印命令列用法；lib 不適用 | 執行四種寫法 | `TestE1VersionHelp` |
 | E2 | 變數名 `<APP>__<NAME>`；lib 讀的變數掛在 app 的名字底下；`TERMINU__ICON_WIDTH`、`TERMINU__POWERLINE_WIDTH` 給子程序 | lib 提供變數名的函式；展示場只讀 `SHOWCASE__…` | `TestE2EnvNames` |
 | E3 | 設定與資料的位置（v0.6.4 補了 Windows）：lib 不適用，展示場不存東西；file-picker 的 `~/` 是使用者的家目錄（`os.UserHomeDir`，Windows 上就是 `%USERPROFILE%`）；家族共用的設定 key `hide_secrets_in_preview`（預設 `false`）、`input_tab_width`（預設 `4`）由 app 讀，交給 lib 的 `App.HideSecretsInPreview`、`App.InputTabWidth`；畫在畫面上的內容裡的 Tab（viewer、檔案預覽、清單、menu……）畫成 `input_tab_width` 格空白，表單與 panel 上的值、輸入框的打字列例外：畫成紅色的 `\t` | 展示場的 global `Hide secrets in preview`；I 的 `Separator` | `TestFilePreviewHidesSecrets`、`TestTextarea`、`TestE3TabsDrawnAsSpaces`、`TestValueControlChars` |
+| E3 | `input_tab_width` 沒走 `Run` 時也照 app 的設定（app 自己的測試） | lib | `TestTabWidthWithoutRun` |
 | E3 | 讀不了時：app 自己的設定、狀態、資料讀不了，開 `MOVE ASIDE` confirm（路徑與原因）、hint `Enter:move Esc:quit`；`Enter` 改名成 `.bak`（已經有就 `.bak.1`、`.bak.2`……，不蓋掉，問句寫實際的名字）、照常開始；`Esc` 離開 app，`Run` 回傳路徑與原因給 main 寫到 stderr（lib：`App.MoveAside`） | D「Move aside: a file it can’t read」 | `TestMoveAside`、`TestMoveAsideNeverOverAnother` |
 | E4 | 需要 Nerd Font 與 truecolor（lib 的 README 寫明）；PUA glyph 在程式碼裡寫成 code point | 看 README；掃原始碼找不到 PUA 字元 | `TestE4NoLiteralPUA` |
 | E5 | 量的是游標實際前進幾格；所有量寬度的地方走同一個函式（含疊 popup）；畫到終端機用 bubbletea v1 的 renderer（紀錄 C1） | `SHOWCASE__ICON_WIDTH=2`；`proto/c1/tmux-check.sh` 的作法 | `TestL4EveryRowFullWidth`（icon 兩格）、`TestE5OutputDropsEraseRight`（renderer 補的「清到行尾」拿掉，紀錄 C1）、`TestVTWideCharacters`（PTY 裡的字也照同一個寬度放） |
@@ -244,7 +245,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | §大寫 | 要大寫：panel 膠囊與 tab、畫面 chip、popup 標題、表頭、清單的分組標題、一列一個值的 label、menu 與 key reference 的區塊標題；熱鍵標記裡的字母照原樣；名稱、路徑在標題與 hint 裡都照原樣（表單按鈕的 hint 只有動詞小寫：`Enter:export hosts.yaml`） | 每個畫面；畫面 chip `[t]ERMINAL`（小寫的熱鍵照原樣）；T terminal popup 的標題 `SESSION: shell`；D「Form: long」的 `EDIT: prod-db-01`；D「Form: with actions」的 `Export hosts.yaml` | `TestUppercaseWhereRequired`、`TestUppercaseKeepsHotkeyAndNames`、`TestPopupTitleSubject`、`TestFormButtonSubject` |
 | §大寫 | 不改：值、menu 的 label 與說明、hint 與 footer 的說明、按鍵名、模式名、app 的內容 | 同上 | `TestUppercaseLeavesContent` |
 | components §控制字元 | 名字與短字（表單與 panel 上的值、清單的格子與位置列、menu、popup 的標題、toast、confirm、error popup、選項、說明列、錯誤列、空狀態、statusbar、tab 的名稱、finder 的項目）裡每個控制字元，連 Tab、`\n`、顏色碼的 ESC，都畫成紅色的名字，不丟、不換成空白、不送給終端機；色塊上 Red 底 Base 字（lib：`Escape`；app 要上色的另外給 `Span`：`Row.Styled`、`Field.Styled`、`FormField.Styled`、`App.Status`） | 任何地方：展示場的資料沒有控制字元，靠測試 | `TestControlCharsNamesAndShortTexts`、`TestControlCharsOnABlock`、`TestSpansStyled`；tdptest 的 `TestTrickyValuesEverywhere` |
-| components §控制字元 | 拿來讀的內容（viewer、panel 上的 log、檔案預覽、finder 的預覽）照終端機的樣子畫，見 note 的「viewer 裡的 Tab 與控制字元」 | P `[2] LOG`（彩色的等級） | `TestReadingContent` |
+| components §控制字元 | 拿來讀的內容（viewer、panel 上的 log、檔案預覽、finder 的預覽）照終端機的樣子畫，見 note 的「viewer 裡的 Tab 與控制字元」；app 自己畫的 body 用 `Reading` | P `[2] LOG`（彩色的等級） | `TestReadingContent`、`TestReadingForAppBodies` |
 
 ## layout/screen
 

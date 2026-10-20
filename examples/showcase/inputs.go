@@ -186,11 +186,15 @@ func newInputsScreen(s *showcase) *inputsScreen {
 		// No display here: X11 is not available (components/input/checkbox).
 		{Label: "Agent", Options: []string{"forward", "X11", "compression"}, Multi: true, Checked: []bool{true, false, true},
 			OptionUnavailable: func(i int) bool { return i == 1 }},
-		{Label: "Brightness", Value: func() string { return terminu.SliderTrack(brightness, 0, 100, 12, terminu.Text) }, Edit: func() tea.Cmd {
+		{Label: "Brightness", Value: func() string { return fmt.Sprint(brightness) }, Styled: func() []terminu.Span {
+			return terminu.SliderSpans(brightness, 0, 100, 12, terminu.Text)
+		}, Edit: func() tea.Cmd {
 			return a.Open(terminu.Slider{Title: "Brightness", Glyph: glyphTune, Bottom: 0, Top: 100, Value: brightness,
 				Done: func(v float64) tea.Cmd { brightness = v; return nil }})
 		}},
-		{Label: "Opacity", Value: func() string { return terminu.SliderTrack(opacity, 0, 1, 12, terminu.Text) }, Edit: func() tea.Cmd {
+		{Label: "Opacity", Value: func() string { return fmt.Sprint(opacity) }, Styled: func() []terminu.Span {
+			return terminu.SliderSpans(opacity, 0, 1, 12, terminu.Text)
+		}, Edit: func() tea.Cmd {
 			return a.Open(terminu.Slider{Title: "Opacity", Glyph: glyphTune, Bottom: 0, Top: 1, Step: 0.05, Value: opacity,
 				Done: func(v float64) tea.Cmd { opacity = v; return nil }})
 		}},

@@ -1108,7 +1108,7 @@ func TestSlider(t *testing.T) {
 	if d := (Slider{Bottom: 0, Top: 100}).numbers(); len(d) != 11 || d[1] != 10 {
 		t.Errorf("the default step is a tenth: %v", d)
 	}
-	if got := StripStyles(SliderTrack(128, 0, 255, 12, Text)); got != "━━━━━━●━━━━━ 128" {
+	if got := spansPlain(SliderSpans(128, 0, 255, 12, Text)); got != "━━━━━━●━━━━━ 128" {
 		t.Errorf("track %q", got)
 	}
 }

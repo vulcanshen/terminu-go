@@ -14,11 +14,11 @@ cannot read, and keeps History and the selection for interactive terminals. Upgr
     ESC of a colour code too, is its name in Red (`\t`, `\n`, `\x1b`), on a cursor Red under Base. `Escape` does
     it for an app's own drawing (a Canvas, a popup of its own)
   - Colours of the app's own in those places come as `Span`s: `Row.Styled`, `Field.Styled`, `FormField.Styled`, and
-    `App.Status` returns `[]Span`; `ColorSpans` replaces `ColorText`
+    `App.Status` returns `[]Span`; `ColorSpans` replaces `ColorText`, `SliderSpans` replaces `SliderTrack`
   - Reading content — a viewer, a panel's log (`Pager`), a finder's preview, a file preview — is drawn as a terminal
     draws it: `\n` starts another line, one in a line the app gave too; a `\r` inside a line leaves its last state
     (`10%\r100%` is `100%`); colour codes colour, a file's own too; any other control character or escape sequence
-    is its name in Red
+    is its name in Red. `Reading` draws reading content that way for a body of the app's own (kbu KB24)
 - A proposal (`TextInput.Suggest`) taken with nothing touched is checked for control characters too (input-52)
 - Every app has an App Log (components/dialog/note, Rules K1, F5): `!` on a panel opens it, a viewer, newest last;
   each entry is its time, its level (`INFO` `OK` `WARN` `ERR`) and what happened. Every toast and error popup goes
@@ -35,14 +35,19 @@ cannot read, and keeps History and the selection for interactive terminals. Upgr
 - `FormResult.Info` makes a form action's toast an Info one instead of Success: which a thing done is, is the app's
   (components/dialog/toast)
 - `Style.Render` goes on in its style after a styled piece inside it ends
-- tdptest: `Check` opens the App Log too; its tricky values go everywhere as they are now
+- The app's `input_tab_width` is used without `Run` too, as in an app's own tests
+- tdptest: `Check` opens the App Log too, and with `Driver.ColourCodes`, which it sets, a colour code drawn as text
+  (one left in a cell or a value) fails the test; its tricky values go everywhere as they are now
 
 ### Changes to make
 
 - Colours you put in `Row.Cells`, `Field.Value`, `FormField.Value` or anything else listed above now show as
   `\x1b[…` in Red: give them as spans instead (`Row.Styled`, `Field.Styled`, `FormField.Styled`), the text staying
   in `Cells` and `Value`. Text from outside you draw yourself goes through `Escape`
-- `App.Status` returns `[]Span`; `ColorText(c)` becomes `ColorSpans(c)` in a `Styled`, `HexText(c)` in `Value`
+- `App.Status` returns `[]Span`; `ColorText(c)` becomes `ColorSpans(c)` in a `Styled`, `HexText(c)` in `Value`;
+  `SliderTrack(…)` becomes `SliderSpans(…)` in a `Styled`, the number in `Value`. `tdptest.Check` finds a colour
+  code left in a cell or a value
+- A body of your own that shows a log or a program's output draws its lines with `Reading`
 - `Terminal.History` and `SelectKey` are gone: mark a terminal the user types in `Interactive: true`
 - A `CoreKey` or a hotkey on `!` is refused: move it
 - A file of your own you cannot read: `app.MoveAside(path, err, startFresh)` at the start

@@ -137,6 +137,44 @@ func TestSpansStyled(t *testing.T) {
 	}
 }
 
+// TestTabWidthWithoutRun: the app's input_tab_width is the one text is
+// drawn with when it is driven without Run, as in its own tests (Rules E3).
+func TestTabWidthWithoutRun(t *testing.T) {
+	ta := newTestApp(t)
+	ta.InputTabWidth = 8
+	p := &Pager{}
+	p.SetLines([]string{"a\tb"})
+	ta.Screen().Panels[1].Body = p
+	if !strings.Contains(ta.screenText(), "a        b") {
+		t.Errorf("a tab is not 8 cells: %q", ta.screenText())
+	}
+	ta.InputTabWidth = 0
+	if !strings.Contains(ta.screenText(), "a    b") {
+		t.Error("back to 4 when unset")
+	}
+}
+
+// TestReadingForAppBodies: Reading draws reading content for a body of the
+// app's own as the Pager does (components, control characters; kbu KB24).
+func TestReadingForAppBodies(t *testing.T) {
+	rows := Reading("\x1b[32mgreen\x1b[0m", "10%\r100%", "x\x1b[2Jy", "one\ntwo", "t\tt", "crlf\r")
+	plain := make([]string, len(rows))
+	for i, r := range rows {
+		plain[i] = StripStyles(r)
+	}
+	if want := []string{"green", "100%", `x\x1b[2Jy`, "one", "two", "t    t", "crlf"}; strings.Join(plain, "|") != strings.Join(want, "|") {
+		t.Errorf("rows: %q", plain)
+	}
+	if !strings.Contains(rows[0], "\x1b[32mgreen") || !strings.Contains(rows[2], Fg(Red).Render(`\x1b`)) || strings.Contains(rows[2], "\x1b[2J") {
+		t.Errorf("the colour code colours, the other ESC is a red name: %q", rows[:3])
+	}
+	for _, r := range rows {
+		if strings.ContainsAny(StripStyles(r), "\r\n\t") {
+			t.Errorf("a control character left: %q", r)
+		}
+	}
+}
+
 // TestReadingContent: a panel's log and a viewer draw what they read as a
 // terminal would: \n starts another line (a line the app gave with one in it
 // too), a \r in a line leaves its last state, SGR colours, a tab is spaces,

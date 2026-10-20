@@ -275,6 +275,25 @@ func TestL4ReportedWithWhere(t *testing.T) {
 	}
 }
 
+// TestColourCodesAsText: with ColourCodes a colour left in a cell, which the
+// lib draws as text, is reported; off, it is not (a test feeding Tricky).
+func TestColourCodesAsText(t *testing.T) {
+	for _, on := range []bool{true, false} {
+		ft := &fakeT{T: t}
+		ty := newTiny()
+		d := Start(ft, ty.App, 80, 24)
+		d.ColourCodes = on
+		d.Do(func() tea.Cmd {
+			ty.list.SetRows([]terminu.Row{{ID: "1", Cells: []string{terminu.Fg(terminu.Red).Render("red")}}})
+			return nil
+		})
+		reported := len(ft.errs) > 0 && strings.Contains(ft.errs[0], "shows the colour code \\x1b[38;2;243;139;168m as text")
+		if reported != on {
+			t.Errorf("ColourCodes %v: reported %v: %q", on, reported, ft.errs)
+		}
+	}
+}
+
 func TestClipboardTaken(t *testing.T) {
 	ty := newTiny()
 	d := Start(t, ty.App, 80, 24)

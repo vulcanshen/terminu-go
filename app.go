@@ -300,6 +300,7 @@ func (a *App) Init() tea.Cmd { return run(a.Start) }
 
 // Update handles a message.
 func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	a.useTabWidth()
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -358,6 +359,15 @@ func (a *App) moved() tea.Cmd {
 		}
 	}
 	return tea.Batch(cmds...)
+}
+
+// useTabWidth makes the app's input_tab_width the one text is drawn with:
+// Run sets it, and so does every message and frame, for an app driven without
+// Run (its own tests).
+func (a *App) useTabWidth() {
+	if w := a.inputTabWidth(); tabCells != w {
+		tabCells = w
+	}
 }
 
 func (a *App) inputTabWidth() int {
@@ -1374,6 +1384,7 @@ func (a *App) Frame() []string {
 		return nil
 	}
 	spinAt.Store(a.now().UnixMilli())
+	a.useTabWidth()
 	a.syncLog()
 	if a.tooSmall() {
 		return a.tinyScreen(w, h)

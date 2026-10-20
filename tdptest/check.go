@@ -62,6 +62,7 @@ func Check(t *testing.T, app App) {
 			t.Run(fmt.Sprintf("%dx%d", s[0], s[1]), func(t *testing.T) {
 				a := launch(t, app)
 				d := Start(t, a, s[0], s[1])
+				d.ColourCodes = true
 				if s[0] >= mw && s[1] >= mh {
 					scan(t, d, a)
 					shrink(t, d, mw, mh)

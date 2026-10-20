@@ -18,6 +18,7 @@ package tdptest
 import (
 	"fmt"
 	"reflect"
+	"regexp"
 	"runtime/debug"
 	"slices"
 	"strings"
@@ -43,6 +44,12 @@ type Driver struct {
 	// I/O included, before the test goes on: 200ms from Start. A command
 	// still running then comes back with a later input, or WaitFor.
 	Wait time.Duration
+	// ColourCodes, when set, fails a frame that shows a colour code as text
+	// (\x1b[31m drawn by its name): the lib draws names and short texts as
+	// text, so a colour of the app's own left in a cell or a value shows
+	// that way; it goes in spans (Row.Styled, Field.Styled,
+	// FormField.Styled). Check sets it; a test feeding Tricky does not.
+	ColourCodes bool
 
 	t      testing.TB
 	app    *terminu.App
@@ -61,6 +68,8 @@ type Driver struct {
 	notes  []string
 	copied []string
 	broke  int
+	// coloured is how many frames showed a colour code as text (ColourCodes).
+	coloured int
 }
 
 // back is what a command gave back; rest is the sequence it was in, still
@@ -502,6 +511,15 @@ func (d *Driver) check() {
 	if text, ok := testhook.Clipboard(); ok {
 		d.copied = append(d.copied, text)
 	}
+	if d.ColourCodes && d.coloured < 3 {
+		for i, l := range lines {
+			if code := colourText.FindString(terminu.StripStyles(l)); code != "" {
+				d.coloured++
+				d.t.Errorf("tdptest: row %d shows the colour code %s as text: a colour of the app's own goes in spans (Row.Styled, Field.Styled, FormField.Styled)%s", i+1, code, d.where())
+				break
+			}
+		}
+	}
 	problem := rowsProblem(lines, d.w, d.h)
 	if problem == "" {
 		return
@@ -514,6 +532,10 @@ func (d *Driver) check() {
 		d.t.Errorf("tdptest: tdp L4 broken again; no more reported for this app")
 	}
 }
+
+// colourText is a colour code drawn as text: the name of its ESC, then the
+// rest of the SGR sequence.
+var colourText = regexp.MustCompile(`\\x1b\[[0-9;:]*m`)
 
 // rowsProblem is what is wrong with a frame for a w × h terminal: rows not
 // h, a row not w cells, a control character that would reach the terminal
