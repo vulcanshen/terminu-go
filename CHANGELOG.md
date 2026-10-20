@@ -2,7 +2,7 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.9.1
+## v0.4.2 — tdp v0.9.1
 
 - `App.MoveAsideRecord` (Rules E3, when a file cannot be read): for data kept one record per file, `Enter` only
   renames the record that cannot be read to `.bak` and runs the app's reread, nothing new made in its place; the
