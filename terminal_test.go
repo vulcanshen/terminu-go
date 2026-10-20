@@ -16,7 +16,7 @@ func ptyApp(t *testing.T) (*testApp, *Terminal, *bytes.Buffer) {
 	t.Helper()
 	ta := newTestApp(t)
 	sent := &bytes.Buffer{}
-	term := &Terminal{Title: "Shell", History: true, in: sent, started: true}
+	term := &Terminal{Title: "Shell", Interactive: true, in: sent, started: true}
 	ta.AddScreen(&Screen{Name: "Terminal", Key: "T", Panels: []*Panel{
 		{Label: "Shell", Body: term, Actions: []Action{{Key: "Enter", Label: "Type", Scope: PanelScope, Do: func() tea.Cmd { term.Enter(); return nil }}}},
 		{Label: "Other", Body: &Pager{}},
@@ -60,6 +60,82 @@ func TestTerminalEmptyUntilItSpeaks(t *testing.T) {
 // TestTerminalHistoryMode: PgUp goes into the History mode; its keys scroll
 // back, Esc goes back to the live screen, any other key leaves it and goes to
 // the program, q too (components/dialog/terminal, Rules K11).
+// altV is Alt-v as the terminal sends it.
+var altV = tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("v"), Alt: true}
+
+// TestTerminalNotInteractive: a PTY the app opens to run one program has no
+// History mode and no selection: PgUp and Alt-v go to the program, the hint
+// does not offer them (components/dialog/terminal, terminal-21).
+func TestTerminalNotInteractive(t *testing.T) {
+	ta, term, sent := termWithHistory(t)
+	term.Interactive = false
+	ta.press("PgUp")
+	ta.Update(altV)
+	ta.settle()
+	if term.Mode() != "" || sent.String() != "\x1b[5~\x1bv" {
+		t.Errorf("mode %q, sent %q: both keys are the program's", term.Mode(), sent.String())
+	}
+	if f := StripStyles(ta.Frame()[ta.h-1]); strings.Contains(f, "select") || strings.Contains(f, "history") {
+		t.Errorf("the footer offers a mode: %q", f)
+	}
+}
+
+// TestTerminalFullScreen: while the program fills the whole screen (the
+// alternate one: vim, less) PgUp is the program's and the hint leaves
+// PgUp:history out; the selection holds that screen alone; back on the
+// normal screen PgUp goes into the history again (terminal-22).
+func TestTerminalFullScreen(t *testing.T) {
+	ta, term, sent := termWithHistory(t)
+	write := func(s string) {
+		term.mu.Lock()
+		term.vt().write([]byte(s))
+		term.mu.Unlock()
+	}
+	write("\x1b[?1049hless screen")
+	if f := StripStyles(ta.Frame()[ta.h-1]); !strings.Contains(f, "Alt-v:select") || strings.Contains(f, "PgUp:history") {
+		t.Errorf("the footer while full screen: %q", f)
+	}
+	ta.press("PgUp")
+	if term.Mode() != "" || sent.String() != "\x1b[5~" {
+		t.Errorf("PgUp went to the history: mode %q, sent %q", term.Mode(), sent.String())
+	}
+	ta.Update(altV)
+	ta.settle()
+	if term.Mode() != "Visual" || len(term.sel.Lines) != term.vt().h || term.sel.line != 0 {
+		t.Errorf("the selection holds the screen alone: %q, %d lines", term.Mode(), len(term.sel.Lines))
+	}
+	ta.press("Esc")
+	write("\x1b[?1049l")
+	ta.press("PgUp")
+	if term.Mode() != "History" {
+		t.Errorf("back on the normal screen PgUp is the history again: %q", term.Mode())
+	}
+}
+
+// TestTerminalAllKeys: when the user hands every key to the program, Alt-v
+// and PgUp|PgDn go to it; the app's own keys (the one taking them back) and
+// the exit key still work; taken back, the modes return (terminal-23).
+func TestTerminalAllKeys(t *testing.T) {
+	ta, term, sent := termWithHistory(t)
+	term.AllKeys = true
+	term.Keys = []TerminalKey{{Key: "Alt-u", Desc: "unlock", Do: func() tea.Cmd { term.AllKeys = false; return nil }}}
+	if f := StripStyles(ta.Frame()[ta.h-1]); !strings.Contains(f, "Alt-u:unlock") || strings.Contains(f, "select") || strings.Contains(f, "history") {
+		t.Errorf("the footer while every key is the program's: %q", f)
+	}
+	ta.Update(altV)
+	ta.settle()
+	ta.press("PgUp", "PgDn")
+	if term.Mode() != "" || sent.String() != "\x1bv\x1b[5~\x1b[6~" {
+		t.Errorf("mode %q, sent %q", term.Mode(), sent.String())
+	}
+	ta.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("u"), Alt: true})
+	ta.settle()
+	ta.press("PgUp")
+	if term.AllKeys || term.Mode() != "History" {
+		t.Errorf("taken back, PgUp goes into the history: %v %q", term.AllKeys, term.Mode())
+	}
+}
+
 func TestTerminalHistoryMode(t *testing.T) {
 	ta, term, sent := termWithHistory(t)
 	ta.press("PgUp")
@@ -106,12 +182,11 @@ func TestTerminalHistoryMode(t *testing.T) {
 	}
 }
 
-// TestTerminalSelectMode: the app's key puts the PTY in the selection mode,
-// a viewer's: the screen holds still, the cursor goes up into the history,
-// y copies with a Success toast (components/dialog/terminal).
+// TestTerminalSelectMode: Alt-v puts an interactive terminal in the
+// selection mode, a viewer's: the screen holds still, the cursor goes up
+// into the history, y copies with a Success toast (components/dialog/terminal).
 func TestTerminalSelectMode(t *testing.T) {
 	ta, term, sent := termWithHistory(t)
-	term.SelectKey = "Alt-v"
 	takeClipboard()
 	if f := StripStyles(ta.Frame()[ta.h-1]); !strings.Contains(f, "Alt-v:select") {
 		t.Errorf("the app's key in the footer: %q", f)

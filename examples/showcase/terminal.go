@@ -83,7 +83,7 @@ func newTerminalScreen(s *showcase) *terminalScreen {
 }
 
 func (ts *terminalScreen) newShell() *terminu.Terminal {
-	return &terminu.Terminal{Title: "Shell", History: true, SelectKey: "Alt-v"}
+	return &terminu.Terminal{Title: "Shell", Interactive: true}
 }
 
 // slowStart is a shell that takes a while to connect: until then only
@@ -91,7 +91,7 @@ func (ts *terminalScreen) newShell() *terminu.Terminal {
 func (ts *terminalScreen) slowStart() tea.Cmd {
 	ts.shell.Stop()
 	ready := time.Now().Add(3 * time.Second)
-	ts.shell = &terminu.Terminal{Title: "Shell", Subject: "slow-host", History: true,
+	ts.shell = &terminu.Terminal{Title: "Shell", Subject: "slow-host", Interactive: true,
 		Command:  []string{"sh", "-c", `echo "connecting to slow-host…"; sleep 3; echo connected; exec "${SHELL:-sh}"`},
 		NotReady: func() bool { return time.Now().Before(ready) }}
 	ts.shellP.Body = ts.shell
@@ -110,7 +110,7 @@ func (ts *terminalScreen) session(name string) *terminu.Terminal {
 		}
 	}
 	a := ts.s.app
-	t := &terminu.Terminal{Title: "Session", Subject: s.name, Command: s.command, Ends: true, History: true, SelectKey: "Alt-v"}
+	t := &terminu.Terminal{Title: "Session", Subject: s.name, Command: s.command, Ends: true, Interactive: true}
 	t.Keys = []terminu.TerminalKey{
 		{Key: "Alt-t", Desc: "hide", Do: func() tea.Cmd { return t.Hide(a) }},
 		{Key: "Alt-b", Desc: "busy", Do: func() tea.Cmd { return func() tea.Msg { return busy{} } }},

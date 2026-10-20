@@ -33,7 +33,7 @@ func dialogOpeners() map[string]func(*testApp) {
 		},
 		"error": func(ta *testApp) { ta.Error("Save failed", strings.Repeat("hosts.yaml changed on disk. ", 12)) },
 		"terminal": func(ta *testApp) {
-			term := &Terminal{Title: "Alterm", Subject: strings.Repeat("myhost", 30), in: &strings.Builder{}, started: true, History: true,
+			term := &Terminal{Title: "Alterm", Subject: strings.Repeat("myhost", 30), in: &strings.Builder{}, started: true, Interactive: true,
 				Keys: []TerminalKey{{Key: "Alt-t", Desc: "hide"}}}
 			term.mu.Lock()
 			term.vt().write([]byte("中文 wide \U000F024B icons and a line long enough to wrap around the screen\r\n$ "))

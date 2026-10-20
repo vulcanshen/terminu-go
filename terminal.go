@@ -32,26 +32,38 @@ type Terminal struct {
 	Ends bool
 	// Keys are the app's own keys in the PTY, shown after the exit key.
 	Keys []TerminalKey
-	// History lets PgUp go into the History mode (Rules K11): j|k, u|d, gg|G,
-	// PgUp|PgDn scroll back through what went off the top, Esc goes back to
-	// the live screen, and any other key leaves the mode and goes to the
-	// program (components/dialog/terminal).
-	History bool
+	// Interactive marks a terminal the user types commands of their own in
+	// (a shell, an ssh session, kubectl exec), not one the app opens to run
+	// one program for one thing ($EDITOR, sudo asking for a password). It
+	// has the two modes of components/dialog/terminal, which every other PTY
+	// leaves to its program, PgUp too:
+	//   - History, on PgUp: j|k, u|d, gg|G, PgUp|PgDn scroll back through
+	//     what went off the top, Esc goes back to the live screen, any other
+	//     key leaves the mode and goes to the program. While the program
+	//     fills the whole screen (vim, less, htop: the alternate screen),
+	//     PgUp is the program's and the hint leaves PgUp:history out.
+	//   - The selection, on Alt-v (the family's v, with Alt to get out of
+	//     the program): the screen holds still, what the program prints
+	//     meanwhile waiting; the cursor starts at the first line in sight
+	//     and goes up into the history too; v starts selecting, y copies,
+	//     Esc leaves. Copy takes the text; unset, it goes on the terminal's
+	//     clipboard with a Success toast.
+	Interactive bool
+	// AllKeys, while set, hands every key to the program but the exit key
+	// and the app's own Keys (the one that takes them back): the user gave
+	// them all away (sshu's locked cell, a family app running inside). The
+	// selection is the program's then and PgUp|PgDn go to it, the innermost
+	// PTY scrolling its own history (components/dialog/terminal).
+	AllKeys bool
 	// ExitKey is the key that takes the focus out (Rules K10), Alt-Esc when
 	// unset; the app may change it while the program runs, and the hint and
 	// the footer show it as it is. Alt-Esc always asks first; another asks
 	// when ExitAsks.
 	ExitKey  string
 	ExitAsks bool
-	// SelectKey, when set, is a key of the app's own (Alt-v) that puts the
-	// terminal in the selection mode, a viewer's (components/dialog/note):
-	// the screen holds still, what the program prints meanwhile waiting; the
-	// cursor starts at the first line in sight and goes up into the history
-	// too; v starts selecting, y copies, Esc leaves. Copy takes the text; unset,
-	// it goes on the terminal's clipboard with a Success toast
-	// (components/dialog/terminal).
-	SelectKey string
-	Copy      func(text string) tea.Cmd
+	// Copy takes what the selection copies (Interactive); unset, it goes on
+	// the terminal's clipboard with a Success toast.
+	Copy func(text string) tea.Cmd
 	// NotReady, while it reports true, keeps the ordinary keys from the
 	// program (it is still connecting); Ctrl-C and the exit key still work.
 	NotReady func() bool
@@ -111,6 +123,21 @@ type termOutput struct{ t *Terminal }
 type termExited struct{ t *Terminal }
 
 const exitKey = "Alt-Esc"
+
+// selectKey puts an interactive terminal in the selection mode: the
+// family's v, with Alt to get out of the program (components/dialog/terminal).
+const selectKey = "Alt-v"
+
+// modes reports whether the terminal has its two modes now: interactive,
+// the keys not all handed to the program.
+func (t *Terminal) modes() bool { return t.Interactive && !t.AllKeys }
+
+// fullScreen reports a program filling the whole screen: the alternate one.
+func (t *Terminal) fullScreen() bool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.vt().altOn
+}
 
 // exit is the exit key now.
 func (t *Terminal) exit() string { return cmpOr(t.ExitKey, exitKey) }
@@ -254,11 +281,11 @@ func (t *Terminal) hint() []KeyHint {
 	for _, k := range t.Keys {
 		h = append(h, KeyHint{k.Key, k.Desc})
 	}
-	if t.SelectKey != "" {
-		h = append(h, KeyHint{t.SelectKey, "select"})
-	}
-	if t.History {
-		h = append(h, KeyHint{"PgUp", "history"})
+	if t.modes() {
+		h = append(h, KeyHint{selectKey, "select"})
+		if !t.fullScreen() {
+			h = append(h, KeyHint{"PgUp", "history"})
+		}
 	}
 	return h
 }
@@ -315,13 +342,17 @@ func (t *Terminal) selectMode(a *App, layer Color) {
 	t.mu.Lock()
 	var lines []string
 	vt := t.vt()
-	for _, l := range vt.history {
+	history := vt.history
+	if vt.altOn {
+		history = nil // a program on the whole screen: only that screen, held still
+	}
+	for _, l := range history {
 		lines = append(lines, renderCells(l, vt.w, -1, Style{}))
 	}
 	for _, l := range vt.cells {
 		lines = append(lines, renderCells(l, vt.w, -1, Style{}))
 	}
-	first := len(vt.history) - min(t.back, len(vt.history))
+	first := len(history) - min(t.back, len(history))
 	t.mu.Unlock()
 	copyText := t.Copy
 	if copyText == nil {
@@ -446,7 +477,7 @@ func (t *Terminal) key(a *App, key string, msg tea.KeyMsg) tea.Cmd {
 	if key == t.exit() {
 		return t.leave(a)
 	}
-	if t.SelectKey != "" && key == t.SelectKey {
+	if t.modes() && key == selectKey {
 		colour := Subtext1 // a panel's cursor
 		if l := a.top(); l != nil {
 			colour = LayerColor(a.layerOf(l))
@@ -462,7 +493,7 @@ func (t *Terminal) key(a *App, key string, msg tea.KeyMsg) tea.Cmd {
 			return run(k.Do)
 		}
 	}
-	if t.History && key == "PgUp" {
+	if t.modes() && key == "PgUp" && !t.fullScreen() {
 		// Back into the history: the History mode (components/dialog/terminal).
 		t.mu.Lock()
 		t.back = min(t.back+max(t.vt().h/2, 1), len(t.vt().history))
