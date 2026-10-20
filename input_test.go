@@ -1487,6 +1487,21 @@ func TestInputSteps(t *testing.T) {
 // TestInputSuggestedValue: with no old value the app may propose one, offered
 // in grey as the old value is; Enter with nothing touched takes it, checked
 // and written back (components/input/README, a suggested value).
+// A proposal taken with nothing touched is checked for control characters
+// as a typed value is, before the spaces go: nothing is written back
+// (components/input/README).
+func TestInputSuggestedValueControlChars(t *testing.T) {
+	ta := newTestApp(t)
+	called := false
+	ta.Text(TextInput{Title: "Icon", Name: "Name", Suggest: "Icon\r", Done: func(string) tea.Cmd { called = true; return nil }})
+	ta.settle()
+	ta.press("Enter")
+	li, ok := ta.topView().(*lineInput)
+	if !ok || li.err != "Name can't have control characters" || called {
+		t.Errorf("a proposal with a CR was taken: open %v, written %v", ok, called)
+	}
+}
+
 func TestInputSuggestedValue(t *testing.T) {
 	ta := newTestApp(t)
 	got, calls := "", 0

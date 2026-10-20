@@ -630,13 +630,19 @@ func (li *lineInput) confirm(a *App) tea.Cmd {
 	if li.showingOld() && li.suggest == "" {
 		return li.same(a) // nothing touched: no change
 	}
-	if li.ed.hasControl() && !li.search {
+	ed := li.ed
+	if li.showingOld() {
+		ed = newEditor(li.suggest) // nothing touched: the app's proposal is taken
+	}
+	// Control characters before the spaces go, in a proposal too
+	// (components/input/README).
+	if ed.hasControl() && !li.search {
 		li.err = cmpOr(li.name, "The value") + " can't have control characters"
 		return nil
 	}
-	v := strings.TrimFunc(li.ed.value(), unicode.IsSpace)
+	v := strings.TrimFunc(ed.value(), unicode.IsSpace)
 	if li.showingOld() {
-		v = li.suggest // nothing touched: the app's proposal is taken
+		v = li.suggest
 	}
 	if !li.checked(v) {
 		return nil
