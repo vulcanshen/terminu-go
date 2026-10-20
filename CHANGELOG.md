@@ -2,7 +2,7 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.8.3
+## v0.3.0 — tdp v0.8.3
 
 - New package `tdptest`: drives an app in a Go test as a user does — keys by their tdp names, text typed, sent at
   once or pasted, the terminal resized, messages of the app's own — and checks every frame for tdp L4 (each row
