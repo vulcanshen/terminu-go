@@ -32,8 +32,8 @@ type App struct {
 // Check launches the app as for the first time on terminals of many sizes,
 // with an icon and a powerline symbol one cell and two (EachIconWidth), and
 // walks what every app has: on each screen and each panel, the Space menu,
-// the global operation popup and the key reference (`?`), each closed one
-// layer an Esc (tdp K4); then a terminal under the least size and back
+// the global operation popup, the App Log (`!`) and the key reference (`?`),
+// each closed one layer an Esc (tdp K4); then a terminal under the least size and back
 // (tdp L1). Every frame is checked for tdp L4 on the way. With go test
 // -short it launches on the least size and 80×24 only, icons one cell.
 //
@@ -171,6 +171,8 @@ func scan(t *testing.T, d *Driver, a *terminu.App) {
 				opens(t, d, where+": ? on the Space menu", 2, "?")
 				closeAll(t, d, where)
 				opens(t, d, where+": the Space menu's Global operation", 2, "Space", "G", "Enter")
+				closeAll(t, d, where)
+				opens(t, d, where+": ! (the App Log)", 1, "!")
 			}
 			closeAll(t, d, where)
 			opens(t, d, where+": ?", 1, "?")

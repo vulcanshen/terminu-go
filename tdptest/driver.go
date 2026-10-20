@@ -47,6 +47,7 @@ type Driver struct {
 	t      testing.TB
 	app    *terminu.App
 	w, h   int
+	mu     sync.Mutex // guards now: the App reads it from any goroutine (App.Log)
 	now    time.Time
 	timers []timer
 	seq    int
@@ -123,7 +124,18 @@ func Start(t testing.TB, app *terminu.App, w, h int) *Driver {
 func (d *Driver) Note(text string) { d.notes = append(d.notes, text) }
 
 // Now is the test's time, the App's clock.
-func (d *Driver) Now() time.Time { return d.now }
+func (d *Driver) Now() time.Time {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return d.now
+}
+
+// setNow moves the test's time to at.
+func (d *Driver) setNow(at time.Time) {
+	d.mu.Lock()
+	d.now = at
+	d.mu.Unlock()
+}
 
 // Press presses keys one after another, each named as tdp writes it (tdp
 // M5, terminu.KeyName): "j", "Enter", "Esc", "Space", "Ctrl-C", "Alt-Esc",
@@ -201,12 +213,12 @@ func (d *Driver) Do(f func() tea.Cmd) {
 func (d *Driver) Advance(dur time.Duration) {
 	d.t.Helper()
 	d.begin(fmt.Sprintf("Advance(%v)", dur))
-	end := d.now.Add(dur)
+	end := d.Now().Add(dur)
 	d.pump()
 	for len(d.timers) > 0 && !d.timers[0].at.After(end) {
 		d.fire()
 	}
-	d.now = end
+	d.setNow(end)
 	d.settle()
 }
 
@@ -427,7 +439,7 @@ func (d *Driver) deliver(b back) {
 		}
 	case testhook.Timer:
 		d.seq++
-		t := timer{at: d.now.Add(m.D), seq: d.seq, fn: m.Fn, rest: b.rest}
+		t := timer{at: d.Now().Add(m.D), seq: d.seq, fn: m.Fn, rest: b.rest}
 		i, _ := slices.BinarySearchFunc(d.timers, t, func(x, y timer) int {
 			if c := x.at.Compare(y.at); c != 0 {
 				return c
@@ -457,10 +469,10 @@ func (d *Driver) deliver(b back) {
 func (d *Driver) fire() {
 	t := d.timers[0]
 	d.timers = d.timers[1:]
-	if t.at.After(d.now) {
-		d.now = t.at
+	if t.at.After(d.Now()) {
+		d.setNow(t.at)
 	}
-	d.deliver(back{msg: t.fn(d.now), rest: t.rest})
+	d.deliver(back{msg: t.fn(d.Now()), rest: t.rest})
 	d.pump()
 }
 

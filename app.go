@@ -158,6 +158,8 @@ type App struct {
 
 	tinyCtrlC bool // Ctrl-C pressed once on a terminal under the least size
 
+	logs appLog // the App Log (applog.go)
+
 	testClock testhook.Clock // a test's time; nil for the real one
 	terminals []*Terminal    // the terminal popups opened, for a test to stop
 }
@@ -251,7 +253,7 @@ func checkPanelKey(key string) error {
 	switch {
 	case key == "" || key == "Enter":
 		return nil
-	case slices.Contains([]string{"Tab", "Esc", "Space", "?", "q", "Ctrl-C", "gg"}, key):
+	case slices.Contains([]string{"Tab", "Esc", "Space", "?", "!", "q", "Ctrl-C", "gg"}, key):
 		return fmt.Errorf("%s is a core key (Rules K1)", key)
 	case len(key) == 1 && key[0] >= '1' && key[0] <= '9':
 		return fmt.Errorf("the digits jump to panels (Rules K1)")
@@ -547,6 +549,7 @@ func gone(l *layer) tea.Cmd {
 // the popup and its value staying (components/layout/popup, the action
 // failing).
 func (a *App) commitFailed(title, subject string, err error) tea.Cmd {
+	a.Log(Error, errorText(title+" failed", subject, err.Error()))
 	return a.open(errorPopup(title+" failed", subject, err.Error()))
 }
 
@@ -635,6 +638,7 @@ func (a *App) relayout() {
 // Toast shows a short message from the bottom (components/dialog/toast); a
 // second one replaces the first and starts its time again.
 func (a *App) Toast(kind ToastKind, text string) tea.Cmd {
+	a.Log(kind, text) // every toast, the same words (components/dialog/note, App Log)
 	a.toastSeq++
 	v := &toastView{kind: kind, text: text, id: a.toastSeq, most: a.ToastLines}
 	if a.toast != nil && !a.toast.closing {
@@ -669,6 +673,7 @@ func (a *App) Error(title, message string) tea.Cmd { return a.ErrorAbout(title, 
 // ErrorAbout is Error naming what failed: subject goes after ": " in the
 // title, kept as it is, RENAME FAILED: notes.md (components/dialog/note).
 func (a *App) ErrorAbout(title, subject, message string) tea.Cmd {
+	a.Log(Error, errorText(title, subject, message)) // an error is logged too (Rules F5)
 	return a.open(errorPopup(title, subject, message))
 }
 
@@ -974,7 +979,7 @@ func (a *App) panelKeyRef(p *Panel) *noteView {
 	if len(p.Tabs) > 0 {
 		move = append(move, KeyRow{Key: "h|l", Desc: "previous tab, next tab"})
 	}
-	core := []KeyRow{{Key: "Space", Desc: "what you can do here"}, {Key: "?", Desc: "this list"}}
+	core := []KeyRow{{Key: "Space", Desc: "what you can do here"}, {Key: "?", Desc: "this list"}, {Key: "!", Desc: "the app log"}}
 	if len(s.Panels) > 1 {
 		tab := KeyRow{Key: "Tab", Desc: "next panel"}
 		if a.ShiftTab {
@@ -1191,6 +1196,8 @@ func (a *App) panelKey(key string, msg tea.KeyMsg) tea.Cmd {
 		return a.openSpaceMenu()
 	case "?":
 		return a.open(a.panelKeyRef(p))
+	case "!":
+		return a.openLog()
 	case "q":
 		return a.startQuit()
 	case "Tab":
@@ -1286,7 +1293,7 @@ func refHas(secs []refSection, key string) bool {
 // modeKey is a key inside a mode (Rules K11).
 func (a *App) modeKey(p *Panel, key string, msg tea.KeyMsg) tea.Cmd {
 	switch {
-	case key == "Space":
+	case key == "Space" || key == "!": // nothing in a mode (Rules K11)
 		return nil
 	case key == "?":
 		return a.open(a.modeKeyRef(p))
@@ -1361,6 +1368,7 @@ func (a *App) Frame() []string {
 		return nil
 	}
 	spinAt.Store(a.now().UnixMilli())
+	a.syncLog()
 	if a.tooSmall() {
 		return a.tinyScreen(w, h)
 	}
@@ -1555,7 +1563,7 @@ func (a *App) footerHints() []KeyHint {
 		}
 		return append(out, KeyHint{"Esc", cmpOr(p.mode.Exit, "leave")})
 	case len(s.Panels) == 1:
-		return []KeyHint{{"Space", "menu"}, {"?", "help"}, {"q", "quit"}}
+		return []KeyHint{{"Space", "menu"}, {"?", "help"}, a.logHint(), {"q", "quit"}}
 	}
-	return []KeyHint{{"Space", "menu"}, {"?", "help"}, {"Tab|1–" + itoa(len(s.Panels)), "panels"}, {"q", "quit"}}
+	return []KeyHint{{"Space", "menu"}, {"?", "help"}, a.logHint(), {"Tab|1–" + itoa(len(s.Panels)), "panels"}, {"q", "quit"}}
 }

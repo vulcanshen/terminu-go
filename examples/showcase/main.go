@@ -76,8 +76,8 @@ func newShowcase() *showcase {
 	a.Splash = splash()
 	// A core key of the showcase's own (Rules K1): the same on every panel and
 	// popup.
-	a.CoreKeys = []terminu.CoreKey{{Key: "!", Desc: "the app log", Do: func() tea.Cmd {
-		return a.Viewer(&terminu.Viewer{Title: "App log", Glyph: glyphYaml, Lines: s.appLog()})
+	a.CoreKeys = []terminu.CoreKey{{Key: "%", Desc: "the showcase's facts", Do: func() tea.Cmd {
+		return a.Viewer(&terminu.Viewer{Title: "Facts", Glyph: glyphYaml, Lines: s.facts()})
 	}}}
 	a.Progress = func() (float64, bool) { return s.task, s.taskOn }
 	a.Spinning = func() bool { return transferring() }
@@ -116,7 +116,11 @@ func newShowcase() *showcase {
 			}},
 	}
 	a.OnMsg = s.onMsg
-	a.Start = func() tea.Cmd { return a.Tick(time.Second, func(time.Time) tea.Msg { return logTick{} }) }
+	a.Start = func() tea.Cmd {
+		// What the app does by itself goes in the App Log (components/dialog/note).
+		a.Log(terminu.Info, "started; pretend files in /tmp/terminu-showcase")
+		return a.Tick(time.Second, func(time.Time) tea.Msg { return logTick{} })
+	}
 	return s
 }
 
@@ -146,8 +150,8 @@ func (s *showcase) status(int) []terminu.Span {
 	return spans
 }
 
-// appLog is what the showcase has done, for its own core key.
-func (s *showcase) appLog() []string {
+// facts are what the showcase is now, for its own core key.
+func (s *showcase) facts() []string {
 	return []string{
 		"started " + s.started.Format("15:04:05"),
 		fmt.Sprintf("icon width %d, powerline width %d", terminu.IconWidth(), terminu.PowerlineWidth()),

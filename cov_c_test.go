@@ -879,7 +879,7 @@ func TestScreenRows(t *testing.T) {
 }
 
 func TestFooterDropsWholePairs(t *testing.T) {
-	pairs := []string{"Space:menu", "?:help", "Tab|1–3:panels", "q:quit"}
+	pairs := []string{"Space:menu", "?:help", "!:log", "Tab|1–3:panels", "q:quit"}
 	ta := newTestApp(t)
 	for _, w := range []int{80, 39, 38, 32, 31, 17, 16, 10, 9} {
 		ta.resize(w, 20)
@@ -908,12 +908,12 @@ func TestFooterVariants(t *testing.T) {
 		keys []string
 		want string
 	}{
-		{"normal", nil, "Space:menu ?:help Tab|1–3:panels q:quit"},
+		{"normal", nil, "Space:menu ?:help !:log Tab|1–3:panels q:quit"},
 		{"mode", []string{"D"}, "?:help Enter:drop Esc:cancel"},
 		{"filter typing", []string{"Esc", "/"}, "Enter|Tab:list Esc:clear"},
 		{"filter, no results", []string{"z", "z", "z"}, "Tab:list Esc:clear"},
-		{"popup", []string{"Esc", "Space"}, "Space:menu ?:help Tab|1–3:panels q:quit"},
-		{"one panel", []string{"Esc", "O"}, "Space:menu ?:help q:quit"},
+		{"popup", []string{"Esc", "Space"}, "Space:menu ?:help !:log Tab|1–3:panels q:quit"},
+		{"one panel", []string{"Esc", "O"}, "Space:menu ?:help !:log q:quit"},
 	}
 	for _, c := range cases {
 		ta.press(c.keys...)

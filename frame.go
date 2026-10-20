@@ -31,6 +31,7 @@ const (
 	glyphWarning    = "\U000F078F" // nf-md-alarm_light
 	glyphError      = "\U000F0238" // nf-md-fire
 	glyphSuccess    = "\U000F05E0" // nf-md-check_circle
+	glyphLog        = "\U0000F03A" // nf-fa-list: the App Log
 )
 
 // loadingFrames are nf-md-circle_slice_1 to _8 (components/layout/popup).

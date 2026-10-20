@@ -33,7 +33,8 @@ cd ~/Documents/sideproj/terminu-go && go build -o /tmp/showcase ./examples/showc
 | `Tab`、`1`–`N` | 換 panel |
 | `Esc` | 一次關一層 |
 | `q`、`Ctrl-C` | 離開（先問） |
-| `!` | 展示場自己的 core key（Rules K1）：在每個 panel 與 popup 上都打開 app log；打字列上是字元 |
+| `!` | App Log（每個 app 都有）：toast、error popup 與展示場記下的事；footer 有沒看過的錯誤時寫成 `!:N errors`；模式裡與打字列上不作用 |
+| `%` | 展示場自己的 core key（Rules K1）：在每個 panel 與 popup 上都打開展示場現在的狀態；打字列上是字元 |
 
 - P 的 `[1] PODS` 上按 `D` 是這個 panel 自己的 `[D]rag`，不會換到 Dialogs 畫面（panel 的熱鍵優先，Rules M4）。要去 Dialogs，
   先 `Tab` 到別的 panel 再按 `D`，或從 Global operation 選。

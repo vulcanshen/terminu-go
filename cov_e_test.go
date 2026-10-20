@@ -1011,7 +1011,7 @@ func TestKeyReferenceCoreKeys(t *testing.T) {
 	ta := newTestApp(t)
 	ta.press("?")
 	_, plain := covEPopup(ta)
-	if core := covEKeys(plain)["CORE KEYS"]; !slices.Equal(core, []string{"Space", "?", "Tab", "1–3", "q|Ctrl-C"}) {
+	if core := covEKeys(plain)["CORE KEYS"]; !slices.Equal(core, []string{"Space", "?", "!", "Tab", "1–3", "q|Ctrl-C"}) {
 		t.Errorf("core keys on a panel with nothing for Esc to do: %v", core)
 	}
 	ta.press("Esc", "/", "1", "Enter", "?") // a filter Esc can clear
@@ -1021,7 +1021,7 @@ func TestKeyReferenceCoreKeys(t *testing.T) {
 	}
 	ta.press("Esc", "Esc", "O", "?") // one panel
 	_, plain = covEPopup(ta)
-	if core := covEKeys(plain)["CORE KEYS"]; !slices.Equal(core, []string{"Space", "?", "q|Ctrl-C"}) {
+	if core := covEKeys(plain)["CORE KEYS"]; !slices.Equal(core, []string{"Space", "?", "!", "q|Ctrl-C"}) {
 		t.Errorf("with one panel there is no Tab nor 1–N: %v", core)
 	}
 }

@@ -155,15 +155,15 @@ func (ta *testApp) covBThreeLayers(t *testing.T) (l1, l2, l3 *layer) {
 
 func TestM1FooterEntries(t *testing.T) {
 	ta := newTestApp(t)
-	if got := ta.covBFooter(); got != "Space:menu ?:help Tab|1–3:panels q:quit" {
+	if got := ta.covBFooter(); got != "Space:menu ?:help !:log Tab|1–3:panels q:quit" {
 		t.Errorf("footer: %q", got)
 	}
 	ta.press("Space")
-	if got := ta.covBFooter(); got != "Space:menu ?:help Tab|1–3:panels q:quit" {
+	if got := ta.covBFooter(); got != "Space:menu ?:help !:log Tab|1–3:panels q:quit" {
 		t.Errorf("with a popup open the footer is the screen's under it: %q", got)
 	}
 	ta.press("Esc", "O")
-	if got := ta.covBFooter(); got != "Space:menu ?:help q:quit" {
+	if got := ta.covBFooter(); got != "Space:menu ?:help !:log q:quit" {
 		t.Errorf("a screen of one panel: %q", got)
 	}
 	ta.press("P", "D")
@@ -530,7 +530,7 @@ func TestM5KeyNames(t *testing.T) {
 func TestM5WritingByPosition(t *testing.T) {
 	ta := newTestApp(t)
 	// hint and footer: key:words, no space around the colon, one between pairs.
-	if got := ta.covBFooter(); got != "Space:menu ?:help Tab|1–3:panels q:quit" {
+	if got := ta.covBFooter(); got != "Space:menu ?:help !:log Tab|1–3:panels q:quit" {
 		t.Errorf("footer: %q", got)
 	}
 	f := ta.Frame()
@@ -732,7 +732,7 @@ func TestL1Core80x40(t *testing.T) {
 	ta := newTestApp(t)
 	ta.resize(80, 40)
 	text := ta.screenText()
-	for _, want := range []string{"[1] PODS", "[2] LOG", "[3] SETTINGS", "Space:menu ?:help Tab|1–3:panels q:quit"} {
+	for _, want := range []string{"[1] PODS", "[2] LOG", "[3] SETTINGS", "Space:menu ?:help !:log Tab|1–3:panels q:quit"} {
 		if !strings.Contains(text, want) {
 			t.Errorf("at 80 × 40 %q is not whole", want)
 		}
@@ -832,13 +832,13 @@ func TestL3ChromeRowsFixed(t *testing.T) {
 		if top := StripStyles(f[2]); !strings.HasPrefix(top, "┏") {
 			t.Errorf("%d wide: the panels do not start on the third row: %q", w, top)
 		}
-		full := "Space:menu ?:help Tab|1–3:panels q:quit"
+		full := "Space:menu ?:help !:log Tab|1–3:panels q:quit"
 		got := ta.covBFooter()
 		if !strings.HasPrefix(full, got) || (got != full && full[len(got)] != ' ') {
 			t.Errorf("%d wide: the footer drops whole pairs from its end: %q", w, got)
 		}
 	}
-	if got := ta.covBFooter(); got != "Space:menu ?:help" {
+	if got := ta.covBFooter(); got != "Space:menu ?:help !:log" {
 		t.Errorf("30 wide: %q", got)
 	}
 }
@@ -1713,7 +1713,12 @@ func TestF7ShortScreenKeepsFooter(t *testing.T) {
 				rows = rows[:1] // it covers the footer (Rules F7)
 			}
 			for _, row := range rows {
-				if got, want := StripStyles(after[row]), StripStyles(before[row]); got != want {
+				want := StripStyles(before[row])
+				if name == "error" && row == sh-1 {
+					// The error is logged, unseen (components/layout/screen).
+					want = Pad(strings.Replace(strings.TrimRight(want, " "), "!:log", "!:1 error", 1), 80)
+				}
+				if got := StripStyles(after[row]); got != want {
 					t.Errorf("%s at 80x%d: row %d is %q, want %q", name, sh, row, got, want)
 				}
 			}

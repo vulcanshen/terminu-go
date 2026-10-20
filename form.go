@@ -271,6 +271,7 @@ func (fv *formView) failed(a *App, it formItem, err error) tea.Cmd {
 	label, subject := fv.buttonParts(it)
 	n := errorPopup(label+" failed", "", err.Error())
 	n.title = popupTitle(label+" failed", subject)
+	a.Log(Error, errorText(label+" failed", subject, err.Error()))
 	return a.open(n)
 }
 

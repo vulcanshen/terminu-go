@@ -7,7 +7,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// CoreKey is a core key of the app's own (Rules K1): "!" for the app's log.
+// CoreKey is a core key of the app's own (Rules K1).
 type CoreKey struct {
 	Key, Desc string
 	Do        func() tea.Cmd
@@ -25,7 +25,7 @@ func (a *App) coreKey(key string) *CoreKey {
 // isCoreKey reports a key that means the same on every surface: the table of
 // Rules K1, and the app's own.
 func (a *App) isCoreKey(key string) bool {
-	return slices.Contains([]string{"Tab", "Shift-Tab", "Enter", "Esc", "Space", "?", "q", "Ctrl-C"}, key) ||
+	return slices.Contains([]string{"Tab", "Shift-Tab", "Enter", "Esc", "Space", "?", "!", "q", "Ctrl-C"}, key) ||
 		len(key) == 1 && key[0] >= '1' && key[0] <= '9' || a.coreKey(key) != nil
 }
 
