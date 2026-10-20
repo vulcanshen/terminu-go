@@ -1,6 +1,6 @@
-# tdp v0.8.3 coverage
+# tdp v0.9.0 coverage
 
-tdp v0.8.3 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
+tdp v0.9.0 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
 （[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -52,8 +52,9 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 
 | 出處 | 規定 | 展示場 | 測試 |
 |---|---|---|---|
-| K1 | 七種 core key（`Tab` `Enter` `Esc` `Space` `?` `q` `1`–`9`）在每個 surface 意義不變；例外只有輸入態、PTY、模式、表單上的 `q` | 每個畫面、每種 popup | `TestK1CoreKeysEverySurface` |
-| K1 | letter hotkey 不能佔用 core key；app 可另定自己的 core key，定了就在所有 surface 一樣 | lib：登記時拒絕（`Run` 也檢查 global 與畫面的鍵）；`App.CoreKeys`：展示場的 `!` 在每個 panel 與 popup 都開 app log，打字列上是字元 | `TestK1HotkeyCannotTakeCoreKey`、`TestK1CustomCoreKeyEverywhere` |
+| K1 | 八種 core key（`Tab` `Enter` `Esc` `Space` `?` `!` `q` `1`–`9`）在每個 surface 意義不變；例外只有輸入態、PTY、模式、表單上的 `q` | 每個畫面、每種 popup | `TestK1CoreKeysEverySurface` |
+| K1 | panel 上按 `!` 打開 App Log；`!` 不能當熱鍵、也不能當 app 自己的 core key | 任一 panel 按 `!` | `TestAppLogOnBang`；展示場的 `TestFirstLaunch`（tdptest.Check 在每個畫面開一次） |
+| K1 | letter hotkey 不能佔用 core key；app 可另定自己的 core key，定了就在所有 surface 一樣 | lib：登記時拒絕（`Run` 也檢查 global 與畫面的鍵）；`App.CoreKeys`：展示場的 `%` 在每個 panel 與 popup 都開展示場的狀態，打字列上是字元 | `TestK1HotkeyCannotTakeCoreKey`、`TestK1CustomCoreKeyEverywhere` |
 | K1 | 數字鍵：panel 上（沒有 popup 時）跳到目前畫面的第 N 個 panel；沒有那個號碼不作用；換畫面就是那個畫面的 panel | P 按 `1` `2` `3`、按 `4`（不作用）；換到 I 按 `2` | `TestK1DigitsJumpPanels`、`TestK1DigitsPerScreen` |
 | K1 | app 不能在 panel 上登記數字熱鍵；popup 裡數字自由（select 選項的數字熱鍵）；數字的 global 熱鍵只在 global operation popup 裡按 | lib：登記時拒絕；I 的 `Profile`（`[1] clock`）；global operation popup 的 `[1] About`（在 panel 上按 `1` 是跳 panel，`?` 也不列它） | `TestK1DigitHotkeyRejectedOnPanel`、`TestK1DigitsFreeInPopups`、`TestM4DigitGlobalOnlyInPopup`、`TestK1DigitGlobalNotInPanelKeyRef` |
 | K2 | `Tab`：畫面上換 panel、最後一個回到第一個；不跨畫面、不離開 popup | P 按 `Tab` 走過三個 panel | `TestK2TabCyclesPanels`、`TestK2TabStaysInPopup` |
@@ -92,11 +93,11 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | K10 | 其他 Alt 出口鍵要不要 confirm、保留哪些鍵、出口後 focus 落點：app 決定（lib 提供選項） | T `[2] SESSIONS` 的 `[Alt-t]erm` 隱藏 terminal popup | `TestK10ReservedKeysShown`、`TestTerminalKeyTakesSeveral`（`TerminalKey.Keys`：一組鍵寫一次） |
 | K10 | 子程序還沒準備好時可以不轉送一般鍵，但 `Ctrl-C` 照轉、出口鍵照有效照揭露 | T `[1] SHELL` 的 `Slow start`（模擬連線中） | `TestK10NotReadyForwardsCtrlC`、`TestTerminalFirstOutput`（lib：`Terminal.OnFirstOutput`、`Spoke`，app 拿來結束 NotReady 與 loading） |
 | K10 | `Alt-Esc` 與兩次 `Esc` 的 byte 一樣（實作參考：bubbletea v1.3.10 實測會黏）：C2 驗 | 見紀錄 C2 | — |
-| K11 | 模式裡 `Space` 不作用；`?` 開模式的 key reference；`Esc` 離開、回到進入前的狀態；`q`、`Ctrl-C` 照 K9 | P `[1] PODS` 的 `[D]rag` | `TestK11ModeCoreKeys` |
+| K11 | 模式裡 `Space`、`!` 不作用（`TestAppLogOnBang`）；`?` 開模式的 key reference；`Esc` 離開、回到進入前的狀態；`q`、`Ctrl-C` 照 K9 | P `[1] PODS` 的 `[D]rag` | `TestK11ModeCoreKeys` |
 | K11 | 模式裡只有模式自己的鍵與上表的 core key 作用：panel 熱鍵與 global 熱鍵都不作用，按了不出聲 | Drag 裡按 `m`（panel 熱鍵）、`I`（global 熱鍵） | `TestK11HotkeysSilentInMode` |
 | K11 | 模式可以暫停 `Tab` 與數字鍵，按了要有回應（toast）；toast 在時第一個 `Esc` 先收 toast | Drag 裡按 `Tab`、`2` | `TestK11TabPausedToast`、`TestK11DigitsPausedToast` |
 | K11 | 模式名在框的上框右側、外框換模式色、離開恢復；不只靠顏色 | Drag；D「Note viewer」的 `v`；I 的 `Segments` 按 `D` | `TestK11ModeLabel`、`TestReorderDrag` |
-| K11 | popup 裡的模式（reorder 的 Drag、viewer 的選取模式）也一樣：只有模式的鍵與上表的 core key 作用，app 自己的 core key 也不作用 | I 的 `Segments` 按 `D` 再按 `!`；D「Note viewer」按 `v` 再按 `!` | `TestReorderDragModeKeys`、`TestK11PopupModeCoreKeys` |
+| K11 | popup 裡的模式（reorder 的 Drag、viewer 的選取模式）也一樣：只有模式的鍵與上表的 core key 作用，app 自己的 core key 也不作用 | I 的 `Segments` 按 `D` 再按 `%`；D「Note viewer」按 `v` 再按 `%` | `TestReorderDragModeKeys`、`TestK11PopupModeCoreKeys` |
 | K12 | 不在打字的地方 `j k u d g G h l` 保留給移動，任何動作都不佔 | lib：登記時拒絕（panel 與 menu；popup 裡數字可以） | `TestK12HotkeyCannotTakeMovement`、`TestK12HotkeyCannotTakeMovementInMenu`、`TestK1DigitsFreeInPopups` |
 | K12 | 有左右結構：`h\|l` 左右（切 tab、跨側、日曆前後一天） | P `[1] PODS` 的 tab；I 的 `Meeting` | `TestK12HLSwitchTabs`、`TestDatetimePicker` |
 | K12 | 一維清單：`h\|k` 往前、`j\|l` 往後；在有 tab 的 panel 裡 `h\|l` 給 tab；reorder 也是（含 Drag）；key reference 照這樣寫（表單、沒有 tab 的一列一個值、menu、reorder 寫 `h\|k`、`j\|l`） | D「Form: New host」；P `[3] SETTINGS`；I `[1] INPUTS`；I 的 `Segments`；各處按 `?` | `TestK12OneDimensional`、`TestReorderOneWay`、`TestKeyReferenceMoveSection`、`TestK6PopupKeysOnly` |
@@ -111,7 +112,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 
 | 出處 | 規定 | 展示場 | 測試 |
 |---|---|---|---|
-| M1 | 非輸入態的每個畫面常駐顯示 `?` 與 `Space`（模式裡不必顯示 `Space`） | footer，每個畫面（popup 開著時照底下畫面的寫） | `TestM1FooterEntries` |
+| M1 | 非輸入態的每個畫面常駐顯示 `?`、`Space` 與 `!`（模式裡不必顯示 `Space`、`!`）；PTY 裡改寫出口鍵、保留鍵、互動 terminal 的 `Alt-v`、`PgUp` | footer，每個畫面（popup 開著時照底下畫面的寫） | `TestM1FooterEntries` |
 | M2 | Space menu 三區：`item operation` → `panel operation` → 一列 `Global operation`（沒熱鍵），順序固定、標題英文原字（畫成大寫，components §大寫） | 任一 panel 按 `Space` | `TestM2SectionsOrder`、`TestM2HeadingStrings` |
 | M2 | global 那一列不加標題、跟上面用分隔線隔開；沒有對象就沒有那一區；item 與 panel 一律加標題（只剩一區也加） | P `[1] PODS` 的 `Empty` 之後按 `Space`（沒有 item 區） | `TestM2NoTargetNoSection`、`TestM2HeadingAlways` |
 | M3 | 每個 item / panel operation 都在 Space menu；每個 global operation 都在 global operation popup；popup 的操作在 hint 與 `?` | lib：只有登記過的動作才有熱鍵 | `TestM3EveryHotkeyInMenu`、`TestValuesEnterInMenuAndKeys`（一列一個值的 `Enter` 也在 Space menu 與 `?`） |
@@ -165,7 +166,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | F3 | `Esc` 立刻開始關閉任何 popup（含 toast）；關閉照常有動畫；在關的 popup 不再理會 `Esc` 與其他鍵 | 連按兩下 `Esc` 關兩層 | `TestF3EscImmediate`、`TestF3ClosingIgnoresKeys` |
 | F3 | 例外：PTY（toast 只能等時間到）、textarea 寫入狀態、改過的表單、textarea 與 reorder 先 confirm | T；I 的 `Comment`；D「Form: New host」改過再 `Esc`；I 的 `Segments` 搬過再 `Esc` | `TestF3Exceptions`、`TestReorderEsc` |
 | F4 | 從 A 開 B，A 留著；取消 B 回 A；多層一樣 | D 的疊法情境 | `TestF4KeepSource`、`TestInputSteps`（多步驟的 input：`Stay`，`Esc` 退一步、值都在） |
-| F5 | 錯誤立刻出現（toast 或 popup）、`Esc` 可關、不阻塞 app；有沒有錯誤歷史由 app 決定 | P `[1] PODS` 的 `Fail`；D「Error popup」 | `TestF5ErrorNonBlocking` |
+| F5 | 錯誤立刻出現（toast 或 popup）、`Esc` 可關、不阻塞 app；錯誤也記進 App Log，toast 收掉之後照樣查得到（lib：每個 toast 與 error popup 自動記） | P `[1] PODS` 的 `Fail`；D「Error popup」後按 `!` | `TestF5ErrorNonBlocking`、`TestAppLogEntries` |
 | F6 | 要不要 confirm 由 app 決定，決定了每次都問；經 picker 明確選的可算已確認 | lib：動作登記「先問」 | `TestF6ConfirmEveryTime`、`TestF6AskFor`（`Action.AskFor`：問句執行時才產生、回 nil 不問；從 menu 跑時 `Esc` 回 menu）、`TestOnCancel`（`OnCancel`：沒回答就關掉時告訴 app） |
 | F6 | 沒有回答就關掉時讓 app 知道：表單也有 `OnCancel`（`Esc`、捨棄的 confirm、底下的 popup 關掉）；input 沒改值就按 `Enter` 時 app 聽得到（`Unchanged`：多步流程收整串、等回答的 prompt 回答原值），K3 的「不寫回」照舊 | D「Form: New host」按 `Esc`（測試驗 `OnCancel`） | `TestFormOnCancel`、`TestInputUnchangedHeard` |
 | F6 | `Enter` 接受、`Esc` 取消，回答只有這兩個鍵（沒有 `y`、`n`）；寫出接受會做的事；不能被誤觸完成 | D「Confirm」 | `TestConfirmKeys`（`y`、`n` 不作用，`?` 只列 `Enter`、`Esc`） |
@@ -207,6 +208,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | E1 | 展示場：`showcase version`（`--version`、`-v`）印版號；`showcase help`（`-h`、`--help`）印命令列用法；lib 不適用 | 執行四種寫法 | `TestE1VersionHelp` |
 | E2 | 變數名 `<APP>__<NAME>`；lib 讀的變數掛在 app 的名字底下；`TERMINU__ICON_WIDTH`、`TERMINU__POWERLINE_WIDTH` 給子程序 | lib 提供變數名的函式；展示場只讀 `SHOWCASE__…` | `TestE2EnvNames` |
 | E3 | 設定與資料的位置（v0.6.4 補了 Windows）：lib 不適用，展示場不存東西；file-picker 的 `~/` 是使用者的家目錄（`os.UserHomeDir`，Windows 上就是 `%USERPROFILE%`）；家族共用的設定 key `hide_secrets_in_preview`（預設 `false`）、`input_tab_width`（預設 `4`）由 app 讀，交給 lib 的 `App.HideSecretsInPreview`、`App.InputTabWidth`；畫在畫面上的內容裡的 Tab（viewer、檔案預覽、清單、menu……）畫成 `input_tab_width` 格空白，表單與 panel 上的值、輸入框的打字列例外：畫成紅色的 `\t` | 展示場的 global `Hide secrets in preview`；I 的 `Separator` | `TestFilePreviewHidesSecrets`、`TestTextarea`、`TestE3TabsDrawnAsSpaces`、`TestValueControlChars` |
+| E3 | 讀不了時：app 自己的設定、狀態、資料讀不了，開 `MOVE ASIDE` confirm（路徑與原因）、hint `Enter:move Esc:quit`；`Enter` 改名成 `.bak`（已經有就 `.bak.1`、`.bak.2`……，不蓋掉，問句寫實際的名字）、照常開始；`Esc` 離開 app，`Run` 回傳路徑與原因給 main 寫到 stderr（lib：`App.MoveAside`） | D「Move aside: a file it can’t read」 | `TestMoveAside`、`TestMoveAsideNeverOverAnother` |
 | E4 | 需要 Nerd Font 與 truecolor（lib 的 README 寫明）；PUA glyph 在程式碼裡寫成 code point | 看 README；掃原始碼找不到 PUA 字元 | `TestE4NoLiteralPUA` |
 | E5 | 量的是游標實際前進幾格；所有量寬度的地方走同一個函式（含疊 popup）；畫到終端機用 bubbletea v1 的 renderer（紀錄 C1） | `SHOWCASE__ICON_WIDTH=2`；`proto/c1/tmux-check.sh` 的作法 | `TestL4EveryRowFullWidth`（icon 兩格）、`TestE5OutputDropsEraseRight`（renderer 補的「清到行尾」拿掉，紀錄 C1）、`TestVTWideCharacters`（PTY 裡的字也照同一個寬度放） |
 | E5 | icon 與 powerline 符號（U+E0A0–U+E0D7）各量各的；啟動時 CPR 探測（unix）；順序 `<APP>__ICON_WIDTH` → `TERMINU__ICON_WIDTH` → `LC_TERMINU_ICON_WIDTH`（隔著 ssh 帶過來的）→ 探測，powerline 照 `<APP>__POWERLINE_WIDTH` → `TERMINU__POWERLINE_WIDTH` → `LC_TERMINU_POWERLINE_WIDTH` → 探測；Windows 預設一格 | 在 icon 佔兩格的 tmux 裡啟動看 statusbar（寫出兩種寬度） | `TestE5WidthOrder`、`TestE5ProbeCPR` |
@@ -241,6 +243,8 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | §折行 | textarea、viewer、confirm、toast、error popup、splash 太窄時都照同一套：在空白處斷，下一個字放不下就整個接到下一列；寬字每個字之間都可以斷，一列填滿再換列；一個字比一列還長才照格子切；寬字不切成兩半；斷在空白處時，textarea 與 viewer 的每個字元都要畫出來（一個字剛好填滿一列、後面接著空白，那個空白畫在下一列的第一格），只是顯示的文字（confirm、toast、error popup、splash）不畫那個空白 | I 的 `Comment`；D「Note viewer」把視窗縮窄、「Confirm: long」、「Error popup: long」；P 的 `Toast long`；把視窗縮窄按 `V` | `TestWrap`、`TestFoldAt`、`TestTextareaWrapAndNumbers`、`TestViewerFoldsAtSpaces`、`TestTextareaUpToShorterRow` |
 | §大寫 | 要大寫：panel 膠囊與 tab、畫面 chip、popup 標題、表頭、清單的分組標題、一列一個值的 label、menu 與 key reference 的區塊標題；熱鍵標記裡的字母照原樣；名稱、路徑在標題與 hint 裡都照原樣（表單按鈕的 hint 只有動詞小寫：`Enter:export hosts.yaml`） | 每個畫面；畫面 chip `[t]ERMINAL`（小寫的熱鍵照原樣）；T terminal popup 的標題 `SESSION: shell`；D「Form: long」的 `EDIT: prod-db-01`；D「Form: with actions」的 `Export hosts.yaml` | `TestUppercaseWhereRequired`、`TestUppercaseKeepsHotkeyAndNames`、`TestPopupTitleSubject`、`TestFormButtonSubject` |
 | §大寫 | 不改：值、menu 的 label 與說明、hint 與 footer 的說明、按鍵名、模式名、app 的內容 | 同上 | `TestUppercaseLeavesContent` |
+| components §控制字元 | 名字與短字（表單與 panel 上的值、清單的格子與位置列、menu、popup 的標題、toast、confirm、error popup、選項、說明列、錯誤列、空狀態、statusbar、tab 的名稱、finder 的項目）裡每個控制字元，連 Tab、`\n`、顏色碼的 ESC，都畫成紅色的名字，不丟、不換成空白、不送給終端機；色塊上 Red 底 Base 字（lib：`Escape`；app 要上色的另外給 `Span`：`Row.Styled`、`Field.Styled`、`FormField.Styled`、`App.Status`） | 任何地方：展示場的資料沒有控制字元，靠測試 | `TestControlCharsNamesAndShortTexts`、`TestControlCharsOnABlock`、`TestSpansStyled`；tdptest 的 `TestTrickyValuesEverywhere` |
+| components §控制字元 | 拿來讀的內容（viewer、panel 上的 log、檔案預覽、finder 的預覽）照終端機的樣子畫，見 note 的「viewer 裡的 Tab 與控制字元」 | P `[2] LOG`（彩色的等級） | `TestReadingContent` |
 
 ## layout/screen
 
@@ -248,7 +252,8 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 |---|---|---|---|
 | screen §由上往下 | 最上面一列（多畫面：chip 列 + 全寬分隔線；單畫面：可有 statusbar）、panel 區、最下面一列 footer；每個畫面的 panel 從 `[1]` 編號 | 每個畫面；lib 的單畫面版本由測試畫 | `TestScreenRows` |
 | screen §footer | 一列、M5 寫法、鍵 Blue 冒號說明 Overlay0；放不下從尾端整組捨 | 縮到 40 欄 | `TestFooterDropsWholePairs` |
-| screen §footer | 一般 `Space:menu ?:help Tab\|1–N:panels q:quit`；單 panel `Space:menu ?:help q:quit`；模式 `?:help` + 模式的鍵 + `Esc:<動詞>`；filter 打字中 `Enter\|Tab:list Esc:clear`，沒有結果時 `Tab:list Esc:clear`；PTY 在 panel 裡：出口鍵 + 保留鍵；popup 開著時照底下畫面的寫、跟著淡化 | P 一般與 Drag；P filter（打 `zz` 沒有結果）；T `[1] SHELL`；任一 popup；lib 的單 panel 版本 | `TestFooterVariants`、`TestFooterUnderPopupDimmed` |
+| screen §footer | 一般 `Space:menu ?:help !:log Tab\|1–N:panels q:quit`；單 panel `Space:menu ?:help !:log q:quit`；模式 `?:help` + 模式的鍵 + `Esc:<動詞>`；filter 打字中 `Enter\|Tab:list Esc:clear`，沒有結果時 `Tab:list Esc:clear`；PTY 在 panel 裡：出口鍵 + 保留鍵（互動 terminal 再接 `Alt-v:select PgUp:history`）；popup 開著時照底下畫面的寫、跟著淡化 | P 一般與 Drag；P filter（打 `zz` 沒有結果）；T `[1] SHELL`；任一 popup；lib 的單 panel 版本 | `TestFooterVariants`、`TestFooterUnderPopupDimmed` |
+| screen §footer | `!` 的提醒：App Log 有沒看過的錯誤時 `!:N errors`（說明 Red），只有警告時 `!:N warning(s)`（Peach），打開後回到 `!:log` | D「Error popup」關掉後看 footer，按 `!` 再看 | `TestAppLogFooter` |
 | screen §footer | terminal popup 開著時 footer 整列不畫：最後一列兩端是空白，不露出 footer 的字 | T 的 terminal popup | `TestTerminalPopupSize` |
 | screen §畫面 chip 列 | 每個畫面一個膠囊、串的顏色 Blue（選中填 Blue 字 Base 粗體、沒選中字 Blue）；放不下先縮 `[P] [I] [D] [T]` 再收掉沒選中的 | 每個畫面；縮窄 | `TestScreenChips`、`TestScreenChipsShrink` |
 | screen §畫面 chip 列 | 右邊放 statusbar；下面全寬粗線 `━` Overlay0；長工作時從左填 Green 進度條、狀態文字 Green；terminal popup 開著時 chip 列與分隔線留著 | `Start task`；開 terminal popup 時再看一次 | `TestChipRowProgress` |
@@ -381,7 +386,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | confirm §長相 | 標題 U+F0ECC + 動作名（大寫）；問句放最後、下面接 hint；內容放問句上面、空一列 | D「Confirm」「Confirm: with details」 | `TestConfirmLayout` |
 | confirm §長相 | 問句 Text 不加粗、內容 Overlay0、警告那一句 Peach（哪句由 app 定） | D「Confirm: with details」 | `TestConfirmColors` |
 | confirm §長相 | 太長折行不截；內容長時只有內容 `j\|k` 捲、問句固定；寬度照「內容確定」 | D「Confirm: long」 | `TestConfirmWrapAndScroll` |
-| confirm §按鍵 | `Enter` 接受、`Esc` 取消，沒有 `y`、`n`；`Space` 不作用；hint `Enter:<動詞> Esc:cancel` | D「Confirm」 | `TestConfirmKeys`、`TestConfirmHint` |
+| confirm §按鍵 | `Enter` 接受、`Esc` 取消，沒有 `y`、`n`；`Space` 不作用；hint `Enter:<動詞> Esc:cancel`；唯一的例外是讀不了時的 confirm：`Esc:quit` | D「Confirm」；D「Move aside」 | `TestConfirmKeys`、`TestConfirmHint`、`TestMoveAside` |
 
 ## dialog/note
 
@@ -392,7 +397,9 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | note §長相 | viewer 的搜尋：命中的字全部加底線、保留原本的顏色；目前那一筆畫成 cursor 色塊；不另外加顏色（Yellow 只給選取）。lib：搜尋由 app 做（`/`、`n\|N`），把命中交給 `Viewer.Hits`、`Current`（`FindText` 找不分大小寫的） | D「Note viewer」按 `/` 打 `nginx`，再 `n`、`N` | `TestViewerSearchHits` |
 | note §viewer 的行號 | viewer（YAML、App Log、檔案內容）左邊有行號：每行第一列、靠右、後空一格、折下來的列空白；Overlay0，選取模式裡游標那行 Text；至少三位：行數固定的取 max(3, 位數)、打開後不變，串流的超過 999 行才跳寬；複製不含行號；`N of M` 跟行號同一套數字 | D「Note viewer」；P `[2] LOG` 按 `Enter`；I `[2] FILES` 的 `[V]iew` | `TestViewerLineNumbers`、`TestViewerLineNumbersStream`、`TestViewerCopyNoNumbers`、`TestViewerFoldedScroll` |
 | note §viewer 的行號 | 有 tab 的 viewer：行號欄照看過的頁裡最寬的，只變寬、不變窄（串流的頁也一樣） | D「Popup with tabs」、DevTools 切 tab | `TestViewerTabGutterOnlyGrows` |
-| note §viewer 裡的 Tab 與控制字元 | Tab 畫成 `input_tab_width` 格空白、不對齊 tab 停點；換行前的 `\r`（CRLF）不畫；其他控制字元畫成名字、Red；複製照原樣；file-picker 預覽的文字檔一樣 | I `[2] FILES` 的 `main.go` 按 `[V]iew`（有 Tab）；`[/] Find` 預覽同一個檔 | `TestViewerTabs`、`TestViewerControlChars`、`TestViewerEscapeSequencesShown`（不是樣式的 escape sequence 照字畫、ESC 寫名字） |
+| note §viewer 裡的 Tab 與控制字元 | 照終端機的樣子：Tab 畫成 `input_tab_width` 格空白、不對齊 tab 停點；`\n` 是換行（app 交來的一行裡夾著也拆）；換行前的 `\r`（CRLF）不畫；顏色碼照著上色；一行裡的 `\r` 只留最後的狀態；其他控制字元與不是顏色碼的序列畫成名字、Red；複製照原樣；file-picker 預覽的文字檔一樣（檔案自己的顏色碼也照著上色） | I `[2] FILES` 的 `main.go` 按 `[V]iew`（有 Tab）；`[/] Find` 預覽同一個檔 | `TestViewerTabs`、`TestViewerControlChars`、`TestViewerEscapeSequencesShown`（不是樣式的 escape sequence 照字畫、ESC 寫名字）、`TestReadingContent`、`TestFilePreviewEscapes` |
+| note §App Log | 每個 app 都有；`!` 在 panel 上打開，是 viewer、最新的在最下面、打開時在最後、開著時新的一筆照樣進來；每一筆 `HH:MM:SS`（Overlay0）、等級（`INFO` Text、`OK` Green、`WARN` Peach、`ERR` Red，四格靠左）、發生的事；每一個 toast 與 error popup 自動記，app 用 `App.Log` 記動作與背景的事（任何 goroutine 都能叫） | 任一 panel 按 `!`；展示場啟動時記一筆 | `TestAppLogEntries` |
+| note §App Log | 只放在記憶體，筆數有上限（1000），滿了丟最舊的 | lib | `TestAppLogInMemory` |
 | note §viewer 的語法顏色 | 有固定格式的照 file-picker 預覽上色（chroma catppuccin-mocha、只上前景色）；語言由 app 給（`Viewer.Lang`），檔案內容照檔名；沒有固定格式或判斷不出來的是純文字 Text（建議；app 自己給的顏色保留，例：log 的 ERROR、WARN 行）；行號 Overlay0；選取範圍 Yellow 底 Base 字、範圍裡不顯示語法顏色 | D「Note viewer」（YAML）；I `[2] FILES` 的 `[V]iew`；P `[2] LOG` 按 `Enter`（ERROR 紅、WARN 橘保留） | `TestViewerSyntaxColours` |
 | note §按鍵 | 折行的 viewer 以畫出來的一列為單位捲（`j\|k` 一列、`u\|d` 照列算）；`N-M of T` 的 N、M 是最上面、最下面那一列所屬的行；選取模式照舊以行為單位 | D「Note viewer」把視窗縮窄 | `TestViewerScrollsRows` |
 | note §按鍵 | 捲動 `j\|k` `u\|d` `gg\|G`；只用 `Esc` 關（`Enter`、`Space` 不關）；error popup（不管怎麼打開的）與表單的打字說明 `Enter` 也能關；hint 熱鍵在前、`Esc:close` 最後 | 同上；D「Error popup」 | `TestNoteKeys` |
@@ -412,8 +419,9 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | terminal §用途 | PTY 在 panel 裡時不是 popup：panel 的框、鍵寫在 footer；focus 在 PTY 裡時 panel 下框不寫 hint | T `[1] SHELL` | `TestK10KeysToChild`、`TestK10ExitKeyShown` |
 | terminal §長相 | 大小照 F7 的例外（chip 列與分隔線留著）；沒有 statusbar 的 app 從第一列開始；上下左右都不留白；標題 U+F018D + 跑的是什麼；子程序的游標畫成一格 Text 底、Base 字的方塊，DECSCUSR 要的形狀不理（panel 裡也一樣） | T `[2] SESSIONS` 的 `[Alt-t]erm` | `TestTerminalPopupSize`、`TestTerminalCursorBlock` |
 | terminal §按鍵 | 出口鍵可以設定（預設 `Alt-Esc`，`Alt-Esc` 一律先問、其他由 app 決定要不要問；lib：`Terminal.ExitKey`、`ExitAsks`）；保留鍵執行中能換；hint 與 footer 照當下的設定 | 測試驗 | `TestTerminalExitKey` |
-| terminal §歷史模式 | `PgUp` 進入 History 模式（框與模式名 Yellow、`┫History┣`）；`j\|k`、`u\|d`、`gg\|G`、`PgUp\|PgDn` 捲歷史、不送給子程序；`Esc` 回即時畫面；其他鍵（含 `q`、`Ctrl-C`）先離開模式再送給子程序；hint／footer 與 `?` 照 K11 揭露 | T `[1] SHELL` 跑幾行後按 `PgUp` | `TestTerminalHistoryMode` |
-| terminal §選取模式 | app 保留的組合鍵進入（展示場 `Alt-v`，常駐揭露；lib：`Terminal.SelectKey`）；畫面凍住、子程序後來的輸出先不畫，游標可以往上走進歷史；按鍵、顏色、捲動位置、複製後的 Success toast 照 note 的選取模式；離開回到即時畫面，之後按鍵照常送給子程序 | T `[1] SHELL` 按 `Alt-v`、`v`、移動、`y` | `TestTerminalSelectMode` |
+| terminal §歷史模式 | 互動 terminal（lib：`Terminal.Interactive`）上 `PgUp` 進入 History 模式（框與模式名 Yellow、`┫History┣`）；`j\|k`、`u\|d`、`gg\|G`、`PgUp\|PgDn` 捲歷史、不送給子程序；`Esc` 回即時畫面；其他鍵（含 `q`、`Ctrl-C`）先離開模式再送給子程序；hint／footer 與 `?` 照 K11 揭露 | T `[1] SHELL` 跑幾行後按 `PgUp` | `TestTerminalHistoryMode` |
+| terminal §選取模式 | 互動 terminal 上 `Alt-v` 進入（家族的 `v` 加 `Alt`，不是 app 挑的，常駐揭露）；畫面凍住、子程序後來的輸出先不畫，游標可以往上走進歷史；按鍵、顏色、捲動位置、複製後的 Success toast 照 note 的選取模式；離開回到即時畫面，之後按鍵照常送給子程序 | T `[1] SHELL` 按 `Alt-v`、`v`、移動、`y` | `TestTerminalSelectMode` |
+| terminal §哪些 PTY 有這兩種模式 | app 開一個程式做一件事的 PTY（沒標 `Interactive`）兩種模式都沒有，`PgUp`、`Alt-v` 都給程式；子程序佔滿整個畫面（alternate screen）時 `PgUp` 給它、hint 不寫 `PgUp:history`，選取的是凍住的那個畫面；使用者把所有鍵給子程序時（lib：`Terminal.AllKeys`）選取模式讓出去、`PgUp\|PgDn` 送進去，解開的鍵照常揭露 | D「Form: New host」的 `Copy key`（ssh-copy-id，不是互動的）；T `[1] SHELL` 裡開 `less`；T `[1] SHELL` 按 `Alt-l` | `TestTerminalNotInteractive`、`TestTerminalFullScreen`、`TestTerminalAllKeys` |
 | terminal §按鍵 | 按鍵都給子程序；hint 出口鍵第一、最後才捨；`Alt-Esc:exit`（結束）／`Alt-Esc:leave`（留著），不寫 `close`；後面跟保留鍵；`Alt-Esc` 先 confirm | 同上 | `TestK10ExitKeyShown`、`TestK10AltEscConfirms`、`TestEncodeKey` |
 
 ## dialog/toast
@@ -424,6 +432,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | toast §長相 | 畫面下方水平置中；下框一律在畫面倒數第三列，最下面兩列一直看得到（平常是 panel 下框與 footer；terminal 開著時是 PTY 最後一列與 terminal 下框）；寬度照「內容確定」 | P 的 `Toast info`；T 的 terminal popup 裡按 `Alt-b`（卡住結束時跳 toast） | `TestToastPosition`、`TestToastPositionOverTerminal` |
 | toast §長相 | 文字置中、太長折行每列置中；最多幾列由 app 設（lib：`App.ToastLines`，預設不限），超過時最後一列結尾 `…`；不高過畫面倒數第三列以上放得下的 | `Toast long` | `TestToastWrapLines` |
 | toast §長相 | Success U+F05E0 `SUCCESS` Green 字；Info U+F024 `INFO` Text；Warning U+F078F `WARNING` Peach；Error U+F0238 `ERROR` Red | P 的 `Toast success`、`Toast info`、`Toast warning`、`Toast error` | `TestToastKinds` |
+| toast §長相 | 做完的事用 Success 還是 Info 由 app 選（lib：`Toast` 的種類；表單動作的 `FormResult.Info`）；失敗一律 Error | lib | `TestFormActionRun` |
 | toast §長相 | Success、Info 2200ms，Warning、Error 4400ms；第二個來直接取代、重新計時 | 連按兩次 `Toast …` | `TestToastDuration`、`TestToastReplace` |
 | toast §按鍵 | `Esc` 立刻收、比其他 popup 先收；其他鍵穿過；PTY 裡只能等時間到；hint `Esc:close` | toast 開著時按 `j`；T 的 terminal popup 裡按 `Alt-b` | `TestToastEscFirst`、`TestToastKeysPassThrough` |
 
@@ -442,7 +451,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | input §新建一個值：建議值 | 沒有舊值、app 有合理的預設時用灰字提議（text、number）；長相、`Tab`、打字、`Backspace`、hint 跟舊值一樣；什麼都沒碰按 `Enter` 用建議值、照常檢查、寫回；不能空又有建議值時 `Enter` 用建議值，`Backspace` 丟掉後再 `Enter` 才是「不能空」（lib：`TextInput.Suggest`、`NumberInput.Suggest`） | I 的 `Archive`（`assets.zip`） | `TestInputSuggestedValue` |
 | input §不放 placeholder | input popup 裡不放 placeholder | I 每一列 | `TestInputNoPlaceholder` |
 | input §貼上的控制字元 | 一行的值：貼上的控制字元一個都不丟、畫成紅字不切開：`\r` `\n` `\t` 寫名字（2 格）、其他 C0、DEL、C1 寫 `\xNN`（4 格）；`\r\n` 是兩個；灰列裡跟著灰；游標停在上面時整個控制字元 Red 底、Base 字（textarea 的寫與移也一樣）；`Backspace` 整個刪；遮罩照遮 | I 的 `Name` 貼上多行、貼上帶顏色的字，`←` 移到控制字元上 | `TestPasteMarkers`、`TestPasteControlChars`、`TestCursorOnControlChar` |
-| input §貼上的控制字元 | 不是打字來的值走同一個過濾；會被拿去用的在 `Enter` 時擋、錯誤列點名值（`Name can't have control characters`）；在去空白字元之前檢查；搜尋與篩選的打字列只畫不擋 | I 的 `Name`；I `[/] Find` 貼上 | `TestPasteBlockedOnEnter`、`TestPasteSearchNotBlocked`、`TestSearchInputNotBlocked`（只拿來搜尋的 text input：`TextInput.Search`） |
+| input §貼上的控制字元 | 不是打字來的值走同一個過濾（什麼都沒碰就收下的提議值也一樣：`TestInputSuggestedValueControlChars`）；會被拿去用的在 `Enter` 時擋、錯誤列點名值（`Name can't have control characters`）；在去空白字元之前檢查；搜尋與篩選的打字列只畫不擋 | I 的 `Name`；I `[/] Find` 貼上 | `TestPasteBlockedOnEnter`、`TestPasteSearchNotBlocked`、`TestSearchInputNotBlocked`（只拿來搜尋的 text input：`TextInput.Search`） |
 | input §值 | 一行的值確定時去掉前後的空白字元（所有 Unicode 空白：一般空格、U+3000、NBSP…）；password 不去 | I 的 `Name` 打 `　x ` | `TestInputTrimWhitespace` |
 | input §在表單與 panel 上怎麼顯示 | 控制字元照實寫成紅色的轉義（`\n`、`\x1b`、`\t`），不丟、不換成空白；app 自己的顏色照留 | I 的 `Separator`（`\t`） | `TestValueControlChars` |
 | input §在表單與 panel 上怎麼顯示 | Text；空值灰字寫「空著代表什麼」（app 寫、不教按鍵）；太長尾端截、路徑前面截；各 input 的顯示（password 8 個 `•`、textarea 第一行 + `…`、checkbox popup 用 `, ` 接、reorder 照目前的順序用 `, ` 接、color 色塊 + hex、file `~`…） | I `[1] INPUTS` 每一列（含空的）；家目錄寫成 `~`：`Download to` | `TestValueDisplay` |

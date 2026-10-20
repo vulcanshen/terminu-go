@@ -6,8 +6,9 @@
 
 You register your panels and your actions — key, name, scope (item, panel or global), whether to confirm first, and
 what to do. terminu-go draws the whole screen from that one registration and handles the core keys: the `Space` menu,
-the `?` key reference, the hint on each panel's bottom border, the footer, confirm popups, fading what is not in focus,
-`Esc` closing one layer at a time, and popups stacked on popups. Because the menu, the key reference and the keys
+the `?` key reference, the App Log on `!` (every toast and error, and what the app logs), the hint on each panel's
+bottom border, the footer, confirm popups, fading what is not in focus, `Esc` closing one layer at a time, and popups
+stacked on popups. Because the menu, the key reference and the keys
 themselves come from the same registration, they cannot drift apart.
 
 Screens the library does not own (a full-screen lock screen, several terminals side by side) can still use its parts:
@@ -85,6 +86,31 @@ To see everything it does, run the showcase, an example app that shows every com
 go run github.com/vulcanshen/terminu-go/examples/showcase@latest
 ```
 
+## Text and colours
+
+The strings you give the library are text. Whatever comes from outside — a file's name, a web page's title, a
+program's output — never reaches the terminal as it is:
+
+- **Names and short texts** (a list's cells, values on forms and panels, menu labels, titles, toasts, confirms,
+  options, the statusbar) draw every control character by its name in Red: a tab is `\t`, a colour code is `\x1b`
+  then `[31m`. To colour one yourself, give spans: `Row.Styled`, `Field.Styled`, `FormField.Styled`, and
+  `App.Status` returns them. On a `Canvas` or in a popup of your own, `Escape` draws text from outside the same way.
+- **What is read** (a viewer, a panel's log, previews) is drawn as a terminal would: colour codes colour, `\n` starts
+  a line, a progress bar's `\r` leaves its last state, anything else is its name in Red.
+
+## The App Log
+
+`!` on any panel opens the App Log: what the app did and what went wrong, newest last, in memory only. Every toast
+and every error popup is in it by itself; `app.Log(kind, text)` adds the rest — an action's result, what the app does
+in the background — from any goroutine. While errors or warnings came in unseen, the footer's `!:log` says how many.
+
+## A file of your own it can't read
+
+When the app can't read its settings, state or data — a bad format, a broken file, no permission — call
+`app.MoveAside(path, err, startFresh)` at the start. The user is asked to move the file aside: `Enter` renames it to
+`.bak` (never over another) and runs `startFresh`, `Esc` leaves, `Run` returning the path and the reason for `main`
+to print.
+
 ## Settings
 
 Two of the user's settings are shared by every terminu app (tdp Rules E3). The library does not read config files: the
@@ -134,7 +160,7 @@ func TestFirstLaunch(t *testing.T) {
   both two.
 - **`Check`** launches the app as for the first time on terminals of many sizes and every icon width, each in a new
   sandbox (`HOME` and the XDG directories under `/tmp`, the app's own variables cleared), and opens the `Space` menu,
-  the global operation popup and `?` on every screen and panel, closing each with `Esc`; then it shrinks the terminal
+  the global operation popup, the App Log and `?` on every screen and panel, closing each with `Esc`; then it shrinks the terminal
   under the app's least size and back. `Env` gets the sandbox's `HOME`, so a variable can point to a file `Seed` put
   there. With `go test -short` it launches on the least size and 80×24 only, icons one cell wide.
 - **`Tricky`, `Sizes` and `Mashes`** are values that have broken screens: control characters, escape sequences, wide
@@ -156,7 +182,7 @@ in whenever it is due.
 
 ## Which terminu design
 
-terminu-go implements **tdp v0.8.3**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
+terminu-go implements **tdp v0.9.0**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
 
 ## Links
 

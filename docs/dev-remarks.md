@@ -1,7 +1,7 @@
 # terminu-go 開發者備忘
 
 terminu-go 是 terminu design principle（tdp）的 Go 實作：給 app 呼叫的 lib，加上展示場 `examples/showcase`。遵循 terminu design
-principle，目前對應 tdp v0.8.3。這個 repo 的任務與規範的讀法見 [`CLAUDE.md`](../CLAUDE.md)。
+principle，目前對應 tdp v0.9.0。這個 repo 的任務與規範的讀法見 [`CLAUDE.md`](../CLAUDE.md)。
 
 ## 運作方式
 
@@ -46,6 +46,21 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
     播完動畫時照時間順序觸發。loading icon 的那一格由畫的那一刻的時鐘決定（`spinAt`，`Frame` 開始時設）。
   - `Check`：每種尺寸、每種 icon 寬度都重新 `New` 一次（第一次啟動），沙盒在 `/tmp/tdp-*`；畫面、panel 用 `testhook.Screens` 列出，
     用 `ShowScreen`、`Focus` 切過去，popup 用按鍵開（`Space`、`Space G Enter`、`?`），用 `testhook.Layers` 數層數。
+
+- **控制字元**（`text.go`）：app 給的字在畫的那一刻才處理，資料本身不動（清單照原字篩選、排序）。
+  - 名字與短字走 `Escape`：每個控制字元換成紅色的名字，前面是 lib 自己的標記 `nameSGR`（Red 加一個不改變什麼的 `24`）。
+    `Style.Render` 在裡面的 reset 之後補回外層的樣式；帶底色的樣式（cursor、膠囊）與 `onBlock` 認得這個標記，把名字畫成
+    Red 底、Base 字。app 要上色的地方給 `Span`，lib 把每段的字 `Escape` 之後套上它的樣式。
+  - 拿來讀的內容先過 `readingRows`（在 `\n` 處拆行、CRLF 的 `\r` 留在行尾給複製用、`lastState` 處理行裡的 `\r`），再照既有的
+    viewer 畫法（`visibleText`、`redNames`：SGR 照留、其他畫名字）。viewer 的 `sync` 在 Lines 變了時重算，`Pager` 在
+    `SetLines`、`Append` 時算。
+- **App Log**（`applog.go`）：`App.Log` 加鎖，任何 goroutine 都能叫；`Toast`、`ErrorAbout`、`commitFailed`、表單動作的失敗都會
+  記一筆。打開時把現在的內容放進一個 viewer，`Frame` 開始時（`syncLog`）把新的一筆補進去，原本在最下面就跟著最下面；它關掉
+  之後新的錯誤、警告才算「沒看過」。footer 的說明直接帶顏色碼（`Fg(Red).Render(...)`），`Style.Render` 會在後面補回 Overlay0。
+- **互動 terminal**：`Terminal.Interactive` 才有 History 與選取模式（`Alt-v` 寫死在 lib，不是 app 挑的）；子程序在 alternate
+  screen 時（`vt.altOn`）`PgUp` 給它；`AllKeys` 時只有出口鍵與 app 的 `Keys` 留在 app。
+- **讀不了時**（`moveaside.go`）：confirm 多一個 `quit`，`Esc` 不取消而是記下 `exitErr`、回 `tea.Quit`；`Run` 在程式結束後
+  回傳它，`main` 照它處理 `Run` 的錯誤那樣印到 stderr。
 
 `proto/c1` 是驗證盲點紀錄 C1 的拋棄式原型，不是 lib 的一部分；lib 寫好後刪掉（go.mod 裡的 lipgloss 只有它在用）。
 
@@ -104,6 +119,14 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   截斷，每台機器不一樣（harness 在 hostu 踩過）。app 自己的變數（`<APP>__…`）、家族的（`TERMINU__…`、`LC_TERMINU_…`）清掉，`HOME`、
   `XDG_*`、`USERPROFILE`、`LOCALAPPDATA`、`APPDATA` 指進沙盒，app 就用 E3 的預設位置、落在沙盒裡。
 
+- **app 上色的字另外給 span，不從字串裡分辨**（tdp v0.9.0 #2、#5）：app 自己用 SGR 上色的字與外面帶進來的顏色碼，在字串裡
+  長得一樣，lib 分不出來；名字與短字照規範一律不解讀，所以 app 要上色就另外給（`Row.Styled`、`Field.Styled`、
+  `FormField.Styled`）。`App.Status` 改成回 `[]Span`、`ColorText` 改成 `ColorSpans`，是故意讓成員編譯不過：留著舊的型別，
+  畫面上會默默多出紅色的 `\x1b`。`Row.Cells` 型別沒變（它本來就是字），成員要自己找出塞了顏色碼的格子。
+- **lib 自己的名字標記用一個特定的 SGR**：要讓色塊上的名字變成 Red 底，畫到一半的字串裡得認得哪些是名字。用私有區的字元或
+  另外的結構都要改動所有量寬度、截斷的地方；一個只有 lib 會寫出來的 SGR（多一個 `24`）走得過既有的每一條路。
+- **App Log 的 `!` 只在 panel 上**：K1 的表寫「在 panel 上打開」；popup 裡不作用，跟 `Space` 一樣。
+
 ## 已否決，不要重提
 
 - **bubbletea v2 與 lipgloss v2**：見「設計決定」。
@@ -127,8 +150,6 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
 - **tdptest 還沒做的**（跟 harness 談定的第二版）：檔案檢查（`CheckRepo`：project 範本、README 與 dev-remarks 的段落、`tdp K4` 的引用、
   splash 對 `docs/icon.svg`）、`coverage.md` 標上 checklist 的條目編號、自動打開每個動作的 popup、把設定檔改壞再開、檢查 app 沒寫到
   沙盒以外。
-- **tdptest 自己的 Tricky 測試避開 G100 與 input-76**：帶控制字元的值只放進規範寫到畫法的地方（一行輸入框的值、textarea、表單與 panel
-  上的值、viewer），表單與 panel 上的值也避開 `ESC [`、`ESC ]` 開頭的序列，等 terminu 交下來（紀錄的「v0.2.2 之後要交的」#2）。
 
 ## 偏離 tdp
 

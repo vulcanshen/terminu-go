@@ -5,8 +5,8 @@
 **照 [terminu design](https://github.com/vulcanshen/terminu) 畫出並驅動終端機介面的 Go 函式庫。**
 
 你登記 panel 與動作 —— 鍵、名稱、範圍（item、panel 或 global）、執行前要不要先問、做什麼。terminu-go 照這一份登記畫出
-整個畫面，並處理 core key：`Space` menu、`?` 的 key reference、每個 panel 下框的 hint、footer、confirm、淡化沒有 focus 的
-地方、`Esc` 一次關一層、popup 上再疊 popup。menu、key reference 與實際的按鍵出自同一份登記，所以不會對不上。
+整個畫面，並處理 core key：`Space` menu、`?` 的 key reference、`!` 的 App Log（每一個 toast 與錯誤，加上 app 記的事）、
+每個 panel 下框的 hint、footer、confirm、淡化沒有 focus 的地方、`Esc` 一次關一層、popup 上再疊 popup。menu、key reference 與實際的按鍵出自同一份登記，所以不會對不上。
 
 函式庫管不到的畫面（全螢幕的鎖定畫面、好幾個並排的終端機），照樣可以用它的零件：用 `App.Canvas` 自己畫那個畫面，
 confirm、toast 與每一種 input 照樣疊在上面，跟在其他地方一樣。
@@ -79,6 +79,28 @@ func main() {
 go run github.com/vulcanshen/terminu-go/examples/showcase@latest
 ```
 
+## 文字與顏色
+
+交給函式庫的字串都是文字。從外面來的東西（檔名、網頁標題、程式的輸出）一律不原樣送給終端機：
+
+- **名字與短字**（清單的格子、表單與 panel 上的值、menu 的 label、標題、toast、confirm、選項、statusbar）：每個控制字元都畫成
+  紅色的名字，Tab 是 `\t`，顏色碼是 `\x1b` 接著 `[31m`。要自己上色時另外給 span：`Row.Styled`、`Field.Styled`、
+  `FormField.Styled`，`App.Status` 也回 span。在 `Canvas` 或自己的 popup 裡畫外面來的字時，用 `Escape` 照同一套畫。
+- **拿來讀的內容**（viewer、panel 上的 log、預覽）：照終端機會畫的樣子，顏色碼照著上色、`\n` 換行、進度列的 `\r` 只留最後的
+  狀態，其他畫成紅色的名字。
+
+## App Log
+
+在任何 panel 上按 `!` 打開 App Log：app 做過的事與出問題的事，最新的在最下面，只放在記憶體裡。每一個 toast 與 error popup
+都會自己記進去；其他的用 `app.Log(kind, text)` 記（動作的結果、app 在背景做的事），任何 goroutine 都能叫。有沒看過的錯誤或
+警告時，footer 的 `!:log` 會寫出有幾個。
+
+## 讀不了自己的檔時
+
+app 讀不了自己的設定、狀態或資料（格式錯、檔案壞掉、沒有權限）時，在啟動時叫 `app.MoveAside(path, err, startFresh)`。
+使用者會被問要不要把檔移開：`Enter` 改名成 `.bak`（一律不蓋掉別的）再跑 `startFresh`，`Esc` 離開，`Run` 回傳路徑與原因，
+交給 `main` 印出來。
+
 ## 設定
 
 使用者的設定裡，有兩個是 terminu 家族每個 app 共用的（tdp Rules E3）。函式庫不讀設定檔：由 app 從自己的設定檔讀出來交給它。
@@ -122,7 +144,7 @@ func TestFirstLaunch(t *testing.T) {
   失敗時會寫出尺寸、按過的鍵與整個畫面；`Note` 再多寫一句（例：給 app 的是 `Tricky` 的哪一個）。
 - **`EachIconWidth`** 把一個測試跑三次：icon 與 powerline 符號都佔一格、icon 佔兩格、兩種都佔兩格。
 - **`Check`** 在好幾種終端機尺寸、每一種 icon 寬度下，像第一次那樣啟動 app，每次都在新的沙盒裡（`HOME` 與 XDG 目錄放在 `/tmp`
-  底下，app 自己的環境變數清掉）；在每個畫面、每個 panel 打開 `Space` menu、global operation popup 與 `?`，再用 `Esc` 一層層關掉；
+  底下，app 自己的環境變數清掉）；在每個畫面、每個 panel 打開 `Space` menu、global operation popup、App Log 與 `?`，再用 `Esc` 一層層關掉；
   最後把終端機縮到比 app 的最低尺寸小，再放回來。`Env` 拿得到沙盒的 `HOME`，環境變數可以指到 `Seed` 放進去的檔。
   `go test -short` 時只在最低尺寸與 80×24 啟動，icon 只用一格。
 - **`Tricky`、`Sizes` 與 `Mashes`** 是弄壞過畫面的值：控制字元、escape sequence、寬字與組合字、很長的值；奇怪的終端機尺寸；
@@ -143,7 +165,7 @@ return app.Tick(300*time.Millisecond, func(time.Time) tea.Msg { return searchNow
 
 ## 實作哪一版 terminu design
 
-terminu-go 實作 **tdp v0.8.3**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
+terminu-go 實作 **tdp v0.9.0**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
 
 ## 相關連結
 

@@ -2,6 +2,52 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.9.0
+
+tdp v0.9.0 settles how control characters are drawn (G100), gives every app an App Log and a way out of a file it
+cannot read, and keeps History and the selection for interactive terminals. Upgrading: see "Changes to make" below.
+
+- Control characters are drawn in three groups (components, control characters):
+  - In names and short texts — a list's cells and location, values and options on forms and panels, menu labels,
+    descriptions and section titles, popup titles and subjects, toasts, confirms, error popups, an input's prompt and
+    error rows, empty states, the statusbar, tab names, finder items — every control character, Tab, `\n` and the
+    ESC of a colour code too, is its name in Red (`\t`, `\n`, `\x1b`), on a cursor Red under Base. `Escape` does
+    it for an app's own drawing (a Canvas, a popup of its own)
+  - Colours of the app's own in those places come as `Span`s: `Row.Styled`, `Field.Styled`, `FormField.Styled`, and
+    `App.Status` returns `[]Span`; `ColorSpans` replaces `ColorText`
+  - Reading content — a viewer, a panel's log (`Pager`), a finder's preview, a file preview — is drawn as a terminal
+    draws it: `\n` starts another line, one in a line the app gave too; a `\r` inside a line leaves its last state
+    (`10%\r100%` is `100%`); colour codes colour, a file's own too; any other control character or escape sequence
+    is its name in Red
+- A proposal (`TextInput.Suggest`) taken with nothing touched is checked for control characters too (input-52)
+- Every app has an App Log (components/dialog/note, Rules K1, F5): `!` on a panel opens it, a viewer, newest last;
+  each entry is its time, its level (`INFO` `OK` `WARN` `ERR`) and what happened. Every toast and error popup goes
+  in by itself; `App.Log` logs the rest, from any goroutine. The footer shows `!:log`, or `!:N errors` in Red,
+  `!:N warnings` in Peach, until it is opened. `!` is a core key: no hotkey and no `CoreKey` may take it
+- Interactive terminals (components/dialog/terminal): `Terminal.Interactive` replaces `History` and `SelectKey`. An
+  interactive terminal has History on `PgUp` and the selection on `Alt-v`, the family's key; any other PTY gives
+  every key to its program, `PgUp` too. While the program fills the whole screen `PgUp` is its own and the hint
+  leaves `PgUp:history` out. `Terminal.AllKeys` hands every key to the program but the exit key and the app's own
+  `Keys`
+- `App.MoveAside` (Rules E3, when a file cannot be read): a `MOVE ASIDE` confirm with the path and why,
+  `Enter:move Esc:quit`; `Enter` renames the file to `.bak` (or `.bak.1`, `.bak.2`…, never over another) and runs
+  the app's fresh start; `Esc` leaves the app and `Run` returns the path and the reason, for main to write to stderr
+- `FormResult.Info` makes a form action's toast an Info one instead of Success: which a thing done is, is the app's
+  (components/dialog/toast)
+- `Style.Render` goes on in its style after a styled piece inside it ends
+- tdptest: `Check` opens the App Log too; its tricky values go everywhere as they are now
+
+### Changes to make
+
+- Colours you put in `Row.Cells`, `Field.Value`, `FormField.Value` or anything else listed above now show as
+  `\x1b[…` in Red: give them as spans instead (`Row.Styled`, `Field.Styled`, `FormField.Styled`), the text staying
+  in `Cells` and `Value`. Text from outside you draw yourself goes through `Escape`
+- `App.Status` returns `[]Span`; `ColorText(c)` becomes `ColorSpans(c)` in a `Styled`, `HexText(c)` in `Value`
+- `Terminal.History` and `SelectKey` are gone: mark a terminal the user types in `Interactive: true`
+- A `CoreKey` or a hotkey on `!` is refused: move it
+- A file of your own you cannot read: `app.MoveAside(path, err, startFresh)` at the start
+- Make your own timers with `app.Tick`, and add `tdptest.Check` to your tests (README, "Testing an app")
+
 ## v0.3.0 — tdp v0.8.3
 
 - New package `tdptest`: drives an app in a Go test as a user does — keys by their tdp names, text typed, sent at
