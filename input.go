@@ -260,7 +260,7 @@ func (in PasswordInput) open(a *App, written func()) tea.Cmd {
 			return then(written, in.Done(v, clear))
 		},
 	}
-	return tea.Batch(a.open(li), li.paused())
+	return tea.Batch(a.open(li), li.paused(a))
 }
 
 func (in NumberInput) open(a *App, written func()) tea.Cmd {
@@ -544,7 +544,7 @@ func (li *lineInput) unlockDots(w int, style, cursor Style) string {
 }
 
 func (li *lineInput) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
-	if key != "Esc" && time.Now().Before(li.pause) {
+	if key != "Esc" && a.now().Before(li.pause) {
 		return true, nil // paused: every key but Esc swallowed
 	}
 	switch key {
@@ -617,7 +617,7 @@ func (li *lineInput) confirm(a *App) tea.Cmd {
 		}
 		v := li.ed.value()
 		if !li.checked(v) {
-			return li.paused()
+			return li.paused(a)
 		}
 		switch {
 		case v == "" && li.hasOld:
@@ -669,18 +669,18 @@ type pauseTick struct{ li *lineInput }
 
 // paused starts the pause the app asks for, if it asks for one now: the
 // error row counts down (components/layout/popup, the error row).
-func (li *lineInput) paused() tea.Cmd {
+func (li *lineInput) paused(a *App) tea.Cmd {
 	if li.pausedUntil == nil {
 		return nil
 	}
 	li.pause = li.pausedUntil()
-	return li.countDown()
+	return li.countDown(a)
 }
 
 // countDown writes what is left of the pause on the error row and ticks
 // again in a second; once it is over it clears the row.
-func (li *lineInput) countDown() tea.Cmd {
-	left := time.Until(li.pause)
+func (li *lineInput) countDown(a *App) tea.Cmd {
+	left := li.pause.Sub(a.now())
 	if left <= 0 {
 		if strings.HasPrefix(li.err, "try again in ") {
 			li.err = ""
@@ -692,7 +692,7 @@ func (li *lineInput) countDown() tea.Cmd {
 	if next == 0 {
 		next = time.Second
 	}
-	return tea.Tick(next, func(time.Time) tea.Msg { return pauseTick{li} })
+	return a.after(next, pauseTick{li})
 }
 
 // write writes a value Enter took back: Commit first, then Done.

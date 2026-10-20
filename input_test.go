@@ -1677,7 +1677,7 @@ func TestPasswordPause(t *testing.T) {
 			t.Fatalf("not paused yet: %q", li.err)
 		}
 	}
-	cmd := li.paused()
+	cmd := li.paused(ta.App)
 	if cmd != nil {
 		t.Error("nothing to count down yet")
 	}
@@ -1690,14 +1690,14 @@ func TestPasswordPause(t *testing.T) {
 		t.Errorf("keys swallowed while paused: %q", li.ed.value())
 	}
 	li.pause = time.Now().Add(1100 * time.Millisecond)
-	if li.countDown() == nil || li.err != "try again in 2 s" {
+	if li.countDown(ta.App) == nil || li.err != "try again in 2 s" {
 		t.Errorf("each second: %q", li.err)
 	}
 	li.pause = time.Now().Add(-time.Millisecond)
 	if _, cmd := ta.Update(pauseTick{li}); li.err != "" || cmd != nil && fmt.Sprint(cmd()) != "{}" && cmd() != nil {
 		t.Errorf("over: the row cleared: %q", li.err)
 	}
-	if li.countDown() != nil {
+	if li.countDown(ta.App) != nil {
 		t.Error("over: no more ticks")
 	}
 	ta.press("Backspace", "1", "2", "3", "4")

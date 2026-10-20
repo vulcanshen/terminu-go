@@ -116,7 +116,7 @@ func newShowcase() *showcase {
 			}},
 	}
 	a.OnMsg = s.onMsg
-	a.Start = func() tea.Cmd { return tea.Tick(time.Second, func(time.Time) tea.Msg { return logTick{} }) }
+	a.Start = func() tea.Cmd { return a.Tick(time.Second, func(time.Time) tea.Msg { return logTick{} }) }
 	return s
 }
 
@@ -158,14 +158,14 @@ func (s *showcase) startTask() tea.Cmd {
 		return s.app.Toast(terminu.Info, "A task is already running")
 	}
 	s.taskOn, s.task = true, 0
-	return tea.Tick(200*time.Millisecond, func(time.Time) tea.Msg { return taskTick{} })
+	return s.app.Tick(200*time.Millisecond, func(time.Time) tea.Msg { return taskTick{} })
 }
 
 func (s *showcase) onMsg(msg tea.Msg) tea.Cmd {
 	switch msg.(type) {
 	case logTick:
 		s.panels.appendLog()
-		return tea.Tick(time.Second, func(time.Time) tea.Msg { return logTick{} })
+		return s.app.Tick(time.Second, func(time.Time) tea.Msg { return logTick{} })
 	case indexTick:
 		return s.inputs.indexStep()
 	case grepDone:
@@ -180,7 +180,7 @@ func (s *showcase) onMsg(msg tea.Msg) tea.Cmd {
 			s.taskOn, s.task = false, 0
 			return s.app.Toast(terminu.Success, "Copied 3 files")
 		}
-		return tea.Tick(200*time.Millisecond, func(time.Time) tea.Msg { return taskTick{} })
+		return s.app.Tick(200*time.Millisecond, func(time.Time) tea.Msg { return taskTick{} })
 	}
 	return nil
 }

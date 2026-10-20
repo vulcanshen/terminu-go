@@ -1,0 +1,48 @@
+// Package testhook is how tdptest reaches into the lib: terminu fills these
+// in when it loads. Nothing outside this module can import it, so none of it
+// is the lib's API.
+package testhook
+
+import (
+	"time"
+
+	tea "github.com/charmbracelet/bubbletea"
+)
+
+// Clock is a test's time: it moves only when the test moves it.
+type Clock interface{ Now() time.Time }
+
+// Timer is what a tick on a test clock gives back instead of waiting: the
+// test fires Fn once its time reaches D from when it came back.
+type Timer struct {
+	D  time.Duration
+	Fn func(time.Time) tea.Msg
+}
+
+// Every app below is a *terminu.App.
+var (
+	// UseClock puts the app on c: its ticks give back a Timer.
+	UseClock func(app any, c Clock)
+	// Prepare does what Run checks and sets before the program starts,
+	// short of asking the terminal anything.
+	Prepare func(app any) error
+	// Animating reports a popup, toast or splash still playing.
+	Animating func(app any) bool
+	// Layers is how many popups are open, the toast and the closing ones
+	// not counted.
+	Layers func(app any) int
+	// Toast reports a toast on the screen, not closing.
+	Toast func(app any) bool
+	// Typing reports keys going to a typing row, a mode or a PTY: ? and q
+	// are not the core keys there (Rules K8).
+	Typing func(app any) bool
+	// Screens is the app's screens, a []*terminu.Screen.
+	Screens func(app any) any
+	// MinSize is the app's least size (Rules L1).
+	MinSize func(app any) (w, h int)
+	// Clipboard is the text waiting to go to the clipboard, taken; ok false
+	// when there is none.
+	Clipboard func() (text string, ok bool)
+	// Stop ends every program the app's terminals run.
+	Stop func(app any)
+)

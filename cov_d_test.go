@@ -629,16 +629,21 @@ func TestLoadingIconFrames(t *testing.T) {
 			t.Errorf("frame %d is %d cells, not one", i, Width(f))
 		}
 	}
-	// The clock decides the frame: frames[(now / 90ms) % 8].
-	before := time.Now().UnixMilli() / 90
-	got := loadingFrame()
-	after := time.Now().UnixMilli() / 90
-	if got != loadingFrames[before%8] && got != loadingFrames[after%8] {
-		t.Errorf("loadingFrame is %U, not the clock's frame", []rune(got))
+	// The App's clock as the frame is drawn decides the frame:
+	// frames[(now / 90ms) % 8].
+	ta := newTestApp(t)
+	clk := &stillClock{time.UnixMilli(90 * 8 * 1000)}
+	ta.testClock = clk
+	for i := range 10 {
+		clk.t = clk.t.Add(spinTime)
+		ta.Frame()
+		if got, want := loadingFrame(), loadingFrames[(i+1)%8]; got != want {
+			t.Errorf("at %v loadingFrame is %U, want %U", clk.t.UnixMilli(), []rune(got), []rune(want))
+		}
 	}
+	ta.testClock = nil
 	// On a popup: after the whole tab chain, a space either side, the layer
 	// colour in bold.
-	ta := newTestApp(t)
 	ta.Viewer(&Viewer{Title: "DevTools", Tabs: []string{"Console", "Network"}, Lines: []string{"a"}, Loading: true})
 	ta.settle()
 	row := covDRows(ta, ta.top())[0]
@@ -653,6 +658,11 @@ func TestLoadingIconFrames(t *testing.T) {
 		t.Errorf("no loading icon after the tabs, in the layer colour bold: %q", StripStyles(row))
 	}
 }
+
+// stillClock is a test's time that moves only when the test sets it.
+type stillClock struct{ t time.Time }
+
+func (c *stillClock) Now() time.Time { return c.t }
 
 func TestLoadingTickOnlyWhenLoading(t *testing.T) {
 	ta := newTestApp(t)

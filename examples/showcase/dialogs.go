@@ -130,7 +130,7 @@ func (ds *dialogsScreen) scenarios() []scenario {
 		{"Quit: the app’s own flow", "menu", "the next [q] opens a menu of ways to leave; Ctrl-C again leaves at once", ds.quitFlow},
 		{"Toast", "toast", "a short message on the third row from the bottom", toast("Copied 3 paths")},
 		{"Toast over a popup", "toast", "a popup, then a toast: Esc takes the toast first", func() tea.Cmd {
-			return tea.Batch(ds.yaml(), tea.Tick(600*time.Millisecond, func(time.Time) tea.Msg {
+			return tea.Batch(ds.yaml(), ds.s.app.Tick(600*time.Millisecond, func(time.Time) tea.Msg {
 				return toastLater{terminu.Warning, "The YAML changed on the cluster"}
 			}))
 		}},
@@ -589,7 +589,7 @@ func (ds *dialogsScreen) table() tea.Cmd {
 func (ds *dialogsScreen) loadingPopup() tea.Cmd {
 	ds.loading = &terminu.Viewer{Title: "Log", Subject: "deploy/api", Glyph: glyphYaml, Loading: true}
 	ds.loaded = 0
-	return tea.Batch(ds.s.app.Viewer(ds.loading), tea.Tick(400*time.Millisecond, func(time.Time) tea.Msg { return loadTick{} }))
+	return tea.Batch(ds.s.app.Viewer(ds.loading), ds.s.app.Tick(400*time.Millisecond, func(time.Time) tea.Msg { return loadTick{} }))
 }
 
 func (ds *dialogsScreen) loadStep() tea.Cmd {
@@ -603,5 +603,5 @@ func (ds *dialogsScreen) loadStep() tea.Cmd {
 		ds.loading = nil
 		return nil
 	}
-	return tea.Tick(250*time.Millisecond, func(time.Time) tea.Msg { return loadTick{} })
+	return ds.s.app.Tick(250*time.Millisecond, func(time.Time) tea.Msg { return loadTick{} })
 }

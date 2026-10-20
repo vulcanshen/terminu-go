@@ -8,6 +8,8 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+
+	"github.com/vulcanshen/terminu-go/internal/testhook"
 )
 
 // Rect is a panel's place in the panel area, in cells.
@@ -152,6 +154,9 @@ type App struct {
 	splashStart time.Time // when it opened
 
 	tinyCtrlC bool // Ctrl-C pressed once on a terminal under the least size
+
+	testClock testhook.Clock // a test's time; nil for the real one
+	terminals []*Terminal    // the terminal popups opened, for a test to stop
 }
 
 // minSize is the least size: the app's, 80 × 40 at most (Rules L1).
@@ -308,7 +313,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case formRan:
 		cmd = msg.done(a)
 	case pauseTick:
-		cmd = msg.li.countDown()
+		cmd = msg.li.countDown(a)
 	case readDone:
 		msg.r.keep(msg)
 	case termOutput, termExited:
@@ -321,7 +326,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmd = tea.Batch(cmd, a.moved(), a.fetch())
 	if !a.spin && a.loading() {
 		a.spin = true
-		cmd = tea.Batch(cmd, spinTick())
+		cmd = tea.Batch(cmd, a.after(spinTime, spinMsg{}))
 	}
 	a.growLoading()
 	return a, cmd
@@ -421,7 +426,7 @@ func (a *App) animate() tea.Cmd {
 		return nil
 	}
 	a.anim = true
-	return animTick()
+	return a.after(frameTime, animMsg{})
 }
 
 // stepAnimation moves every animating popup on by one frame.
@@ -457,7 +462,7 @@ func (a *App) stepAnimation() tea.Cmd {
 	}
 	a.anim = busy
 	if busy {
-		cmds = append(cmds, animTick())
+		cmds = append(cmds, a.after(frameTime, animMsg{}))
 	}
 	return tea.Batch(cmds...)
 }
@@ -636,7 +641,7 @@ func (a *App) Toast(kind ToastKind, text string) tea.Cmd {
 	}
 	a.placeToast()
 	id := a.toastSeq
-	return tea.Batch(a.animate(), tea.Tick(kind.duration(), func(time.Time) tea.Msg { return toastDone{id} }))
+	return tea.Batch(a.animate(), a.after(kind.duration(), toastDone{id}))
 }
 
 // placeToast puts the toast's bottom border on the third row from the bottom.
@@ -1352,6 +1357,7 @@ func (a *App) Frame() []string {
 	if w <= 0 || h <= 0 {
 		return nil
 	}
+	spinAt.Store(a.now().UnixMilli())
 	if a.tooSmall() {
 		return a.tinyScreen(w, h)
 	}

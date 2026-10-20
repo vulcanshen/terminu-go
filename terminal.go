@@ -3,6 +3,7 @@ package terminu
 import (
 	"io"
 	"os"
+	"slices"
 	"strconv"
 	"sync"
 	"unicode/utf8"
@@ -616,6 +617,8 @@ func (t *Terminal) MoveKeys() []KeyRow { return nil }
 // OpenTerminal opens a terminal popup with t in it, starting it if it has not
 // started (components/dialog/terminal).
 func (a *App) OpenTerminal(t *Terminal) tea.Cmd {
+	a.terminals = slices.DeleteFunc(a.terminals, func(o *Terminal) bool { return o == t || o.exited })
+	a.terminals = append(a.terminals, t)
 	return tea.Batch(a.open(&termView{t: t, a: a}), t.Start())
 }
 

@@ -25,10 +25,6 @@ type splashMsg struct{ id int }
 // splashTickTime is one tick of the reveal (Rules S5).
 const splashTickTime = 10 * time.Millisecond
 
-func splashTick(id int) tea.Cmd {
-	return tea.Tick(splashTickTime, func(time.Time) tea.Msg { return splashMsg{id} })
-}
-
 // The mark's colours (Rules S5): the U frame, the same in every family app;
 // the letters in it; the squares under them, Surface0.
 var (
@@ -324,9 +320,9 @@ func (a *App) PlaySplash(s Splash) tea.Cmd {
 	if s == nil {
 		return nil
 	}
-	a.splashOn, a.splashFrame, a.shown, a.splashStart = true, 0, s, time.Now()
+	a.splashOn, a.splashFrame, a.shown, a.splashStart = true, 0, s, a.now()
 	a.splashID++
-	return splashTick(a.splashID)
+	return a.after(splashTickTime, splashMsg{a.splashID})
 }
 
 // stepSplash moves the reveal on until it is over. The frame is the time
@@ -339,8 +335,8 @@ func (a *App) stepSplash(msg splashMsg) tea.Cmd {
 	if _, done := a.shown(a.splashFrame, a.w, a.h); done {
 		return nil
 	}
-	a.splashFrame = max(a.splashFrame+1, int(time.Since(a.splashStart)/splashTickTime))
-	return splashTick(a.splashID)
+	a.splashFrame = max(a.splashFrame+1, int(a.now().Sub(a.splashStart)/splashTickTime))
+	return a.after(splashTickTime, splashMsg{a.splashID})
 }
 
 // checkSplash refuses an app the splash cannot be opened in (Rules S1): none

@@ -3,6 +3,7 @@ package terminu
 import (
 	"slices"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -35,8 +36,6 @@ const (
 )
 
 type animMsg struct{}
-
-func animTick() tea.Cmd { return tea.Tick(frameTime, func(time.Time) tea.Msg { return animMsg{} }) }
 
 // layer is one popup on the stack.
 type layer struct {
@@ -175,10 +174,14 @@ func cursorRow(plain string, inner int, block Style) string {
 	return block.Render(" "+Fit(plain, inner-1-arrow)) + Fg(block.Bg).Render(glyphHard)
 }
 
+// spinAt is the time the frame being drawn is drawn at, in milliseconds: the
+// drawing App's clock, set as each frame starts.
+var spinAt atomic.Int64
+
 // loadingFrame is the loading icon now: the clock decides which of the eight
 // frames, 90ms each (components/layout/popup).
 func loadingFrame() string {
-	return loadingFrames[(time.Now().UnixMilli()/90)%8]
+	return loadingFrames[(spinAt.Load()/spinTime.Milliseconds())%8]
 }
 
 // LoadingFrame is the loading icon as it is now, for a row of the app's own
@@ -188,9 +191,8 @@ func LoadingFrame() string { return loadingFrame() }
 
 type spinMsg struct{}
 
-func spinTick() tea.Cmd {
-	return tea.Tick(90*time.Millisecond, func(time.Time) tea.Msg { return spinMsg{} })
-}
+// spinTime is one frame of the loading icon.
+const spinTime = 90 * time.Millisecond
 
 // popupWidth is Rules F7's width: content + 4 when it is known when the popup
 // opens, at least the title and hint, at most min(screen − 2, 120); the

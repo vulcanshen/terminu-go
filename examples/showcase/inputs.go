@@ -409,7 +409,7 @@ func (is *inputsScreen) slowIndex() tea.Cmd {
 	is.index = &terminu.Finder{Title: "Search", Glyph: glyphSearch, Verb: "open", Loading: true, Files: true,
 		Done: func(it terminu.FinderItem) tea.Cmd { return is.s.app.Toast(terminu.Info, "Opened "+it.Text) }}
 	is.indexed = 0
-	return tea.Batch(is.s.app.Find(is.index), tea.Tick(time.Second, func(time.Time) tea.Msg { return indexTick{} }))
+	return tea.Batch(is.s.app.Find(is.index), is.s.app.Tick(time.Second, func(time.Time) tea.Msg { return indexTick{} }))
 }
 
 func (is *inputsScreen) indexStep() tea.Cmd {
@@ -424,7 +424,7 @@ func (is *inputsScreen) indexStep() tea.Cmd {
 		is.index = nil
 		return nil
 	}
-	return tea.Tick(300*time.Millisecond, func(time.Time) tea.Msg { return indexTick{} })
+	return is.s.app.Tick(300*time.Millisecond, func(time.Time) tea.Msg { return indexTick{} })
 }
 
 // hosts are pretend ssh hosts for a finder whose preview the app gives.
