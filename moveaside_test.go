@@ -52,6 +52,50 @@ func TestMoveAside(t *testing.T) {
 	}
 }
 
+// TestMoveAsideRecord: data kept one record per file: Enter only renames the
+// record that cannot be read to .bak, and the app reads the rest again; the
+// question says go on without it (E3-22; kamonu KM18). A rename that fails
+// asks the same again.
+func TestMoveAsideRecord(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "kiri.yaml")
+	writeFile(t, path, []byte("bad: [\n"), 0o600)
+	ta := newTestApp(t)
+	reread := false
+	ta.MoveAsideRecord(path, errors.New("bad"), func() tea.Cmd { reread = true; return nil })
+	ta.settle()
+	text := ta.screenText()
+	for _, want := range []string{"MOVE ASIDE", path + " can't be read:", "Move it to kiri.yaml.bak and go on without it?", "Enter:move Esc:quit"} {
+		if !strings.Contains(text, want) {
+			t.Errorf("%q is not on the confirm:\n%s", want, text)
+		}
+	}
+	ta.press("Enter")
+	if _, err := os.Stat(path + ".bak"); err != nil || !reread || ta.top() != nil {
+		t.Errorf("Enter: moved %v, read again %v, closed %v", err, reread, ta.top() == nil)
+	}
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		t.Errorf("something is in its place: %v", err)
+	}
+	// The rename fails: the error, and under it the same question again.
+	writeFile(t, path, []byte("bad again"), 0o600)
+	ta.MoveAsideRecord(path, errors.New("bad"), func() tea.Cmd { return nil })
+	ta.settle()
+	if err := os.Chmod(dir, 0o500); err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chmod(dir, 0o700)
+	ta.press("Enter")
+	ta.settle()
+	if text := ta.screenText(); !strings.Contains(text, "MOVE ASIDE FAILED") {
+		t.Errorf("a failed rename says nothing:\n%s", text)
+	}
+	ta.press("Esc")
+	if text := ta.screenText(); !strings.Contains(text, "Move it to kiri.yaml.bak.1 and go on without it?") {
+		t.Errorf("not asked again:\n%s", text)
+	}
+}
+
 // TestMoveAsideNeverOverAnother: with .bak there it goes to .bak.1, then
 // .bak.2, the question naming the one it uses (E3-19).
 func TestMoveAsideNeverOverAnother(t *testing.T) {

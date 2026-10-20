@@ -27,6 +27,24 @@ func (ds *dialogsScreen) moveAside() tea.Cmd {
 	})
 }
 
+// moveAsideRecord breaks one of a few pretend records kept one per file and
+// asks what to do with it: moved aside, the showcase reads the rest (Rules
+// E3).
+func (ds *dialogsScreen) moveAsideRecord() tea.Cmd {
+	a := ds.s.app
+	dir := filepath.Join(dataDir(), "records")
+	_ = os.MkdirAll(dir, 0o755)
+	for _, n := range []string{"alpha", "beta"} {
+		_ = os.WriteFile(filepath.Join(dir, n+".yaml"), []byte("name: "+n+"\n"), 0o600)
+	}
+	path := filepath.Join(dir, "gamma.yaml")
+	_ = os.WriteFile(path, []byte("name: [gamma\n"), 0o600)
+	return a.MoveAsideRecord(path, errors.New("line 1: did not find expected ',' or ']'"), func() tea.Cmd {
+		read, _ := filepath.Glob(filepath.Join(dir, "*.yaml"))
+		return a.Toast(terminu.Info, fmt.Sprintf("Read %d records, gamma.yaml moved aside", len(read)))
+	})
+}
+
 // dialogsScreen is [D]IALOGS: every kind of dialog and how they stack. Each
 // row of [1] DIALOGS is one scenario; Enter opens it.
 type dialogsScreen struct {
@@ -145,6 +163,7 @@ func (ds *dialogsScreen) scenarios() []scenario {
 		{"Popup: the app’s own", "app’s own", "the app draws the inside, the lib the frame: draw on the grid, [Tab] to Save; Esc and Ctrl-C say when changed", ds.draw},
 		{"Quit: the app’s own flow", "menu", "the next [q] opens a menu of ways to leave; Ctrl-C again leaves at once", ds.quitFlow},
 		{"Move aside: a file it can’t read", "confirm", "its settings broken: Enter moves the file to .bak and starts a new one, Esc quits the showcase", ds.moveAside},
+		{"Move aside: a record it can’t read", "confirm", "one record per file, one broken: Enter moves just that one to .bak and reads the rest", ds.moveAsideRecord},
 		{"Toast", "toast", "a short message on the third row from the bottom", toast("Copied 3 paths")},
 		{"Toast over a popup", "toast", "a popup, then a toast: Esc takes the toast first", func() tea.Cmd {
 			return tea.Batch(ds.yaml(), ds.s.app.Tick(600*time.Millisecond, func(time.Time) tea.Msg {

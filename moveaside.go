@@ -23,16 +23,32 @@ import (
 // A cache that cannot be read is not asked about: throw it away and build it
 // again. Something outside the app that cannot be reached (a cluster, the
 // network) is not the app's own: the app goes on and says so where it shows
-// it (layout/panel, loading and errors).
+// it (layout/panel, loading and errors). Data kept one record per file uses
+// MoveAsideRecord.
 func (a *App) MoveAside(path string, err error, fresh func() tea.Cmd) tea.Cmd {
+	return a.moveAside(path, err, fresh, "start a new one")
+}
+
+// MoveAsideRecord is MoveAside for data kept one record per file (a mark per
+// file): Enter only renames the record that cannot be read to <name>.bak,
+// making nothing new in its place, and runs reread, where the app reads the
+// rest as usual (Rules E3, when it cannot be read). The question is "Move it
+// to <name>.bak and go on without it?"; Esc leaves the app as MoveAside's.
+func (a *App) MoveAsideRecord(path string, err error, reread func() tea.Cmd) tea.Cmd {
+	return a.moveAside(path, err, reread, "go on without it")
+}
+
+// moveAside asks about path; then is what the question says comes after the
+// move.
+func (a *App) moveAside(path string, err error, fresh func() tea.Cmd, then string) tea.Cmd {
 	shown := homeShort(path)
 	c := newConfirm(Ask{Title: "Move aside", Verb: "move",
 		Details:  []string{shown + " can't be read:", err.Error()},
-		Question: "Move it to " + filepath.Base(asideName(path)) + " and start a new one?"}, nil)
+		Question: "Move it to " + filepath.Base(asideName(path)) + " and " + then + "?"}, nil)
 	c.accept = func() tea.Cmd {
 		to := asideName(path) // the next free one, if one was taken meanwhile
 		if rerr := os.Rename(path, to); rerr != nil {
-			return tea.Batch(a.closeTop(), a.MoveAside(path, err, fresh), a.ErrorAbout("Move aside failed", filepath.Base(path), rerr.Error()))
+			return tea.Batch(a.closeTop(), a.moveAside(path, err, fresh, then), a.ErrorAbout("Move aside failed", filepath.Base(path), rerr.Error()))
 		}
 		a.Log(Info, "moved "+shown+" to "+homeShort(to))
 		return tea.Batch(a.closeTop(), run(fresh))
