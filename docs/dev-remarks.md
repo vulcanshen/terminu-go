@@ -36,6 +36,17 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   框、標題、層色、動畫、淡化，以及 app 沒收的 `Esc`、`?`、`q` 都是 lib 的。`ClosePopup` 用 body 找到那一層，跟 `closeView` 一樣連上面
   的一起關。body 可以多一個 `QuitNote() string`：離開流程開 confirm 時從下往上問每一個開著的 app popup，不是空的排在 Details 最後、標 Peach。
 
+- **tdptest**（`tdptest/`）：在 Go 的測試裡跑一個 App，不開 bubbletea program，直接叫 `Init`、`Update`、`Frame`，順序照 program：
+  `Init`、還不知道大小時畫一次、`WindowSizeMsg`。每個 `Update` 之後畫一次，量每一列（L4：列數、寬度、沒有 SGR 以外的控制字元）。
+  - 命令：app 的命令各自在 goroutine 跑，送進去之前照開始的順序排好；這次輸入開始的命令最多等 `Driver.Wait`（200ms），沒回來的
+    留到之後的輸入或 `WaitFor`。`tea.BatchMsg` 展開；`tea.Sequence` 的 message 型別沒有匯出，用 reflect 認（元素是 `tea.Cmd` 的
+    slice），一個跑完才跑下一個；`tea.QuitMsg` 記下來，之後的輸入讓測試失敗。
+  - 時間：`Start` 把 App 放上 driver 的時鐘（`internal/testhook.UseClock`）。lib 的計時器（`App.after`：開關動畫、loading icon、toast、
+    splash、輸入框的暫停）與 `App.Tick` 在測試的時鐘上不等待，回一個 `testhook.Timer`，driver 收進自己的排程，`Advance`、`Step`、
+    播完動畫時照時間順序觸發。loading icon 的那一格由畫的那一刻的時鐘決定（`spinAt`，`Frame` 開始時設）。
+  - `Check`：每種尺寸、每種 icon 寬度都重新 `New` 一次（第一次啟動），沙盒在 `/tmp/tdp-*`；畫面、panel 用 `testhook.Screens` 列出，
+    用 `ShowScreen`、`Focus` 切過去，popup 用按鍵開（`Space`、`Space G Enter`、`?`），用 `testhook.Layers` 數層數。
+
 `proto/c1` 是驗證盲點紀錄 C1 的拋棄式原型，不是 lib 的一部分；lib 寫好後刪掉（go.mod 裡的 lipgloss 只有它在用）。
 
 ## 設計決定
@@ -80,6 +91,19 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
 - **最低尺寸預設 80×40**（tdp L1）：用 lib 的 app 在比較小的終端機裡會只看到名稱與提示；版面在更小的畫面也畫得下的 app 自己調低
   （`App.MinWidth`、`MinHeight`）。測試的 app 都調到 1×1，各自的測試照樣在小畫面上跑。
 
+- **tdptest 走 lib 內部的 hook，不開公開 API**（2026-10-20，harness 的請求）：driver 要知道 popup 還在不在播、有幾層、有沒有 toast、
+  剪貼簿裡等著什麼，也要把 App 放上測試的時鐘。這些放在 `internal/testhook`（只有這個 module 裡的套件 import 得到），terminu 在
+  `init` 填進去（`clock.go`）；app 看得到的只有 `App.Tick`。
+- **測試的時鐘，不是真的時間**：真的跑 32ms 一格的動畫，掃一次展示場要幾分鐘，toast 何時消失也跟機器快慢有關；harness 也要能停在
+  開場動畫中間（F2）、自己推時間。時鐘從真的時間起算、對齊 loading icon 的一整圈（720ms），app 用真的時間算出來的期限（PIN 的暫停）
+  差不多對得上，loading icon 每次都從同一格開始。
+- **lib 的計時器與 `tea.Batch`／`tea.Sequence` 做的命令在原地跑**：每個命令都開 goroutine 時，動畫的每一格都要喚醒一次 thread，掃展示場
+  的時間大多花在這上面（`-race` 下一個尺寸 15 秒）。這幾種命令一定馬上回來，用 reflect 取函式的 code pointer 認出來（同一個 closure
+  的 code pointer 都一樣），其他命令照舊開 goroutine。認不出來也只是變慢，不會錯。
+- **`Check` 的沙盒在 `/tmp`，不在 `$TMPDIR`**：macOS 的 `$TMPDIR` 很長（`/var/folders/…`），畫面上印路徑的 confirm、toast 會因此換行或
+  截斷，每台機器不一樣（harness 在 hostu 踩過）。app 自己的變數（`<APP>__…`）、家族的（`TERMINU__…`、`LC_TERMINU_…`）清掉，`HOME`、
+  `XDG_*`、`USERPROFILE`、`LOCALAPPDATA`、`APPDATA` 指進沙盒，app 就用 E3 的預設位置、落在沙盒裡。
+
 ## 已否決，不要重提
 
 - **bubbletea v2 與 lipgloss v2**：見「設計決定」。
@@ -100,6 +124,11 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
 - **家族共用的設定 key**（Rules E3）：`hide_secrets_in_preview`、`input_tab_width` 是使用者的設定，lib 不讀設定檔；app 從自己的設定檔讀，
   設到 `App.HideSecretsInPreview`、`App.InputTabWidth`。
 - **PTY 只在 unix**：`terminal_other.go` 開不了 PTY，只在畫面上寫出原因。
+- **tdptest 還沒做的**（跟 harness 談定的第二版）：檔案檢查（`CheckRepo`：project 範本、README 與 dev-remarks 的段落、`tdp K4` 的引用、
+  splash 對 `docs/icon.svg`）、`coverage.md` 標上 checklist 的條目編號、自動打開每個動作的 popup、把設定檔改壞再開、檢查 app 沒寫到
+  沙盒以外。
+- **tdptest 自己的 Tricky 測試避開 G100 與 input-76**：帶控制字元的值只放進規範寫到畫法的地方（一行輸入框的值、textarea、表單與 panel
+  上的值、viewer），表單與 panel 上的值也避開 `ESC [`、`ESC ]` 開頭的序列，等 terminu 交下來（紀錄的「v0.2.2 之後要交的」#2）。
 
 ## 偏離 tdp
 

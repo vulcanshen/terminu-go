@@ -56,7 +56,7 @@ var icon []byte // the app's mark, drawn by its splash (V)
 
 func main() {
 	app := terminu.New("todo")
-	list := &terminu.List{Columns: []terminu.Column{{Title: "Task", Flex: true}}}
+	list := &terminu.List{Columns: []terminu.Column{{Title: "Task", Shrink: true}}}
 	list.SetRows([]terminu.Row{{ID: "1", Cells: []string{"Write the README"}}, {ID: "2", Cells: []string{"Tag v1.0.0"}}})
 	done := terminu.Action{Key: "x", Label: "Done", Desc: "this task", Scope: terminu.ItemScope, Hint: "done",
 		Do: func() tea.Cmd {
@@ -94,6 +94,51 @@ app reads them from its own and hands them over.
 |---|---|---|---|
 | `hide_secrets_in_preview` | Previews of files hide private keys and files only their owner may read | `false` | `App.HideSecretsInPreview` |
 | `input_tab_width` | How many spaces `Tab` puts in a multi-line text, and how wide a tab in text on the screen is drawn | `4` | `App.InputTabWidth` |
+
+## Testing an app
+
+The `tdptest` package drives an app in a Go test the way a user does, and after every message it checks what terminu
+design asks of every screen: each row exactly as wide as the terminal (tdp L4).
+
+```go
+func TestDone(t *testing.T) {
+	d := tdptest.Start(t, newApp(), 80, 40) // newApp is all of main but Run
+	d.Press("x")
+	if !d.Has("Done: Write the README") {
+		t.Error("no toast")
+	}
+	d.Advance(10 * time.Second)
+	if d.Has("Done:") {
+		t.Error("the toast stays")
+	}
+}
+
+// The app's first launch, walked on many terminal sizes.
+func TestFirstLaunch(t *testing.T) {
+	tdptest.Check(t, tdptest.App{Name: "todo", New: newApp})
+}
+```
+
+- **Keys and text**: `Press` takes keys by the names terminu design writes (`"j"`, `"Enter"`, `"Ctrl-C"`, `"Alt-Esc"`);
+  `Type` types text a key at a time, `Burst` sends it all at once, `Paste` pastes it. `Resize` changes the terminal's
+  size, `Send` sends a message of the app's own, `Do` runs code where the app may be changed (`app.Focus`).
+- **Time is the test's**: after each input the popups' animations play to their end; `Advance` moves the time on (a
+  toast going, a timer); with `d.Auto = false`, `Step` plays one frame at a time. A timer of the app's own follows the
+  test's time when it is made with `App.Tick`; one made with `tea.Tick` runs on the real clock.
+- **Commands** run as they do in the program. One that takes long (a file read, a program's output) comes back with a
+  later input; `WaitFor` waits for it.
+- **What is on the screen**: `Screen` is the rows as text, `Styled` with their colours, `Has` looks for text, `Quit`
+  reports that the app asked to quit, `Clipboard` is what it copied.
+- **`EachIconWidth`** runs a test once with icons and powerline symbols one cell wide, once with icons two, once with
+  both two.
+- **`Check`** launches the app as for the first time on terminals of many sizes and every icon width, each in a new
+  sandbox (`HOME` and the XDG directories under `/tmp`, the app's own variables cleared), and opens the `Space` menu,
+  the global operation popup and `?` on every screen and panel, closing each with `Esc`; then it shrinks the terminal
+  under the app's least size and back.
+- **`Tricky`, `Sizes` and `Mashes`** are values that have broken screens: control characters, escape sequences, wide
+  and joined characters, very long values; odd terminal sizes; keys pressed faster than the animations (`Mash`).
+
+The widths of icons are the whole test program's, so a test that drives an app does not run in parallel with another.
 
 ## Which terminu design
 

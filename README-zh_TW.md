@@ -51,7 +51,7 @@ var icon []byte // the app's mark, drawn by its splash (V)
 
 func main() {
 	app := terminu.New("todo")
-	list := &terminu.List{Columns: []terminu.Column{{Title: "Task", Flex: true}}}
+	list := &terminu.List{Columns: []terminu.Column{{Title: "Task", Shrink: true}}}
 	list.SetRows([]terminu.Row{{ID: "1", Cells: []string{"Write the README"}}, {ID: "2", Cells: []string{"Tag v1.0.0"}}})
 	done := terminu.Action{Key: "x", Label: "Done", Desc: "this task", Scope: terminu.ItemScope, Hint: "done",
 		Do: func() tea.Cmd {
@@ -87,6 +87,46 @@ go run github.com/vulcanshen/terminu-go/examples/showcase@latest
 |---|---|---|---|
 | `hide_secrets_in_preview` | 檔案預覽裡藏起私鑰與只有擁有者能讀的檔 | `false` | `App.HideSecretsInPreview` |
 | `input_tab_width` | 多行文字裡按 `Tab` 插入幾個空白；畫面上文字裡的 Tab 也畫成這麼寬 | `4` | `App.InputTabWidth` |
+
+## 測試 app
+
+`tdptest` 套件在 Go 的測試裡像使用者那樣操作 app，每處理一個 message 就檢查 terminu design 對每個畫面的要求：每一列剛好等於
+終端機的寬度（tdp L4）。
+
+```go
+func TestDone(t *testing.T) {
+	d := tdptest.Start(t, newApp(), 80, 40) // newApp 是 main 裡 Run 以外的全部
+	d.Press("x")
+	if !d.Has("Done: Write the README") {
+		t.Error("no toast")
+	}
+	d.Advance(10 * time.Second)
+	if d.Has("Done:") {
+		t.Error("the toast stays")
+	}
+}
+
+// 第一次啟動，在好幾種終端機尺寸上走一遍。
+func TestFirstLaunch(t *testing.T) {
+	tdptest.Check(t, tdptest.App{Name: "todo", New: newApp})
+}
+```
+
+- **按鍵與文字**：`Press` 用 terminu design 寫的鍵名（`"j"`、`"Enter"`、`"Ctrl-C"`、`"Alt-Esc"`）；`Type` 一個字一個鍵打字，
+  `Burst` 一次送進一串，`Paste` 貼上。`Resize` 改終端機大小，`Send` 送 app 自己的 message，`Do` 在可以改 app 的地方跑程式
+  （`app.Focus`）。
+- **時間由測試決定**：每次輸入之後，popup 的動畫播到完；`Advance` 讓時間往前走（toast 消失、計時器到時）；設 `d.Auto = false`
+  時用 `Step` 一格一格播。app 自己的計時器用 `App.Tick` 做的才跟著測試的時間走；用 `tea.Tick` 做的照真的時間跑。
+- **命令**照程式裡那樣跑。跑得久的（讀檔、程式的輸出）在之後的輸入時回來；`WaitFor` 等它。
+- **畫面上有什麼**：`Screen` 是每一列的文字，`Styled` 帶顏色，`Has` 找字，`Quit` 回報 app 要離開了沒，`Clipboard` 是它複製了什麼。
+- **`EachIconWidth`** 把一個測試跑三次：icon 與 powerline 符號都佔一格、icon 佔兩格、兩種都佔兩格。
+- **`Check`** 在好幾種終端機尺寸、每一種 icon 寬度下，像第一次那樣啟動 app，每次都在新的沙盒裡（`HOME` 與 XDG 目錄放在 `/tmp`
+  底下，app 自己的環境變數清掉）；在每個畫面、每個 panel 打開 `Space` menu、global operation popup 與 `?`，再用 `Esc` 一層層關掉；
+  最後把終端機縮到比 app 的最低尺寸小，再放回來。
+- **`Tricky`、`Sizes` 與 `Mashes`** 是弄壞過畫面的值：控制字元、escape sequence、寬字與組合字、很長的值；奇怪的終端機尺寸；
+  比動畫還快的連按（`Mash`）。
+
+icon 的寬度是整個測試程式共用的，所以操作 app 的測試不跟別的測試平行跑。
 
 ## 實作哪一版 terminu design
 

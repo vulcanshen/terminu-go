@@ -2,6 +2,29 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.8.3
+
+- New package `tdptest`: drives an app in a Go test as a user does — keys by their tdp names, text typed, sent at
+  once or pasted, the terminal resized, messages of the app's own — and checks every frame for tdp L4 (each row
+  exactly as wide as the terminal; no control character reaching the terminal)
+  - The app runs on the test's clock: after each input the animations play to their end; `Advance` moves the time
+    (a toast going, a timer), `Step` plays one frame, `Driver.Auto` off stops the time between inputs
+  - The app's commands run as in the program; `WaitFor` waits for a slow one. `tea.Batch` and `tea.Sequence` are
+    run as Bubble Tea runs them, a quit is noted; a command that panics fails the test
+  - `EachIconWidth` runs a test with icons and powerline symbols one cell wide, icons two, both two (tdp E5)
+  - `Check` launches the app as for the first time on many terminal sizes and icon widths, in a sandbox, and walks the
+    `Space` menu, the global operation popup and `?` on every screen and panel, each closed one layer an `Esc` (tdp
+    K4), then a terminal under the least size and back (tdp L1)
+  - `Tricky`, `Sizes` and `Mashes` (with `Driver.Mash`): values, terminal sizes and fast keys that have broken screens
+- `App.Tick` is `tea.Tick` on the app's clock: under a test that drives the app, the test moves its time
+- Characters that come in one key are characters, however many: typed fast, `end` is three letters, not the End
+  key, and `ctrl+c` does not quit (Rules M5)
+- An escape sequence in a viewer's line that is not a style is shown, not obeyed: its ESC drawn by name in Red, the
+  rest as it is; a style stays a style (components/dialog/note)
+- A textarea whose old text has its line breaks as `\r` or `\r\n` is not changed by opening it: `Esc` closes it
+  without asking and `Enter` writes nothing back (components/input/textarea)
+- README: the quick start's column is `Shrink` (`Flex` went in v0.2.1)
+
 ## v0.2.2 — tdp v0.8.3
 
 - A one-line input's prompt folds when it is too long, several sentences and its own line breaks (a web page's
