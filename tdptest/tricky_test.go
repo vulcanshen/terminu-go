@@ -16,80 +16,65 @@ import (
 // go: list cells, a value panel, a pager, the screen's top row; open lists
 // each popup that can show it.
 func everywhere(v string) (*terminu.App, []func(a *terminu.App) tea.Cmd) {
-	// TODO(tdp G100): tdp says how a control character is drawn only in an
-	// input's value, a textarea, a value on a form or a panel and a viewer;
-	// elsewhere a value with one gets it taken out until G100 is settled.
-	free := strings.Map(func(r rune) rune {
-		if unicode.IsControl(r) {
-			return -1
-		}
-		return r
-	}, v)
-	// TODO(tdp G100): a viewer's line with \n in it.
-	line := strings.ReplaceAll(v, "\n", "")
-	// An escape sequence in a value on a form or a panel waits for the lib
-	// fix terminu hands over after v0.2.2 (input-76).
-	value := v
-	if strings.Contains(v, "\x1b[") || strings.Contains(v, "\x1b]") {
-		value = free
-	}
 	a := terminu.New("tricky")
 	a.MinWidth, a.MinHeight = 20, 10
 	a.Splash = func(frame, w, h int) ([]string, bool) { return []string{"tricky"}, true }
 	a.Quit = &terminu.Ask{Title: "Quit", Question: "Quit tricky?", Verb: "quit"}
-	a.Status = func(w int) string { return terminu.Fit(free, w) }
+	a.Status = func(int) []terminu.Span {
+		return []terminu.Span{{Text: v}, {Text: " " + v, Style: terminu.Fg(terminu.Lavender)}}
+	}
 	list := &terminu.List{Columns: []terminu.Column{{Title: "Name", Shrink: true}, {Title: "Note"}}, Filterable: true, Marks: true}
-	list.SetRows([]terminu.Row{{ID: "1", Cells: []string{free, free}}, {ID: "2", Cells: []string{"plain", free}}})
+	list.SetRows([]terminu.Row{{ID: "1", Cells: []string{v, v}}, {ID: "2", Cells: []string{"plain", v}}})
 	pager := &terminu.Pager{}
-	pager.SetLines([]string{free, "after"})
-	values := &terminu.Values{Fields: []*terminu.Field{{Label: "Name", Value: func() string { return value }}, {Label: "Path", Path: true, Value: func() string { return value }}}}
+	pager.SetLines([]string{v, "after"})
+	values := &terminu.Values{Fields: []*terminu.Field{{Label: "Name", Value: func() string { return v }}, {Label: "Path", Path: true, Value: func() string { return v }}}}
 	a.AddScreen(&terminu.Screen{Name: "One", Key: "O", Panels: []*terminu.Panel{
-		{Label: "Items", Body: list, Actions: []terminu.Action{{Key: "r", Label: "Rename", Desc: free, Scope: terminu.ItemScope, Do: func() tea.Cmd { return nil }}}},
+		{Label: "Items", Body: list, Actions: []terminu.Action{{Key: "r", Label: "Rename", Desc: v, Scope: terminu.ItemScope, Do: func() tea.Cmd { return nil }}}},
 		{Label: "Log", Body: pager},
 		{Label: "Settings", Body: values},
 	}})
-	a.AddScreen(&terminu.Screen{Name: "Two", Key: "T", Panels: []*terminu.Panel{{Label: "Empty", Body: &terminu.Pager{EmptyFact: free}}}})
+	a.AddScreen(&terminu.Screen{Name: "Two", Key: "T", Panels: []*terminu.Panel{{Label: "Empty", Body: &terminu.Pager{EmptyFact: v}}}})
 	nop := func() tea.Cmd { return nil }
 	open := []func(a *terminu.App) tea.Cmd{
-		func(a *terminu.App) tea.Cmd { return a.Toast(terminu.Info, free) },
-		func(a *terminu.App) tea.Cmd { return a.Toast(terminu.Warning, free) },
+		func(a *terminu.App) tea.Cmd { return a.Toast(terminu.Info, v) },
+		func(a *terminu.App) tea.Cmd { return a.Toast(terminu.Warning, v) },
 		func(a *terminu.App) tea.Cmd {
-			return a.Confirm(terminu.Ask{Title: "Delete", Subject: free, Question: free, Verb: "delete", Details: []string{free, free}, Warn: []int{1}}, nop)
+			return a.Confirm(terminu.Ask{Title: "Delete", Subject: v, Question: v, Verb: "delete", Details: []string{v, v}, Warn: []int{1}}, nop)
 		},
-		func(a *terminu.App) tea.Cmd { return a.ErrorAbout("Open", free, free) },
+		func(a *terminu.App) tea.Cmd { return a.ErrorAbout("Open", v, v) },
 		func(a *terminu.App) tea.Cmd {
-			return a.MenuAbout("Pick", free, terminu.MenuSection{Title: free, Actions: []terminu.Action{{Label: free, Desc: free, Do: nop}, {Key: "x", Label: "Other", Desc: free, Do: nop}}})
-		},
-		func(a *terminu.App) tea.Cmd {
-			return a.Viewer(&terminu.Viewer{Title: "Log", Subject: free, Lines: []string{line, line + line, ""}, Tabs: []string{free, "Two"}})
+			return a.MenuAbout("Pick", v, terminu.MenuSection{Title: v, Actions: []terminu.Action{{Label: v, Desc: v, Do: nop}, {Key: "x", Label: "Other", Desc: v, Do: nop}}})
 		},
 		func(a *terminu.App) tea.Cmd {
-			return a.Viewer(&terminu.Viewer{Title: "Wide", Subject: free, Lines: []string{line, line + line}, NoWrap: true})
+			return a.Viewer(&terminu.Viewer{Title: "Log", Subject: v, Lines: []string{v, v + v, ""}, Tabs: []string{v, "Two"}})
 		},
 		func(a *terminu.App) tea.Cmd {
-			return a.Find(&terminu.Finder{Title: "Search", Subject: free, Items: []terminu.FinderItem{{ID: "1", Text: free}, {ID: "2", Text: "b " + free}},
-				Preview: func(it terminu.FinderItem) (string, []string) { return it.Text, []string{free, free} }})
+			return a.Viewer(&terminu.Viewer{Title: "Wide", Subject: v, Lines: []string{v, v + v}, NoWrap: true})
 		},
 		func(a *terminu.App) tea.Cmd {
-			return a.Select(terminu.Select{Title: "Pick", Subject: free, Options: []string{free, "two"}})
+			return a.Find(&terminu.Finder{Title: "Search", Subject: v, Items: []terminu.FinderItem{{ID: "1", Text: v}, {ID: "2", Text: "b " + v}},
+				Preview: func(it terminu.FinderItem) (string, []string) { return it.Text, []string{v, v} }})
 		},
 		func(a *terminu.App) tea.Cmd {
-			return a.Checks(terminu.Checks{Title: "Pick", Subject: free, Options: []string{free, "two"}, Checked: []bool{true, false}})
+			return a.Select(terminu.Select{Title: "Pick", Subject: v, Options: []string{v, "two"}})
 		},
 		func(a *terminu.App) tea.Cmd {
-			return a.Text(terminu.TextInput{Title: "Rename", Subject: free, Prompt: free, Verb: "rename", Old: v})
+			return a.Checks(terminu.Checks{Title: "Pick", Subject: v, Options: []string{v, "two"}, Checked: []bool{true, false}})
+		},
+		func(a *terminu.App) tea.Cmd {
+			return a.Text(terminu.TextInput{Title: "Rename", Subject: v, Prompt: v, Verb: "rename", Old: v})
 		},
 		func(a *terminu.App) tea.Cmd {
 			return a.Text(terminu.TextInput{Title: "New", Prompt: "Name", Verb: "create", Suggest: v})
 		},
 		func(a *terminu.App) tea.Cmd {
-			return a.Textarea(terminu.Textarea{Title: "Note", Subject: free, Old: v})
+			return a.Textarea(terminu.Textarea{Title: "Note", Subject: v, Old: v})
 		},
 		func(a *terminu.App) tea.Cmd {
-			return a.Form(&terminu.Form{Title: "Edit", Subject: free, Button: "Save", Fields: []*terminu.FormField{
-				{Label: "Name", Value: func() string { return value }},
-				{Label: "Path", Path: true, Stacked: true, Value: func() string { return value }},
-				{Label: "Kind", Options: []string{free, "two"}},
+			return a.Form(&terminu.Form{Title: "Edit", Subject: v, Button: "Save", Fields: []*terminu.FormField{
+				{Label: "Name", Value: func() string { return v }},
+				{Label: "Path", Path: true, Stacked: true, Value: func() string { return v }},
+				{Label: "Kind", Options: []string{v, "two"}},
 			}})
 		},
 	}

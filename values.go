@@ -11,8 +11,13 @@ type Field struct {
 	Label string
 	// Value is the value as shown (components/input/README, how a value is
 	// shown); Empty is what an empty value means, shown in grey ("not set").
+	// A control character in it, ESC too, is drawn by its name (Escape).
 	Value func() string
-	Empty string
+	// Styled, when set, is how the value is shown in colours of the app's own
+	// (a swatch, ColorSpans; a state in Green): each piece's text drawn as
+	// Value's is. Value stays what the value is.
+	Styled func() []Span
+	Empty  string
 	// Path cuts a value too long from the front: "…/.ssh/id_ed25519".
 	Path bool
 	// Options make the field a radio drawn in place: Selected is the chosen
@@ -233,24 +238,30 @@ func (v *Values) valueText(f *Field, k int) string {
 	case len(f.Options) > 0 && f.Multi:
 		on := k < len(f.Checked) && f.Checked[k]
 		if f.OptionUnavailable != nil && f.OptionUnavailable(k) {
-			return Fg(Surface2).Render(checkGlyph(on) + " " + f.Options[k])
+			return Fg(Surface2).Render(checkGlyph(on) + " " + Escape(f.Options[k]))
 		}
 		if on {
-			return Fg(Green).Render(glyphMarked + " " + f.Options[k])
+			return Fg(Green).Render(glyphMarked + " " + Escape(f.Options[k]))
 		}
-		return Fg(Text).Render(glyphUnchecked + " " + f.Options[k])
+		return Fg(Text).Render(glyphUnchecked + " " + Escape(f.Options[k]))
 	case len(f.Options) > 0:
 		if k == f.Selected {
-			return Fg(Green).Render(glyphRadioOn + " " + f.Options[k])
+			return Fg(Green).Render(glyphRadioOn + " " + Escape(f.Options[k]))
 		}
-		return Fg(Text).Render(glyphRadioOff + " " + f.Options[k])
+		return Fg(Text).Render(glyphRadioOff + " " + Escape(f.Options[k]))
+	}
+	if f.Styled != nil {
+		if sp := f.Styled(); spansPlain(sp) != "" {
+			return Fg(Text).Render(spansText(sp))
+		}
+		return Fg(Overlay0).Render(Escape(f.Empty))
 	}
 	val := ""
 	if f.Value != nil {
 		val = f.Value()
 	}
 	if val == "" {
-		return Fg(Overlay0).Render(f.Empty)
+		return Fg(Overlay0).Render(Escape(f.Empty))
 	}
 	if f.Path {
 		return valueText(homeShort(val), Fg(Text))

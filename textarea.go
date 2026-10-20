@@ -229,7 +229,7 @@ func (tv *textareaView) draw(w, h int, layer Color) []string {
 		}
 		body = append(body, " "+num+" "+Fit(b.String(), tv.textW)+" ")
 	}
-	body = append(body, Repeat(" ", inner), padRow(Fg(Red).Render(Truncate(tv.err, inner-2)), inner))
+	body = append(body, Repeat(" ", inner), padRow(Fg(Red).Render(Truncate(Escape(tv.err), inner-2)), inner))
 	scroll := ""
 	if len(rows) > n {
 		scroll = scrollText(true, tv.line+1, 0, len(tv.lines))

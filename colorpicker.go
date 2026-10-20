@@ -53,10 +53,10 @@ func (c ColorPicker) open(a *App, written func()) tea.Cmd {
 // HexText writes a colour as the family does: "#2A2A3C".
 func HexText(c Color) string { return strings.ToUpper(c.String()) }
 
-// ColorText is a colour on a form or a panel: a small swatch and its hex
-// (components/input/color-picker).
-func ColorText(c Color) string {
-	return Fg(c).Render("███") + " " + Fg(Text).Render(HexText(c))
+// ColorSpans is a colour as a value on a form or a panel shows it, for
+// Styled: a small swatch and its hex (components/input/color-picker).
+func ColorSpans(c Color) []Span {
+	return []Span{{Text: "███", Style: Fg(c)}, {Text: " "}, {Text: HexText(c), Style: Fg(Text)}}
 }
 
 // The row: old and new 8 cells wide, R, G, B 3 cells, two cells apart.

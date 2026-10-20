@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/x/ansi"
 )
 
 // Column is one column of a List (layout/panel, ordinary lists).
@@ -43,8 +42,15 @@ type Column struct {
 
 // Row is one item of a List.
 type Row struct {
-	ID    string   // what marks are kept by; the row's place when empty
-	Cells []string // one per column; may carry the app's own colours
+	ID string // what marks are kept by; the row's place when empty
+	// Cells are the row's text, one per column: a control character in one,
+	// ESC too, is drawn by its name (Escape; layout/panel). The filter and
+	// sorting go by them.
+	Cells []string
+	// Styled, when set for a cell, is how it is drawn in colours of the app's
+	// own: each piece's text drawn as a cell's is. The cell's text stays in
+	// Cells.
+	Styled [][]Span
 	// Sort, when set, are the values sorted by instead of the cells (an age
 	// shown as "3d" sorted by seconds).
 	Sort []string
@@ -343,9 +349,18 @@ func (l *List) sortValue(row, col int) string {
 
 func (l *List) cell(row, col int) string {
 	if col < len(l.rows[row].Cells) {
-		return ansi.Strip(l.rows[row].Cells[col])
+		return l.rows[row].Cells[col]
 	}
 	return ""
+}
+
+// shown is a cell as it is drawn: its spans, or its text escaped.
+func (l *List) shown(row, col int) string {
+	r := &l.rows[row]
+	if col < len(r.Styled) && r.Styled[col] != nil {
+		return spansText(r.Styled[col])
+	}
+	return Escape(l.cell(row, col))
 }
 
 // compare orders two rows by one column: numbers by value, text as text.
@@ -378,7 +393,7 @@ func (l *List) Draw(w, h int, focused bool) []string {
 	if l.Location != "" {
 		// One cell from the frame on the left, the arrow's room on the right.
 		room := w - 1 - Width(glyphHard)
-		out = append(out, " "+Pad(Fg(Lavender).Render(TruncateLeft(l.Location, room)), w-1))
+		out = append(out, " "+Pad(Fg(Lavender).Render(TruncateLeft(Escape(l.Location), room)), w-1))
 	}
 	if l.filter != nil {
 		out = append(out, l.filterRow(w, focused))
@@ -436,7 +451,7 @@ func (l *List) Draw(w, h int, focused bool) []string {
 		}
 		if lines[li].item < 0 {
 			// A group title: Blue, upper case, not bold, one cell from the frame.
-			out = append(out, " "+Pad(Fg(Blue).Render(Truncate(Upper(lines[li].title), w-1-arrow)), w-1-arrow)+Repeat(" ", arrow))
+			out = append(out, " "+Pad(Fg(Blue).Render(Truncate(Escape(Upper(lines[li].title)), w-1-arrow)), w-1-arrow)+Repeat(" ", arrow))
 			continue
 		}
 		vi := lines[li].item
@@ -539,7 +554,7 @@ func (l *List) widths(w int) []int {
 	for c := range n {
 		ws[c] = Width(l.title(c))
 		for r := range l.rows {
-			ws[c] = max(ws[c], Width(l.cell(r, c)))
+			ws[c] = max(ws[c], Width(l.shown(r, c)))
 		}
 	}
 	least := func(c int) int {
@@ -690,21 +705,14 @@ func (l *List) header(ws []int) string {
 
 func (l *List) rowText(r int, ws []int) string {
 	if len(l.Columns) == 0 {
-		v := ""
-		if len(l.rows[r].Cells) > 0 {
-			v = l.rows[r].Cells[0]
-		}
-		return Truncate(v, ws[0])
+		return Truncate(l.shown(r, 0), ws[0])
 	}
 	var parts []string
 	for c := range ws {
 		if ws[c] < 0 {
 			continue // taken away
 		}
-		v := ""
-		if c < len(l.rows[r].Cells) {
-			v = l.rows[r].Cells[c]
-		}
+		v := l.shown(r, c)
 		col := l.Columns[c]
 		switch {
 		case col.Path:

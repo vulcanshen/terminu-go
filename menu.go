@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/x/ansi"
 )
 
 type menuRowKind int
@@ -102,14 +101,14 @@ func (m *menuView) arrowRoom() int { return Width(glyphHard) }
 func (m *menuView) rowWidth(r menuRow) int {
 	switch r.kind {
 	case menuTitle:
-		return Width(glyphHexagon) + 1 + Width(r.label)
+		return Width(glyphHexagon) + 1 + Width(Escape(r.label))
 	case menuSeparator:
 		return 0
 	}
 	if r.desc == "" {
-		return Width(r.label)
+		return Width(Escape(r.label))
 	}
-	return Width(r.label) + 2 + Width(r.desc)
+	return Width(Escape(r.label)) + 2 + Width(Escape(r.desc))
 }
 
 // hint is Enter:run Esc:close, Enter:detail on a row opening its full text
@@ -194,16 +193,16 @@ func (m *menuView) draw(w, h int, color Color) []string {
 		}
 		switch r.kind {
 		case menuTitle:
-			body = append(body, " "+Fit(Fg(Overlay0).Render(glyphHexagon+" "+Upper(r.label)), text)+Repeat(" ", arrow))
+			body = append(body, " "+Fit(Fg(Overlay0).Render(glyphHexagon+" "+Escape(Upper(r.label))), text)+Repeat(" ", arrow))
 		case menuSeparator:
 			body = append(body, " "+Fg(Overlay0).Render(Repeat("╌", inner-2))+" ")
 		default:
 			line := m.rowText(r, text)
 			switch {
 			case i == m.cursor && r.selectable():
-				body = append(body, cursorRow(ansi.Strip(line), inner, On(color)))
+				body = append(body, cursorRow(plainNames(line), inner, On(color)))
 			case r.action.disabled():
-				body = append(body, " "+Fg(Surface2).Render(ansi.Strip(line))+Repeat(" ", arrow))
+				body = append(body, " "+Fg(Surface2).Render(plainNames(line))+Repeat(" ", arrow))
 			default:
 				body = append(body, " "+line+Repeat(" ", arrow))
 			}
@@ -239,12 +238,12 @@ func (m *menuView) titleText() string {
 // rowText is a row in w cells: label in Text, description in Overlay0 on the
 // right, cut with "…" when it does not fit (components/dialog/menu).
 func (m *menuView) rowText(r menuRow, w int) string {
-	label := Truncate(r.label, w)
+	label := Truncate(Escape(r.label), w)
 	room := w - Width(label) - 2
 	if r.desc == "" || room < 2 {
 		return Pad(Fg(Text).Render(label), w)
 	}
-	desc := Truncate(r.desc, room)
+	desc := Truncate(Escape(r.desc), room)
 	return Fg(Text).Render(label) + Repeat(" ", w-Width(label)-Width(desc)) + Fg(Overlay0).Render(desc)
 }
 

@@ -38,20 +38,20 @@ func (c *confirmView) wrapTo(w int) {
 			c.content = append(c.content, "")
 			continue
 		}
-		for _, l := range Wrap(d, w) {
+		for _, l := range Wrap(Escape(d), w) {
 			c.content = append(c.content, style.Render(l))
 		}
 	}
-	for _, l := range Wrap(c.ask.Question, w) {
+	for _, l := range Wrap(Escape(c.ask.Question), w) {
 		c.quest = append(c.quest, Fg(Text).Render(l))
 	}
 }
 
 func (c *confirmView) measure(sw, sh int) (int, int) {
 	most := max(min(sw-2, 120), 1)
-	content := Width(c.ask.Question)
+	content := Width(Escape(c.ask.Question))
 	for _, d := range c.ask.Details {
-		content = max(content, Width(d))
+		content = max(content, Width(Escape(d)))
 	}
 	w := min(max(content+4, Width(titleCapsule(glyphConfirm, popupTitle(c.ask.Title, c.ask.Subject), Base, 1<<20))+4, hintWidth(c.hint())+6), most)
 	rows := func() int {

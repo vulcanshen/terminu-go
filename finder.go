@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/x/ansi"
 )
 
 // FinderItem is one row of a Finder.
@@ -223,7 +222,15 @@ func (a *App) Find(f *Finder) tea.Cmd {
 		fv.slow = true
 		fv.previewTitle = func(r finderRow) string { return path.Base(filepath.ToSlash(r.item.ID)) }
 	case f.Preview != nil:
-		fv.preview = func(r finderRow, _, _ int) (string, []string) { return f.Preview(r.item) }
+		fv.preview = func(r finderRow, _, _ int) (string, []string) {
+			// Reading content, drawn as a viewer draws it (components, control characters).
+			title, lines := f.Preview(r.item)
+			rows := readingRows(lines)
+			for i, l := range rows {
+				rows[i] = readingLine(cutCR(l), tabCells)
+			}
+			return title, rows
+		}
 	}
 	return a.open(fv)
 }
@@ -388,7 +395,7 @@ func (f *finderView) mark(i int, r finderRow) string {
 	return r.icon
 }
 
-func (f *finderView) rowLabel(r finderRow) string { return cmpOr(r.label, r.text) }
+func (f *finderView) rowLabel(r finderRow) string { return Escape(cmpOr(r.label, r.text)) }
 
 // listHint is the list's hint. With no results Enter does nothing and is
 // left out; a checkbox popup's Enter still applies the checks, so only Space
@@ -533,7 +540,7 @@ func (f *finderView) drawList(w, h int, layer Color) []string {
 			if mark != "" {
 				plain = mark + " " + label
 			}
-			line := cursorRow(ansi.Strip(plain), inner, On(layer))
+			line := cursorRow(plainNames(plain), inner, On(layer))
 			if !f.onList {
 				line = Dim(line) // the focus is on the typing row (P6)
 			}

@@ -306,16 +306,17 @@ func TestSwatchOnCursor(t *testing.T) {
 		}
 	}
 	ta := newTestApp(t)
-	ta.Form(&Form{Title: "Theme", Fields: []*FormField{{Label: "Background", Value: func() string { return ColorText(c) }}}})
+	styled := func() []Span { return ColorSpans(c) }
+	ta.Form(&Form{Title: "Theme", Fields: []*FormField{{Label: "Background", Value: func() string { return HexText(c) }, Styled: styled}}})
 	ta.settle()
 	lines, layer := covFDraw(ta)
 	check("form", covFRow(lines, "#2A2A3C"), On(layer))
 	ta.press("Esc")
 	// A value panel and a list.
-	v := &Values{Fields: []*Field{{Label: "Background", Value: func() string { return ColorText(c) }}}}
+	v := &Values{Fields: []*Field{{Label: "Background", Value: func() string { return HexText(c) }, Styled: styled}}}
 	check("values", strings.Join(v.Draw(60, 3, true), "\n"), On(Subtext1))
 	l := &List{}
-	l.SetRows([]Row{{Cells: []string{ColorText(c)}}})
+	l.SetRows([]Row{{Cells: []string{HexText(c)}, Styled: [][]Span{ColorSpans(c)}}})
 	check("list", l.Draw(30, 1, true)[0], On(Subtext1))
 	// Other text on the block is Base, its own colour gone.
 	if got := onBlock(Fg(Green).Render("ok"), On(Blue)); got != On(Blue).Render("ok") {

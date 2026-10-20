@@ -775,7 +775,7 @@ func TestValueDisplay(t *testing.T) {
 		if r := StripStyles(covFRow(lines, "Downloads")); !strings.Contains(r, "~/Downloads") {
 			t.Errorf("%s: the home directory is ~: %q", where, r)
 		}
-		if r := covFRow(lines, "#2A2A3C"); !strings.Contains(r, Fg(bg).Render("███")+" "+Fg(Text).Render("#2A2A3C")) {
+		if r := covFRow(lines, "#2A2A3C"); !strings.Contains(r, Fg(bg).Render("███")) || !strings.Contains(StripStyles(r), "███ #2A2A3C") {
 			t.Errorf("%s: a colour is a swatch and its hex: %q", where, r)
 		}
 	}
@@ -786,7 +786,7 @@ func TestValueDisplay(t *testing.T) {
 		{Label: "Note", Value: value(long)},
 		{Label: "Key", Path: true, Value: value(deep)},
 		{Label: "Save to", Path: true, Value: value(filepath.Join(home, "Downloads"))},
-		{Label: "Background", Value: value(ColorText(bg))},
+		{Label: "Background", Value: value(HexText(bg)), Styled: func() []Span { return ColorSpans(bg) }},
 	}}
 	check("panel", v.Draw(50, 9, true))
 
@@ -799,7 +799,7 @@ func TestValueDisplay(t *testing.T) {
 		{Label: "Note", Value: value(long)},
 		{Label: "Key", Path: true, Value: value(deep)},
 		{Label: "Save to", Path: true, Value: value(filepath.Join(home, "Downloads"))},
-		{Label: "Background", Value: value(ColorText(bg))},
+		{Label: "Background", Value: value(HexText(bg)), Styled: func() []Span { return ColorSpans(bg) }},
 	}})
 	ta.settle()
 	lines, _ := covFDraw(ta)

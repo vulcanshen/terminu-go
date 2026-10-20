@@ -103,7 +103,17 @@ func (s Style) Render(text string) string {
 	if p == "" || text == "" {
 		return text
 	}
-	return "\x1b[" + p + "m" + text + "\x1b[0m"
+	open := "\x1b[" + p + "m"
+	if strings.Contains(text, "\x1b[") {
+		if s.Bg.Set {
+			// A control character's name on a block: Red under Base.
+			text = strings.ReplaceAll(text, nameSGR, nameOnBlock)
+		}
+		// Styled pieces inside (a name, a span) end with a reset: the style
+		// goes on after each.
+		text = strings.ReplaceAll(text, "\x1b[0m", "\x1b[0m"+open)
+	}
+	return open + text + "\x1b[0m"
 }
 
 // sgrAt matches an SGR sequence at the start of a string.
@@ -119,7 +129,8 @@ func onBlock(s string, block Style) string {
 		out.WriteString(block.Render(plain.String()))
 		plain.Reset()
 	}
-	cur := "" // the SGR sequences in force
+	cur := ""     // the SGR sequences in force
+	name := false // in a control character's name: Red under Base
 	for len(s) > 0 {
 		if s[0] == 0x1b {
 			seq := sgrAt.FindString(s)
@@ -127,7 +138,9 @@ func onBlock(s string, block Style) string {
 			case seq == "":
 				seq = s[:1] // not a colour: dropped
 			case seq == "\x1b[0m" || seq == "\x1b[m":
-				cur = ""
+				cur, name = "", false
+			case seq == nameSGR || seq == nameOnBlock:
+				name = true
 			default:
 				cur += seq
 			}
@@ -140,6 +153,11 @@ func onBlock(s string, block Style) string {
 		}
 		text := s[:end]
 		s = s[end:]
+		if name {
+			flush()
+			out.WriteString(nameOnBlock + text + "\x1b[0m")
+			continue
+		}
 		for text != "" {
 			swatch := strings.HasPrefix(text, "█")
 			n := 0

@@ -202,7 +202,7 @@ func newInputsScreen(s *showcase) *inputsScreen {
 			return a.PickDate(terminu.DatePicker{Title: "Meeting", Glyph: glyphCalendar, Value: meeting, Time: true,
 				Done: func(t time.Time) tea.Cmd { meeting = t; return nil }})
 		}},
-		{Label: "Background", Value: func() string { return terminu.ColorText(background) }, Edit: func() tea.Cmd {
+		{Label: "Background", Value: func() string { return terminu.HexText(background) }, Styled: func() []terminu.Span { return terminu.ColorSpans(background) }, Edit: func() tea.Cmd {
 			return a.PickColor(terminu.ColorPicker{Title: "Background", Glyph: glyphPalette, Value: background,
 				Done: func(c terminu.Color) tea.Cmd { background = c; return nil }})
 		}},
@@ -211,7 +211,12 @@ func newInputsScreen(s *showcase) *inputsScreen {
 			if !highlight.Set {
 				return ""
 			}
-			return terminu.ColorText(highlight)
+			return terminu.HexText(highlight)
+		}, Styled: func() []terminu.Span {
+			if !highlight.Set {
+				return nil
+			}
+			return terminu.ColorSpans(highlight)
 		}, Empty: "the theme's own", Edit: func() tea.Cmd {
 			return a.PickColor(terminu.ColorPicker{Title: "Highlight", Glyph: glyphPalette, Value: highlight,
 				Done: func(c terminu.Color) tea.Cmd { highlight = c; return nil }})

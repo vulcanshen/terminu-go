@@ -100,7 +100,7 @@ func (rv *reorderView) draw(w, h int, layer Color) []string {
 	arrow := Width(glyphHard)
 	body := make([]string, 0, n)
 	for i := rv.top; i < rv.top+n && i < len(rv.order); i++ {
-		item := rv.r.Options[rv.order[i]]
+		item := Escape(rv.r.Options[rv.order[i]])
 		switch {
 		case i == rv.cursor && rv.held:
 			// The held item: the cursor in the mode's colour, the swap glyph

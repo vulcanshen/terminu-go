@@ -779,7 +779,7 @@ func TestScreenNarrow(t *testing.T) {
 
 func TestL2FixedWidthChrome(t *testing.T) {
 	ta := newTestApp(t)
-	ta.Status = func(w int) string { return Truncate("copying  4%", w) }
+	ta.Status = func(w int) []Span { return []Span{{Text: Truncate("copying  4%", w)}} }
 	chips := StripStyles(ta.Frame()[0])
 	ta.press("O")
 	if got := StripStyles(ta.Frame()[0]); got != chips {
@@ -817,7 +817,9 @@ func TestL2FixedWidthChrome(t *testing.T) {
 
 func TestL3ChromeRowsFixed(t *testing.T) {
 	ta := newTestApp(t)
-	ta.Status = func(w int) string { return Truncate("context: prod  namespace: kube-system  2 errors", w) }
+	ta.Status = func(w int) []Span {
+		return []Span{{Text: Truncate("context: prod  namespace: kube-system  2 errors", w)}}
+	}
 	for _, w := range []int{120, 60, 30} {
 		ta.resize(w, 20)
 		f := ta.Frame()

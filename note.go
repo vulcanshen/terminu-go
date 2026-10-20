@@ -177,12 +177,12 @@ func keyReference(title string, sections []refSection) *noteView {
 				lines = append(lines, Fg(Overlay0).Render(glyphHexagon+" "+Upper(s.title)))
 			}
 			for _, r := range s.rows {
-				key, desc := Pad(renderKey(r.Key, Fg(Blue), Overlay0), keyW), Fg(Text).Render(r.Desc)
+				key, desc := Pad(renderKey(r.Key, Fg(Blue), Overlay0), keyW), Fg(Text).Render(Escape(r.Desc))
 				if r.Disabled {
-					key, desc = Fg(Surface2).Render(Pad(r.Key, keyW)), Fg(Surface2).Render(r.Desc)
+					key, desc = Fg(Surface2).Render(Pad(r.Key, keyW)), Fg(Surface2).Render(Escape(r.Desc))
 				}
 				if s.names {
-					for i, l := range Wrap(r.Desc, max(room-1-keyW-2, 1)) {
+					for i, l := range Wrap(Escape(r.Desc), max(room-1-keyW-2, 1)) {
 						name := Repeat(" ", keyW)
 						if i == 0 {
 							name = Fg(Text).Render(Pad(r.Key, keyW))
@@ -207,7 +207,7 @@ func keyReference(title string, sections []refSection) *noteView {
 func errorPopup(title, subject, message string) *noteView {
 	red := Red
 	return &noteView{
-		glyph: glyphError, title: popupTitle(title, subject), text: message, textStyle: Fg(Red), known: true, color: &red, enterCloses: true,
+		glyph: glyphError, title: popupTitle(title, subject), text: Escape(message), textStyle: Fg(Red), known: true, color: &red, enterCloses: true,
 		hint: []KeyHint{{"Enter|Esc", "close"}}, name: title,
 	}
 }

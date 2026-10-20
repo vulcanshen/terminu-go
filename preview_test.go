@@ -31,19 +31,23 @@ func writeFile(t *testing.T, p string, data []byte, mode os.FileMode) {
 	}
 }
 
-// TestFilePreviewEscapes: an escape sequence written in a file is shown, not
-// obeyed: ESC by its red name, the rest of it as text, nothing lost
-// (components/input/file-picker; sshu SS38).
+// TestFilePreviewEscapes: a file's colour codes colour it; an escape
+// sequence that is not one is shown, not obeyed: ESC by its red name, the
+// rest of it as text; a \r in a line leaves its last state
+// (components/input/file-picker, file-picker-93).
 func TestFilePreviewEscapes(t *testing.T) {
 	dir := t.TempDir()
-	writeFile(t, filepath.Join(dir, "log.txt"), []byte("ok \x1b[31mred\x1b[0m done\n"), 0o600)
+	writeFile(t, filepath.Join(dir, "log.txt"), []byte("ok \x1b[31mred\x1b[0m done\n\x1b[2Jclear\n10%\r100%\n"), 0o600)
 	lines := filePreview(filepath.Join(dir, "log.txt"), 60, 5, false, nil, 4)
 	text := StripStyles(strings.Join(lines, "\n"))
-	if !strings.Contains(text, `ok \x1b[31mred\x1b[0m done`) {
-		t.Errorf("every character shown: %q", text)
+	for _, want := range []string{"1 ok red done", `2 \x1b[2Jclear`, "3 100%"} {
+		if !strings.Contains(text, want) {
+			t.Errorf("%q is not shown: %q", want, text)
+		}
 	}
-	if !strings.Contains(strings.Join(lines, ""), Fg(Red).Render(`\x1b`)) {
-		t.Errorf("ESC by its red name: %q", lines)
+	all := strings.Join(lines, "")
+	if !strings.Contains(all, "\x1b[31mred") || !strings.Contains(all, Fg(Red).Render(`\x1b`)) || strings.Contains(all, "\x1b[2J") {
+		t.Errorf("the colour code colours, the other ESC by its red name: %q", lines)
 	}
 }
 

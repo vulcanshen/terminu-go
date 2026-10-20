@@ -63,6 +63,9 @@ func shrunk(text string) string {
 			return text[:i+1]
 		}
 	}
+	if strings.HasPrefix(text, "\x1b") {
+		return Cut(text, 0, 1) // a control character's name starts it
+	}
 	g, _, _, _ := uniseg.FirstGraphemeClusterInString(text, -1)
 	return g
 }
@@ -80,6 +83,9 @@ func drawChain(caps []Capsule, color Color, maxW int) string {
 		return ""
 	}
 	parts := append([]Capsule(nil), caps...)
+	for i := range parts {
+		parts[i].Text = Escape(parts[i].Text) // a tab's name (components, control characters)
+	}
 	draw := func(ps []Capsule, folded bool) string {
 		ground := func(c Capsule) Color {
 			if c.Selected {
@@ -149,9 +155,9 @@ func drawChain(caps []Capsule, color Color, maxW int) string {
 // titleCapsule is a popup's title: glyph and text, upper case, in a capsule
 // rounded at both ends, filled with color (components/layout/popup).
 func titleCapsule(glyph, title string, color Color, maxW int) string {
-	text := title
+	text := Escape(title) // a name: control characters by name (components)
 	if glyph != "" {
-		text = glyph + " " + title
+		text = glyph + " " + text
 	}
 	ends := Width(glyphRoundLeft) + Width(glyphRoundRight)
 	text = Truncate(text, maxW-ends)

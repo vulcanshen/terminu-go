@@ -323,15 +323,27 @@ func linesFrom(r io.Reader, first, h int) (int, string) {
 
 // highlight is text in the colours of catppuccin-mocha (foreground only),
 // its line numbers in Overlay0; tabs and control characters as a viewer
-// draws them.
+// draws them. A file with colour codes of its own is drawn in them instead,
+// not lexed; a \r inside a line leaves its last state (components/input/
+// file-picker).
 func highlight(p, text string, h, tabW, first int) []string {
 	raw := strings.Split(strings.TrimRight(text, "\n"), "\n")
 	if len(raw) > h {
 		raw = raw[:h]
 	}
+	numW := len(strconv.Itoa(first + len(raw) - 1))
+	if strings.Contains(text, "\x1b[") {
+		out := make([]string, len(raw))
+		for i, l := range raw {
+			l = lastState(cutCR(l))
+			out[i] = Fg(Overlay0).Render(PadLeft(strconv.Itoa(first+i), numW)) + " " + onText(readingLine(l, tabW))
+		}
+		return out
+	}
 	lines := make([]string, len(raw))
 	for i := range raw {
 		raw[i], _ = crlf(raw[i])
+		raw[i] = lastState(raw[i])
 		lines[i] = fileText(raw[i], tabW)
 	}
 	lexer := lexers.Match(filepath.Base(p))
@@ -339,7 +351,6 @@ func highlight(p, text string, h, tabW, first int) []string {
 		lexer = lexers.Fallback
 	}
 	coloured := colourise(lexer, lines)
-	numW := len(strconv.Itoa(first + len(lines) - 1))
 	out := make([]string, len(lines))
 	for i := range lines {
 		out[i] = Fg(Overlay0).Render(PadLeft(strconv.Itoa(first+i), numW)) + " " + redNames(coloured[i], graphemes(raw[i]), tabW)

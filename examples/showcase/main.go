@@ -123,8 +123,8 @@ func newShowcase() *showcase {
 // status is the statusbar (layout/screen): the layout with its hotkey, how
 // wide an icon is, the log's errors and warnings, the running job. Every
 // number keeps its width (Rules L2).
-func (s *showcase) status(w int) string {
-	grey := terminu.Fg(terminu.Overlay0)
+func (s *showcase) status(int) []terminu.Span {
+	grey, here := terminu.Fg(terminu.Overlay0), terminu.Fg(terminu.Lavender)
 	narrow := "off"
 	if s.app.ForceNarrow {
 		narrow = "on "
@@ -132,15 +132,18 @@ func (s *showcase) status(w int) string {
 	// Each group label: value, a space after the colon; two spaces between
 	// groups, no other mark (components, spacing). Each value keeps its
 	// width (Rules L2) but the last, which pushes nothing.
-	text := grey.Render("[N]arrow: ") + terminu.Fg(terminu.Lavender).Render(narrow) +
-		grey.Render("  icon: ") + terminu.Fg(terminu.Lavender).Render(fmt.Sprint(terminu.IconWidth())) +
-		grey.Render("  powerline: ") + terminu.Fg(terminu.Lavender).Render(fmt.Sprint(terminu.PowerlineWidth())) +
-		grey.Render("  errors: ") + terminu.Fg(terminu.Red).Render(fmt.Sprintf("%-3d", s.panels.errors)) +
-		grey.Render("  warnings: ") + terminu.Fg(terminu.Peach).Render(fmt.Sprintf("%-3d", s.panels.warnings))
-	if s.taskOn {
-		text += grey.Render("  copying: ") + terminu.Fg(terminu.Green).Render(fmt.Sprintf("%d%%", int(s.task*100)))
+	spans := []terminu.Span{
+		{Text: "[N]arrow: ", Style: grey}, {Text: narrow, Style: here},
+		{Text: "  icon: ", Style: grey}, {Text: fmt.Sprint(terminu.IconWidth()), Style: here},
+		{Text: "  powerline: ", Style: grey}, {Text: fmt.Sprint(terminu.PowerlineWidth()), Style: here},
+		{Text: "  errors: ", Style: grey}, {Text: fmt.Sprintf("%-3d", s.panels.errors), Style: terminu.Fg(terminu.Red)},
+		{Text: "  warnings: ", Style: grey}, {Text: fmt.Sprintf("%-3d", s.panels.warnings), Style: terminu.Fg(terminu.Peach)},
 	}
-	return terminu.Truncate(text, w)
+	if s.taskOn {
+		spans = append(spans, terminu.Span{Text: "  copying: ", Style: grey},
+			terminu.Span{Text: fmt.Sprintf("%d%%", int(s.task*100)), Style: terminu.Fg(terminu.Green)})
+	}
+	return spans
 }
 
 // appLog is what the showcase has done, for its own core key.

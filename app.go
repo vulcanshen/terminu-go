@@ -76,8 +76,11 @@ type App struct {
 	// Global are the global operations besides switching screens and
 	// quitting (Principle P3); their hotkeys work on panels too (Rules M4).
 	Global []Action
-	// Status draws the statusbar in w cells (layout/screen); nil for none.
-	Status func(w int) string
+	// Status is the statusbar for w cells (layout/screen); nil for none. It
+	// is spans, in the app's colours (Overlay0 words, a Lavender value...):
+	// a value from outside (a path) has its control characters drawn by
+	// name (components, control characters). Cut at w.
+	Status func(w int) []Span
 	// Canvas, when set, is a screen the app draws itself, whole: a full-screen
 	// lock screen. The lib draws it instead of its screens, chips and footer,
 	// h lines of w cells, and puts its popups and toasts over it, so confirm,
@@ -1413,7 +1416,7 @@ func (a *App) base() []string {
 			lines = append(lines, a.divider(w))
 		}
 	case a.Status != nil:
-		lines = append(lines, Pad(a.Status(w), w))
+		lines = append(lines, Fit(spansText(a.Status(w)), w))
 	}
 	areaH := h - len(lines) - 1
 	lines = append(lines, a.panelArea(w, areaH)...)
@@ -1443,7 +1446,7 @@ func (a *App) chipRow(w int) string {
 	}
 	status := ""
 	if a.Status != nil {
-		status = a.Status(max(w/2, 0))
+		status = Truncate(spansText(a.Status(max(w/2, 0))), max(w/2, 0))
 	}
 	chips := drawChain(caps, Blue, max(w-Width(status)-1, 1))
 	gap := w - Width(chips) - Width(status)

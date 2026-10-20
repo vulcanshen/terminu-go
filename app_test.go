@@ -558,22 +558,32 @@ func TestE3TabsDrawnAsSpaces(t *testing.T) {
 	}
 }
 
-// TestValueControlChars: a value on a form or a panel writes its control
-// characters as their red names, a tab too (\t), as on a typing row; the
-// app's own colours stay (components/input/README, Rules E3).
+// TestValueControlChars: a value on a form or a panel writes every control
+// character as its red name, a tab and ESC too, a colour code included, as on
+// a typing row; colours of the app's own come as spans (components, control
+// characters; components/input/README, Rules E3).
 func TestValueControlChars(t *testing.T) {
-	v := "a\tb\nc\x1bd"
-	want := Fg(Text).Render("a") + Fg(Red).Render(`\t`) + Fg(Text).Render("b") + Fg(Red).Render(`\n`) +
-		Fg(Text).Render("c") + Fg(Red).Render(`\x1b`) + Fg(Text).Render("d")
-	if got := valueText(v, Fg(Text)); got != want {
-		t.Errorf("valueText = %q, want %q", got, want)
+	v := "a\tb\nc\x1b[31md"
+	got := valueText(v, Fg(Text))
+	if StripStyles(got) != `a\tb\nc\x1b[31md` {
+		t.Errorf("valueText shows %q", StripStyles(got))
 	}
-	swatch := ColorText(Hex("#2A2A3C"))
-	if got := StripStyles(valueText(swatch, Fg(Text))); got != "███ #2A2A3C" {
-		t.Errorf("the app's colours are not control characters: %q", got)
+	for _, name := range []string{`\t`, `\n`, `\x1b`} {
+		if !strings.Contains(got, nameSGR+name) {
+			t.Errorf("%s is not in Red: %q", name, got)
+		}
+	}
+	if strings.Contains(got, "\x1b[31m") {
+		t.Error("a colour code in a value reached the terminal")
+	}
+	f := &Field{Label: "Background", Value: func() string { return "#2A2A3C" }, Styled: func() []Span { return ColorSpans(Hex("#2A2A3C")) }}
+	vals := &Values{Fields: []*Field{f}}
+	if row := strings.Join(vals.Draw(40, 1, false), ""); !strings.Contains(StripStyles(row), "BACKGROUND  ███ #2A2A3C") ||
+		!strings.Contains(row, "\x1b["+sgrRGB(true, Hex("#2A2A3C").RGB)) {
+		t.Errorf("a styled value: %q", row)
 	}
 	ta := newTestApp(t)
-	vals := &Values{Fields: []*Field{{Label: "Command", Value: func() string { return "make\tcheck" }}}}
+	vals = &Values{Fields: []*Field{{Label: "Command", Value: func() string { return "make\tcheck" }}}}
 	ta.Screen().Panels[1].Body = vals
 	ta.press("2")
 	if text := ta.screenText(); !strings.Contains(text, `make\tcheck`) {

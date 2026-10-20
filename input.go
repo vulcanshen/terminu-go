@@ -367,7 +367,7 @@ func (li *lineInput) measure(sw, sh int) (int, int) {
 		if li.unit != "" {
 			content = max(content, Width(li.unit)) // the unit row lines up with the value
 		}
-		prompt := Width(li.prompt)
+		prompt := Width(Escape(li.prompt))
 		if li.unlock {
 			prompt = 0 // no prompt row (components/input/password)
 		}
@@ -451,7 +451,7 @@ func (li *lineInput) draw(w, h int, layer Color) []string {
 // blank rows instead of the prompt and padding (components/input/password).
 func (li *lineInput) rows(inner int, value string, most int) []string {
 	cw := inner - 2
-	errRow := Fg(Red).Render(Truncate(li.err, cw))
+	errRow := Fg(Red).Render(Truncate(Escape(li.err), cw))
 	blank := Repeat(" ", inner)
 	if li.unlock {
 		return []string{blank, blank, value, blank, padRow(Center(errRow, cw), inner)}
@@ -473,7 +473,7 @@ func (li *lineInput) rows(inner int, value string, most int) []string {
 // as the popup has room for beside its other rows, at least one; the last one
 // kept ends in "…" when not all fit (components/input/README).
 func (li *lineInput) promptRows(cw, most int) []string {
-	rows := Wrap(li.prompt, max(cw, 1))
+	rows := Wrap(Escape(li.prompt), max(cw, 1))
 	if len(rows) == 0 {
 		rows = []string{""}
 	}

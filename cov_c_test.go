@@ -814,7 +814,7 @@ func TestPopupTitleSubject(t *testing.T) {
 
 func TestUppercaseLeavesContent(t *testing.T) {
 	ta := newTestApp(t)
-	ta.Status = func(int) string { return "[N]arrow: off" }
+	ta.Status = func(int) []Span { return []Span{{Text: "[N]arrow: off"}} }
 	text := ta.screenText()
 	for _, s := range []string{"web", "pod-00", "Enter:logs", "Space:menu", "?:help", "[N]arrow: off"} {
 		if !strings.Contains(text, s) {
@@ -871,7 +871,7 @@ func TestScreenRows(t *testing.T) {
 	if !strings.HasPrefix(covCPlain(lines[0]), "┏") || !strings.HasPrefix(covCPlain(lines[9]), "Space:menu") {
 		t.Errorf("one screen without a statusbar:\n%s", one.screenText())
 	}
-	one.Status = func(int) string { return "status" }
+	one.Status = func(int) []Span { return []Span{{Text: "status"}} }
 	lines = one.Frame()
 	if covCPlain(lines[0]) != Pad("status", 60) || !strings.HasPrefix(covCPlain(lines[1]), "┏") {
 		t.Errorf("one screen with a statusbar:\n%s", one.screenText())
@@ -1031,9 +1031,9 @@ func TestChipRowProgress(t *testing.T) {
 func TestStatusbar(t *testing.T) {
 	ta := newTestApp(t)
 	var widths []int
-	ta.Status = func(w int) string {
+	ta.Status = func(w int) []Span {
 		widths = append(widths, w)
-		return Fg(Overlay0).Render("[N]arrow: ") + Fg(Lavender).Render("off")
+		return []Span{{Text: "[N]arrow: ", Style: Fg(Overlay0)}, {Text: "off", Style: Fg(Lavender)}}
 	}
 	lines := ta.Frame()
 	// Several screens: the right of the chip row, not a row of its own.
@@ -1065,10 +1065,10 @@ func TestStatusbar(t *testing.T) {
 	// One screen: the top row; too long, it is cut, never wrapped.
 	one := &testApp{App: anySize(New("one"))}
 	one.AddScreen(&Screen{Name: "Main", Panels: []*Panel{{Label: "A", Body: &Pager{}}}})
-	one.Status = func(int) string { return strings.Repeat("status ", 30) }
+	one.Status = func(int) []Span { return []Span{{Text: strings.Repeat("status ", 30)}} }
 	one.resize(60, 10)
 	lines = one.Frame()
-	if covCPlain(lines[0]) != strings.Repeat("status ", 30)[:60] || !strings.HasPrefix(covCPlain(lines[1]), "┏") {
+	if covCPlain(lines[0]) != Truncate(strings.Repeat("status ", 30), 60) || !strings.HasPrefix(covCPlain(lines[1]), "┏") {
 		t.Errorf("one screen, a long statusbar:\n%s", one.screenText())
 	}
 }
@@ -1541,7 +1541,7 @@ func TestCapsuleChainShrink(t *testing.T) {
 func TestListCursor(t *testing.T) {
 	ta := newTestApp(t)
 	rows := ta.list.Rows()
-	rows[0].Cells = []string{Fg(Red).Render("pod-00"), "0"}
+	rows[0].Styled = [][]Span{{{Text: "pod-00", Style: Fg(Red)}}}
 	ta.list.SetRows(rows)
 	check := func(block, arrow Color) {
 		t.Helper()

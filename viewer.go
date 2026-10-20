@@ -57,6 +57,8 @@ type Viewer struct {
 	// among the rows the line folds onto; visible the rows of text; textW
 	// the cells of text a row holds, after the line numbers; numW the line
 	// numbers' column, as wide as it has been since it opened.
+	// text is Lines as read (readingRows), textOf the Lines it was made of.
+	text, textOf                   []string
 	top, sub, visible, textW, numW int
 	// left is how many cells a NoWrap viewer is scrolled to the right, to
 	// keep the selection's cursor in sight.
@@ -85,12 +87,13 @@ type TextMatch struct{ Line, From, To int }
 // FindText is every place q is in the lines, in either case, for the app's
 // search (Hits).
 func (v *Viewer) FindText(q string) []TextMatch {
+	v.sync()
 	want := graphemes(strings.ToLower(q))
 	if len(want) == 0 {
 		return nil
 	}
 	var out []TextMatch
-	for i, l := range v.Lines {
+	for i, l := range v.text {
 		chars := v.chars(l)
 		for k := 0; k+len(want) <= len(chars); k++ {
 			if strings.ToLower(strings.Join(chars[k:k+len(want)], "")) == strings.Join(want, "") {
@@ -141,10 +144,22 @@ func (a *App) Viewer(v *Viewer) tea.Cmd {
 // ScrollTo puts line i at the top as far as the lines go; in the selection
 // mode the cursor goes to its start.
 func (v *Viewer) ScrollTo(i int) {
+	v.sync()
 	v.top, v.sub = i, 0
 	if v.inMode {
 		v.line, v.col = max(i, 0), 0
 	}
+}
+
+// sync reads Lines again when they changed: the rows the viewer goes by
+// (components, control characters: a line with \n in it is two, a \r in
+// one leaves its last state).
+func (v *Viewer) sync() {
+	if v.text != nil && slices.Equal(v.textOf, v.Lines) {
+		return
+	}
+	v.textOf = slices.Clone(v.Lines)
+	v.text = readingRows(v.Lines)
 }
 
 // Top is the first line in sight.
@@ -180,12 +195,13 @@ func (vv *viewerView) hint() []KeyHint {
 
 func (vv *viewerView) measure(sw, sh int) (int, int) {
 	v := vv.v
+	v.sync()
 	w := popupWidth(sw, 0, false)
 	v.readLines()
 	v.textW = v.textWidth(w - 2)
 	most := max(sh-2, 3)
 	rows := 0 // the rows its lines fold onto, counted as far as the most
-	for i := range v.Lines {
+	for i := range v.text {
 		if rows += len(v.wrap(i)); rows+4 >= most {
 			break
 		}
@@ -203,7 +219,7 @@ func (v *Viewer) numWidth() int {
 	if v.NoNumbers {
 		return 0
 	}
-	v.numW = max(v.numW, len(strconv.Itoa(len(v.Lines))), 3)
+	v.numW = max(v.numW, len(strconv.Itoa(len(v.text))), 3)
 	return v.numW
 }
 
@@ -243,7 +259,7 @@ func (v *Viewer) wrap(i int) []int {
 // (components/dialog/note), so a line taller than the view is read whole.
 func (v *Viewer) maxTop() (line, sub int) {
 	rows := 0
-	for t := len(v.Lines) - 1; t >= 0; t-- {
+	for t := len(v.text) - 1; t >= 0; t-- {
 		n := len(v.wrap(t))
 		if rows+n >= v.visible {
 			return t, rows + n - v.visible
@@ -309,7 +325,7 @@ func (v *Viewer) nowrapRow(styled string, w int) string {
 
 // clampTop keeps the first row in sight between the first row and maxTop.
 func (v *Viewer) clampTop() {
-	if v.top < 0 || len(v.Lines) == 0 {
+	if v.top < 0 || len(v.text) == 0 {
 		v.top, v.sub = 0, 0
 		return
 	}
@@ -326,7 +342,7 @@ func (v *Viewer) scrollRows(n int) {
 	for ; n > 0; n-- {
 		if v.sub+1 < len(v.wrap(v.top)) {
 			v.sub++
-		} else if v.top+1 < len(v.Lines) {
+		} else if v.top+1 < len(v.text) {
 			v.top, v.sub = v.top+1, 0
 		}
 	}
@@ -364,13 +380,14 @@ func (vv *viewerView) isLoading() bool { return vv.v.Loading }
 
 func (vv *viewerView) draw(w, h int, layer Color) []string {
 	v := vv.v
+	v.sync()
 	inner := w - 2
 	v.visible = max(h-4, 1)
 	v.readLines()
 	v.textW = v.textWidth(inner)
 	numW := v.numWidth()
 	if v.inMode {
-		v.line = min(max(v.line, 0), max(len(v.Lines)-1, 0))
+		v.line = min(max(v.line, 0), max(len(v.text)-1, 0))
 		v.follow(v.line) // the view follows the cursor
 	}
 	v.followAcross()
@@ -380,7 +397,7 @@ func (vv *viewerView) draw(w, h int, layer Color) []string {
 	// cursor's line in Text (components/dialog/note).
 	body := make([]string, 0, v.visible)
 	last, whole := v.top-1, true // the line of the last row in sight, and whether all of it is
-	for i := v.top; i < len(v.Lines) && len(body) < v.visible; i++ {
+	for i := v.top; i < len(v.text) && len(body) < v.visible; i++ {
 		styled := vv.lineView(i, layer)
 		starts := v.wrap(i)
 		first := 0
@@ -425,11 +442,11 @@ func (vv *viewerView) draw(w, h int, layer Color) []string {
 	// first and the last row in sight belong to, N-M of T; in the selection
 	// mode the cursor's line, N of M (components/dialog/note).
 	scroll := ""
-	if v.top > 0 || v.sub > 0 || last < len(v.Lines)-1 || !whole {
+	if v.top > 0 || v.sub > 0 || last < len(v.text)-1 || !whole {
 		if v.inMode {
-			scroll = scrollText(true, v.line+1, 0, len(v.Lines))
+			scroll = scrollText(true, v.line+1, 0, len(v.text))
 		} else {
-			scroll = scrollText(false, v.top+1, last+1, len(v.Lines))
+			scroll = scrollText(false, v.top+1, last+1, len(v.text))
 		}
 	}
 	box := popupBox{color: layer, glyph: v.Glyph, title: vv.title(), hint: vv.hint(), scroll: scroll, loading: v.Loading}
@@ -455,14 +472,14 @@ type viewerColours struct {
 // keeps its styles.
 func (v *Viewer) coloured() []string {
 	c := &v.colours
-	if c.lang == v.Lang && slices.Equal(c.lines, v.Lines) && len(c.out) == len(v.Lines) {
+	if c.lang == v.Lang && slices.Equal(c.lines, v.text) && len(c.out) == len(v.text) {
 		return c.out
 	}
-	c.lang, c.lines = v.Lang, slices.Clone(v.Lines)
-	c.out = make([]string, len(v.Lines))
+	c.lang, c.lines = v.Lang, slices.Clone(v.text)
+	c.out = make([]string, len(v.text))
 	if lexer := lexerFor(v.Lang); lexer != nil {
-		plain := make([]string, len(v.Lines))
-		for i, l := range v.Lines {
+		plain := make([]string, len(v.text))
+		for i, l := range v.text {
 			l, _ = crlf(stripSGR(l))
 			plain[i] = visibleText(l, v.tabW)
 		}
@@ -470,15 +487,15 @@ func (v *Viewer) coloured() []string {
 			if StripStyles(l) != plain[i] { // the lexer changed the text: not coloured
 				l = Fg(Text).Render(plain[i])
 			}
-			c.out[i] = redNames(l, v.chars(v.Lines[i]), v.tabW)
+			c.out[i] = redNames(l, v.chars(v.text[i]), v.tabW)
 		}
 		return c.out
 	}
-	for i, l := range v.Lines {
+	for i, l := range v.text {
 		if k := strings.LastIndex(l, "\r"); k >= 0 && strings.HasSuffix(stripSGR(l), "\r") {
 			l = l[:k] + l[k+1:]
 		}
-		c.out[i] = redNames(onText(visibleText(l, v.tabW)), v.chars(v.Lines[i]), v.tabW)
+		c.out[i] = redNames(onText(visibleText(l, v.tabW)), v.chars(v.text[i]), v.tabW)
 	}
 	return c.out
 }
@@ -515,7 +532,7 @@ func lexerFor(lang string) chroma.Lexer {
 // moves through.
 func (v *Viewer) readLines() {
 	v.plain, v.crlf = v.plain[:0], v.crlf[:0]
-	for _, l := range v.Lines {
+	for _, l := range v.text {
 		_, cr := crlf(stripSGR(l))
 		v.plain, v.crlf = append(v.plain, v.chars(l)), append(v.crlf, cr)
 	}
@@ -672,7 +689,7 @@ func (v *Viewer) prev(p pos) (pos, bool) {
 // key moved.
 func (vv *viewerView) move(key string) bool {
 	v := vv.v
-	if len(v.plain) != len(v.Lines) {
+	if len(v.plain) != len(v.text) {
 		v.readLines()
 	}
 	if len(v.plain) == 0 {
@@ -754,6 +771,7 @@ func isMoveKey(key string) bool {
 
 func (vv *viewerView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 	v := vv.v
+	v.sync()
 	if v.inMode {
 		// Other keys do nothing in the mode (Rules K11); h|l move the cursor,
 		// not the tabs (Rules K12).
@@ -795,7 +813,7 @@ func (vv *viewerView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 	case "gg":
 		v.top, v.sub = 0, 0
 	case "G":
-		v.top, v.sub = len(v.Lines), 0
+		v.top, v.sub = len(v.text), 0
 	case "h", "←", "l", "→":
 		if n := len(v.Tabs); n > 0 {
 			dir := 1
@@ -813,7 +831,7 @@ func (vv *viewerView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 			// The cursor comes out at the start of the first line in sight;
 			// nothing is selected yet.
 			v.inMode = true
-			v.line, v.col = min(max(v.top, 0), max(len(v.Lines)-1, 0)), 0
+			v.line, v.col = min(max(v.top, 0), max(len(v.text)-1, 0)), 0
 			return true, nil
 		}
 		for _, k := range v.Keys {

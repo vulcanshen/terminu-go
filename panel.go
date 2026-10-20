@@ -318,7 +318,7 @@ func emptyState(w, h int, fact string, factStyle Style, hint string, hintStyle S
 	out := blankLines(w, h)
 	room := max(w-2, 1)
 	var lines []string
-	for _, l := range Wrap(fact, room) {
+	for _, l := range Wrap(Escape(fact), room) {
 		lines = append(lines, factStyle.Render(l))
 	}
 	if hint != "" {

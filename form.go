@@ -18,7 +18,11 @@ type FormField struct {
 	// Value is the value as shown (components/input/README, how a value is
 	// shown); Empty is what an empty value means, in grey ("not set").
 	Value func() string
-	Empty string
+	// Styled, when set, is how the value is shown in colours of the app's
+	// own (a swatch, ColorSpans): each piece's text drawn as Value's is
+	// (Escape). Value stays what the value is.
+	Styled func() []Span
+	Empty  string
 	// Path cuts a value too long from the front: "…/.ssh/id_ed25519".
 	Path bool
 	// Edit makes the input popup Enter opens, when it opens: it starts from
@@ -447,7 +451,7 @@ func (fv *formView) draw(w, h int, layer Color) []string {
 			fit := Fit
 			if f.Path {
 				fit = FitLeft
-				if f.Value != nil && f.Value() != "" {
+				if f.Styled == nil && f.Value != nil && f.Value() != "" {
 					value = valueText(homeShort(f.Value()), Fg(Text))
 				}
 			}
@@ -527,12 +531,18 @@ func (fv *formView) label(f *FormField, layer Color) string {
 }
 
 func (fv *formView) value(f *FormField) string {
+	if f.Styled != nil {
+		if sp := f.Styled(); spansPlain(sp) != "" {
+			return Fg(Text).Render(spansText(sp))
+		}
+		return Fg(Overlay0).Render(Escape(f.Empty))
+	}
 	v := ""
 	if f.Value != nil {
 		v = f.Value()
 	}
 	if v == "" {
-		return Fg(Overlay0).Render(f.Empty)
+		return Fg(Overlay0).Render(Escape(f.Empty))
 	}
 	return valueText(v, Fg(Text))
 }
@@ -548,22 +558,22 @@ func (fv *formView) option(f *FormField, i int) string {
 		case i == f.Selected:
 			glyph = glyphRadioOn
 		}
-		return Fg(Surface2).Render(glyph + " " + f.Options[i])
+		return Fg(Surface2).Render(glyph + " " + Escape(f.Options[i]))
 	}
 	if f.Multi {
 		on := i < len(f.Checked) && f.Checked[i]
 		if f.optionUnavailable(i) {
-			return Fg(Surface2).Render(checkGlyph(on) + " " + f.Options[i])
+			return Fg(Surface2).Render(checkGlyph(on) + " " + Escape(f.Options[i]))
 		}
 		if on {
-			return Fg(Green).Render(glyphMarked + " " + f.Options[i])
+			return Fg(Green).Render(glyphMarked + " " + Escape(f.Options[i]))
 		}
-		return Fg(Text).Render(glyphUnchecked + " " + f.Options[i])
+		return Fg(Text).Render(glyphUnchecked + " " + Escape(f.Options[i]))
 	}
 	if i == f.Selected {
-		return Fg(Green).Render(glyphRadioOn + " " + f.Options[i])
+		return Fg(Green).Render(glyphRadioOn + " " + Escape(f.Options[i]))
 	}
-	return Fg(Text).Render(glyphRadioOff + " " + f.Options[i])
+	return Fg(Text).Render(glyphRadioOff + " " + Escape(f.Options[i]))
 }
 
 // block is the focus from the item's start to the frame: the layer colour,
@@ -583,7 +593,7 @@ func (fv *formView) errorRow(cw int, layer Color) string {
 	if fv.focus.kind == itemError {
 		return " " + fv.block(Truncate(msg, cw), cw+arrow, layer)
 	}
-	return " " + Fit(Fg(Red).Render(msg), cw) + Repeat(" ", arrow)
+	return " " + Fit(Fg(Red).Render(Escape(msg)), cw) + Repeat(" ", arrow)
 }
 
 // step moves one item within the focus's area, wrapping at its ends (Rules

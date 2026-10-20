@@ -294,15 +294,16 @@ func (t *Terminal) lines(w, h int, cursor bool) []string {
 // the selection drawn as a viewer's (components/dialog/note).
 func (t *Terminal) held(w, h int) []string {
 	v := t.sel
+	v.sync()
 	v.visible, v.textW = max(h, 1), w
 	v.readLines()
-	v.line = min(max(v.line, 0), max(len(v.Lines)-1, 0))
+	v.line = min(max(v.line, 0), max(len(v.text)-1, 0))
 	v.follow(v.line)
 	v.followAcross()
 	v.clampTop()
 	vv := &viewerView{v: v}
 	out := make([]string, 0, h)
-	for i := v.top; i < len(v.Lines) && len(out) < h; i++ {
+	for i := v.top; i < len(v.text) && len(out) < h; i++ {
 		out = append(out, v.nowrapRow(vv.lineView(i, t.cursorColour), w))
 	}
 	return Pad2(out, w, h)
@@ -331,6 +332,7 @@ func (t *Terminal) selectMode(a *App, layer Color) {
 	}
 	t.sel = &Viewer{Lines: lines, NoWrap: true, NoNumbers: true, tabW: a.inputTabWidth(),
 		Select: &Selection{Key: "v", Name: visualMode, Copy: copyText}}
+	t.sel.sync()
 	t.sel.inMode, t.sel.line, t.sel.col, t.sel.top = true, first, 0, first
 	t.mode, t.back, t.cursorColour = visualMode, 0, layer
 }

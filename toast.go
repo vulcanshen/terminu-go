@@ -50,8 +50,9 @@ func (t *toastView) hint() []KeyHint { return []KeyHint{{"Esc", "close"}} }
 
 func (t *toastView) measure(sw, sh int) (int, int) {
 	most := max(min(sw-2, 120), 1)
-	w := min(max(Width(t.text)+4, Width(titleCapsule(t.kind.glyph(), t.kind.title(), Base, 1<<20))+4, hintWidth(t.hint())+6), most)
-	lines := Wrap(t.text, w-4)
+	text := Escape(t.text) // a short text (components, control characters)
+	w := min(max(Width(text)+4, Width(titleCapsule(t.kind.glyph(), t.kind.title(), Base, 1<<20))+4, hintWidth(t.hint())+6), most)
+	lines := Wrap(text, w-4)
 	// As many lines as the app allows, and as fit above the bottom two rows;
 	// the last one kept ends in "…".
 	n := len(lines)
