@@ -9,9 +9,10 @@ import (
 
 // Glyphs tdp names by code point (Rules E4: written as code points).
 const (
-	glyphSlantLeft  = "\U0000E0BA" // nf-ple-lower_right_triangle: a capsule chain's left end
-	glyphHard       = "\U0000E0B0" // nf-pl-left_hard_divider: right end, a join where the colour changes, the cursor arrow
-	glyphSoft       = "\U0000E0B1" // nf-pl-left_soft_divider: a join between parts of the same colour
+	glyphSlantLeft  = "\U0000E0BA" // nf-ple-lower_right_triangle: a capsule chain's left end, a join into a selected part
+	glyphSlantJoin  = "\U0000E0BC" // nf-ple-upper_left_triangle: a join out of a selected part
+	glyphSlash      = "\U0000E0BB" // nf-ple-forwardslash_separator: a join between two unselected parts
+	glyphHard       = "\U0000E0B0" // nf-pl-left_hard_divider: a capsule chain's right end, the cursor arrow
 	glyphRoundLeft  = "\U0000E0B6" // nf-ple-left_half_circle_thick: a popup title's left end
 	glyphRoundRight = "\U0000E0B4" // nf-ple-right_half_circle_thick: a popup title's right end
 	glyphHexagon    = "\U000F02D8" // nf-md-hexagon: before a section title
@@ -72,13 +73,15 @@ func shrunk(text string) string {
 }
 
 // drawChain draws a capsule chain (components/layout/panel) in color, in at
-// most maxW cells: slanted ends, selected parts filled, joins U+E0B0 where the
-// colour changes and U+E0B1 where it does not. When it does not fit,
-// unselected parts shrink to their first character, then are folded away from
-// the end behind a "…"; the selected ones always stay, and one still too long
-// is cut from the end with "…", its slanted ends drawn. The ends and joins are
-// coloured as in Powerline: the left part's ground over the right part's, an
-// unselected part's ground taken as Base (layout/panel, capsule chain).
+// most maxW cells: slanted ends, selected parts filled with color, unselected
+// ones on Mantle, every join a slant the way of the left end, in color on
+// Mantle: U+E0BC out of a selected part, U+E0BA into one, the thin U+E0BB
+// between two unselected ones. The ends take the ground of the part beside
+// them, nothing behind them; every cell of the chain says its colours, so it
+// looks the same on any terminal ground. When it does not fit, unselected
+// parts shrink to their first character, then are folded away from the end
+// behind a "…"; the selected ones always stay, and one still too long is cut
+// from the end with "…", its slanted ends drawn (layout/panel, capsule chain).
 func drawChain(caps []Capsule, color Color, maxW int) string {
 	if len(caps) == 0 || maxW <= 0 {
 		return ""
@@ -92,26 +95,29 @@ func drawChain(caps []Capsule, color Color, maxW int) string {
 			if c.Selected {
 				return color
 			}
-			return Base
+			return Mantle
 		}
+		unselected := Style{Fg: color, Bg: Mantle} // its text, and every join
 		var b strings.Builder
 		b.WriteString(Fg(ground(ps[0])).Render(glyphSlantLeft))
 		for i, p := range ps {
 			if i > 0 {
 				prev := ps[i-1]
 				switch {
-				case prev.Selected && p.Selected:
-					b.WriteString(Style{Fg: Base, Bg: color}.Render(glyphSoft))
-				case !prev.Selected && !p.Selected:
-					b.WriteString(Fg(color).Render(glyphSoft))
+				case prev.Selected && p.Selected: // as [N] and the first tab: a space as wide as a join
+					b.WriteString(On(color).Render(Repeat(" ", PowerlineWidth())))
+				case prev.Selected:
+					b.WriteString(unselected.Render(glyphSlantJoin))
+				case p.Selected:
+					b.WriteString(unselected.Render(glyphSlantLeft))
 				default:
-					b.WriteString(Style{Fg: ground(prev), Bg: ground(p)}.Render(glyphHard))
+					b.WriteString(unselected.Render(glyphSlash))
 				}
 			}
 			if p.Selected {
 				b.WriteString(On(color).Render(p.Text))
 			} else {
-				b.WriteString(Fg(color).Render(p.Text))
+				b.WriteString(unselected.Render(p.Text))
 			}
 		}
 		b.WriteString(Fg(ground(ps[len(ps)-1])).Render(glyphHard))

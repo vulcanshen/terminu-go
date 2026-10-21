@@ -780,9 +780,12 @@ func TestScreenNarrow(t *testing.T) {
 func TestL2FixedWidthChrome(t *testing.T) {
 	ta := newTestApp(t)
 	ta.Status = func(w int) []Span { return []Span{{Text: Truncate("copying  4%", w)}} }
-	chips := StripStyles(ta.Frame()[0])
+	// The joins change their slant with the chosen screen; the text does
+	// not move.
+	joins := strings.NewReplacer(glyphSlantJoin, "/", glyphSlantLeft, "/", glyphSlash, "/")
+	chips := joins.Replace(StripStyles(ta.Frame()[0]))
 	ta.press("O")
-	if got := StripStyles(ta.Frame()[0]); got != chips {
+	if got := joins.Replace(StripStyles(ta.Frame()[0])); got != chips {
 		t.Errorf("the chips moved with the chosen screen:\n%q\n%q", chips, got)
 	}
 	ta.press("P")
@@ -1378,11 +1381,13 @@ func TestF8DimStreamToo(t *testing.T) {
 
 func TestDimEveryColor(t *testing.T) {
 	for _, c := range []struct{ in, want RGB }{
-		{Text.RGB, RGB{109, 113, 135}},
-		{Red.RGB, RGB{126, 79, 101}},
-		{RGB{255, 255, 255}, RGB{131, 131, 140}},
+		{Text.RGB, RGB{99, 103, 120}},
+		{Red.RGB, RGB{116, 69, 86}},
+		{Blue.RGB, RGB{68, 88, 123}},
+		{RGB{255, 255, 255}, RGB{121, 121, 125}},
 		{RGB{0, 0, 0}, RGB{0, 0, 0}}, // never lighter
-		{Base.RGB, Base.RGB},
+		{Base.RGB, RGB{0x14, 0x14, 0x1f}},
+		{Mantle.RGB, RGB{0x11, 0x11, 0x1b}}, // Crust (color-19, panel-137)
 	} {
 		if got := DimRGB(c.in); got != c.want {
 			t.Errorf("dim(%v) = %v, want %v", c.in, got, c.want)

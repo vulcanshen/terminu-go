@@ -212,8 +212,9 @@ func covCOpen(t *testing.T, state string) *testApp {
 // never brighter than c; the rounding is not given, so within one.
 func covCClose(t *testing.T, what string, got, src RGB) {
 	t.Helper()
+	to := RGB{0x0c, 0x0c, 0x13} // t, one step darker than Crust (color-19)
 	for i := range 3 {
-		exact := float64(src[i])*0.45 + float64(Base.RGB[i])*0.55
+		exact := float64(src[i])*0.45 + float64(to[i])*0.55
 		switch {
 		case exact > float64(src[i]):
 			if got[i] != src[i] {
@@ -239,7 +240,7 @@ func covCFg(t *testing.T, line string) RGB {
 
 func TestColorTokensOneMeaning(t *testing.T) {
 	tokens := map[string]Color{
-		"Base": Base, "Blue": Blue, "Surface2": Surface2, "Lavender": Lavender, "Green": Green, "Yellow": Yellow,
+		"Base": Base, "Mantle": Mantle, "Blue": Blue, "Surface2": Surface2, "Lavender": Lavender, "Green": Green, "Yellow": Yellow,
 		"Peach": Peach, "Red": Red, "Overlay0": Overlay0, "Text": Text, "Subtext1": Subtext1, "Surface1": Surface1,
 	}
 	for k := 1; k <= 4; k++ {
@@ -502,7 +503,7 @@ func TestCursorBlock(t *testing.T) {
 	// The block without the focus has its cursor dimmed once more (P6): the
 	// list under a panel filter's typing row...
 	ta.press("Esc", "/")
-	if st := covCStyleOf(t, pods(), "pod-00"); st.Bg != DimColor(Subtext1) || st.Fg != Base {
+	if st := covCStyleOf(t, pods(), "pod-00"); st.Bg != DimColor(Subtext1) || st.Fg != DimColor(Base) {
 		t.Errorf("the list's cursor while typing: %v on %v", st.Fg, st.Bg)
 	}
 	// ...and a finder's list while its typing row has the focus.
@@ -511,7 +512,7 @@ func TestCursorBlock(t *testing.T) {
 	ta.settle()
 	l := ta.top()
 	list := covCCrop(ta.Frame(), l.x, l.x+l.w/2) // the list's half, not the preview's
-	if st := covCStyleOf(t, list, "README.md"); st.Bg != DimColor(LayerColor(1)) || st.Fg != Base {
+	if st := covCStyleOf(t, list, "README.md"); st.Bg != DimColor(LayerColor(1)) || st.Fg != DimColor(Base) {
 		t.Errorf("the finder's cursor while typing: %v on %v", st.Fg, st.Bg)
 	}
 	ta.press("Tab")
@@ -947,18 +948,18 @@ func TestFooterUnderPopupDimmed(t *testing.T) {
 
 func TestScreenChips(t *testing.T) {
 	ta := newTestApp(t)
-	sl, h := glyphSlantLeft, glyphHard
+	sl, j, h := glyphSlantLeft, glyphSlantJoin, glyphHard
 	check := func(sel, unsel string) {
 		t.Helper()
 		row := ta.Frame()[0]
 		if s := covCSpan(row, sel); s == nil || s[0].St != (covCStyle{Fg: Base, Bg: Blue, Bold: true}) {
 			t.Errorf("the chosen screen %q: %+v", sel, s)
 		}
-		if s := covCSpan(row, unsel); s == nil || s[0].St != (covCStyle{Fg: Blue}) {
+		if s := covCSpan(row, unsel); s == nil || s[0].St != (covCStyle{Fg: Blue, Bg: Mantle}) {
 			t.Errorf("another screen %q: %+v", unsel, s)
 		}
 	}
-	if got := covCPlain(ta.Frame()[0]); !strings.HasPrefix(got, sl+"[P]ANELS"+h+"[O]THER"+h+" ") {
+	if got := covCPlain(ta.Frame()[0]); !strings.HasPrefix(got, sl+"[P]ANELS"+j+"[O]THER"+h+" ") {
 		t.Errorf("one capsule per screen in a chain: %q", got)
 	}
 	check("[P]ANELS", "[O]THER")
@@ -969,7 +970,7 @@ func TestScreenChips(t *testing.T) {
 func TestScreenChipsShrink(t *testing.T) {
 	ta := newTestApp(t)
 	ta.AddScreen(&Screen{Name: "Inputs", Key: "I", Panels: []*Panel{{Label: "Inputs", Body: &Pager{}}}})
-	sl, h, s := glyphSlantLeft, glyphHard, glyphSoft
+	sl, j, x, h := glyphSlantLeft, glyphSlantJoin, glyphSlash, glyphHard
 	chips := func(w int) string {
 		ta.resize(w, 20)
 		return strings.TrimRight(covCPlain(ta.Frame()[0]), " ")
@@ -978,8 +979,8 @@ func TestScreenChipsShrink(t *testing.T) {
 		w    int
 		want string
 	}{
-		{60, sl + "[P]ANELS" + h + "[O]THER" + s + "[I]NPUTS" + h},
-		{20, sl + "[P]ANELS" + h + "[O]" + s + "[I]" + h},
+		{60, sl + "[P]ANELS" + j + "[O]THER" + x + "[I]NPUTS" + h},
+		{20, sl + "[P]ANELS" + j + "[O]" + x + "[I]" + h},
 		{14, sl + "[P]ANELS" + h + "…"},
 	}
 	for _, c := range cases {
@@ -991,7 +992,7 @@ func TestScreenChipsShrink(t *testing.T) {
 		t.Errorf("8 wide: the chosen chip stays, cut to the width: %q", got)
 	}
 	ta.press("O")
-	if got, want := chips(20), sl+"[P]"+h+"[O]THER"+h+"[I]"+h; got != want {
+	if got, want := chips(20), sl+"[P]"+sl+"[O]THER"+j+"[I]"+h; got != want {
 		t.Errorf("the middle one chosen, 20 wide: %q, want %q", got, want)
 	}
 	if got, want := chips(14), sl+"[O]THER"+h+"…"; got != want {
@@ -1161,13 +1162,13 @@ func TestPanelFrameFocus(t *testing.T) {
 
 func TestPanelTitle(t *testing.T) {
 	ta := newTestApp(t)
-	sl, h := glyphSlantLeft, glyphHard
+	sl, j, h := glyphSlantLeft, glyphSlantJoin, glyphHard
 	top := ta.Frame()[2]
 	for _, c := range []struct {
 		x0, x1 int
 		want   string
 	}{
-		{0, 40, "┏" + sl + "[1] PODS" + h + "EVENTS" + h + "━"},
+		{0, 40, "┏" + sl + "[1] PODS" + j + "EVENTS" + h + "━"},
 		{40, 80, "┌" + sl + "[2] LOG" + h + "─"},
 		{80, 120, "┌" + sl + "[3] SETTINGS" + h + "─"},
 	} {
@@ -1441,9 +1442,9 @@ func TestCapsuleChain(t *testing.T) {
 	}{
 		{"left end", covCAt(top, 1), glyphSlantLeft, style(Blue, none, false)},
 		{"[1]", covCSpan(top, "[1]")[0], "[", style(Base, Blue, true)},
-		{"join to PODS", covCAfter(top, "[1]"), glyphHard, style(Blue, Base, false)},
-		{"PODS", covCSpan(top, "PODS")[0], "P", style(Blue, none, false)},
-		{"join to EVENTS", covCAfter(top, "PODS"), glyphHard, style(Base, Blue, false)},
+		{"join to PODS", covCAfter(top, "[1]"), glyphSlantJoin, style(Blue, Mantle, false)},
+		{"PODS", covCSpan(top, "PODS")[0], "P", style(Blue, Mantle, false)},
+		{"join to EVENTS", covCAfter(top, "PODS"), glyphSlantLeft, style(Blue, Mantle, false)},
 		{"EVENTS", covCSpan(top, "EVENTS")[0], "E", style(Base, Blue, true)},
 		{"right end", covCAfter(top, "EVENTS"), glyphHard, style(Blue, none, false)},
 	} {
@@ -1451,34 +1452,44 @@ func TestCapsuleChain(t *testing.T) {
 			t.Errorf("%s: %q %+v, want %q %+v", c.what, c.cell.Ch, c.cell.St, c.ch, c.want)
 		}
 	}
-	// Joins between parts of one kind, and an end on an unchosen part.
+	// Two chosen parts side by side (as [N] and the first tab), the thin
+	// slash between two unchosen ones, and an end on an unchosen part: every
+	// cell says its colours, nothing behind the ends (panel-31 to panel-36).
 	chain := drawChain([]Capsule{{"A", true}, {"B", true}, {"C", false}, {"D", false}}, Green, 40)
 	cells := covCCells(chain)
-	if got := covCPlain(chain); got != glyphSlantLeft+"A"+glyphSoft+"B"+glyphHard+"C"+glyphSoft+"D"+glyphHard {
+	if got := covCPlain(chain); got != glyphSlantLeft+"A B"+glyphSlantJoin+"C"+glyphSlash+"D"+glyphHard {
 		t.Fatalf("chain %q", got)
 	}
 	for i, want := range []covCStyle{
-		style(Green, none, false), style(Base, Green, true), style(Base, Green, false), style(Base, Green, true),
-		style(Green, Base, false), style(Green, none, false), style(Green, none, false), style(Green, none, false),
-		style(Base, none, false),
+		style(Green, none, false), style(Base, Green, true), style(Base, Green, true), style(Base, Green, true),
+		style(Green, Mantle, false), style(Green, Mantle, false), style(Green, Mantle, false), style(Green, Mantle, false),
+		style(Mantle, none, false),
 	} {
 		if cells[i].St != want {
 			t.Errorf("cell %d %q: %+v, want %+v", i, cells[i].Ch, cells[i].St, want)
 		}
 	}
-	if c := covCCells(drawChain([]Capsule{{"X", false}, {"Y", true}}, Green, 40))[0]; c.St.Fg != Base {
-		t.Errorf("an end on an unchosen part is Base: %v", c.St.Fg)
+	if c := covCCells(drawChain([]Capsule{{"X", false}, {"Y", true}}, Green, 40))[0]; c.St.Fg != Mantle || c.St.Bg.Set {
+		t.Errorf("an end on an unchosen part is Mantle, nothing behind it: %+v", c.St)
 	}
 	// The chain's colour: the frame's on a panel, the layer's in a popup.
+	// Unfocused, the chain takes the frame's colour and Mantle stays; under a
+	// popup the whole screen dims and Mantle becomes Crust (panel-137).
 	ta.press("Tab")
 	if st := covCStyleOf(t, covCCrop(ta.Frame(), 0, 40), "EVENTS"); st.Bg != Surface2 {
 		t.Errorf("unfocused panel: chosen tab on %v", st.Bg)
 	}
+	if st := covCStyleOf(t, covCCrop(ta.Frame(), 0, 40), "PODS"); st != style(Surface2, Mantle, false) {
+		t.Errorf("unfocused panel: the other tab %+v", st)
+	}
 	ta.Viewer(&Viewer{Title: "DevTools", Tabs: []string{"Console", "Network"}, Lines: []string{"x"}})
 	ta.settle()
 	lines := ta.Frame()
+	if st := covCStyleOf(t, covCCrop(lines, 0, 40), "PODS"); st != style(DimColor(Surface2), Hex("#11111b"), false) {
+		t.Errorf("under a popup: the other tab %+v", st)
+	}
 	covCWant(t, "chosen popup tab", lines, "CONSOLE", Base, LayerColor(1))
-	covCWant(t, "other popup tab", lines, "NETWORK", LayerColor(1), none)
+	covCWant(t, "other popup tab", lines, "NETWORK", LayerColor(1), Mantle)
 	// Changing the chosen tab moves no text.
 	p := &Panel{Label: "Pods", Tabs: []string{"Events", "Yaml"}, Tab: 1}
 	cols := func() (int, int) {
@@ -1493,15 +1504,15 @@ func TestCapsuleChain(t *testing.T) {
 }
 
 func TestCapsuleChainShrink(t *testing.T) {
-	sl, h, s := glyphSlantLeft, glyphHard, glyphSoft
+	sl, j, x, h := glyphSlantLeft, glyphSlantJoin, glyphSlash, glyphHard
 	caps := []Capsule{{"[1] PODS", true}, {"EVENTS", false}, {"YAML", false}, {"LOGS", false}}
 	for _, c := range []struct {
 		w    int
 		want string
 	}{
-		{40, sl + "[1] PODS" + h + "EVENTS" + s + "YAML" + s + "LOGS" + h},
-		{20, sl + "[1] PODS" + h + "E" + s + "Y" + s + "L" + h},
-		{15, sl + "[1] PODS" + h + "E" + s + "Y" + h + "…"},
+		{40, sl + "[1] PODS" + j + "EVENTS" + x + "YAML" + x + "LOGS" + h},
+		{20, sl + "[1] PODS" + j + "E" + x + "Y" + x + "L" + h},
+		{15, sl + "[1] PODS" + j + "E" + x + "Y" + h + "…"},
 		{11, sl + "[1] PODS" + h + "…"},
 	} {
 		got := drawChain(caps, Blue, c.w)
@@ -1525,7 +1536,7 @@ func TestCapsuleChainShrink(t *testing.T) {
 	}
 	// Chosen parts in the middle stay; the others go from the end.
 	mid := []Capsule{{"[1]", true}, {"PODS", false}, {"EVENTS", true}, {"YAML", false}}
-	if got, want := covCPlain(drawChain(mid, Blue, 13)), sl+"[1]"+s+"EVENTS"+h+"…"; got != want {
+	if got, want := covCPlain(drawChain(mid, Blue, 13)), sl+"[1] EVENTS"+h+"…"; got != want {
 		t.Errorf("13 cells: %q, want %q", got, want)
 	}
 	// A narrow panel keeps its frame's width.
@@ -1543,14 +1554,14 @@ func TestListCursor(t *testing.T) {
 	rows := ta.list.Rows()
 	rows[0].Styled = [][]Span{{{Text: "pod-00", Style: Fg(Red)}}}
 	ta.list.SetRows(rows)
-	check := func(block, arrow Color) {
+	check := func(text, block, arrow Color) {
 		t.Helper()
 		lines := covCCrop(ta.Frame(), 0, 40)
 		r, _ := covCFind(t, lines, "pod-00")
 		for _, c := range covCCells(lines[r]) {
 			switch {
 			case c.Col >= 1 && c.Col <= 37:
-				if c.St != (covCStyle{Fg: Base, Bg: block, Bold: true}) {
+				if c.St != (covCStyle{Fg: text, Bg: block, Bold: true}) {
 					t.Errorf("column %d %q: %+v, want Base on %v", c.Col, c.Ch, c.St, block)
 					return
 				}
@@ -1561,9 +1572,9 @@ func TestListCursor(t *testing.T) {
 			}
 		}
 	}
-	check(Subtext1, Subtext1)
+	check(Base, Subtext1, Subtext1)
 	ta.press("Tab")
-	check(DimColor(Subtext1), DimColor(Subtext1))
+	check(DimColor(Base), DimColor(Subtext1), DimColor(Subtext1)) // the whole block dims (Rules T2)
 }
 
 func TestCursorArrow(t *testing.T) {

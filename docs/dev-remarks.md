@@ -1,7 +1,7 @@
 # terminu-go 開發者備忘
 
 terminu-go 是 terminu design principle（tdp）的 Go 實作：給 app 呼叫的 lib，加上展示場 `examples/showcase`。遵循 terminu design
-principle，目前對應 tdp v0.9.3。這個 repo 的任務與規範的讀法見 [`CLAUDE.md`](../CLAUDE.md)。
+principle，目前對應 tdp v0.9.5。這個 repo 的任務與規範的讀法見 [`CLAUDE.md`](../CLAUDE.md)。
 
 ## 運作方式
 
@@ -30,7 +30,11 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   表單的欄位用 `Edit` 在打開時做出它的 `Input`，表單打開它時傳一個 `written`，值寫回時表單記成「改過了」（離開前先問）。一般的
   finder、select、checkbox popup、file-picker 共用 `finder.go` 的骨架（打字列、筆數、分隔線、清單、預覽），各自只換標記、`Enter`
   與清單的來源。
-- **上色**：自己寫 SGR（`Style.Render`，一律 24-bit），淡化（`Dim`）就是改寫每一列的 SGR。
+- **上色**：自己寫 SGR（`Style.Render`，一律 24-bit），淡化（`Dim`）就是改寫每一列的 SGR。淡化往 `#0c0c13`（`dimTo`）靠，
+  不是 Base：比 Base 暗的顏色也跟著變暗，膠囊串沒選中的段的 Mantle 被蓋住時就成了 Crust，不用另外寫特例。
+- **膠囊串**（`drawChain`）：串裡每一格都寫明前景與背景（沒選中的段與接縫是串色配 Mantle），只有兩端外側不塗，所以終端機的底
+  是什麼顏色都一樣（kbu 的 KB26）。`[N]` 與第一個 tab 由 `Panel.capsules` 併成一段，中間的空白一個 powerline 符號寬；`drawChain`
+  遇到兩段相鄰都選中時也畫同樣的空白。
 - **app 自己的 popup**（`apppopup.go`）：`App.Popup` 把 app 的 `PopupBody` 包成 popup 疊裡的一層，跟 lib 自己的 popup 一樣走
   `measure`、`draw`、`key`。app 給框裡的大小（`Size`）、內容（`Draw`，框線到框線的寬度）、按鍵（`Key`）、hint、key reference 的鍵；
   框、標題、層色、動畫、淡化，以及 app 沒收的 `Esc`、`?`、`q` 都是 lib 的。`ClosePopup` 用 body 找到那一層，跟 `closeView` 一樣連上面

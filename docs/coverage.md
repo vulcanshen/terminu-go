@@ -1,6 +1,6 @@
-# tdp v0.9.3 coverage
+# tdp v0.9.5 coverage
 
-tdp v0.9.3 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
+tdp v0.9.5 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
 （[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -229,12 +229,12 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | color §呈現規則 2、§popup 的層色 | 第 K 層 = `lerp(Lavender, Sapphire, K/4)`，4 層以上固定；toast 一律第 1 層 | D 的四層疊法（Space menu → Global → Quit → `?`） | `TestLayerColors`（每個通道四捨五入，等於表 `#A4C0FA` `#94C3F5` `#84C5F1` `#74c7ec`） |
 | color §呈現規則 4 | 警示色不跟層數換色，蓋在底下照 F8 淡化 | D「Confirm: with details」的 Peach 在第 1 層；P `[1] PODS` 的 Space menu → `[x] Delete` 在第 2 層 | `TestWarningColorFixed` |
 | color §呈現規則 6 | 粗體只用在：cursor 上的字、popup 標題、膠囊的字、模式名、標題後的 loading icon | 每種畫面 | `TestBoldOnlyWhereAllowed` |
-| color §色碼 | 每個意義的色碼與用處（Base、Blue、Surface2、層色、Lavender、Green、Yellow、Peach、Red、Overlay0、Text、Subtext1、Surface1） | 每個畫面 | `TestColorTable` |
-| color §色碼 | 畫面不塗底色：沒指定背景的格子留給終端機；Base 只用在色塊上的字、膠囊接縫沒填色的那一邊、淡化的目標 | 換一個不是 Base 的終端機底色看 | `TestNoBackgroundPainted` |
+| color §色碼 | 每個意義的色碼與用處（Base、Mantle、Blue、Surface2、層色、Lavender、Green、Yellow、Peach、Red、Overlay0、Text、Subtext1、Surface1） | 每個畫面 | `TestColorTable` |
+| color §色碼 | 畫面不塗底色：沒指定背景的格子留給終端機；Base 只用在色塊上的字；膠囊串自己塗滿每一格（沒選中的段 Mantle），只有串外面留給終端機 | 換一個不是 Base 的終端機底色看 | `TestNoBackgroundPainted` |
 | color §色碼 | 模式色 Yellow 也用在 Drag 拿著的那一列 | P `[1] PODS` 的 `[D]rag`；I 的 `Segments` 按 `D` | `TestPanelDragHeldRow`、`TestReorderDrag` |
 | color §色碼 | 例外是色塊：內容本身就是顏色的格子（`ColorText` 的 `███`）在 cursor 色塊上保留自己的顏色，同一塊上的其他字照樣換成 Base。lib：表單、一列一個值的 panel、一般清單的 cursor | I `[1] INPUTS` 的 `Background` 停在上面 | `TestSwatchOnCursor` |
 | color §色碼 | cursor 色塊：popup 層色底、panel Subtext1 底，字 Base 粗體；沒 focus 那塊的 cursor 再淡化一次；放在色塊上的字一律 Base | P 的 cursor；I `[/] Find` 的兩塊 | `TestCursorBlock` |
-| color §淡化 | `dim(c) = c × 0.45 + base × 0.55`，每個通道四捨五入，前景背景都算；256 色的 16–255 照標準值；0–15 用終端機的調色盤（啟動時 OSC 4 問，問不到用 xterm 的值） | F8、T2 的畫面；在 tmux 裡改調色盤看 | `TestDimFormula`、`TestDimPaletteFromOSC4`、`TestDimPaletteFallbackXterm` |
+| color §淡化 | `dim(c) = c × 0.45 + t × 0.55`（t `#0c0c13`，Crust 的下一格；v0.9.5 前是 Base），每個通道四捨五入（Blue → `(68,88,123)`、Mantle → Crust、Base → `#14141f`），前景背景都算；256 色的 16–255 照標準值；0–15 用終端機的調色盤（啟動時 OSC 4 問，問不到用 xterm 的值） | F8、T2 的畫面；在 tmux 裡改調色盤看 | `TestDimFormula`、`TestDimPaletteFromOSC4`、`TestDimPaletteFallbackXterm` |
 | color §淡化 | 絕不變亮（每通道取小）；一律輸出 24-bit；沒指定前景給 `dim(Text)`；bold、reverse、游標移動、文字不動 | 同上 | `TestDimNeverBrighter`、`TestDimTruecolorOut`、`TestDimDefaultFg` |
 
 ## components §圖與間距、§折行、§大寫
@@ -259,7 +259,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | screen §footer | 一般 `Space:menu ?:help !:log Tab\|1–N:panels q:quit`；單 panel `Space:menu ?:help !:log q:quit`；模式 `?:help` + 模式的鍵 + `Esc:<動詞>`；filter 打字中 `Enter\|Tab:list Esc:clear`，沒有結果時 `Tab:list Esc:clear`；PTY 在 panel 裡：出口鍵 + 保留鍵（互動 terminal 再接 `Alt-v:select PgUp:history`）；popup 開著時照底下畫面的寫、跟著淡化 | P 一般與 Drag；P filter（打 `zz` 沒有結果）；T `[1] SHELL`；任一 popup；lib 的單 panel 版本 | `TestFooterVariants`、`TestFooterUnderPopupDimmed` |
 | screen §footer | `!` 的提醒：App Log 有沒看過的錯誤時 `!:N errors`（說明 Red），只有警告時 `!:N warning(s)`（Peach），打開後回到 `!:log` | D「Error popup」關掉後看 footer，按 `!` 再看 | `TestAppLogFooter` |
 | screen §footer | terminal popup 開著時 footer 整列不畫：最後一列兩端是空白，不露出 footer 的字 | T 的 terminal popup | `TestTerminalPopupSize` |
-| screen §畫面 chip 列 | 每個畫面一個膠囊、串的顏色 Blue（選中填 Blue 字 Base 粗體、沒選中字 Blue）；放不下先縮 `[P] [I] [D] [T]` 再收掉沒選中的 | 每個畫面；縮窄 | `TestScreenChips`、`TestScreenChipsShrink` |
+| screen §畫面 chip 列 | 每個畫面一個膠囊、串的顏色 Blue（選中填 Blue 字 Base 粗體、沒選中底 Mantle 字 Blue）；放不下先縮 `[P] [I] [D] [T]` 再收掉沒選中的 | 每個畫面；縮窄 | `TestScreenChips`、`TestScreenChipsShrink` |
 | screen §畫面 chip 列 | 右邊放 statusbar；下面全寬粗線 `━` Overlay0；長工作時從左填 Green 進度條、狀態文字 Green；terminal popup 開著時 chip 列與分隔線留著 | `Start task`；開 terminal popup 時再看一次 | `TestChipRowProgress` |
 | screen §statusbar | 不是 surface；label 有熱鍵就標；一組 `label: 值`、冒號後空一格，組與組之間兩格、不加分隔符號（展示場：app 畫的）；一般 Overlay0、你在哪 Lavender、進行中 Green、錯誤警告數 Red / Peach；寬度固定、截斷不折行 | statusbar：`[N]arrow: off  icon: 1  powerline: 1  errors: 3  warnings: 2`（有熱鍵、值 Lavender）、`[S]tart task` 進行中 `copying: 4%` Green | `TestStatusbar` |
 | screen §窄寬 | 放不下時只畫 focus 的 panel 佔滿寬、`Tab` 照換；門檻 app 定、不高於 80；窄寬只在最低尺寸以上才有 | `[N]arrow layout`；或縮到 59 欄以下 | `TestScreenNarrow` |
@@ -276,10 +276,11 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | panel §框 | 下框左邊 hint（每個 panel 都有；focus 在 panel filter 打字列上、在 panel 裡的 PTY 時不寫，回來時再寫）；下框右邊捲動位置 | 每個 panel；P 按 `/` 打字；T `[1] SHELL` 按 `Enter` 進去 | `TestPanelHint`、`TestPanelNoHintWhileFiltering`、`TestK10ExitKeyShown` |
 | panel §框 | 框上的字與角之間隔一段線（`┗━ Enter:logs`、`3 of 40 ━┛`、`┫Drag┣━┓`），只有 `[N] label` 膠囊緊接左上角 | 每個 panel | `TestPanelFrameTextSpacing` |
 | panel §框 | hint：這個 panel 自己的鍵（`Enter` 做什麼、常用熱鍵），不寫移動鍵與 footer 已有的 core key；清單一項都沒有時（panel filter 篩到空，或本來就空）拿掉 `Enter` 與對項目的熱鍵，只留對整個 panel 的；focus 時鍵 Blue 說明 Overlay0、失焦跟著淡化；放不下從尾端整組捨、捲動位置留著 | 每個 panel；縮窄；I `[2] FILES` 的 `Empty`（只剩 `/:find`），或按 `/` 打 `zz` 再 `Tab` | `TestPanelHintContent`、`TestPanelHintDrop`、`TestPanelHintNoItems` |
-| panel §膠囊串 | 兩端斜角 U+E0BA / U+E0B0；選中的填串色、字 Base 粗體；沒選中的不填、字用串色；斜角與接縫照 Powerline 上色（前景左段的底、背景右段的底，沒選中的底當 Base）；串色：panel 是框線色、popup 是層色、chip 是 Blue；`[N]` 膠囊與目前 tab 都算選中 | P `[1] PODS` 換 tab；D「Popup with tabs」 | `TestCapsuleChain` |
+| panel §膠囊串 | 兩端斜角 U+E0BA / U+E0B0，前景是旁邊那一段的底（選中的串色、沒選中的 Mantle），外側不塗背景；選中的填串色、字 Base 粗體；沒選中的底 Mantle、字用串色；接縫一律斜線、前景串色背景 Mantle：選中 → 沒選中 U+E0BC、沒選中 → 選中 U+E0BA、兩段都沒選中 U+E0BB；串色：panel 是框線色、popup 是層色、chip 是 Blue；`[N]` 膠囊與目前 tab 都算選中（panel-31～36） | P `[1] PODS` 換 tab；D「Popup with tabs」 | `TestCapsuleChain` |
 | panel §框 | label 裡的名稱照原樣，跟 popup 的標題一樣：`[2] PODS: nginx-7d4f`；整個 label 就是名稱時照原樣（lib：`Panel.Name`；Space menu 與 `?` 的標題也一樣） | K `[2] KIND: pods` | `TestPanelName` |
 | panel §膠囊串 | `[N]` 與第一個 tab 都選中時中間的空白跟接縫一樣佔一個 powerline 符號的寬度，換 tab 時字不位移 | P `[1] PODS` 換 tab（`SHOWCASE__POWERLINE_WIDTH=2` 也試一次） | `TestPanelTabSpaceIsAJoin` |
-| panel §膠囊串 | 接縫：換色 U+E0B0、同色 U+E0B1；字前後不加空白、大寫；放不下先縮沒選中的成第一個字，再從尾端收成 `…`，選中的永遠留著、不撐寬框；選中的那一段自己就太長時字從尾端截加 `…`，兩端斜角照畫、跟框角之間留一段線 | 縮窄 | `TestCapsuleChainShrink`、`TestPanelModeLabelKeptWhenNarrow` |
+| panel §膠囊串 | 字前後不加空白、大寫；放不下先縮沒選中的成第一個字，再從尾端收成 `…`，選中的永遠留著、不撐寬框；選中的那一段自己就太長時字從尾端截加 `…`，兩端斜角照畫、跟框角之間留一段線 | 縮窄 | `TestCapsuleChainShrink`、`TestPanelModeLabelKeptWhenNarrow` |
+| panel §膠囊串 | 失焦時串色換成失焦的框線色、Mantle 不變；被蓋住時照 F8 跟整個畫面一起淡化，Mantle 變成 Crust `#11111b`（panel-137） | P `[1] PODS` 按 `Tab`；再開 Space menu | `TestCapsuleChain`、`TestDimEveryColor` |
 | panel §一般清單 | cursor：Subtext1 底、Base 粗體、佔滿內寬、整列 Base 字；右邊的留白（跟箭頭一樣寬）畫 U+E0B0、Subtext1；失焦跟著淡化 | P `[1] PODS` | `TestListCursor`、`TestCursorArrow` |
 | panel §一般清單 | 表頭 Blue 不加粗、大寫、固定不捲；每欄是數字或文字：數字靠右照數值排、文字靠左照文字排；欄間兩格；排序欄位加 U+F160（升）/ U+F161（降）；多欄排序在箭頭前加順位 `(2)` | P `[1] PODS` 的 `Sort by`（Name 升冪、Age 降冪、兩欄） | `TestListHeader`、`TestListSortGlyphs`、`TestListSortNumbers` |
 | panel §一般清單 | 捲動位置：放不下時 `N of M`（框線色），全放得下不寫；沒有 cursor 的寫 `N-M of T` | P `[1] PODS`（40 列）、`[2] LOG` | `TestPanelScrollPosition` |
@@ -535,9 +536,10 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 
 | code point | 名稱 | 規範 | 展示場 |
 |---|---|---|---|
-| U+E0BA | `nf-ple-lower_right_triangle` | panel §膠囊串（左端） | 每個 panel 標題、chip 列、popup 的 tab |
-| U+E0B0 | `nf-pl-left_hard_divider` | panel §膠囊串（右端、換色接縫）；popup §外框（cursor 尾端的箭頭） | 同上；每個 cursor |
-| U+E0B1 | `nf-pl-left_soft_divider` | panel §膠囊串（同色接縫） | 畫面 chip 列（沒選中的 chip 之間） |
+| U+E0BA | `nf-ple-lower_right_triangle` | panel §膠囊串（左端、沒選中 → 選中的接縫） | 每個 panel 標題、chip 列、popup 的 tab |
+| U+E0BC | `nf-ple-upper_left_triangle` | panel §膠囊串（選中 → 沒選中的接縫） | 同上 |
+| U+E0BB | `nf-ple-forwardslash_separator` | panel §膠囊串（兩段都沒選中的接縫） | 畫面 chip 列（沒選中的 chip 之間） |
+| U+E0B0 | `nf-pl-left_hard_divider` | panel §膠囊串（右端）；popup §外框（cursor 尾端的箭頭） | 每個 panel 標題；每個 cursor |
 | U+E0B6 | `nf-ple-left_half_circle_thick` | popup §外框（標題膠囊左端） | 每種 popup |
 | U+E0B4 | `nf-ple-right_half_circle_thick` | popup §外框（標題膠囊右端） | 每種 popup |
 | U+F02D8 | `nf-md-hexagon` | menu §長相、note §key reference（區塊標題） | Space menu；任一處按 `?` |

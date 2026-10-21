@@ -493,7 +493,7 @@ func (l *List) Draw(w, h int, focused bool) []string {
 			}
 			if l.Typing() {
 				// The focus is on the typing row: the list's cursor is dimmed once (P6).
-				cursor = Style{Fg: Base, Bg: DimColor(Subtext1), Bold: true}
+				cursor = Style{Fg: DimColor(Base), Bg: DimColor(Subtext1), Bold: true}
 				arrowStyle = Fg(DimColor(Subtext1))
 			}
 			// Base on the block, a swatch keeping its colour (components/color).

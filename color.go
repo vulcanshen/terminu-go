@@ -40,7 +40,8 @@ func (c Color) B() uint8 { return c.RGB[2] }
 // The family colours, catppuccin-mocha (components/color). Each meaning has
 // one colour (Principle P4); the comment is what tdp uses it for.
 var (
-	Base     = Hex("#1e1e2e") // text on blocks, the unfilled side of a capsule join, what dimming fades to
+	Base     = Hex("#1e1e2e") // text on blocks
+	Mantle   = Hex("#181825") // an unselected capsule part and the joins of a chain; dimmed, it is Crust #11111b
 	Blue     = Hex("#89b4fa") // focus: frames, keys you can press now, the screen chips
 	Surface2 = Hex("#585b70") // not usable: unfocused frames, disabled rows
 	Lavender = Hex("#b4befe") // being edited, the user's footprint
@@ -189,16 +190,20 @@ func sgrRGB(fg bool, c RGB) string {
 
 // --- dimming (Rules F8, T2; components/color) -------------------------------
 
-// dimKeep is how much of a colour survives: dim(c) = c × 0.45 + base × 0.55.
+// dimKeep is how much of a colour survives: dim(c) = c × 0.45 + t × 0.55.
 const dimKeep = 0.45
 
-// DimRGB fades c toward Base. It never lightens: a channel darker than Base
-// keeps its own value.
+// dimTo is t, what dimming fades toward: #0c0c13, one step darker than Crust
+// as Base, Mantle and Crust step down; never drawn itself (components/color).
+var dimTo = RGB{0x0c, 0x0c, 0x13}
+
+// DimRGB fades c toward #0c0c13 (dimTo). It never lightens: a channel darker
+// than that keeps its own value.
 func DimRGB(c RGB) RGB {
 	var out RGB
 	for i := range c {
 		// Each channel rounds half up, then is compared with the original.
-		v := float64(c[i])*dimKeep + float64(Base.RGB[i])*(1-dimKeep) + 0.5
+		v := float64(c[i])*dimKeep + float64(dimTo[i])*(1-dimKeep) + 0.5
 		out[i] = min(c[i], uint8(v))
 	}
 	return out
@@ -246,7 +251,7 @@ func color256(n int) RGB {
 func dimText() string { return sgrRGB(true, DimRGB(Text.RGB)) }
 
 // Dim redraws one drawn line dimmed: every foreground and background colour in
-// its SGR sequences fades toward Base, always written as 24-bit, and text with
+// its SGR sequences fades toward #0c0c13, always written as 24-bit, and text with
 // no colour of its own gets dim(Text). Bold, reverse, cursor movement and the
 // text itself are left as they are.
 func Dim(line string) string {

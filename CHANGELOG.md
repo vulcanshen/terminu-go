@@ -2,6 +2,18 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.9.5
+
+- Capsule chains (panel titles and tabs, screen chips, a popup's tabs) say every colour they use, so they look the
+  same on any terminal ground (kbu KB26, tdp v0.9.4 and v0.9.5): an unselected part is on Mantle `#181825`, every join
+  is a slant the way of the left end, in the chain's colour on Mantle — U+E0BC out of a selected part, U+E0BA into
+  one, the thin U+E0BB between two unselected ones; the ends take the ground of the part beside them, nothing behind
+  them. U+E0B1 is no longer used
+- Dimming fades toward `#0c0c13`, one step darker than Crust, not Base: `dim(c) = c × 0.45 + t × 0.55`, never
+  lighter. Colours darker than Base dim too: under a popup an unselected capsule part's Mantle becomes Crust
+  `#11111b`, and Base text on a dimmed cursor block becomes `#14141f`
+- `Mantle` joins the colours
+
 ## v0.4.4 — tdp v0.9.3
 
 - The lib sends its own timers — a popup's or a toast's opening and closing frames, a toast's time — whatever the app
