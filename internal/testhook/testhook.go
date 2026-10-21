@@ -45,4 +45,10 @@ var (
 	Clipboard func() (text string, ok bool)
 	// Stop ends every program the app's terminals run.
 	Stop func(app any)
+	// Timers is the lib's own timers started outside a message (Driver.Do),
+	// which Update sends at its end.
+	Timers func(app any) tea.Cmd
+	// Once is one of the lib's timers that run once, sent by the app and the
+	// lib both: it comes back at once when its timer does.
+	Once func() tea.Cmd
 )

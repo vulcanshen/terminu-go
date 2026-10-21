@@ -5,6 +5,7 @@ import (
 	"os"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -148,6 +149,7 @@ type App struct {
 	// what the app's QuitFlow opened.
 	quitConfirm popupView
 	anim        bool
+	timers      []tea.Cmd // the lib's own timers started while a message is handled (sendTimers)
 	spin        bool
 
 	splashOn    bool
@@ -296,7 +298,7 @@ func (a *App) Run() error {
 }
 
 // Init runs Start.
-func (a *App) Init() tea.Cmd { return run(a.Start) }
+func (a *App) Init() tea.Cmd { return tea.Batch(run(a.Start), a.sendTimers()) }
 
 // Update handles a message.
 func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -335,7 +337,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmd = a.OnMsg(msg)
 		}
 	}
-	cmd = tea.Batch(cmd, a.moved(), a.fetch())
+	cmd = tea.Batch(cmd, a.moved(), a.fetch(), a.sendTimers())
 	if !a.spin && a.loading() {
 		a.spin = true
 		cmd = tea.Batch(cmd, a.after(spinTime, spinMsg{}))
@@ -447,7 +449,36 @@ func (a *App) animate() tea.Cmd {
 		return nil
 	}
 	a.anim = true
-	return a.after(frameTime, animMsg{})
+	return a.own(a.after(frameTime, animMsg{}))
+}
+
+// own keeps a timer of the lib's own, the frame tick or a toast's time, for
+// the lib to send too when the message is done (sendTimers): an app that
+// drops the command an App method gave it (two toasts, only the second's
+// returned) does not stop every animation for good. Sent by both, it runs
+// once.
+func (a *App) own(cmd tea.Cmd) tea.Cmd {
+	cmd = once(cmd)
+	a.timers = append(a.timers, cmd)
+	return cmd
+}
+
+// once is cmd that does its work the first time it runs only; after that it
+// gives back nothing.
+func once(cmd tea.Cmd) tea.Cmd {
+	var o sync.Once
+	return func() tea.Msg {
+		var msg tea.Msg
+		o.Do(func() { msg = cmd() })
+		return msg
+	}
+}
+
+// sendTimers is the lib's own timers kept since it last sent them.
+func (a *App) sendTimers() tea.Cmd {
+	cmd := tea.Batch(a.timers...)
+	a.timers = nil
+	return cmd
 }
 
 // stepAnimation moves every animating popup on by one frame.
@@ -664,7 +695,7 @@ func (a *App) Toast(kind ToastKind, text string) tea.Cmd {
 	}
 	a.placeToast()
 	id := a.toastSeq
-	return tea.Batch(a.animate(), a.after(kind.duration(), toastDone{id}))
+	return tea.Batch(a.animate(), a.own(a.after(kind.duration(), toastDone{id})))
 }
 
 // placeToast puts the toast's bottom border on the third row from the bottom.

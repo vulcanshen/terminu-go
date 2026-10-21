@@ -526,6 +526,16 @@ func TestM6HintListsDisabled(t *testing.T) {
 // TestE3TabsDrawnAsSpaces: a tab in the text of a panel or a popup is drawn as
 // input_tab_width spaces, as in a viewer, and counted so: a row holding one
 // is still exactly as wide as the terminal (Rules E3, L4).
+// TestInitSendsLibTimers: the timers of a toast Start opens go out with
+// Init, whatever Start returns, not at the first message.
+func TestInitSendsLibTimers(t *testing.T) {
+	ta := newTestApp(t)
+	ta.Start = func() tea.Cmd { ta.Toast(Info, "Started"); return nil }
+	if ta.Init() == nil || len(ta.timers) != 0 {
+		t.Errorf("Init kept %d timers", len(ta.timers))
+	}
+}
+
 func TestE3TabsDrawnAsSpaces(t *testing.T) {
 	if got := Width("a\tb"); got != 2+tabCells {
 		t.Errorf("a tab is %d cells", got-2)

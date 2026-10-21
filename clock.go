@@ -97,4 +97,6 @@ func init() {
 			}
 		}
 	}
+	testhook.Timers = func(app any) tea.Cmd { return app.(*App).sendTimers() }
+	testhook.Once = func() tea.Cmd { return once(nil) }
 }

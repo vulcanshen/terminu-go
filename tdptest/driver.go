@@ -211,7 +211,7 @@ func (d *Driver) Send(msg tea.Msg) {
 func (d *Driver) Do(f func() tea.Cmd) {
 	d.t.Helper()
 	d.begin("Do")
-	cmd := f()
+	cmd := tea.Batch(f(), testhook.Timers(d.app))
 	d.check()
 	d.launch(cmd, nil)
 	d.settle()
@@ -369,14 +369,14 @@ func (d *Driver) launch(cmd tea.Cmd, rest []tea.Cmd) {
 }
 
 // instant are the commands known to come back at once, run where they are
-// started rather than on their own: a timer on the test clock, the ones
-// tea.Batch and tea.Sequence make, tea.Quit.
+// started rather than on their own: a timer on the test clock and the lib's
+// own that runs once, the ones tea.Batch and tea.Sequence make, tea.Quit.
 var instant = sync.OnceValue(func() map[uintptr]bool {
 	nop := func() tea.Msg { return nil }
 	a := terminu.New("")
 	testhook.UseClock(a, zeroClock{})
 	m := map[uintptr]bool{}
-	for _, c := range []tea.Cmd{a.Tick(0, nil), tea.Batch(nop, nop), tea.Sequence(nop, nop), tea.Quit} {
+	for _, c := range []tea.Cmd{a.Tick(0, nil), testhook.Once(), tea.Batch(nop, nop), tea.Sequence(nop, nop), tea.Quit} {
 		m[reflect.ValueOf(c).Pointer()] = true
 	}
 	return m
