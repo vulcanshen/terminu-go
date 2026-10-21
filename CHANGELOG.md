@@ -2,7 +2,7 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.9.3
+## v0.4.4 — tdp v0.9.3
 
 - The lib sends its own timers — a popup's or a toast's opening and closing frames, a toast's time — whatever the app
   returns: an app that keeps only one of two commands (two toasts in one update, a popup and a toast) or drops them
