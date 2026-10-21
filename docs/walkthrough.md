@@ -76,7 +76,7 @@ cd ~/Documents/sideproj/terminu-go && go build -o /tmp/showcase ./examples/showc
 - 「Popup: the app’s own」是展示場自己畫的 popup（`DRAW: icon`）：框裡的格子與按鍵是展示場的，框、動畫、淡化是 lib 的。`hjkl` 移、
   `Enter` 或 `Space` 畫一格，`Tab` 到 `Save`、再按回格子；`q` 不作用。畫過一格之後 `Esc` 先問要不要放棄，`Ctrl-C` 的離開 confirm
   多一句 Peach 的 `Changes to icon are not saved.`；`?` 只列它自己的鍵。
-- 「Move aside」兩列是讀不了自己的檔時的 confirm：`a file` 是設定檔，`Enter` 移到 `.bak`、開新的；`a record` 是一筆一個檔的資料，
+- 「Move aside」兩列是讀不了自己的檔時的 confirm：`a file` 是設定檔，`Enter` 移到 `.bak`、像第一次打開一樣用預設值（展示場第一次打開不建設定檔，所以不會多一個新的）；`a record` 是一筆一個檔的資料，
   問句寫 `go on without it`，`Enter` 只把壞的那一筆移開、讀其他的。兩個都是 `Esc` 直接離開展示場。
 - 每一層看：只有最上層亮、底下淡化一次，`Esc` 一次關一層。
 

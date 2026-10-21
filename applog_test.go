@@ -52,15 +52,15 @@ func TestAppLogOnBang(t *testing.T) {
 // Rules F5).
 func TestAppLogEntries(t *testing.T) {
 	ta, clk := logApp(t)
-	ta.Toast(Info, "switched to Pods")
-	ta.Toast(Success, "nginx scaled")
+	ta.Toast(Info, "Switched to Pods")
+	ta.Toast(Success, "Scaled nginx")
 	ta.Log(Warning, "CRD discovery: unable")
 	ta.Error("Fetch", "Forbidden")
 	ta.settle()
 	ta.press("Esc", "Esc")
 	ta.press("!")
 	text := ta.screenText()
-	for _, want := range []string{"14:02:11 INFO switched to Pods", "14:02:11 OK   nginx scaled", "14:02:11 WARN CRD discovery: unable", "14:02:11 ERR  Fetch: Forbidden"} {
+	for _, want := range []string{"14:02:11 INFO Switched to Pods", "14:02:11 OK   Scaled nginx", "14:02:11 WARN CRD discovery: unable", "14:02:11 ERR  Fetch: Forbidden"} {
 		if !strings.Contains(text, want) {
 			t.Errorf("%q is not in the App Log:\n%s", want, text)
 		}
@@ -71,12 +71,12 @@ func TestAppLogEntries(t *testing.T) {
 			t.Errorf("not in its colour: %q", want)
 		}
 	}
-	if strings.Index(text, "switched") > strings.Index(text, "Forbidden") {
+	if strings.Index(text, "Switched") > strings.Index(text, "Forbidden") {
 		t.Error("the newest is not at the bottom")
 	}
 	clk.t = clk.t.Add(time.Minute)
-	ta.Log(Info, "came in while open")
-	if !strings.Contains(ta.screenText(), "14:03:11 INFO came in while open") {
+	ta.Log(Info, "Came in while open")
+	if !strings.Contains(ta.screenText(), "14:03:11 INFO Came in while open") {
 		t.Error("an entry logged while it is open does not come in")
 	}
 	// Opened at its end: with more than fits, the newest is in sight.

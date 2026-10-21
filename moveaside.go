@@ -15,8 +15,9 @@ import (
 // confirm, MOVE ASIDE, names the path and why:
 //   - Enter (move) renames the file to <name>.bak (.bak.1, .bak.2… when that
 //     is taken: never over another), logs it and runs fresh, where the app
-//     starts a new one in the same place (its defaults for settings, empty
-//     state or data) and goes on.
+//     goes on as on its first start (its defaults for settings, empty state
+//     or data): a file its first start makes is made again, one it does not
+//     waits for the first save. The lib makes nothing in its place.
 //   - Esc (quit) leaves the app: Run returns the path and the reason, for
 //     main to write to stderr as it does any error of Run.
 //
@@ -50,7 +51,7 @@ func (a *App) moveAside(path string, err error, fresh func() tea.Cmd, then strin
 		if rerr := os.Rename(path, to); rerr != nil {
 			return tea.Batch(a.closeTop(), a.moveAside(path, err, fresh, then), a.ErrorAbout("Move aside failed", filepath.Base(path), rerr.Error()))
 		}
-		a.Log(Info, "moved "+shown+" to "+homeShort(to))
+		a.Log(Info, "Moved "+shown+" to "+homeShort(to))
 		return tea.Batch(a.closeTop(), run(fresh))
 	}
 	c.quit = func() tea.Cmd {

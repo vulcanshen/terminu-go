@@ -21,9 +21,10 @@ func (ds *dialogsScreen) moveAside() tea.Cmd {
 	if err := os.MkdirAll(dataDir(), 0o755); err == nil {
 		err = os.WriteFile(path, []byte("theme: [dark\n"), 0o600)
 	}
+	// Moved aside, the showcase goes on as on its first start, which makes
+	// no settings file: the next one comes with the first save.
 	return a.MoveAside(path, errors.New("line 1: did not find expected ',' or ']'"), func() tea.Cmd {
-		_ = os.WriteFile(path, []byte("theme: dark\n"), 0o600)
-		return a.Toast(terminu.Info, "A new settings.yaml, the old one moved aside")
+		return a.Toast(terminu.Info, "Settings back to their defaults, settings.yaml moved aside")
 	})
 }
 
@@ -162,7 +163,7 @@ func (ds *dialogsScreen) scenarios() []scenario {
 		}},
 		{"Popup: the app’s own", "app’s own", "the app draws the inside, the lib the frame: draw on the grid, [Tab] to Save; Esc and Ctrl-C say when changed", ds.draw},
 		{"Quit: the app’s own flow", "menu", "the next [q] opens a menu of ways to leave; Ctrl-C again leaves at once", ds.quitFlow},
-		{"Move aside: a file it can’t read", "confirm", "its settings broken: Enter moves the file to .bak and starts a new one, Esc quits the showcase", ds.moveAside},
+		{"Move aside: a file it can’t read", "confirm", "its settings broken: Enter moves the file to .bak and starts as the first time, Esc quits the showcase", ds.moveAside},
 		{"Move aside: a record it can’t read", "confirm", "one record per file, one broken: Enter moves just that one to .bak and reads the rest", ds.moveAsideRecord},
 		{"Toast", "toast", "a short message on the third row from the bottom", toast("Copied 3 paths")},
 		{"Toast over a popup", "toast", "a popup, then a toast: Esc takes the toast first", func() tea.Cmd {

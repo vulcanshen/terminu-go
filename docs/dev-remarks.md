@@ -1,7 +1,7 @@
 # terminu-go 開發者備忘
 
 terminu-go 是 terminu design principle（tdp）的 Go 實作：給 app 呼叫的 lib，加上展示場 `examples/showcase`。遵循 terminu design
-principle，目前對應 tdp v0.9.1。這個 repo 的任務與規範的讀法見 [`CLAUDE.md`](../CLAUDE.md)。
+principle，目前對應 tdp v0.9.2。這個 repo 的任務與規範的讀法見 [`CLAUDE.md`](../CLAUDE.md)。
 
 ## 運作方式
 
@@ -61,7 +61,8 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   screen 時（`vt.altOn`）`PgUp` 給它；`AllKeys` 時只有出口鍵與 app 的 `Keys` 留在 app。
 - **讀不了時**（`moveaside.go`）：confirm 多一個 `quit`，`Esc` 不取消而是記下 `exitErr`、回 `tea.Quit`；`Run` 在程式結束後
   回傳它，`main` 照它處理 `Run` 的錯誤那樣印到 stderr。一筆一個檔的資料用 `MoveAsideRecord`：同一個 confirm，只有問句的
-  後半不同；改名失敗時再問的也是同一種問句。
+  後半不同；改名失敗時再問的也是同一種問句。lib 只改名，不建新檔：第一次打開會建什麼只有 app 知道（tdp v0.9.2 的「像第一次
+  打開一樣」），交給 `fresh`。
 - **一行文字的欄**（`Column.Line`）：格子的字（含 `Styled` 每一段的字）先把 Tab 換成 `input_tab_width` 格空白再 `Escape`，
   其他控制字元照樣畫名字；app 給的 span 不改，換在複製的那份上。
 

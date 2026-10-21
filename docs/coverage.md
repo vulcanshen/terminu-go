@@ -1,6 +1,6 @@
-# tdp v0.9.1 coverage
+# tdp v0.9.2 coverage
 
-tdp v0.9.1 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
+tdp v0.9.2 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
 （[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -209,7 +209,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | E2 | 變數名 `<APP>__<NAME>`；lib 讀的變數掛在 app 的名字底下；`TERMINU__ICON_WIDTH`、`TERMINU__POWERLINE_WIDTH` 給子程序 | lib 提供變數名的函式；展示場只讀 `SHOWCASE__…` | `TestE2EnvNames` |
 | E3 | 設定與資料的位置（v0.6.4 補了 Windows）：lib 不適用，展示場不存東西；file-picker 的 `~/` 是使用者的家目錄（`os.UserHomeDir`，Windows 上就是 `%USERPROFILE%`）；家族共用的設定 key `hide_secrets_in_preview`（預設 `false`）、`input_tab_width`（預設 `4`）由 app 讀，交給 lib 的 `App.HideSecretsInPreview`、`App.InputTabWidth`；拿來讀的內容裡的 Tab（viewer、檔案預覽、panel 上的 log、`Column.Line` 的欄）畫成 `input_tab_width` 格空白，名字與短字（表單與 panel 上的值、清單的格子、menu……）與輸入框的打字列裡畫成紅色的 `\t`；只有 App Log 的 app 照預設（v0.9.1，lib 不用改） | 展示場的 global `Hide secrets in preview`；I 的 `Separator` | `TestFilePreviewHidesSecrets`、`TestTextarea`、`TestE3TabsDrawnAsSpaces`、`TestValueControlChars` |
 | E3 | `input_tab_width` 沒走 `Run` 時也照 app 的設定（app 自己的測試） | lib | `TestTabWidthWithoutRun` |
-| E3 | 讀不了時：app 自己的設定、狀態、資料讀不了，開 `MOVE ASIDE` confirm（路徑與原因）、hint `Enter:move Esc:quit`；`Enter` 改名成 `.bak`（已經有就 `.bak.1`、`.bak.2`……，不蓋掉，問句寫實際的名字）、照常開始；`Esc` 離開 app，`Run` 回傳路徑與原因給 main 寫到 stderr（lib：`App.MoveAside`） | D「Move aside: a file it can’t read」 | `TestMoveAside`、`TestMoveAsideNeverOverAnother` |
+| E3 | 讀不了時：app 自己的設定、狀態、資料讀不了，開 `MOVE ASIDE` confirm（路徑與原因）、hint `Enter:move Esc:quit`；`Enter` 改名成 `.bak`（已經有就 `.bak.1`、`.bak.2`……，不蓋掉，問句寫實際的名字）、像第一次打開一樣照常開始（lib 不建檔，交給 app 的 `fresh`；展示場不存設定，所以不建）；`Esc` 離開 app，`Run` 回傳路徑與原因給 main 寫到 stderr（lib：`App.MoveAside`） | D「Move aside: a file it can’t read」 | `TestMoveAside`（lib 不建檔）、`TestMoveAsideNeverOverAnother` |
 | E3 | 讀不了時，資料是一筆一個檔：讀不了的那一筆按 `Enter` 只改名成 `.bak`、不另外建，其他照常讀；問句 `Move it to <檔名>.bak and go on without it?`（lib：`App.MoveAsideRecord`，app 的 `reread` 只是重讀） | D「Move aside: a record it can’t read」 | `TestMoveAsideRecord` |
 | E4 | 需要 Nerd Font 與 truecolor（lib 的 README 寫明）；PUA glyph 在程式碼裡寫成 code point | 看 README；掃原始碼找不到 PUA 字元 | `TestE4NoLiteralPUA` |
 | E5 | 量的是游標實際前進幾格；所有量寬度的地方走同一個函式（含疊 popup）；畫到終端機用 bubbletea v1 的 renderer（紀錄 C1） | `SHOWCASE__ICON_WIDTH=2`；`proto/c1/tmux-check.sh` 的作法 | `TestL4EveryRowFullWidth`（icon 兩格）、`TestE5OutputDropsEraseRight`（renderer 補的「清到行尾」拿掉，紀錄 C1）、`TestVTWideCharacters`（PTY 裡的字也照同一個寬度放） |
@@ -401,7 +401,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | note §viewer 的行號 | viewer（YAML、App Log、檔案內容）左邊有行號：每行第一列、靠右、後空一格、折下來的列空白；Overlay0，選取模式裡游標那行 Text；至少三位：行數固定的取 max(3, 位數)、打開後不變，串流的超過 999 行才跳寬；複製不含行號；`N of M` 跟行號同一套數字 | D「Note viewer」；P `[2] LOG` 按 `Enter`；I `[2] FILES` 的 `[V]iew` | `TestViewerLineNumbers`、`TestViewerLineNumbersStream`、`TestViewerCopyNoNumbers`、`TestViewerFoldedScroll` |
 | note §viewer 的行號 | 有 tab 的 viewer：行號欄照看過的頁裡最寬的，只變寬、不變窄（串流的頁也一樣） | D「Popup with tabs」、DevTools 切 tab | `TestViewerTabGutterOnlyGrows` |
 | note §viewer 裡的 Tab 與控制字元 | 照終端機的樣子：Tab 畫成 `input_tab_width` 格空白、不對齊 tab 停點；`\n` 是換行（app 交來的一行裡夾著也拆）；換行前的 `\r`（CRLF）不畫；顏色碼照著上色；一行裡的 `\r` 只留最後的狀態；其他控制字元與不是顏色碼的序列畫成名字、Red；複製照原樣；file-picker 預覽的文字檔一樣（檔案自己的顏色碼也照著上色） | I `[2] FILES` 的 `main.go` 按 `[V]iew`（有 Tab）；`[/] Find` 預覽同一個檔 | `TestViewerTabs`、`TestViewerControlChars`、`TestViewerEscapeSequencesShown`（不是樣式的 escape sequence 照字畫、ESC 寫名字）、`TestReadingContent`、`TestFilePreviewEscapes` |
-| note §App Log | 每個 app 都有；`!` 在 panel 上打開，是 viewer、最新的在最下面、打開時在最後、開著時新的一筆照樣進來；每一筆 `HH:MM:SS`（Overlay0）、等級（`INFO` Text、`OK` Green、`WARN` Peach、`ERR` Red，四格靠左）、發生的事；每一個 toast 與 error popup 自動記，app 用 `App.Log` 記動作與背景的事（任何 goroutine 都能叫） | 任一 panel 按 `!`；展示場啟動時記一筆 | `TestAppLogEntries` |
+| note §App Log | 每個 app 都有；`!` 在 panel 上打開，是 viewer、最新的在最下面、打開時在最後、開著時新的一筆照樣進來；每一筆 `HH:MM:SS`（Overlay0）、等級（`INFO` Text、`OK` Green、`WARN` Peach、`ERR` Red，四格靠左）、發生的事（跟 toast 一樣大寫開頭：lib 自己記的 `Moved … to …`、展示場的 `Started; …`）；每一個 toast 與 error popup 自動記，app 用 `App.Log` 記動作與背景的事（任何 goroutine 都能叫） | 任一 panel 按 `!`；展示場啟動時記一筆 | `TestAppLogEntries`、`TestMoveAside`（大寫開頭） |
 | note §App Log | 只放在記憶體，筆數有上限（1000），滿了丟最舊的 | lib | `TestAppLogInMemory` |
 | note §viewer 的語法顏色 | 有固定格式的照 file-picker 預覽上色（chroma catppuccin-mocha、只上前景色）；語言由 app 給（`Viewer.Lang`），檔案內容照檔名；沒有固定格式或判斷不出來的是純文字 Text（建議；app 自己給的顏色保留，例：log 的 ERROR、WARN 行）；行號 Overlay0；選取範圍 Yellow 底 Base 字、範圍裡不顯示語法顏色 | D「Note viewer」（YAML）；I `[2] FILES` 的 `[V]iew`；P `[2] LOG` 按 `Enter`（ERROR 紅、WARN 橘保留） | `TestViewerSyntaxColours` |
 | note §按鍵 | 折行的 viewer 以畫出來的一列為單位捲（`j\|k` 一列、`u\|d` 照列算）；`N-M of T` 的 N、M 是最上面、最下面那一列所屬的行；選取模式照舊以行為單位 | D「Note viewer」把視窗縮窄 | `TestViewerScrollsRows` |

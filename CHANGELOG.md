@@ -2,6 +2,12 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.9.2
+
+- The App Log's entry for a file moved aside starts with a capital, as a toast does: `Moved … to …` (note-78)
+- `MoveAside`: `Enter` has the app go on as on its first start (Rules E3): the lib made no file before and still
+  makes none; the doc says what `fresh` does now. The showcase's settings file comes back only with a save.
+
 ## v0.4.2 — tdp v0.9.1
 
 - `App.MoveAsideRecord` (Rules E3, when a file cannot be read): for data kept one record per file, `Enter` only

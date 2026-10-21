@@ -104,14 +104,15 @@ program's output — never reaches the terminal as it is:
 
 `!` on any panel opens the App Log: what the app did and what went wrong, newest last, in memory only. Every toast
 and every error popup is in it by itself; `app.Log(kind, text)` adds the rest — an action's result, what the app does
-in the background — from any goroutine. While errors or warnings came in unseen, the footer's `!:log` says how many.
+in the background — from any goroutine, worded as a toast, with a capital first. While errors or warnings came in
+unseen, the footer's `!:log` says how many.
 
 ## A file of your own it can't read
 
 When the app can't read its settings, state or data — a bad format, a broken file, no permission — call
 `app.MoveAside(path, err, startFresh)` at the start. The user is asked to move the file aside: `Enter` renames it to
-`.bak` (never over another) and runs `startFresh`, `Esc` leaves, `Run` returning the path and the reason for `main`
-to print. When the data is kept one record per file, call `app.MoveAsideRecord(path, err, reread)` for the record
+`.bak` (never over another) and runs `startFresh`, where the app goes on as on its first start; `Esc` leaves, `Run`
+returning the path and the reason for `main` to print. When the data is kept one record per file, call `app.MoveAsideRecord(path, err, reread)` for the record
 that can't be read: `Enter` only moves that one aside and runs `reread`, which reads the rest.
 
 ## Settings
@@ -186,7 +187,7 @@ in whenever it is due.
 
 ## Which terminu design
 
-terminu-go implements **tdp v0.9.1**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
+terminu-go implements **tdp v0.9.2**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
 
 ## Links
 

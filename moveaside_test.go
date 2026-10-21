@@ -11,9 +11,11 @@ import (
 )
 
 // TestMoveAside: a file of the app's own it cannot read asks MOVE ASIDE, its
-// path and why; Enter renames it to .bak and starts a new one; Esc leaves
+// path and why; Enter renames it to .bak and runs fresh, the lib making
+// nothing in its place (the app goes on as on its first start); Esc leaves
 // the app, Run returning the path and the reason (Rules E3: E3-17, E3-18,
-// E3-20; components/dialog/confirm).
+// E3-20; components/dialog/confirm). The App Log's entry starts with a
+// capital, as a toast does (note-78).
 func TestMoveAside(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "profiles.yaml")
@@ -33,7 +35,10 @@ func TestMoveAside(t *testing.T) {
 	if _, err := os.Stat(path + ".bak"); err != nil || !fresh || ta.top() != nil {
 		t.Errorf("Enter: moved %v, started fresh %v, closed %v", err, fresh, ta.top() == nil)
 	}
-	if !strings.Contains(strings.Join(ta.logs.lines(), "\n"), "moved "+path+" to "+path+".bak") {
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		t.Errorf("the lib made something in its place: %v", err)
+	}
+	if !strings.Contains(strings.Join(ta.logs.lines(), "\n"), "Moved "+path+" to "+path+".bak") {
 		t.Error("the move is not in the App Log")
 	}
 	// Esc leaves the app, saying what and why.

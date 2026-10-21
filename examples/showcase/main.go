@@ -98,7 +98,7 @@ func newShowcase() *showcase {
 		// A digit: a global hotkey that only works in the global operation popup (Rules K1, M4).
 		{Key: "1", Label: "About", Desc: "what the showcase is", Scope: terminu.GlobalScope,
 			Do: func() tea.Cmd {
-				return a.Toast(terminu.Info, "showcase "+version+": every component of terminu design")
+				return a.Toast(terminu.Info, "About showcase "+version+": every component of terminu design")
 			}},
 		{Key: "S", Label: "Start task", Desc: "a long job: the bar under the screen chips", Scope: terminu.GlobalScope,
 			Do: s.startTask},
@@ -112,13 +112,13 @@ func newShowcase() *showcase {
 				if a.HideSecretsInPreview {
 					state = "on"
 				}
-				return a.Toast(terminu.Info, "hide_secrets_in_preview is "+state)
+				return a.Toast(terminu.Info, "Turned hide_secrets_in_preview "+state)
 			}},
 	}
 	a.OnMsg = s.onMsg
 	a.Start = func() tea.Cmd {
 		// What the app does by itself goes in the App Log (components/dialog/note).
-		a.Log(terminu.Info, "started; pretend files in /tmp/terminu-showcase")
+		a.Log(terminu.Info, "Started; pretend files in /tmp/terminu-showcase")
 		return a.Tick(time.Second, func(time.Time) tea.Msg { return logTick{} })
 	}
 	return s
