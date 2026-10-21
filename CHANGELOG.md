@@ -2,7 +2,7 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.9.5
+## v0.4.5 — tdp v0.9.5
 
 - Capsule chains (panel titles and tabs, screen chips, a popup's tabs) say every colour they use, so they look the
   same on any terminal ground (kbu KB26, tdp v0.9.4 and v0.9.5): an unselected part is on Mantle `#181825`, every join
