@@ -27,7 +27,7 @@ import (
 // it (layout/panel, loading and errors). Data kept one record per file uses
 // MoveAsideRecord.
 func (a *App) MoveAside(path string, err error, fresh func() tea.Cmd) tea.Cmd {
-	return a.moveAside(path, err, fresh, "start a new one")
+	return a.moveAside(path, err, fresh, "start fresh")
 }
 
 // MoveAsideRecord is MoveAside for data kept one record per file (a mark per
@@ -59,6 +59,20 @@ func (a *App) moveAside(path string, err error, fresh func() tea.Cmd, then strin
 		return tea.Quit
 	}
 	return a.open(c)
+}
+
+// NoLongerUsed notes each file of the app's own that a newer version no
+// longer uses and that is still there (settings, state or data): an INFO in
+// the App Log naming its path, "No longer used: <path>; delete it if you
+// don't need it". The file is not deleted and there is no toast: what to do
+// with it is the user's. Call it at every start; the App Log starts empty
+// (Rules E3, files no longer used).
+func (a *App) NoLongerUsed(paths ...string) {
+	for _, p := range paths {
+		if _, err := os.Lstat(p); err == nil {
+			a.Log(Info, "No longer used: "+homeShort(p)+"; delete it if you don't need it")
+		}
+	}
 }
 
 // asideName is where path goes aside: path.bak, or the first of .bak.1,

@@ -64,6 +64,17 @@ func dataDir() string {
 	return "/tmp/terminu-showcase"
 }
 
+// oldLayout is the file a pretend older showcase kept its layout in, put
+// there for this one to say it no longer uses it.
+func oldLayout() string {
+	p := filepath.Join(dataDir(), "layout.yaml")
+	if _, err := os.Stat(p); err != nil {
+		_ = os.MkdirAll(dataDir(), 0o755)
+		_ = os.WriteFile(p, []byte("layout: row\n"), 0o644)
+	}
+	return p
+}
+
 // minimalPDF is a one-page PDF that says text.
 func minimalPDF(text string) []byte {
 	var b bytes.Buffer

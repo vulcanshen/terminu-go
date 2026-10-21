@@ -1,7 +1,7 @@
 # terminu-go 開發者備忘
 
 terminu-go 是 terminu design principle（tdp）的 Go 實作：給 app 呼叫的 lib，加上展示場 `examples/showcase`。遵循 terminu design
-principle，目前對應 tdp v0.9.2。這個 repo 的任務與規範的讀法見 [`CLAUDE.md`](../CLAUDE.md)。
+principle，目前對應 tdp v0.9.3。這個 repo 的任務與規範的讀法見 [`CLAUDE.md`](../CLAUDE.md)。
 
 ## 運作方式
 
@@ -63,6 +63,11 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   回傳它，`main` 照它處理 `Run` 的錯誤那樣印到 stderr。一筆一個檔的資料用 `MoveAsideRecord`：同一個 confirm，只有問句的
   後半不同；改名失敗時再問的也是同一種問句。lib 只改名，不建新檔：第一次打開會建什麼只有 app 知道（tdp v0.9.2 的「像第一次
   打開一樣」），交給 `fresh`。
+- **lib 自己送出自己的計時**（`own`、`sendTimers`）：開關動畫的 tick 同一時間只排一個（`a.anim`），toast 有自己的時間
+  （`toastDone`）。這些計時原本只放在 App 方法回傳的 command 裡，app 只回傳兩個裡的一個（同一個 update 開兩個 toast）或全丟掉，
+  `a.anim` 就永遠是 true、之後所有開關動畫都停（filu 踩到）。現在 lib 把它們記下來，在 `Update`、`Init`、tdptest 的 `Do`
+  結束時自己也送一份；App 方法照樣回傳同一個 command（`ClosePopup` 還是用 nil 說「沒開著」），兩份共用一個 `sync.Once`，
+  先跑的那份才排計時，另一份什麼都不給，動畫不會變兩倍快。tdptest 認得這種 command，照樣當場跑（`testhook.Once`）。
 - **一行文字的欄**（`Column.Line`）：格子的字（含 `Styled` 每一段的字）先把 Tab 換成 `input_tab_width` 格空白再 `Escape`，
   其他控制字元照樣畫名字；app 給的 span 不改，換在複製的那份上。
 

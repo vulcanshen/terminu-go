@@ -2,6 +2,17 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.9.3
+
+- The lib sends its own timers — a popup's or a toast's opening and closing frames, a toast's time — whatever the app
+  returns: an app that keeps only one of two commands (two toasts in one update, a popup and a toast) or drops them
+  all no longer stops every animation for good, and the toast still goes. App methods return the same commands; one
+  returned and also sent by the lib runs once. tdptest's `Do` sends them too (filu, 2026-10-21)
+- `MoveAside`'s question is `Move it to <name>.bak and start fresh?` (Rules E3)
+- `App.NoLongerUsed(paths...)` (Rules E3, files no longer used): at every start, an INFO in the App Log for each file
+  of the app's own a newer version no longer uses that is still there, `No longer used: <path>; delete it if you
+  don't need it`; nothing deleted, no toast
+
 ## v0.4.3 — tdp v0.9.2
 
 - The App Log's entry for a file moved aside starts with a capital, as a toast does: `Moved … to …` (note-78)

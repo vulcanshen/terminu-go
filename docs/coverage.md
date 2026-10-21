@@ -1,6 +1,6 @@
-# tdp v0.9.2 coverage
+# tdp v0.9.3 coverage
 
-tdp v0.9.2 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
+tdp v0.9.3 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
 （[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -161,7 +161,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | F1 | toast 不是一層（不淡化、不算層數），但 `Esc` 先收它 | D「Toast over a popup」 | `TestToastNotALayer` |
 | F1 | 多步驟流程每一步是自己的 popup | D「Menu: Sort by」（欄位 → 方向） | `TestMultiStepStacks` |
 | F1 | 七類以外的 popup 是 app 自己的一類，app 記成偏離（例：kamonu 畫格子的 popup）。lib 給入口 `App.Popup`：框裡的內容與按鍵歸 app；框、標題（`DRAW: icon`）、hint、層色、開關動畫、淡化、F7 的大小歸 lib；app 沒收的 `Esc` 關這一層、`?` 開它的 key reference（只列它自己的鍵）、`q` 進離開流程，`Ctrl-C` 不經過它；lib 的 confirm、input、error popup 疊在它上面，`ClosePopup` 連同上面的一起關 | D「Popup: the app’s own」：`hjkl` 移、`Enter` 畫、`Tab` 到 Save、改過再 `Esc` 先問、`q` 不作用 | `TestAppPopupFrame`、`TestAppPopupSize`、`TestAppPopupKeys`、`TestAppPopupStack`、`TestAppPopupComparable` |
-| F2 | 開關都有動畫，全家族同一種：中間拉一條線、再上下展開，收起倒著播；每格 32ms、各 9 格；打開的動畫播完前不收鍵 | 每種 popup | `TestF2AnimationFrames`、`TestF2NoKeysWhileOpening` |
+| F2 | 開關都有動畫，全家族同一種：中間拉一條線、再上下展開，收起倒著播；每格 32ms、各 9 格；打開的動畫播完前不收鍵 | 每種 popup | `TestF2AnimationFrames`、`TestF2NoKeysWhileOpening`；app 丟掉 lib 給的 command 時照樣播、toast 照時間消失（lib 自己送出計時）：tdptest 的 `TestToastCommandDropped`、`TestOpeningKeepsItsTime`、`TestDoSendsLibTimers`、`TestStartSendsLibTimers`；`TestInitSendsLibTimers` |
 | F2 | 好幾層一起收起時（一個動作關掉整疊、T1 清掉兩層以上的 source）每一層同時收、各自照自己的大小與層色，總共還是 9 格 | D：Space menu → Global → `?` 再跑會關掉整疊的動作 | `TestF2LayersCloseTogether` |
 | F3 | `Esc` 立刻開始關閉任何 popup（含 toast）；關閉照常有動畫；在關的 popup 不再理會 `Esc` 與其他鍵 | 連按兩下 `Esc` 關兩層 | `TestF3EscImmediate`、`TestF3ClosingIgnoresKeys` |
 | F3 | 例外：PTY（toast 只能等時間到）、textarea 寫入狀態、改過的表單、textarea 與 reorder 先 confirm | T；I 的 `Comment`；D「Form: New host」改過再 `Esc`；I 的 `Segments` 搬過再 `Esc` | `TestF3Exceptions`、`TestReorderEsc` |
@@ -211,6 +211,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | E3 | `input_tab_width` 沒走 `Run` 時也照 app 的設定（app 自己的測試） | lib | `TestTabWidthWithoutRun` |
 | E3 | 讀不了時：app 自己的設定、狀態、資料讀不了，開 `MOVE ASIDE` confirm（路徑與原因）、hint `Enter:move Esc:quit`；`Enter` 改名成 `.bak`（已經有就 `.bak.1`、`.bak.2`……，不蓋掉，問句寫實際的名字）、像第一次打開一樣照常開始（lib 不建檔，交給 app 的 `fresh`；展示場不存設定，所以不建）；`Esc` 離開 app，`Run` 回傳路徑與原因給 main 寫到 stderr（lib：`App.MoveAside`） | D「Move aside: a file it can’t read」 | `TestMoveAside`（lib 不建檔）、`TestMoveAsideNeverOverAnother` |
 | E3 | 讀不了時，資料是一筆一個檔：讀不了的那一筆按 `Enter` 只改名成 `.bak`、不另外建，其他照常讀；問句 `Move it to <檔名>.bak and go on without it?`（lib：`App.MoveAsideRecord`，app 的 `reread` 只是重讀） | D「Move aside: a record it can’t read」 | `TestMoveAsideRecord` |
+| E3 | 不再用的檔：app 改版後不再用的設定、狀態、資料檔不刪、不跳 toast；檔案還在時每次啟動在 App Log 記一筆 INFO，寫出路徑（`No longer used: <路徑>; delete it if you don't need it`）（lib：`App.NoLongerUsed`） | 展示場啟動時：`/tmp/terminu-showcase/layout.yaml`（假裝舊版用過），按 `!` 看 | `TestNoLongerUsed` |
 | E4 | 需要 Nerd Font 與 truecolor（lib 的 README 寫明）；PUA glyph 在程式碼裡寫成 code point | 看 README；掃原始碼找不到 PUA 字元 | `TestE4NoLiteralPUA` |
 | E5 | 量的是游標實際前進幾格；所有量寬度的地方走同一個函式（含疊 popup）；畫到終端機用 bubbletea v1 的 renderer（紀錄 C1） | `SHOWCASE__ICON_WIDTH=2`；`proto/c1/tmux-check.sh` 的作法 | `TestL4EveryRowFullWidth`（icon 兩格）、`TestE5OutputDropsEraseRight`（renderer 補的「清到行尾」拿掉，紀錄 C1）、`TestVTWideCharacters`（PTY 裡的字也照同一個寬度放） |
 | E5 | icon 與 powerline 符號（U+E0A0–U+E0D7）各量各的；啟動時 CPR 探測（unix）；順序 `<APP>__ICON_WIDTH` → `TERMINU__ICON_WIDTH` → `LC_TERMINU_ICON_WIDTH`（隔著 ssh 帶過來的）→ 探測，powerline 照 `<APP>__POWERLINE_WIDTH` → `TERMINU__POWERLINE_WIDTH` → `LC_TERMINU_POWERLINE_WIDTH` → 探測；Windows 預設一格 | 在 icon 佔兩格的 tmux 裡啟動看 statusbar（寫出兩種寬度） | `TestE5WidthOrder`、`TestE5ProbeCPR` |
@@ -401,7 +402,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | note §viewer 的行號 | viewer（YAML、App Log、檔案內容）左邊有行號：每行第一列、靠右、後空一格、折下來的列空白；Overlay0，選取模式裡游標那行 Text；至少三位：行數固定的取 max(3, 位數)、打開後不變，串流的超過 999 行才跳寬；複製不含行號；`N of M` 跟行號同一套數字 | D「Note viewer」；P `[2] LOG` 按 `Enter`；I `[2] FILES` 的 `[V]iew` | `TestViewerLineNumbers`、`TestViewerLineNumbersStream`、`TestViewerCopyNoNumbers`、`TestViewerFoldedScroll` |
 | note §viewer 的行號 | 有 tab 的 viewer：行號欄照看過的頁裡最寬的，只變寬、不變窄（串流的頁也一樣） | D「Popup with tabs」、DevTools 切 tab | `TestViewerTabGutterOnlyGrows` |
 | note §viewer 裡的 Tab 與控制字元 | 照終端機的樣子：Tab 畫成 `input_tab_width` 格空白、不對齊 tab 停點；`\n` 是換行（app 交來的一行裡夾著也拆）；換行前的 `\r`（CRLF）不畫；顏色碼照著上色；一行裡的 `\r` 只留最後的狀態；其他控制字元與不是顏色碼的序列畫成名字、Red；複製照原樣；file-picker 預覽的文字檔一樣（檔案自己的顏色碼也照著上色） | I `[2] FILES` 的 `main.go` 按 `[V]iew`（有 Tab）；`[/] Find` 預覽同一個檔 | `TestViewerTabs`、`TestViewerControlChars`、`TestViewerEscapeSequencesShown`（不是樣式的 escape sequence 照字畫、ESC 寫名字）、`TestReadingContent`、`TestFilePreviewEscapes` |
-| note §App Log | 每個 app 都有；`!` 在 panel 上打開，是 viewer、最新的在最下面、打開時在最後、開著時新的一筆照樣進來；每一筆 `HH:MM:SS`（Overlay0）、等級（`INFO` Text、`OK` Green、`WARN` Peach、`ERR` Red，四格靠左）、發生的事（跟 toast 一樣大寫開頭：lib 自己記的 `Moved … to …`、展示場的 `Started; …`）；每一個 toast 與 error popup 自動記，app 用 `App.Log` 記動作與背景的事（任何 goroutine 都能叫） | 任一 panel 按 `!`；展示場啟動時記一筆 | `TestAppLogEntries`、`TestMoveAside`（大寫開頭） |
+| note §App Log | 每個 app 都有；`!` 在 panel 上打開，是 viewer、最新的在最下面、打開時在最後、開著時新的一筆照樣進來；每一筆 `HH:MM:SS`（Overlay0）、等級（`INFO` Text、`OK` Green、`WARN` Peach、`ERR` Red，四格靠左）、發生的事（跟 toast 一樣大寫開頭：lib 自己記的 `Moved … to …`、展示場的 `Started; …`）；每一個 toast 與 error popup 自動記，app 用 `App.Log` 記動作與背景的事（任何 goroutine 都能叫） | 任一 panel 按 `!`；展示場啟動時記兩筆 | `TestAppLogEntries`、`TestMoveAside`（大寫開頭） |
 | note §App Log | 只放在記憶體，筆數有上限（1000），滿了丟最舊的 | lib | `TestAppLogInMemory` |
 | note §viewer 的語法顏色 | 有固定格式的照 file-picker 預覽上色（chroma catppuccin-mocha、只上前景色）；語言由 app 給（`Viewer.Lang`），檔案內容照檔名；沒有固定格式或判斷不出來的是純文字 Text（建議；app 自己給的顏色保留，例：log 的 ERROR、WARN 行）；行號 Overlay0；選取範圍 Yellow 底 Base 字、範圍裡不顯示語法顏色 | D「Note viewer」（YAML）；I `[2] FILES` 的 `[V]iew`；P `[2] LOG` 按 `Enter`（ERROR 紅、WARN 橘保留） | `TestViewerSyntaxColours` |
 | note §按鍵 | 折行的 viewer 以畫出來的一列為單位捲（`j\|k` 一列、`u\|d` 照列算）；`N-M of T` 的 N、M 是最上面、最下面那一列所屬的行；選取模式照舊以行為單位 | D「Note viewer」把視窗縮窄 | `TestViewerScrollsRows` |

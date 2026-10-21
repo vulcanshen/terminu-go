@@ -101,7 +101,8 @@ go run github.com/vulcanshen/terminu-go/examples/showcase@latest
 app 讀不了自己的設定、狀態或資料（格式錯、檔案壞掉、沒有權限）時，在啟動時叫 `app.MoveAside(path, err, startFresh)`。
 使用者會被問要不要把檔移開：`Enter` 改名成 `.bak`（一律不蓋掉別的）再跑 `startFresh`，app 在裡面像第一次打開一樣開始；
 `Esc` 離開，`Run` 回傳路徑與原因，交給 `main` 印出來。資料是一筆一個檔時，讀不了的那一筆改叫
-`app.MoveAsideRecord(path, err, reread)`：`Enter` 只把那一筆移開，再跑 `reread` 讀其他的。
+`app.MoveAsideRecord(path, err, reread)`：`Enter` 只把那一筆移開，再跑 `reread` 讀其他的。改版後不再用的檔交給使用者處理：
+每次啟動叫 `app.NoLongerUsed(paths...)`，還在的那幾個會在 App Log 各記一筆。
 
 ## 設定
 
@@ -169,7 +170,7 @@ return app.Tick(300*time.Millisecond, func(time.Time) tea.Msg { return searchNow
 
 ## 實作哪一版 terminu design
 
-terminu-go 實作 **tdp v0.9.2**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
+terminu-go 實作 **tdp v0.9.3**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
 
 ## 相關連結
 

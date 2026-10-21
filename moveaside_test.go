@@ -26,7 +26,7 @@ func TestMoveAside(t *testing.T) {
 	ta.MoveAside(path, why, func() tea.Cmd { fresh = true; return nil })
 	ta.settle()
 	text := ta.screenText()
-	for _, want := range []string{"MOVE ASIDE", path + " can't be read:", why.Error(), "Move it to profiles.yaml.bak and start a new one?", "Enter:move Esc:quit"} {
+	for _, want := range []string{"MOVE ASIDE", path + " can't be read:", why.Error(), "Move it to profiles.yaml.bak and start fresh?", "Enter:move Esc:quit"} {
 		if !strings.Contains(text, want) {
 			t.Errorf("%q is not on the confirm:\n%s", want, text)
 		}
@@ -101,6 +101,29 @@ func TestMoveAsideRecord(t *testing.T) {
 	}
 }
 
+// TestNoLongerUsed: a file the app no longer uses that is still there gets an
+// INFO in the App Log with its path, at every start; it is not deleted and
+// there is no toast; one that is gone says nothing (Rules E3, E3-23).
+func TestNoLongerUsed(t *testing.T) {
+	dir := t.TempDir()
+	old, gone := filepath.Join(dir, "errors.yaml"), filepath.Join(dir, "theme.yaml")
+	writeFile(t, old, []byte("x"), 0o600)
+	for range 2 { // every start: the App Log starts empty
+		ta := newTestApp(t)
+		ta.NoLongerUsed(old, gone)
+		log := StripStyles(strings.Join(ta.logs.lines(), "\n"))
+		if !strings.Contains(log, "INFO No longer used: "+old+"; delete it if you don't need it") || strings.Contains(log, gone) {
+			t.Errorf("the App Log:\n%s", log)
+		}
+		if ta.toast != nil {
+			t.Error("a toast")
+		}
+	}
+	if _, err := os.Stat(old); err != nil {
+		t.Errorf("the file was deleted: %v", err)
+	}
+}
+
 // TestMoveAsideNeverOverAnother: with .bak there it goes to .bak.1, then
 // .bak.2, the question naming the one it uses (E3-19).
 func TestMoveAsideNeverOverAnother(t *testing.T) {
@@ -112,7 +135,7 @@ func TestMoveAsideNeverOverAnother(t *testing.T) {
 	ta := newTestApp(t)
 	ta.MoveAside(path, errors.New("bad"), func() tea.Cmd { return nil })
 	ta.settle()
-	if !strings.Contains(ta.screenText(), "Move it to config.yaml.bak.2 and start") {
+	if !strings.Contains(ta.screenText(), "Move it to config.yaml.bak.2 and start fresh?") {
 		t.Errorf("the question:\n%s", ta.screenText())
 	}
 	ta.press("Enter")

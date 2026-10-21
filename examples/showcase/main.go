@@ -119,6 +119,9 @@ func newShowcase() *showcase {
 	a.Start = func() tea.Cmd {
 		// What the app does by itself goes in the App Log (components/dialog/note).
 		a.Log(terminu.Info, "Started; pretend files in /tmp/terminu-showcase")
+		// A pretend older showcase kept its layout in a file this one no
+		// longer uses: left alone, and every start says so (Rules E3).
+		a.NoLongerUsed(oldLayout())
 		return a.Tick(time.Second, func(time.Time) tea.Msg { return logTick{} })
 	}
 	return s

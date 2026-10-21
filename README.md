@@ -113,7 +113,9 @@ When the app can't read its settings, state or data — a bad format, a broken f
 `app.MoveAside(path, err, startFresh)` at the start. The user is asked to move the file aside: `Enter` renames it to
 `.bak` (never over another) and runs `startFresh`, where the app goes on as on its first start; `Esc` leaves, `Run`
 returning the path and the reason for `main` to print. When the data is kept one record per file, call `app.MoveAsideRecord(path, err, reread)` for the record
-that can't be read: `Enter` only moves that one aside and runs `reread`, which reads the rest.
+that can't be read: `Enter` only moves that one aside and runs `reread`, which reads the rest. Files a newer version
+no longer uses are left to the user: call `app.NoLongerUsed(paths...)` at every start, and the App Log names each one
+still there.
 
 ## Settings
 
@@ -187,7 +189,7 @@ in whenever it is due.
 
 ## Which terminu design
 
-terminu-go implements **tdp v0.9.2**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
+terminu-go implements **tdp v0.9.3**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
 
 ## Links
 
