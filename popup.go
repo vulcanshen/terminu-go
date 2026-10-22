@@ -127,6 +127,7 @@ type popupBox struct {
 	glyph   string
 	title   string // as given: the caller has made it upper case where it should be
 	tabs    []Capsule
+	tabOff  []bool // tabs that cannot be chosen now (Rules M6)
 	loading bool
 	mode    string
 	hint    []KeyHint
@@ -142,7 +143,7 @@ func (p popupBox) draw(w int, body []string) []string {
 		// The tabs follow one line segment after the title (layout/popup).
 		left := room - Width(b.title) - 1
 		if left > 2 {
-			b.title += Fg(p.color).Render("━") + drawChain(p.tabs, p.color, left)
+			b.title += Fg(p.color).Render("━") + drawChainOff(p.tabs, p.tabOff, p.color, left)
 		}
 	}
 	if p.loading {

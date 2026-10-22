@@ -64,7 +64,12 @@ type ModeKey struct {
 	NoFooter bool
 	// Do runs it, with the key pressed.
 	Do func(key string) tea.Cmd
+	// Disabled reports that it cannot be pressed now: in the disabled colour
+	// in the footer and the key reference, pressing it does nothing (Rules M6).
+	Disabled func() bool
 }
+
+func (k ModeKey) off() bool { return k.Disabled != nil && k.Disabled() }
 
 func (k ModeKey) takes(key string) bool {
 	if len(k.Keys) == 0 {

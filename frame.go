@@ -83,10 +83,18 @@ func shrunk(text string) string {
 // behind a "…"; the selected ones always stay, and one still too long is cut
 // from the end with "…", its slanted ends drawn (layout/panel, capsule chain).
 func drawChain(caps []Capsule, color Color, maxW int) string {
+	return drawChainOff(caps, nil, color, maxW)
+}
+
+// drawChainOff is drawChain with the unselected parts that cannot be chosen
+// now (off) in Surface2 (Rules M6).
+func drawChainOff(caps []Capsule, off []bool, color Color, maxW int) string {
 	if len(caps) == 0 || maxW <= 0 {
 		return ""
 	}
 	parts := append([]Capsule(nil), caps...)
+	offs := make([]bool, len(caps))
+	copy(offs, off)
 	for i := range parts {
 		parts[i].Text = Escape(parts[i].Text) // a tab's name (components, control characters)
 	}
@@ -114,9 +122,12 @@ func drawChain(caps []Capsule, color Color, maxW int) string {
 					b.WriteString(unselected.Render(glyphSlash))
 				}
 			}
-			if p.Selected {
+			switch {
+			case p.Selected:
 				b.WriteString(On(color).Render(p.Text))
-			} else {
+			case offs[i]:
+				b.WriteString(Style{Fg: Surface2, Bg: Mantle}.Render(p.Text))
+			default:
 				b.WriteString(unselected.Render(p.Text))
 			}
 		}
@@ -142,6 +153,7 @@ func drawChain(caps []Capsule, color Color, maxW int) string {
 			continue
 		}
 		parts = append(parts[:j], parts[j+1:]...)
+		offs = append(offs[:j], offs[j+1:]...)
 		if s := draw(parts, true); Width(s) <= maxW {
 			return s
 		}

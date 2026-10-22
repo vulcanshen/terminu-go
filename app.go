@@ -149,7 +149,8 @@ type App struct {
 	// what the app's QuitFlow opened.
 	quitConfirm popupView
 	anim        bool
-	timers      []tea.Cmd // the lib's own timers started while a message is handled (sendTimers)
+	timers      []tea.Cmd    // the lib's own timers started while a message is handled (sendTimers)
+	comparings  []*comparing // the compare modes under way (compare.go)
 	spin        bool
 
 	splashOn    bool
@@ -337,7 +338,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmd = a.OnMsg(msg)
 		}
 	}
-	cmd = tea.Batch(cmd, a.moved(), a.fetch(), a.sendTimers())
+	cmd = tea.Batch(cmd, a.moved(), a.fetch(), a.checkCompares(), a.sendTimers())
 	if !a.spin && a.loading() {
 		a.spin = true
 		cmd = tea.Batch(cmd, a.after(spinTime, spinMsg{}))
@@ -1091,7 +1092,7 @@ func refTitle(v popupView) string {
 func (a *App) modeKeyRef(p *Panel) *noteView {
 	var rows []KeyRow
 	for _, k := range p.mode.Keys {
-		rows = append(rows, KeyRow{Key: k.Key, Desc: k.Desc})
+		rows = append(rows, KeyRow{Key: k.Key, Desc: k.Desc, Disabled: k.off()})
 	}
 	rows = append(rows, KeyRow{Key: "Esc", Desc: cmpOr(p.mode.Exit, "leave") + ", back to before " + p.mode.Name})
 	core := []KeyRow{{Key: "?", Desc: "this list"}, {Key: "q|Ctrl-C", Desc: "quit"}}
@@ -1231,7 +1232,12 @@ func (a *App) panelKey(key string, msg tea.KeyMsg) tea.Cmd {
 		return cmd
 	}
 	if p.mode != nil {
-		return a.modeKey(p, key, msg)
+		// gg reaches a mode as one key (its movement keys).
+		k, ok := a.prefix(key, func(string) bool { return false })
+		if !ok {
+			return nil
+		}
+		return a.modeKey(p, k, msg)
 	}
 	k, ok := a.prefix(key, func(pair string) bool { return a.panelPair(p, pair) })
 	if !ok {
@@ -1368,6 +1374,9 @@ func (a *App) modeKey(p *Panel, key string, msg tea.KeyMsg) tea.Cmd {
 	}
 	for _, k := range p.mode.Keys {
 		if k.takes(key) && k.Do != nil {
+			if k.off() {
+				return nil
+			}
 			return k.Do(key)
 		}
 	}
@@ -1584,7 +1593,17 @@ func Pad2(lines []string, w, h int) []string {
 
 // footer is the bottom row (layout/screen, footer): what can be pressed now.
 func (a *App) footer(w int) string {
-	return renderHints(a.footerHints(), w, Fg(Blue), Overlay0)
+	pairs := a.footerHints()
+	var off []bool // a mode's keys that cannot be pressed now (Rules M6)
+	if s := a.Screen(); s != nil && s.Focused() != nil && s.Focused().mode != nil {
+		off = make([]bool, len(pairs))
+		for i, h := range pairs {
+			for _, k := range s.Focused().mode.Keys {
+				off[i] = off[i] || k.Key == h.Key && k.off()
+			}
+		}
+	}
+	return renderHintsOff(pairs, off, w, Fg(Blue), Overlay0)
 }
 
 func (a *App) footerHints() []KeyHint {

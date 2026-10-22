@@ -78,6 +78,9 @@ type Viewer struct {
 	crlf []bool
 	// tabW is the user's input_tab_width: the spaces a tab is drawn as.
 	tabW int
+	// tabOff is a tab that cannot be chosen now (Rules M6): the compare's
+	// SPLIT on a narrow terminal.
+	tabOff func(i int) bool
 }
 
 // TextMatch is a stretch of a viewer's line: its characters From to To, To
@@ -452,6 +455,7 @@ func (vv *viewerView) draw(w, h int, layer Color) []string {
 	box := popupBox{color: layer, glyph: v.Glyph, title: vv.title(), hint: vv.hint(), scroll: scroll, loading: v.Loading}
 	for i, t := range v.Tabs {
 		box.tabs = append(box.tabs, Capsule{Text: Upper(t), Selected: i == v.Tab})
+		box.tabOff = append(box.tabOff, v.tabOff != nil && v.tabOff(i))
 	}
 	if v.inMode {
 		// A mode marks its frame: the mode colour and its name (Rules K11).
@@ -820,7 +824,14 @@ func (vv *viewerView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 			if key == "h" || key == "←" {
 				dir = -1
 			}
-			v.Tab = (v.Tab + dir + n) % n
+			next := (v.Tab + dir + n) % n
+			for v.tabOff != nil && v.tabOff(next) && next != v.Tab {
+				next = (next + dir + n) % n
+			}
+			if next == v.Tab {
+				return true, nil
+			}
+			v.Tab = next
 			v.top, v.sub = 0, 0
 			return true, run2tab(v.OnTab, v.Tab)
 		}

@@ -58,6 +58,10 @@ func newPanelsScreen(s *showcase) *panelsScreen {
 	ps.pods = &terminu.Panel{Label: "Pods", Tabs: []string{"Events"}, Body: ps.podList, LoadingText: "loading pods…"}
 	ps.pods.OnTab = ps.switchTab
 	ps.pods.Actions = ps.podActions()
+	// C compares two pods' pretend YAML (layout/panel, compare mode): the
+	// lib does the mode and the popup; the app gives the key and the text.
+	ps.pods.Actions = append(ps.pods.Actions, s.app.CompareAction(ps.pods, ps.podList, terminu.Compare{Key: "C",
+		Text: func(r terminu.Row) (string, error) { return podYAML(r), nil }}))
 
 	ps.logText = &terminu.Pager{Follow: true, EmptyFact: "No log lines yet"}
 	ps.log = &terminu.Panel{Label: "Log", Body: ps.logText, Stream: true, Actions: []terminu.Action{
@@ -126,6 +130,16 @@ func (ps *panelsScreen) layout(w, h int) []terminu.Rect {
 		{X: left, Y: 0, W: w - left, H: top},
 		{X: left, Y: top, W: w - left, H: h - top},
 	}
+}
+
+// podYAML is a pod's pretend manifest, from what its row says.
+func podYAML(r terminu.Row) string {
+	if len(r.Cells) < 5 { // an event: its own cells, a line each
+		return strings.Join(r.Cells, "\n") + "\n"
+	}
+	return "apiVersion: v1\nkind: Pod\nmetadata:\n  name: " + r.Cells[0] + "\n  namespace: default\nspec:\n  containers:\n" +
+		"    - name: app\n      image: registry.local/app:1.4\n      ports:\n        - containerPort: 8080\n" +
+		"status:\n  phase: " + r.Cells[2] + "\n  ready: " + r.Cells[1] + "\n  restartCount: " + r.Cells[3] + "\n  age: " + r.Cells[4] + "\n"
 }
 
 func podRows() []terminu.Row {

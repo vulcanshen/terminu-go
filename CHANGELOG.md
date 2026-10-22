@@ -2,6 +2,18 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.9.6
+
+- The compare mode and the compare popup (components/layout/panel, compare mode; components/dialog/note, compare):
+  `App.CompareAction(panel, list, Compare{Key, Can, Name, Text, Split})` is the Compare item action. Its key on a row
+  enters the mode with that row as the anchor (`List.Anchor`); `j|k`, `u|d`, `gg|G` move; the key or `Enter`
+  compares with the anchor in a `DIFF — <anchor> ↔ <other>` viewer, UNIFIED or SPLIT (`h|l`, remembered in `Split`,
+  SPLIT off under 96 columns), only the stretches that changed with 3 lines either side; the same text is an Info
+  toast; `Esc` leaves; an anchor no longer in the list ends it with a Warning toast (kbu)
+- `ModeKey.Disabled`: a mode key that cannot be pressed now, in the disabled colour in the footer and the key
+  reference, doing nothing (Rules M6)
+- `gg` reaches a mode as one key
+
 ## v0.4.6 — tdp v0.9.5
 
 - `List.Anchor`: the row a mode keeps picked while the cursor moves on (a Compare mode's first pick) is drawn whole

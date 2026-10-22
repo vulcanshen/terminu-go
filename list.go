@@ -357,6 +357,16 @@ func (l *List) sortValue(row, col int) string {
 	return l.cell(row, col)
 }
 
+// rowByID is the row whose ID is id.
+func (l *List) rowByID(id string) (Row, bool) {
+	for _, r := range l.rows {
+		if r.ID == id {
+			return r, true
+		}
+	}
+	return Row{}, false
+}
+
 func (l *List) cell(row, col int) string {
 	if col < len(l.rows[row].Cells) {
 		return l.rows[row].Cells[col]
