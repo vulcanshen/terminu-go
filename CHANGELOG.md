@@ -2,7 +2,7 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.9.8
+## v0.4.10 — tdp v0.9.8
 
 - With a popup open (a toast is not one) the first `q` or `Ctrl-C` never leaves at once (Rules K9, kbu KB29): an app
   with no `App.Quit` asks `Quit <app>?`, and a `QuitFlow` that would leave there and then asks it first, leaving on
