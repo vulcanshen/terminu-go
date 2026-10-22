@@ -806,3 +806,57 @@ func TestOnResize(t *testing.T) {
 		t.Errorf("heard %v", got)
 	}
 }
+
+// TestK9PopupAsksFirst: with a popup open the first q or Ctrl-C never leaves
+// at once: an app with no confirm asks Quit test?, Esc back to the popup; a
+// QuitFlow that would leave there asks first, Enter running it; one that asks
+// something of its own asks only that; on a panel the flow is as it is
+// (K9-6).
+func TestK9PopupAsksFirst(t *testing.T) {
+	quits := func(cmd tea.Cmd) bool {
+		if cmd == nil {
+			return false
+		}
+		_, ok := cmd().(tea.QuitMsg)
+		return ok
+	}
+	ta := newTestApp(t)
+	ta.Quit = nil
+	if !quits(ta.press("q")) {
+		t.Fatal("on a panel an app with no confirm leaves at once")
+	}
+	ta.press("Space")
+	menu := ta.top()
+	if quits(ta.press("q")) || !strings.Contains(ta.screenText(), "Quit test?") {
+		t.Fatalf("q over a popup left or did not ask:\n%s", ta.screenText())
+	}
+	ta.press("Esc")
+	if ta.top() != menu {
+		t.Error("Esc did not go back to the popup")
+	}
+	ta.press("Ctrl-C")
+	if !quits(ta.press("Ctrl-C")) {
+		t.Error("the second Ctrl-C does not leave")
+	}
+
+	tb := newTestApp(t)
+	tb.Quit = nil
+	tb.QuitFlow = func() tea.Cmd { return tea.Quit } // nothing to ask: it would leave at once
+	tb.press("Space")
+	if quits(tb.press("q")) || !strings.Contains(tb.screenText(), "Quit test?") {
+		t.Fatalf("a flow leaving at once over a popup did not ask:\n%s", tb.screenText())
+	}
+	if !quits(tb.press("Enter")) {
+		t.Error("Enter does not run the flow")
+	}
+
+	tc := newTestApp(t)
+	tc.Quit = nil
+	tc.QuitFlow = func() tea.Cmd {
+		return tc.Menu("Leave", MenuSection{Actions: []Action{{Label: "Here", Do: func() tea.Cmd { return tea.Quit }}}})
+	}
+	tc.press("Space", "q")
+	if len(tc.stack) != 2 || strings.Contains(tc.screenText(), "Quit test?") {
+		t.Errorf("a flow asking of its own was asked twice: %d layers\n%s", len(tc.stack), tc.screenText())
+	}
+}

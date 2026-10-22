@@ -2,8 +2,12 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.9.7
+## Unreleased — tdp v0.9.8
 
+- With a popup open (a toast is not one) the first `q` or `Ctrl-C` never leaves at once (Rules K9, kbu KB29): an app
+  with no `App.Quit` asks `Quit <app>?`, and a `QuitFlow` that would leave there and then asks it first, leaving on
+  `Enter`; a flow that asks something of its own asks only that. `Esc` goes back to the popup; on a panel the app's
+  flow is as it was; the second `Ctrl-C` still leaves at once
 - A reorder's Drag mode menu leaves with `[Esc] Cancel`, the verb of its hint's `Esc:cancel`, not `[Esc] Put back`
 
 ## v0.4.9 — tdp v0.9.7

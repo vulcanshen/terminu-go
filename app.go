@@ -821,26 +821,38 @@ func (a *App) quitAction() Action {
 
 // startQuit is the quit flow (Rules K9). What a popup of the app's own would
 // lose goes last in the confirm, in Peach; it asks then even when Quit is nil.
+//
+// With a popup open (a toast is not one) the first q or Ctrl-C never leaves
+// at once (Rules K9): a flow that would leave there and then asks Quit <app>?
+// first, its leaving put off to Enter; one that asks something of its own
+// asks only that.
 func (a *App) startQuit() tea.Cmd {
-	if a.QuitFlow != nil {
-		if a.quitting {
-			return nil
-		}
-		before := a.top()
-		cmd := a.QuitFlow()
-		if top := a.top(); top != nil && top != before {
-			// The flow is on until what it opened closes.
-			a.quitting, a.quitConfirm = true, top.view
-		}
-		return cmd
-	}
-	notes := a.quitNotes()
-	if a.Quit == nil && len(notes) == 0 {
-		return tea.Quit
-	}
 	if a.quitting {
 		return nil
 	}
+	popup := a.top()
+	if a.QuitFlow != nil {
+		cmd := a.QuitFlow()
+		if top := a.top(); top != nil && top != popup {
+			// The flow is on until what it opened closes.
+			a.quitting, a.quitConfirm = true, top.view
+			return cmd
+		}
+		if popup == nil || cmd == nil {
+			return cmd
+		}
+		return a.askQuit(nil, func() tea.Cmd { return cmd })
+	}
+	notes := a.quitNotes()
+	if a.Quit == nil && len(notes) == 0 && popup == nil {
+		return tea.Quit
+	}
+	return a.askQuit(notes, func() tea.Cmd { return tea.Quit })
+}
+
+// askQuit opens the quit confirm, the app's Ask or Quit <app>?, the notes of
+// its popups among its details; accept is what Enter does.
+func (a *App) askQuit(notes []string, accept func() tea.Cmd) tea.Cmd {
 	ask := Ask{Question: "Quit " + a.Name + "?", Verb: "quit"}
 	if a.Quit != nil {
 		ask = *a.Quit
@@ -857,7 +869,7 @@ func (a *App) startQuit() tea.Cmd {
 		}
 	}
 	a.quitting = true
-	a.quitConfirm = newConfirm(ask, func() tea.Cmd { return tea.Quit })
+	a.quitConfirm = newConfirm(ask, accept)
 	return a.open(a.quitConfirm)
 }
 
