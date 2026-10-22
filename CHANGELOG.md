@@ -2,6 +2,12 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.9.10
+
+- A mode's name opens a character a frame: the junctions first, then one more character every 32ms, so every frame
+  changes and the time goes with the name (`Drag` about 160ms, `Compare` about 256ms), no longer spread over 288ms
+  (kbu KB30)
+
 ## v0.4.11 — tdp v0.9.9
 
 - A mode's name opens from its middle on the frame and closes back to the line (components/layout/panel, the

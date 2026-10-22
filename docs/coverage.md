@@ -1,6 +1,6 @@
-# tdp v0.9.9 coverage
+# tdp v0.9.10 coverage
 
-tdp v0.9.9 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
+tdp v0.9.10 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
 （[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -85,7 +85,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | K8 | 輸入態：letter hotkey、`Space`、`?`、`q` 是字元；`Esc` 取消；`Tab` 照 K2；`Ctrl-C` 進離開流程；離開輸入面立刻恢復 | I 的 `Name` 打 `q ?`；P filter 打 `q` | `TestK8InputState`、`TestK8CtrlCInInput` |
 | K8 | textarea 寫入狀態 `Tab` 插入 `input_tab_width` 個空白（E3 的設定，預設 4），不插 `\t` | I 的 `Comment` | `TestTextarea` |
 | K9 | `q` 與 `Ctrl-C` 同一個離開流程；`q` 在輸入態是字元、在表單上不作用；`Ctrl-C` 在輸入態與表單上有效；PTY 裡兩個都屬於子程序 | 任一 panel；D「Form: New host」上按 `q` | `TestK9QuitSameFlow`、`TestK9QNoopOnForm` |
-| panel §框 | 模式名的開關：進入時兩個接頭先在中間並排、往兩邊撐開，名字從中間露出來；離開倒著播到只剩框線；約 288ms、照時鐘算；開或關到一半又切換時從當下轉向；模式與外框顏色立刻換、整段照樣收鍵；標題一直留著整個標籤的位置；popup 裡、PTY 上一樣（panel-146～148，kbu 的 KB30） | P `[1] PODS` 快速按 `D` `Esc` `D`；D「Note viewer」按 `v` | `TestModeLabelOpens`、tdptest 的 `TestModeLabelPlays` |
+| panel §框 | 模式名的開關：進入時兩個接頭先在中間並排、往兩邊撐開，名字從中間露出來；離開倒著播到只剩框線；第一幀是兩個接頭，之後每 32ms 一幀多露出一個字、照時鐘算；開或關到一半又切換時從當下轉向；模式與外框顏色立刻換、整段照樣收鍵；標題一直留著整個標籤的位置；popup 裡、PTY 上一樣（panel-146～148，kbu 的 KB30） | P `[1] PODS` 快速按 `D` `Esc` `D`；D「Note viewer」按 `v` | `TestModeLabelOpens`、`TestModeLabelFrames`、tdptest 的 `TestModeLabelPlays` |
 | K9 | 有 popup 開著時（toast 不算），第一下 `q`、`Ctrl-C` 一定不會直接離開：沒有 confirm 的 app 開 `Quit <app>?`；`QuitFlow` 當下會直接離開時先開這個 confirm、`Enter` 才照流程離開；流程自己會問的只問那一次；`Esc` 回到 popup；panel 上照 app 的流程（K9-6，kbu 的 KB29） | 開 Space menu 按 `q`、再按 `Esc` | `TestK9PopupAsksFirst` |
 | K9 | 離開流程由 app 決定（直接 / 先確認 / 選擇）；進行中再按 `Ctrl-C` 立刻離開；離開列在 global operation popup。lib：`App.Quit`（confirm）或 `App.QuitFlow`（app 自己的動作，例：開一個 menu 選離開的方式） | 展示場：先 confirm（`Quit showcase?`）；D「Quit: the app’s own flow」之後按 `q` 是 menu | `TestK9SecondCtrlCQuits`、`TestK9QuitInGlobalPopup`、`TestQuitFlowOfTheApp` |
 | K9 | app 自己的 popup 有東西沒存時（`QuitNote`），離開的 confirm 最後加一句 Peach，`App.Quit` 是 nil 也先問；離開的 confirm 被底下的 popup 帶著關掉時，離開流程結束、下一次 `Ctrl-C` 再問 | D「Popup: the app’s own」畫一格再 `Ctrl-C`（`Changes to icon are not saved.`） | `TestAppPopupQuitNote`、`TestK9QuitConfirmClosedUnder` |

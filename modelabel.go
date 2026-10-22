@@ -10,13 +10,15 @@ import (
 
 // A mode's name opens from its middle on the frame and closes back to the
 // line (components/layout/panel, the frame): the junctions side by side
-// first, then apart, the name showing from its middle; about 288ms whatever
-// its length, by the clock, as a popup opens (Rules F2). Only the name
-// moves: the mode and the frame's colour change at once and keys work all
-// the while. A switch halfway turns it where it is.
+// first, then one more character each frame of 32ms, as a popup's (Rules
+// F2), so every frame changes and the length goes with the name's; by the
+// clock. Only the name moves: the mode and the frame's colour change at once
+// and keys work all the while. A switch halfway turns it where it is.
 
-// modeLabelTime is how long a mode's name takes to open or to close.
-const modeLabelTime = openFrames * frameTime
+// labelTime is how long name takes to open or to close: a frame a character.
+func labelTime(name string) time.Duration {
+	return time.Duration(max(len(graphemes(name)), 1)) * frameTime
+}
 
 // labelAnim is a mode name opening (dir 1) or closing (dir -1), from where
 // it was (from, 1 all open) since start.
@@ -28,7 +30,7 @@ type labelAnim struct {
 }
 
 func (l *labelAnim) at(now time.Time) float64 {
-	p := l.from + float64(l.dir)*float64(now.Sub(l.start))/float64(modeLabelTime)
+	p := l.from + float64(l.dir)*float64(now.Sub(l.start))/float64(labelTime(l.name))
 	return min(max(p, 0), 1)
 }
 
@@ -152,8 +154,8 @@ func (a *App) endLabels() {
 // its width all the while; the name in Yellow, the junctions the frame's.
 func drawLabel(name string, closed float64, ls lineSet, frame Style) string {
 	g := graphemes(name)
-	r := len(g) - int(math.Round(closed*float64(len(g))))
-	start := (len(g) - r) / 2 // an odd name a half cell to the left
+	r := min(int(math.Floor((1-closed)*float64(len(g))+1e-6)), len(g)) // a character a frame
+	start := (len(g) - r) / 2                                          // an odd name a half cell to the left
 	left, mid, right := strings.Join(g[:start], ""), strings.Join(g[start:start+r], ""), strings.Join(g[start+r:], "")
 	out := frame.Render(Repeat(ls.h, Width(left)) + ls.jl)
 	if mid != "" {
