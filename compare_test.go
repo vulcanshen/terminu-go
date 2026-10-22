@@ -2,6 +2,7 @@ package terminu
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -115,7 +116,7 @@ func TestCompareHunks(t *testing.T) {
 	x := strings.Split("a b c d e f g h i j k l m n o", " ")
 	y := append([]string(nil), x...)
 	y[1], y[13] = "B", "N"
-	lines := diffUnified(diffLines(x, y), x, y, 30)
+	lines, _ := diffUnified(diffLines(x, y), x, y, 30)
 	plain := make([]string, len(lines))
 	for i, l := range lines {
 		plain[i] = StripStyles(l)
@@ -145,7 +146,7 @@ func TestCompareSplit(t *testing.T) {
 	if !strings.HasPrefix(row, " 1 age: 0") || !strings.Contains(row, " 1 age: 1") {
 		t.Errorf("each half numbered: %q", row)
 	}
-	if got := diffSplit([]diffOp{{'-', 0, -1}}, []string{strings.Repeat("x", 40)}, nil, 30); !strings.Contains(StripStyles(got[0]), "…") || Width(got[0]) > 30 {
+	if got, _ := diffSplit([]diffOp{{'-', 0, -1}}, []string{strings.Repeat("x", 40)}, nil, 30); !strings.Contains(StripStyles(got[0]), "…") || Width(got[0]) > 30 {
 		t.Errorf("a long line is cut: %q", got)
 	}
 	ta.press("Esc", "Enter")
@@ -190,5 +191,60 @@ func TestModeKeyDisabled(t *testing.T) {
 	ta.press("?")
 	if !strings.Contains(strings.Join(ta.Frame(), "\n"), Fg(Surface2).Render("pick")) {
 		t.Error("the key reference does not show it off")
+	}
+}
+
+// TestCompareResize: the compare lays itself out again as the terminal
+// changes size: under 96 columns UNIFIED, back over it the remembered
+// SPLIT, the stretch on top kept in sight (note-85).
+func TestCompareResize(t *testing.T) {
+	ta := newTestApp(t)
+	split := new(bool)
+	*split = true
+	ta.pods.Actions = append(ta.pods.Actions, ta.CompareAction(ta.pods, ta.list, Compare{Key: "C", Split: split,
+		Text: func(r Row) (string, error) {
+			var b strings.Builder
+			for i := range 61 {
+				if i%15 == 0 { // a change every 15 lines: five stretches
+					fmt.Fprintf(&b, "age %s at %d\n", r.Cells[1], i)
+					continue
+				}
+				fmt.Fprintf(&b, "line %d\n", i)
+			}
+			return b.String(), nil
+		}}))
+	ta.resize(120, 16)
+	ta.press("C", "j", "Enter")
+	v := ta.topView().(*viewerView).v
+	if v.Tab != 1 {
+		t.Fatalf("opened on tab %d, want the remembered SPLIT", v.Tab)
+	}
+	sep := -1
+	for i, l := range v.Lines {
+		if strings.HasPrefix(StripStyles(l), "───") {
+			sep = i
+		}
+	}
+	v.top = sep + 1 // the last stretch on top, as far as it scrolls
+	ta.screenText()
+	want := regexp.MustCompile(`line \d+`).FindString(StripStyles(v.Lines[v.top]))
+	if want == "" || v.top == 0 {
+		t.Fatalf("not scrolled: %d %q", v.top, StripStyles(v.Lines[v.top]))
+	}
+	ta.resize(90, 16)
+	if v.Tab != 0 || v.NoWrap || !strings.Contains(StripStyles(v.Lines[v.top]), want) {
+		t.Errorf("under 96: tab %d, on top %q, want %q", v.Tab, StripStyles(v.Lines[v.top]), want)
+	}
+	if !strings.Contains(ta.screenText(), want) {
+		t.Errorf("%q is not in sight:\n%s", want, ta.screenText())
+	}
+	ta.resize(120, 16)
+	if v.Tab != 1 || !*split || !strings.Contains(ta.screenText(), want) {
+		t.Errorf("back over 96: tab %d, %q in sight:\n%s", v.Tab, want, ta.screenText())
+	}
+	for i, l := range ta.Frame() {
+		if Width(l) != 120 {
+			t.Errorf("row %d is %d wide", i, Width(l))
+		}
 	}
 }

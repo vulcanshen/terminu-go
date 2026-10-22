@@ -117,24 +117,43 @@ func (a *App) compareWith(cm *comparing) tea.Cmd {
 	x, y := textLines(at), textLines(bt)
 	ops := diffLines(x, y)
 	v := &Viewer{Title: "Diff", Subject: an + " ↔ " + bn, Glyph: glyphCompare, Tabs: []string{"Unified", "Split"}, NoNumbers: true}
-	narrow := func() bool { return a.w < splitMin }
-	v.tabOff = func(i int) bool { return i == 1 && narrow() }
-	show := func(tab int) tea.Cmd {
-		w := popupWidth(a.w, 0, false) - 4 // the viewer's text, numbers left out
+	v.tabOff = func(i int) bool { return i == 1 && a.w < splitMin }
+	// layout lays the lines out for a terminal sw wide, as it opens and
+	// whenever its size changes: SPLIT when it is chosen and there is room,
+	// the line on top kept by the op it shows (lineOp: each line's op).
+	var lineOp []int
+	lastW, lastTab := -1, -1
+	layout := func(sw int) {
+		tab := 0
+		if *c.Split && sw >= splitMin {
+			tab = 1
+		}
+		w := popupWidth(sw, 0, false) - 4 // the viewer's text, numbers left out
+		if w == lastW && tab == lastTab {
+			return
+		}
+		keep := -1
+		if v.top < len(lineOp) {
+			keep = lineOp[v.top]
+		}
 		v.Tab, v.NoWrap = tab, tab == 1
 		if tab == 1 {
-			v.Lines = diffSplit(ops, x, y, w)
+			v.Lines, lineOp = diffSplit(ops, x, y, w)
 		} else {
-			v.Lines = diffUnified(ops, x, y, w)
+			v.Lines, lineOp = diffUnified(ops, x, y, w)
 		}
-		return nil
+		v.top, v.sub = 0, 0
+		for i, o := range lineOp {
+			if keep >= 0 && o >= keep {
+				v.top = i
+				break
+			}
+		}
+		lastW, lastTab = w, tab
 	}
-	v.OnTab = func(tab int) tea.Cmd { *c.Split = tab == 1; return show(tab) }
-	if *c.Split && !narrow() {
-		show(1)
-	} else {
-		show(0)
-	}
+	v.relayout = layout
+	v.OnTab = func(tab int) tea.Cmd { *c.Split = tab == 1; layout(a.w); return nil }
+	layout(a.w)
 	return a.Viewer(v)
 }
 
@@ -281,8 +300,9 @@ func hunks(ops []diffOp) [][2]int {
 func numWidthOf(x, y []string) int { return len(itoa(max(len(x), len(y), 1))) }
 
 // diffUnified is UNIFIED: both line numbers, then - in Red, + in Green or a
-// space, the hunks w cells wide with an Overlay0 line between.
-func diffUnified(ops []diffOp, x, y []string, w int) []string {
+// space, the hunks w cells wide with an Overlay0 line between; at is the op
+// each line shows (a line between hunks, the one before the next's first).
+func diffUnified(ops []diffOp, x, y []string, w int) (out []string, at []int) {
 	nw := numWidthOf(x, y)
 	num := func(i int) string {
 		if i < 0 {
@@ -290,12 +310,13 @@ func diffUnified(ops []diffOp, x, y []string, w int) []string {
 		}
 		return PadLeft(itoa(i+1), nw)
 	}
-	var out []string
 	for hi, h := range hunks(ops) {
 		if hi > 0 {
-			out = append(out, Fg(Overlay0).Render(Repeat("─", w)))
+			out, at = append(out, Fg(Overlay0).Render(Repeat("─", w))), append(at, h[0]-1)
 		}
-		for _, o := range ops[h[0]:h[1]] {
+		for j := h[0]; j < h[1]; j++ {
+			o := ops[j]
+			at = append(at, j)
 			nums := Fg(Overlay0).Render(num(o.a)+" "+num(o.b)) + " "
 			switch o.op {
 			case '-':
@@ -307,13 +328,13 @@ func diffUnified(ops []diffOp, x, y []string, w int) []string {
 			}
 		}
 	}
-	return out
+	return out, at
 }
 
 // diffSplit is SPLIT: the anchor's lines on the left, the other's on the
 // right, each half with its numbers, a line too long cut with "…"; a line
-// with nothing across from it faces an empty half.
-func diffSplit(ops []diffOp, x, y []string, w int) []string {
+// with nothing across from it faces an empty half; at is as diffUnified's.
+func diffSplit(ops []diffOp, x, y []string, w int) (out []string, at []int) {
 	nw := numWidthOf(x, y)
 	half := max((w-2)/2, nw+2)
 	side := func(i int, lines []string, st Style) string {
@@ -322,40 +343,44 @@ func diffSplit(ops []diffOp, x, y []string, w int) []string {
 		}
 		return Pad(Fg(Overlay0).Render(PadLeft(itoa(i+1), nw))+" "+st.Render(Truncate(lines[i], half-nw-1)), half)
 	}
-	var out []string
 	for hi, h := range hunks(ops) {
 		if hi > 0 {
-			out = append(out, Fg(Overlay0).Render(Repeat("─", w)))
+			out, at = append(out, Fg(Overlay0).Render(Repeat("─", w))), append(at, h[0]-1)
 		}
-		var dels, adds []int
+		var dels, adds []int // ops
 		flush := func() {
 			for k := range max(len(dels), len(adds)) {
 				l, r := -1, -1
 				if k < len(dels) {
-					l = dels[k]
+					l = ops[dels[k]].a
+					at = append(at, dels[k])
+				} else {
+					at = append(at, adds[k])
 				}
 				if k < len(adds) {
-					r = adds[k]
+					r = ops[adds[k]].b
 				}
 				out = append(out, side(l, x, Fg(Red))+"  "+side(r, y, Fg(Green)))
 			}
 			dels, adds = nil, nil
 		}
-		for _, o := range ops[h[0]:h[1]] {
+		for j := h[0]; j < h[1]; j++ {
+			o := ops[j]
 			switch o.op {
 			case '-':
 				if len(adds) > 0 {
 					flush()
 				}
-				dels = append(dels, o.a)
+				dels = append(dels, j)
 			case '+':
-				adds = append(adds, o.b)
+				adds = append(adds, j)
 			default:
 				flush()
+				at = append(at, j)
 				out = append(out, side(o.a, x, Style{})+"  "+side(o.b, y, Style{}))
 			}
 		}
 		flush()
 	}
-	return out
+	return out, at
 }

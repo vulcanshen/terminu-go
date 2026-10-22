@@ -2,6 +2,11 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.9.6
+
+- The compare popup lays itself out again when the terminal changes size, as other popups do: under 96 columns it is
+  UNIFIED at once, back over 96 the remembered SPLIT; the stretch on top stays in sight
+
 ## v0.4.7 — tdp v0.9.6
 
 - The compare mode and the compare popup (components/layout/panel, compare mode; components/dialog/note, compare):

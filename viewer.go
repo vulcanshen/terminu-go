@@ -81,6 +81,9 @@ type Viewer struct {
 	// tabOff is a tab that cannot be chosen now (Rules M6): the compare's
 	// SPLIT on a narrow terminal.
 	tabOff func(i int) bool
+	// relayout lays the lines out again for a terminal sw wide, before it is
+	// measured (the compare, its lines cut to the width).
+	relayout func(sw int)
 }
 
 // TextMatch is a stretch of a viewer's line: its characters From to To, To
@@ -198,6 +201,9 @@ func (vv *viewerView) hint() []KeyHint {
 
 func (vv *viewerView) measure(sw, sh int) (int, int) {
 	v := vv.v
+	if v.relayout != nil {
+		v.relayout(sw)
+	}
 	v.sync()
 	w := popupWidth(sw, 0, false)
 	v.readLines()
