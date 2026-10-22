@@ -1577,6 +1577,32 @@ func TestListCursor(t *testing.T) {
 	check(DimColor(Base), DimColor(Subtext1), DimColor(Subtext1)) // the whole block dims (Rules T2)
 }
 
+// TestListAnchor: the row a mode keeps picked (List.Anchor) is Yellow with
+// Base text, not bold, across the row, with no arrow; the cursor on it wins
+// (kbu KB27).
+func TestListAnchor(t *testing.T) {
+	ta := newTestApp(t)
+	ta.list.Anchor = "3"
+	lines := covCCrop(ta.Frame(), 0, 40)
+	r, _ := covCFind(t, lines, "pod-03")
+	for _, c := range covCCells(lines[r]) {
+		switch {
+		case c.Col >= 1 && c.Col <= 37:
+			if c.St != (covCStyle{Fg: Base, Bg: Yellow}) {
+				t.Fatalf("column %d %q: %+v, want Base on Yellow", c.Col, c.Ch, c.St)
+			}
+		case c.Col == 38:
+			if c.Ch != " " || c.St.Bg.Set {
+				t.Errorf("an arrow on the anchor: %q %+v", c.Ch, c.St)
+			}
+		}
+	}
+	ta.press("j", "j", "j")
+	if st := covCStyleOf(t, covCCrop(ta.Frame(), 0, 40), "pod-03"); st != (covCStyle{Fg: Base, Bg: Subtext1, Bold: true}) {
+		t.Errorf("the cursor on the anchor: %+v", st)
+	}
+}
+
 func TestCursorArrow(t *testing.T) {
 	for _, pl := range []int{1, 2} {
 		t.Run(fmt.Sprintf("powerline %d", pl), func(t *testing.T) {

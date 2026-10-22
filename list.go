@@ -87,6 +87,11 @@ type List struct {
 	// Draggable keeps that column too, for the swap glyph of the row held in
 	// a Drag mode (layout/panel): Hold, MoveHeld, Drop.
 	Draggable bool
+	// Anchor is the ID of a row a mode keeps picked while the cursor moves
+	// on (a Compare mode's first pick, Rules K11): drawn whole in Yellow,
+	// the mode's, with Base text, not bold and no arrow, as a selected range
+	// (components/color, dialog/note). The cursor on it wins. "" is none.
+	Anchor string
 	// Filterable lets / open a panel filter on the list.
 	Filterable bool
 	// EmptyFact and EmptyHint are what an empty list says (layout/screen,
@@ -498,6 +503,10 @@ func (l *List) Draw(w, h int, focused bool) []string {
 			}
 			// Base on the block, a swatch keeping its colour (components/color).
 			out = append(out, onBlock(Pad(" "+indent+mark+text, w-arrow), cursor)+arrowStyle.Render(glyphHard))
+			continue
+		}
+		if l.Anchor != "" && l.rowID(r) == l.Anchor {
+			out = append(out, onBlock(Pad(" "+indent+mark+text, w-arrow), Style{Fg: Base, Bg: Yellow})+Repeat(" ", arrow))
 			continue
 		}
 		if mark != "" && l.marked[l.rowID(r)] {

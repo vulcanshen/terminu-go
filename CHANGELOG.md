@@ -2,6 +2,11 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.9.5
+
+- `List.Anchor`: the row a mode keeps picked while the cursor moves on (a Compare mode's first pick) is drawn whole
+  in Yellow with Base text, not bold, no arrow, as a selected range; the cursor on it wins (kbu KB27)
+
 ## v0.4.5 — tdp v0.9.5
 
 - Capsule chains (panel titles and tabs, screen chips, a popup's tabs) say every colour they use, so they look the
