@@ -2,7 +2,7 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.9.6
+## v0.4.7 — tdp v0.9.6
 
 - The compare mode and the compare popup (components/layout/panel, compare mode; components/dialog/note, compare):
   `App.CompareAction(panel, list, Compare{Key, Can, Name, Text, Split})` is the Compare item action. Its key on a row
