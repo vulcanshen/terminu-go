@@ -114,7 +114,8 @@ func (a *App) reorderModeMenu(rv *reorderView) tea.Cmd {
 		return func() tea.Cmd { _, cmd := rv.dragKey(a, key); return cmd }
 	}
 	item := []Action{{Key: "Enter", Label: "Drop", Desc: "it here", Do: do("Enter")}}
-	keys := []Action{moveRow("h|k", "move it up"), moveRow("j|l", "move it down"), leaveRow("put back", do("Esc"))}
+	// Leaving says the hint's verb, Esc:cancel (components/dialog/menu, in a mode).
+	keys := []Action{moveRow("h|k", "move it up"), moveRow("j|l", "move it down"), leaveRow("cancel", do("Esc"))}
 	return a.modeMenu(a.modeTitle(), "Drag", item, keys)
 }
 

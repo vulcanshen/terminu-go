@@ -96,7 +96,7 @@ func TestModeSpaceMenuInPopups(t *testing.T) {
 	ta.settle()
 	rv := ta.topView().(*reorderView)
 	ta.press("D", "j", "Space")
-	if !strings.Contains(ta.screenText(), "[Enter] Drop") || !strings.Contains(ta.screenText(), "DRAG MODE") {
+	if text := ta.screenText(); !strings.Contains(text, "[Enter] Drop") || !strings.Contains(text, "DRAG MODE") || !strings.Contains(text, "[Esc] Cancel") {
 		t.Errorf("the Drag mode's menu:\n%s", ta.screenText())
 	}
 	ta.press("Enter")

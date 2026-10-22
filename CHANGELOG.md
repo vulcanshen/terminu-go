@@ -2,6 +2,10 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.9.7
+
+- A reorder's Drag mode menu leaves with `[Esc] Cancel`, the verb of its hint's `Esc:cancel`, not `[Esc] Put back`
+
 ## v0.4.9 — tdp v0.9.7
 
 - `Space` in a mode opens the mode's Space menu (Rules K11; components/dialog/menu, in a mode; kbu KB28), on a panel,
