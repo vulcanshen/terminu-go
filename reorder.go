@@ -36,6 +36,7 @@ func (r Reorder) typed() bool { return false }
 func (a *App) Reorder(r Reorder) tea.Cmd { return r.open(a, nil) }
 
 type reorderView struct {
+	labelled
 	r       Reorder
 	order   []int // the options' indexes as they now stand
 	cursor  int   // index into order
@@ -121,10 +122,18 @@ func (rv *reorderView) draw(w, h int, layer Color) []string {
 	}
 	box := popupBox{color: layer, glyph: rv.r.Glyph, title: popupTitle(rv.r.Title, rv.r.Subject), hint: rv.hint(), scroll: scroll}
 	if rv.held {
-		// The Drag mode marks its frame: the mode colour and its name (Rules K11).
-		box.color, box.mode = Yellow, "Drag"
+		box.color = Yellow // the Drag mode marks its frame: the mode colour and its name (Rules K11)
 	}
+	lab := rv.labelFor(rv.modeName())
+	box.mode, box.closed = lab.name, 1-lab.shown
 	return box.draw(w, body)
+}
+
+func (rv *reorderView) modeName() string {
+	if rv.held {
+		return "Drag"
+	}
+	return ""
 }
 
 func (rv *reorderView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {

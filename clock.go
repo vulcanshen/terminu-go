@@ -53,7 +53,7 @@ func init() {
 	}
 	testhook.Animating = func(app any) bool {
 		a := app.(*App)
-		if a.anim {
+		if a.anim || a.labelsMoving() {
 			return true
 		}
 		if a.splashOn {

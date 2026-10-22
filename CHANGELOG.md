@@ -2,6 +2,16 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.9.9
+
+- A mode's name opens from its middle on the frame and closes back to the line (components/layout/panel, the
+  frame; kbu KB30): the junctions side by side first, then apart, the name showing from its middle, about 288ms by
+  the clock whatever its length; switched halfway it turns where it is. Only the name moves: the mode and the
+  frame's colour change at once, keys work all the while, and the title keeps the name's room. On panels, in popups
+  and on PTYs. tdptest plays it to its end with `Auto` on and steps it with `Auto` off
+- `App.QuitFlow`'s doc says what cannot be undone goes in the command it returns: with a popup open the lib runs the
+  flow first, then may hold that command for `Enter`
+
 ## v0.4.10 — tdp v0.9.8
 
 - With a popup open (a toast is not one) the first `q` or `Ctrl-C` never leaves at once (Rules K9, kbu KB29): an app

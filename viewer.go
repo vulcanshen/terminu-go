@@ -171,7 +171,17 @@ func (v *Viewer) sync() {
 // Top is the first line in sight.
 func (v *Viewer) Top() int { return v.top }
 
-type viewerView struct{ v *Viewer }
+type viewerView struct {
+	v *Viewer
+	labelled
+}
+
+func (vv *viewerView) modeName() string {
+	if vv.v.inMode {
+		return cmpOr(vv.v.Select.Name, "Select")
+	}
+	return ""
+}
 
 func (vv *viewerView) title() string {
 	t := Upper(vv.v.Title)
@@ -464,9 +474,10 @@ func (vv *viewerView) draw(w, h int, layer Color) []string {
 		box.tabOff = append(box.tabOff, v.tabOff != nil && v.tabOff(i))
 	}
 	if v.inMode {
-		// A mode marks its frame: the mode colour and its name (Rules K11).
-		box.color, box.mode = Yellow, cmpOr(v.Select.Name, "Select")
+		box.color = Yellow // a mode marks its frame: the mode colour and its name (Rules K11)
 	}
+	lab := vv.labelFor(vv.modeName())
+	box.mode, box.closed = lab.name, 1-lab.shown
 	return box.draw(w, body)
 }
 

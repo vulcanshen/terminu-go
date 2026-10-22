@@ -65,7 +65,8 @@ type App struct {
 	// Name is the app's name, for its environment variables (Rules E2).
 	Name string
 	// Quit is the quit flow (Rules K9): nil leaves at once, an Ask confirms
-	// first. A second Ctrl-C during the flow always leaves.
+	// first. A second Ctrl-C during the flow always leaves. With a popup open
+	// it always asks first: Quit <app>? when nil.
 	Quit *Ask
 	// QuitDesc is the Quit row's description in the global operation popup.
 	QuitDesc string
@@ -73,6 +74,12 @@ type App struct {
 	// K9: the app's): q and Ctrl-C run it, a menu of the app's own to choose
 	// how to leave, say. While the popup it opens is open, a second Ctrl-C
 	// leaves at once, as in any quit flow.
+	//
+	// With a popup open the lib runs it first and only then decides whether
+	// to stop it (Rules K9): when it opens nothing, the command it returns
+	// waits for Enter on Quit <app>?, and Esc drops it. So what cannot be
+	// undone (closing a session, stopping a task) goes in that command, not
+	// in QuitFlow itself.
 	QuitFlow func() tea.Cmd
 	// Global are the global operations besides switching screens and
 	// quitting (Principle P3); their hotkeys work on panels too (Rules M4).
@@ -149,8 +156,10 @@ type App struct {
 	// what the app's QuitFlow opened.
 	quitConfirm popupView
 	anim        bool
-	timers      []tea.Cmd    // the lib's own timers started while a message is handled (sendTimers)
-	comparings  []*comparing // the compare modes under way (compare.go)
+	timers      []tea.Cmd          // the lib's own timers started while a message is handled (sendTimers)
+	comparings  []*comparing       // the compare modes under way (compare.go)
+	labels      map[any]*labelAnim // the mode names opening and closing, by frame (modelabel.go)
+	labelTick   bool               // a tick for them on its way
 	spin        bool
 
 	splashOn    bool
@@ -314,6 +323,8 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case animMsg:
 		cmd = a.stepAnimation()
+	case labelMsg:
+		a.labelTick = false
 	case spinMsg:
 		a.spin = false
 	case splashMsg:
@@ -338,7 +349,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmd = a.OnMsg(msg)
 		}
 	}
-	cmd = tea.Batch(cmd, a.moved(), a.fetch(), a.checkCompares(), a.sendTimers())
+	cmd = tea.Batch(cmd, a.moved(), a.fetch(), a.checkCompares(), a.sendTimers(), a.syncLabels())
 	if !a.spin && a.loading() {
 		a.spin = true
 		cmd = tea.Batch(cmd, a.after(spinTime, spinMsg{}))
@@ -1466,6 +1477,9 @@ func (a *App) Frame() []string {
 		} else if l.shade.Set {
 			color = l.shade
 		}
+		if lv, ok := l.view.(interface{ setLabel(label) }); ok {
+			lv.setLabel(a.labelOf(l.view))
+		}
 		full := fitRows(l.view.draw(l.w, l.h, color), l.h)
 		if i < under {
 			full = DimLines(full)
@@ -1587,6 +1601,7 @@ func (a *App) panelArea(w, h int) []string {
 		if fp, ok := p.Body.(*FilePreview); ok {
 			fp.hide = a.HideSecretsInPreview // the app's setting, as a file-picker's preview has it
 		}
+		p.setLabel(a.labelOf(p))
 		Composite(area, p.draw(i+1, r.W, r.H, i == s.at()), r.X, r.Y, w)
 	}
 	return area

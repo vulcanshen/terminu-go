@@ -73,6 +73,7 @@ func (ta *testApp) resize(w, h int) { ta.Update(tea.WindowSizeMsg{Width: w, Heig
 
 // settle plays every animation to its end.
 func (ta *testApp) settle() {
+	defer ta.endLabels() // the mode names all open or gone
 	for range 40 {
 		if !ta.anim {
 			return

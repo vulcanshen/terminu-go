@@ -108,6 +108,7 @@ type Failure struct {
 // Panel is a region of a screen with its own cursor and content (Principle
 // "Panel"). It is numbered by its place in its screen, from [1].
 type Panel struct {
+	labelled // its mode's name as drawn (modelabel.go)
 	// Label is the panel's name after its [N]. With tabs it is the first
 	// tab's name: a panel has no other name (layout/panel, tabs).
 	Label string
@@ -267,20 +268,18 @@ func (p *Panel) draw(n, w, h int, focused bool) []string {
 	if focused {
 		lines, color = heavyLines, Blue
 	}
-	mode := ""
-	if p.mode != nil {
-		color, mode = Yellow, p.mode.Name
+	if p.modeName() != "" {
+		color = Yellow
 	}
-	if t, ok := p.Body.(*Terminal); ok && t.mode != "" {
-		color, mode = Yellow, t.mode // the PTY's own mode (Rules K11)
-	}
+	lab := p.labelFor(p.modeName())
+	mode := lab.name // still there while it closes
 	b := box{width: w, lines: lines, color: color, hintKey: Fg(Blue)}
 	// A line segment stays before the top-right corner (or the mode's name).
 	b.head = drawChain(p.capsules(n), color, max(w-3-modeRoom(mode), 1))
 	if p.Loading {
 		b.after = Fg(color).Render(loadingFrame()) // the frame's colour (components/layout/popup)
 	}
-	b.mode = mode
+	b.mode, b.modeClosed = mode, 1-lab.shown
 	inner, ih := w-2, h-2
 	var body []string
 	switch {
@@ -313,6 +312,18 @@ func (p *Panel) draw(n, w, h int, focused bool) []string {
 		b.hintWords = DimColor(Overlay0)
 	}
 	return b.draw()
+}
+
+// modeName is the mode the panel is in now: its own, or its PTY's (Rules
+// K11).
+func (p *Panel) modeName() string {
+	if p.mode != nil {
+		return p.mode.Name
+	}
+	if t, ok := p.Body.(*Terminal); ok {
+		return t.mode
+	}
+	return ""
 }
 
 // modeRoom is how much of the top border a mode name takes.

@@ -224,19 +224,22 @@ func itoa(n int) string {
 
 // box is everything that goes on a frame.
 type box struct {
-	width     int
-	lines     lineSet
-	color     Color  // the frame's colour
-	head      string // drawn right after the top-left corner (a panel's capsule chain)
-	title     string // drawn after one line segment (a popup's title capsule, its tabs)
-	after     string // after head or title, one space either side (the loading icon)
-	mode      string // the mode name, between junctions at the right of the top border
-	hint      []KeyHint
-	hintOff   []bool // the pairs that cannot be pressed now, in the disabled colour
-	hintKey   Style  // the colour of the hint's keys
-	hintWords Color  // the colour of its colons and words; Overlay0 when unset
-	scroll    string // the scroll position at the right of the bottom border
-	body      []string
+	width int
+	lines lineSet
+	color Color  // the frame's colour
+	head  string // drawn right after the top-left corner (a panel's capsule chain)
+	title string // drawn after one line segment (a popup's title capsule, its tabs)
+	after string // after head or title, one space either side (the loading icon)
+	mode  string // the mode name, between junctions at the right of the top border
+	// modeClosed is how far the mode name is closed, 0 all open: it opens
+	// and closes from its middle, keeping its room (modelabel.go).
+	modeClosed float64
+	hint       []KeyHint
+	hintOff    []bool // the pairs that cannot be pressed now, in the disabled colour
+	hintKey    Style  // the colour of the hint's keys
+	hintWords  Color  // the colour of its colons and words; Overlay0 when unset
+	scroll     string // the scroll position at the right of the bottom border
+	body       []string
 }
 
 // draw draws the frame around body, every line exactly b.width cells. Text on
@@ -277,7 +280,7 @@ func (b box) draw() []string {
 	}
 	top.WriteString(frame.Render(Repeat(ls.h, inner-used-modeW)))
 	if b.mode != "" {
-		top.WriteString(frame.Render(ls.jl) + Fg(Yellow).Bolded().Render(b.mode) + frame.Render(ls.jr+ls.h))
+		top.WriteString(drawLabel(b.mode, b.modeClosed, ls, frame))
 	}
 	out = append(out, frame.Render(ls.tl)+top.String()+frame.Render(ls.tr))
 

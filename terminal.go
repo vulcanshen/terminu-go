@@ -658,7 +658,10 @@ func (a *App) OpenTerminal(t *Terminal) tea.Cmd {
 type termView struct {
 	t *Terminal
 	a *App
+	labelled
 }
+
+func (tv *termView) modeName() string { return tv.t.mode }
 
 // topRows are the rows a terminal popup leaves above it: the screen chips
 // and their divider, or the statusbar (Rules F7, the terminal exception).
@@ -684,8 +687,10 @@ func (tv *termView) draw(w, h int, layer Color) []string {
 	body := tv.t.lines(w-2, h-2, true)
 	box := popupBox{color: layer, glyph: glyphTerminal, title: tv.t.title(), hint: tv.t.hint(), scroll: tv.t.scroll(), bare: true}
 	if tv.t.mode != "" {
-		box.color, box.mode = Yellow, tv.t.mode // a mode marks its frame (Rules K11)
+		box.color = Yellow // a mode marks its frame (Rules K11)
 	}
+	lab := tv.labelFor(tv.modeName())
+	box.mode, box.closed = lab.name, 1-lab.shown
 	return box.draw(w, body)
 }
 

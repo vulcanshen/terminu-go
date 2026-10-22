@@ -130,13 +130,14 @@ type popupBox struct {
 	tabOff  []bool // tabs that cannot be chosen now (Rules M6)
 	loading bool
 	mode    string
+	closed  float64 // how far the mode name is closed (box.modeClosed)
 	hint    []KeyHint
 	scroll  string
 	bare    bool // no padding at all (terminal)
 }
 
 func (p popupBox) draw(w int, body []string) []string {
-	b := box{width: w, lines: heavyLines, color: p.color, hintKey: Fg(Blue), mode: p.mode}
+	b := box{width: w, lines: heavyLines, color: p.color, hintKey: Fg(Blue), mode: p.mode, modeClosed: p.closed}
 	room := w - 4 - modeRoom(p.mode)
 	b.title = titleCapsule(p.glyph, p.title, p.color, room)
 	if len(p.tabs) > 0 {

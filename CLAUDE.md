@@ -7,7 +7,7 @@ terminu design（tdp）的 Go 實作：一個像 bubbletea 那樣讓 app 直接�
 - 建在 bubbletea **v1**（`github.com/charmbracelet/bubbletea` v1.3.10）與 lipgloss v1（v1.1.0）上，跟五個 app 相同。
   原本定 v2，2026-10-08 改回 v1（紀錄的 C1、G22）：v2 的 renderer 與 lipgloss v2 的合成都處理不了 icon 佔兩格，要用 v2 就得
   自己重寫輸出層。user：v2 還不成熟，不該為了它打破既有狀態、重新造輪；等 v2 成熟再升。
-- 規範：`~/Documents/sideproj/terminu`，目前實作的版本是 **tdp v0.9.8**
+- 規範：`~/Documents/sideproj/terminu`，目前實作的版本是 **tdp v0.9.9**
 
 上面這些與下面「lib 的範圍」都已經跟 user 定案，不要重提。
 

@@ -1,6 +1,7 @@
 package tdptest
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -121,5 +122,27 @@ func TestDoSendsLibTimers(t *testing.T) {
 	d.Advance(2200 * time.Millisecond)
 	if d.Has("Dropped") {
 		t.Error("the toast did not go")
+	}
+}
+
+// TestModeLabelPlays: a mode name opening is an animation to the driver,
+// played by its ticks on the clock: with Auto off it steps, and it ends open.
+func TestModeLabelPlays(t *testing.T) {
+	ty := newTiny()
+	p := ty.App.Screen().Panels[0]
+	p.Actions = append(p.Actions, terminu.Action{Key: "M", Label: "Mark mode", Desc: "a mode", Scope: terminu.PanelScope,
+		Do: func() tea.Cmd { p.EnterMode(&terminu.Mode{Name: "Mark"}); return nil }})
+	d := Start(t, ty.App, 80, 24)
+	d.Auto = false
+	d.Press("M")
+	if !testhook.Animating(ty.App) || d.Has("Mark") {
+		t.Fatal("the mode name is not opening")
+	}
+	steps := 0
+	for testhook.Animating(ty.App) && d.Step() {
+		steps++
+	}
+	if steps < 2 || !d.Has("┫Mark┣") {
+		t.Errorf("%d steps, then:\n%s", steps, strings.Join(d.Screen(), "\n"))
 	}
 }
