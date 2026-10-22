@@ -178,7 +178,7 @@ func TestReorderDragModeKeys(t *testing.T) {
 	ta.settle()
 	rv := ta.topView().(*reorderView)
 	ta.press("j", "D")
-	ta.press("D", "Space", "G", "gg", "d", "!", "Tab")
+	ta.press("D", "G", "gg", "d", "!", "Tab")
 	if !rv.held || rv.cursor != 1 || len(ta.ran) != 0 || len(ta.stack) != 1 {
 		t.Errorf("other keys did something: held %v, cursor %d, ran %v, %d layers", rv.held, rv.cursor, ta.ran, len(ta.stack))
 	}

@@ -74,6 +74,9 @@ type Action struct {
 	ToDetails func() bool
 	// Do runs it.
 	Do func() tea.Cmd
+	// show is a mode's movement key in its Space menu: shown, the cursor
+	// passing it, never run (components/dialog/menu, in a mode).
+	show bool
 }
 
 func (a Action) hidden() bool   { return a.Hidden != nil && a.Hidden() }

@@ -1095,7 +1095,7 @@ func (a *App) modeKeyRef(p *Panel) *noteView {
 		rows = append(rows, KeyRow{Key: k.Key, Desc: k.Desc, Disabled: k.off()})
 	}
 	rows = append(rows, KeyRow{Key: "Esc", Desc: cmpOr(p.mode.Exit, "leave") + ", back to before " + p.mode.Name})
-	core := []KeyRow{{Key: "?", Desc: "this list"}, {Key: "q|Ctrl-C", Desc: "quit"}}
+	core := []KeyRow{{Key: "Space", Desc: "what you can do here"}, {Key: "?", Desc: "this list"}, {Key: "q|Ctrl-C", Desc: "quit"}}
 	return keyReference(Upper(p.mode.Name), []refSection{{title: p.mode.Name, rows: rows}, {title: "core keys", rows: core}})
 }
 
@@ -1125,6 +1125,9 @@ func (a *App) handleKey(msg tea.KeyMsg) tea.Cmd {
 	// In a PTY every key goes to the program, Esc and Ctrl-C too, but the
 	// exit key and the app's own keys (Rules K10).
 	if t := a.ptyFocus(); t != nil {
+		if t.mode != "" && key == "Space" { // the mode's Space menu, not the program's (Rules K11)
+			return a.terminalModeMenu(t)
+		}
 		return t.key(a, key, msg)
 	}
 	// The second Ctrl-C of a quit flow leaves at once (Rules K9).
@@ -1346,14 +1349,14 @@ func refHas(secs []refSection, key string) bool {
 // modeKey is a key inside a mode (Rules K11).
 func (a *App) modeKey(p *Panel, key string, msg tea.KeyMsg) tea.Cmd {
 	switch {
-	case key == "Space" || key == "!": // nothing in a mode (Rules K11)
+	case key == "!": // nothing in a mode (Rules K11)
 		return nil
+	case key == "Space":
+		return a.panelModeMenu(p)
 	case key == "?":
 		return a.open(a.modeKeyRef(p))
 	case key == "Esc":
-		m := p.mode
-		p.mode = nil
-		return run(m.OnExit)
+		return a.leavePanelMode(p)
 	case key == "q":
 		return a.startQuit()
 	case key == "Tab" || isDigit(key) && key != "0":
@@ -1622,7 +1625,7 @@ func (a *App) footerHints() []KeyHint {
 		}
 		return []KeyHint{{"Enter|Tab", "list"}, {"Esc", "clear"}}
 	case p.mode != nil:
-		out := []KeyHint{{"?", "help"}}
+		out := []KeyHint{{"Space", "menu"}, {"?", "help"}}
 		for _, k := range p.mode.Keys {
 			if !k.NoFooter {
 				out = append(out, KeyHint{k.Key, k.Desc})

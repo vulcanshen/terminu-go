@@ -289,7 +289,7 @@ func TestK11HotkeysSilentInMode(t *testing.T) {
 	if ta.pods.InMode() == nil {
 		t.Fatal("D did not enter the mode")
 	}
-	ta.press("S", "x", "Space")
+	ta.press("S", "x")
 	if len(ta.ran) != 0 || ta.top() != nil {
 		t.Errorf("hotkeys worked in the mode: ran %v, popup %T", ta.ran, ta.topView())
 	}

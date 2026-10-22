@@ -67,9 +67,25 @@ type ModeKey struct {
 	// Disabled reports that it cannot be pressed now: in the disabled colour
 	// in the footer and the key reference, pressing it does nothing (Rules M6).
 	Disabled func() bool
+	// In the mode's Space menu (components/dialog/menu, in a mode): Item puts
+	// it under ITEM OPERATION, a key acting on the item under the cursor or
+	// the range selected; the others go under the mode's name, a NoFooter one
+	// (a movement key) only shown. Label names its row, its hotkey marked
+	// (Compare: [C]ompare), Desc capitalised when empty; MenuDesc describes it.
+	Item     bool
+	Label    string
+	MenuDesc string
 }
 
 func (k ModeKey) off() bool { return k.Disabled != nil && k.Disabled() }
+
+// first is the key the mode's Space menu presses for it.
+func (k ModeKey) first() string {
+	if len(k.Keys) > 0 {
+		return k.Keys[0]
+	}
+	return strings.Split(k.Key, "|")[0]
+}
 
 func (k ModeKey) takes(key string) bool {
 	if len(k.Keys) == 0 {

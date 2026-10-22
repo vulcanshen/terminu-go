@@ -167,8 +167,8 @@ func TestM1FooterEntries(t *testing.T) {
 		t.Errorf("a screen of one panel: %q", got)
 	}
 	ta.press("P", "D")
-	if got := ta.covBFooter(); !strings.HasPrefix(got, "?:help") || strings.Contains(got, "Space") {
-		t.Errorf("in a mode ? stays and Space need not: %q", got)
+	if got := ta.covBFooter(); !strings.HasPrefix(got, "Space:menu ?:help") || strings.Contains(got, "!") {
+		t.Errorf("in a mode Space and ? come first, ! need not: %q", got)
 	}
 }
 

@@ -1,6 +1,6 @@
-# tdp v0.9.6 coverage
+# tdp v0.9.7 coverage
 
-tdp v0.9.6 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
+tdp v0.9.7 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
 （[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -93,7 +93,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | K10 | 其他 Alt 出口鍵要不要 confirm、保留哪些鍵、出口後 focus 落點：app 決定（lib 提供選項） | T `[2] SESSIONS` 的 `[Alt-t]erm` 隱藏 terminal popup | `TestK10ReservedKeysShown`、`TestTerminalKeyTakesSeveral`（`TerminalKey.Keys`：一組鍵寫一次） |
 | K10 | 子程序還沒準備好時可以不轉送一般鍵，但 `Ctrl-C` 照轉、出口鍵照有效照揭露 | T `[1] SHELL` 的 `Slow start`（模擬連線中） | `TestK10NotReadyForwardsCtrlC`、`TestTerminalFirstOutput`（lib：`Terminal.OnFirstOutput`、`Spoke`，app 拿來結束 NotReady 與 loading） |
 | K10 | `Alt-Esc` 與兩次 `Esc` 的 byte 一樣（實作參考：bubbletea v1.3.10 實測會黏）：C2 驗 | 見紀錄 C2 | — |
-| K11 | 模式裡 `Space`、`!` 不作用（`TestAppLogOnBang`）；`?` 開模式的 key reference；`Esc` 離開、回到進入前的狀態；`q`、`Ctrl-C` 照 K9 | P `[1] PODS` 的 `[D]rag` | `TestK11ModeCoreKeys` |
+| K11 | 模式裡 `!` 不作用（`TestAppLogOnBang`）；`Space` 開模式的 Space menu（見 menu §模式裡）；`?` 開模式的 key reference；`Esc` 離開、回到進入前的狀態；`q`、`Ctrl-C` 照 K9 | P `[1] PODS` 的 `[D]rag` | `TestK11ModeCoreKeys` |
 | K11 | 模式裡只有模式自己的鍵與上表的 core key 作用：panel 熱鍵與 global 熱鍵都不作用，按了不出聲 | Drag 裡按 `m`（panel 熱鍵）、`I`（global 熱鍵） | `TestK11HotkeysSilentInMode` |
 | K11 | 模式可以暫停 `Tab` 與數字鍵，按了要有回應（toast）；toast 在時第一個 `Esc` 先收 toast | Drag 裡按 `Tab`、`2` | `TestK11TabPausedToast`、`TestK11DigitsPausedToast` |
 | K11 | 模式名在框的上框右側、外框換模式色、離開恢復；不只靠顏色 | Drag；D「Note viewer」的 `v`；I 的 `Segments` 按 `D` | `TestK11ModeLabel`、`TestReorderDrag` |
@@ -256,7 +256,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 |---|---|---|---|
 | screen §由上往下 | 最上面一列（多畫面：chip 列 + 全寬分隔線；單畫面：可有 statusbar）、panel 區、最下面一列 footer；每個畫面的 panel 從 `[1]` 編號 | 每個畫面；lib 的單畫面版本由測試畫 | `TestScreenRows` |
 | screen §footer | 一列、M5 寫法、鍵 Blue 冒號說明 Overlay0；放不下從尾端整組捨 | 縮到 40 欄 | `TestFooterDropsWholePairs` |
-| screen §footer | 一般 `Space:menu ?:help !:log Tab\|1–N:panels q:quit`；單 panel `Space:menu ?:help !:log q:quit`；模式 `?:help` + 模式的鍵 + `Esc:<動詞>`；filter 打字中 `Enter\|Tab:list Esc:clear`，沒有結果時 `Tab:list Esc:clear`；PTY 在 panel 裡：出口鍵 + 保留鍵（互動 terminal 再接 `Alt-v:select PgUp:history`）；popup 開著時照底下畫面的寫、跟著淡化 | P 一般與 Drag；P filter（打 `zz` 沒有結果）；T `[1] SHELL`；任一 popup；lib 的單 panel 版本 | `TestFooterVariants`、`TestFooterUnderPopupDimmed` |
+| screen §footer | 一般 `Space:menu ?:help !:log Tab\|1–N:panels q:quit`；單 panel `Space:menu ?:help !:log q:quit`；模式 `Space:menu ?:help` + 模式的鍵 + `Esc:<動詞>`；filter 打字中 `Enter\|Tab:list Esc:clear`，沒有結果時 `Tab:list Esc:clear`；PTY 在 panel 裡：出口鍵 + 保留鍵（互動 terminal 再接 `Alt-v:select PgUp:history`）；popup 開著時照底下畫面的寫、跟著淡化 | P 一般與 Drag；P filter（打 `zz` 沒有結果）；T `[1] SHELL`；任一 popup；lib 的單 panel 版本 | `TestFooterVariants`、`TestFooterUnderPopupDimmed` |
 | screen §footer | `!` 的提醒：App Log 有沒看過的錯誤時 `!:N errors`（說明 Red），只有警告時 `!:N warning(s)`（Peach），打開後回到 `!:log` | D「Error popup」關掉後看 footer，按 `!` 再看 | `TestAppLogFooter` |
 | screen §footer | terminal popup 開著時 footer 整列不畫：最後一列兩端是空白，不露出 footer 的字 | T 的 terminal popup | `TestTerminalPopupSize` |
 | screen §畫面 chip 列 | 每個畫面一個膠囊、串的顏色 Blue（選中填 Blue 字 Base 粗體、沒選中底 Mantle 字 Blue）；放不下先縮 `[P] [I] [D] [T]` 再收掉沒選中的 | 每個畫面；縮窄 | `TestScreenChips`、`TestScreenChipsShrink` |
@@ -283,6 +283,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | panel §膠囊串 | 失焦時串色換成失焦的框線色、Mantle 不變；被蓋住時照 F8 跟整個畫面一起淡化，Mantle 變成 Crust `#11111b`（panel-137） | P `[1] PODS` 按 `Tab`；再開 Space menu | `TestCapsuleChain`、`TestDimEveryColor` |
 | panel §一般清單 | cursor：Subtext1 底、Base 粗體、佔滿內寬、整列 Base 字；右邊的留白（跟箭頭一樣寬）畫 U+E0B0、Subtext1；失焦跟著淡化 | P `[1] PODS` | `TestListCursor`、`TestCursorArrow` |
 | panel §一般清單 | 模式裡先標住、cursor 會離開的那一列（例：Compare 的 anchor，K11）：整列 Yellow 底、Base 字、不加粗、沒有箭頭；cursor 停在上面時 cursor 優先（lib：`List.Anchor`；kbu 的 KB27，tdp 下一版明寫） | lib；展示場還沒有，tdp 寫進去時補 | `TestListAnchor` |
+| menu §模式裡 | 模式裡（panel、popup 裡、PTY 上）`Space` 開模式的 Space menu：標題是模式所在的地方（panel 的 `[N] label` 或 popup 的標題）；`ITEM OPERATION` 對 cursor 那一項能做的事、能執行、現在不能做的停用；`<模式名> MODE` 模式的鍵，移動鍵只顯示（鍵 Blue、說明 Overlay0、cursor 跳過），`[Esc] Leave` 能執行；panel、item、global 的動作不列；menu 裡 `Esc` 只關 menu；PTY 上的模式不再把 `Space` 送給子程序（lib：`ModeKey.Item`、`Label`、`MenuDesc`；menu-23～27、K5-3、reorder-19） | P `[1] PODS` 按 `C` 或 `[D]rag` 再按 `Space`；D「Note viewer」按 `v` 再按 `Space`；I 的 `Segments` 按 `D` 再按 `Space`；terminal 的 History 裡按 `Space` | `TestModeSpaceMenu`、`TestModeSpaceMenuInPopups`、`TestK11ModeCoreKeys` |
 | panel §比較模式 | 比較鍵進入 K11 的模式，那一列成為 anchor（`List.Anchor`）；只比文字（`Compare.Can`，不能比的沒有比較的動作）；`j|k`、`u|d`、`gg|G` 移動；比較鍵或 `Enter` 打開比較，cursor 在 anchor 或不能比的列上時停用；兩邊一樣時 Info toast；`Esc` 離開、拿掉 anchor；`Tab` 與數字鍵暫停；anchor 不在了時離開、Warning toast（lib：`App.CompareAction`；panel-138～145） | P `[1] PODS` 按 `C`、移開再按 `Enter` | `TestCompareMode`、`TestCompareAnchorGone`、`TestModeKeyDisabled` |
 | note §比較 | 標題 glyph U+F018A、`DIFF — <anchor> ↔ <另一個>`、`UNIFIED`／`SPLIT` 兩個 tab；只顯示有差異的段落、前後 3 行、段落之間 Overlay0 的線；UNIFIED 行號兩欄、`-` Red、`+` Green；SPLIT 左 anchor 右另一個、各自行號、對應不到留空列、不折行截 `…`；記住選的 tab（`Compare.Split`，app 存進狀態）；不到 96 欄一律 UNIFIED、`SPLIT` 停用（note-80～85） | 同上，按 `h|l`；開著時把終端機縮到 96 以下再拉回來 | `TestCompareMode`、`TestCompareHunks`、`TestCompareSplit`、`TestCompareResize`（開著時縮放：重排、留住捲動位置）、`TestDiffLines` |
 | panel §一般清單 | 表頭 Blue 不加粗、大寫、固定不捲；每欄是數字或文字：數字靠右照數值排、文字靠左照文字排；欄間兩格；排序欄位加 U+F160（升）/ U+F161（降）；多欄排序在箭頭前加順位 `(2)` | P `[1] PODS` 的 `Sort by`（Name 升冪、Age 降冪、兩欄） | `TestListHeader`、`TestListSortGlyphs`、`TestListSortNumbers` |

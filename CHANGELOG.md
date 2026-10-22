@@ -2,6 +2,18 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.9.7
+
+- `Space` in a mode opens the mode's Space menu (Rules K11; components/dialog/menu, in a mode; kbu KB28), on a panel,
+  in a popup (a viewer's selection, a reorder's Drag) and on a PTY (History, selection: `Space` no longer goes to the
+  program there). It is titled as where the mode is; `ITEM OPERATION` lists what can be done to the item under the
+  cursor, run as its key (Compare's `[C]ompare with <anchor>`, `[v] Select`, then `[y] Copy`, `[Enter] Drop`), off
+  when it cannot be done now; `<NAME> MODE` the mode's own keys, the movement keys only shown in Blue, the cursor
+  passing them, leaving (`[Esc] Leave`) to run. `Esc` in the menu only closes it
+- `ModeKey.Item`, `Label` and `MenuDesc` place an app's mode key in that menu; a `NoFooter` key is shown as a
+  movement key
+- In a mode the footer starts with `Space:menu`: `Space:menu ?:help <the mode's keys> Esc:<leave>`
+
 ## v0.4.8 — tdp v0.9.6
 
 - The compare popup lays itself out again when the terminal changes size, as other popups do: under 96 columns it is

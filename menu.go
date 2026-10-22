@@ -21,7 +21,9 @@ type menuRow struct {
 	action Action
 }
 
-func (r menuRow) selectable() bool { return r.kind == menuItem && !r.action.disabled() }
+func (r menuRow) selectable() bool {
+	return r.kind == menuItem && !r.action.disabled() && !r.action.show
+}
 
 // menuView is a menu popup (components/dialog/menu): a list without search,
 // j/k to move, Enter or a hotkey to run a row.
@@ -240,11 +242,15 @@ func (m *menuView) titleText() string {
 func (m *menuView) rowText(r menuRow, w int) string {
 	label := Truncate(Escape(r.label), w)
 	room := w - Width(label) - 2
+	drawn := Fg(Text).Render(label)
+	if r.action.show { // a mode's movement key: Blue, as keys that can be pressed now
+		drawn = renderKey(label, Fg(Blue), Overlay0)
+	}
 	if r.desc == "" || room < 2 {
-		return Pad(Fg(Text).Render(label), w)
+		return Pad(drawn, w)
 	}
 	desc := Truncate(Escape(r.desc), room)
-	return Fg(Text).Render(label) + Repeat(" ", w-Width(label)-Width(desc)) + Fg(Overlay0).Render(desc)
+	return drawn + Repeat(" ", w-Width(label)-Width(desc)) + Fg(Overlay0).Render(desc)
 }
 
 func (m *menuView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
@@ -274,7 +280,9 @@ func (m *menuView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 		return true, nil
 	default:
 		for _, r := range m.rows {
-			if r.kind == menuItem && r.action.Key == key && key != "Enter" {
+			// Enter runs the row under the cursor; Esc closes the menu, a
+			// mode's [Esc] Leave too (components/dialog/menu, in a mode).
+			if r.kind == menuItem && r.action.Key == key && key != "Enter" && key != "Esc" {
 				if r.action.disabled() {
 					return true, nil
 				}

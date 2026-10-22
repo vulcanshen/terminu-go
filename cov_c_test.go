@@ -910,7 +910,7 @@ func TestFooterVariants(t *testing.T) {
 		want string
 	}{
 		{"normal", nil, "Space:menu ?:help !:log Tab|1–3:panels q:quit"},
-		{"mode", []string{"D"}, "?:help Enter:drop Esc:cancel"},
+		{"mode", []string{"D"}, "Space:menu ?:help Enter:drop Esc:cancel"},
 		{"filter typing", []string{"Esc", "/"}, "Enter|Tab:list Esc:clear"},
 		{"filter, no results", []string{"z", "z", "z"}, "Tab:list Esc:clear"},
 		{"popup", []string{"Esc", "Space"}, "Space:menu ?:help !:log Tab|1–3:panels q:quit"},
@@ -940,7 +940,7 @@ func TestFooterUnderPopupDimmed(t *testing.T) {
 	covCWant(t, "words under a popup", footer, ":menu", DimColor(Overlay0), Color{})
 	// In a mode, under its key reference: the mode's footer, dimmed.
 	ta.press("Esc", "D", "?")
-	if got := covCFooter(ta); got != "?:help Enter:drop Esc:cancel" {
+	if got := covCFooter(ta); got != "Space:menu ?:help Enter:drop Esc:cancel" {
 		t.Errorf("a mode's footer under its key reference: %q", got)
 	}
 	covCWant(t, "mode key under a popup", ta.Frame()[39:], "Enter", DimColor(Blue), Color{})

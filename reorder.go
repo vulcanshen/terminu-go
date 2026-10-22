@@ -129,7 +129,7 @@ func (rv *reorderView) draw(w, h int, layer Color) []string {
 
 func (rv *reorderView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {
 	if rv.held {
-		return rv.dragKey(key)
+		return rv.dragKey(a, key)
 	}
 	n := len(rv.order)
 	if n == 0 {
@@ -181,10 +181,12 @@ func (rv *reorderView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {
 
 // dragKey is a key in the Drag mode: only its own keys and the core keys of
 // Rules K11 work.
-func (rv *reorderView) dragKey(key string) (bool, tea.Cmd) {
+func (rv *reorderView) dragKey(a *App, key string) (bool, tea.Cmd) {
 	switch key {
 	case "?", "q", "Ctrl-C":
 		return false, nil // the mode's key reference, the quit flow (Rules K11)
+	case "Space":
+		return true, a.reorderModeMenu(rv) // the mode's Space menu (Rules K11)
 	case "j", "l", "↓", "→":
 		rv.cursor = moveWrap(rv.order, rv.cursor, true)
 	case "k", "h", "↑", "←":

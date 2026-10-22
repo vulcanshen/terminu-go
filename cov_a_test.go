@@ -1189,16 +1189,20 @@ func TestK11ModeCoreKeys(t *testing.T) {
 	ta.pods.EnterMode(&Mode{Name: "Drag", Exit: "cancel",
 		Keys:   []ModeKey{{Key: "j|k", Keys: []string{"j", "k"}, Desc: "move the pod", NoFooter: true, Do: func(string) tea.Cmd { return nil }}},
 		OnExit: func() tea.Cmd { exited++; return nil }})
-	ta.press("Space")
-	if ta.top() != nil {
+	ta.press("Space") // the mode's Space menu (Rules K11)
+	if m, ok := ta.topView().(*menuView); !ok || !m.space {
 		t.Errorf("Space in a mode opened %T", ta.topView())
+	}
+	ta.press("Esc")
+	if ta.top() != nil || ta.pods.InMode() == nil || exited != 0 {
+		t.Fatal("Esc in the mode's menu closes the menu only")
 	}
 	ta.press("?")
 	if n, ok := ta.topView().(*noteView); !ok || n.title != "DRAG KEYS" {
 		t.Fatalf("? in a mode is the mode's key reference: %T", ta.topView())
 	}
 	keys := covAKeys(covARef(t, ta))
-	if !keys["j|k"] || !keys["Esc"] || keys["Space"] || keys["m"] || keys["S"] {
+	if !keys["j|k"] || !keys["Esc"] || !keys["Space"] || keys["m"] || keys["S"] {
 		t.Errorf("the mode's key reference lists what works in the mode only: %v", keys)
 	}
 	ta.press("?")

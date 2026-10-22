@@ -88,6 +88,7 @@ func (a *App) startCompare(p *Panel, l *List, c Compare, anchor Row) {
 		{Key: "u|d", Keys: []string{"u", "d"}, Desc: "half a page up, down", NoFooter: true, Do: move},
 		{Key: "gg|G", Keys: []string{"gg", "G"}, Desc: "to the top, the bottom", NoFooter: true, Do: move},
 		{Key: c.Key + "|Enter", Keys: []string{c.Key, "Enter"}, Desc: "compare", Disabled: off,
+			Item: true, Label: "Compare", MenuDesc: "with " + cm.name,
 			Do: func(string) tea.Cmd { return a.compareWith(cm) }},
 	}, OnExit: func() tea.Cmd { l.Anchor = ""; return nil }}
 	p.EnterMode(cm.mode)

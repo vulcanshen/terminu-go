@@ -788,6 +788,8 @@ func (vv *viewerView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 		switch key {
 		case "?", "q", "Ctrl-C":
 			return false, nil // the mode's key reference, the quit flow (Rules K11)
+		case "Space": // the mode's Space menu (Rules K11)
+			return true, a.selectModeMenu(v, func(k string) tea.Cmd { _, cmd := vv.key(a, k, tea.KeyMsg{}); return cmd })
 		case "Esc":
 			v.inMode, v.selecting = false, false // at any step: the whole mode, no copy
 		case v.Select.Key:

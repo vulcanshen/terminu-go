@@ -342,7 +342,9 @@ func (ps *panelsScreen) startDrag() tea.Cmd {
 		Keys: []terminu.ModeKey{
 			{Key: "j|k", Keys: []string{"j", "k", "↓", "↑"}, Desc: "move it down, up", NoFooter: true,
 				Do: func(key string) tea.Cmd { ps.podList.MoveHeld(key == "j" || key == "↓"); return nil }},
-			{Key: "Enter", Desc: "drop", Do: func(string) tea.Cmd {
+			// The drop acts on the pod held: ITEM OPERATION in the mode's
+			// Space menu (components/dialog/menu, in a mode).
+			{Key: "Enter", Desc: "drop", Item: true, MenuDesc: "the pod here", Do: func(string) tea.Cmd {
 				ps.podList.Drop()
 				ps.pods.LeaveMode()
 				return ps.s.app.Toast(terminu.Info, "Dropped "+ps.dragFrom)
