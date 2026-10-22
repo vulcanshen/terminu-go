@@ -2,7 +2,7 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.9.9
+## v0.4.11 — tdp v0.9.9
 
 - A mode's name opens from its middle on the frame and closes back to the line (components/layout/panel, the
   frame; kbu KB30): the junctions side by side first, then apart, the name showing from its middle, about 288ms by
