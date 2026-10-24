@@ -2,7 +2,7 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.9.14
+## v0.4.17 — tdp v0.9.14
 
 - Where `h|l` switch tabs the lib writes `h|l:tab` in the hint, the app giving nothing (components/layout/panel,
   layout/popup, dialog/note, hint; filu FL27): on a panel of two tabs or more after `Enter`, in a viewer of two tabs
