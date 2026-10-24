@@ -2,7 +2,7 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.9.15
+## v0.4.18 — tdp v0.9.15
 
 - An error popup's message and a toast's text come a row at a time (components, control characters; sshu SS43):
   `Error(title, message...)`, `ErrorAbout(title, subject, message...)`, `Toast(kind, text...)`, each string a row
