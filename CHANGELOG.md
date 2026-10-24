@@ -2,7 +2,7 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.9.15
+## v0.4.19 — tdp v0.9.15
 
 - tdptest: a Driver fails a test whose frames showed a line break by its name in Red (`\n`, `\r`) by default, in an
   app's own tests too, reported when the test ends. `Driver.AllowLineBreaks` lets it be, for data with such names on
