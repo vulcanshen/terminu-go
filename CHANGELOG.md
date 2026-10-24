@@ -2,7 +2,7 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.9.13
+## v0.4.16 — tdp v0.9.13
 
 - A mode of several layers joins them with `>` (components/layout/panel, the frame): once selecting, a viewer's
   selection mode is `Visual>select`, in a popup and on a PTY too. `Esc` goes a layer back: selecting, the range
