@@ -104,6 +104,7 @@ func trickyEverywhere(t *testing.T, v string) {
 	for _, size := range [][2]int{{20, 10}, {80, 24}} {
 		a, open := everywhere(v)
 		d := Start(t, a, size[0], size[1])
+		d.AllowLineBreaks = true // tricky names on purpose
 		for _, panel := range []string{"1", "2", "3"} {
 			d.Press(panel, "Space")
 			closeAll(t, d, "the Space menu with "+fmt.Sprintf("%q", v))
@@ -129,6 +130,7 @@ func TestTrickyValuesTyped(t *testing.T) {
 		t.Run(fmt.Sprint(i), func(t *testing.T) {
 			a, _ := everywhere("")
 			d := Start(t, a, 80, 24)
+			d.AllowLineBreaks = true // tricky names on purpose
 			for _, how := range []string{"paste", "burst"} {
 				var got *string
 				d.Do(func() tea.Cmd {

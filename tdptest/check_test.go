@@ -143,8 +143,26 @@ func TestCheckFindsLineBreaks(t *testing.T) {
 	if err == nil || !strings.Contains(string(out), "shows a line break by its name") {
 		t.Errorf("Check did not fail on a line break in a toast: %v\n%s", err, out)
 	}
-	d := Start(t, breakingApp(), 80, 24) // LineBreaks off by default
+	d := Start(t, breakingApp(), 80, 24)
+	d.AllowLineBreaks = true // shown, the check let off
 	if !d.Has(`\n`) {
 		t.Error("the toast does not show the line break by its name")
+	}
+}
+
+// TestDriverFindsLineBreaks: a Driver checks for line breaks by default, in
+// an app's own tests too, the frames from Start on: one shown fails the test
+// when it ends (a child test process, which must fail) unless the test lets
+// it be with AllowLineBreaks, set after Start.
+func TestDriverFindsLineBreaks(t *testing.T) {
+	if os.Getenv("TDPTEST_CHILD") == "driver" {
+		Start(t, breakingApp(), 80, 24)
+		return
+	}
+	cmd := exec.Command(os.Args[0], "-test.run=^TestDriverFindsLineBreaks$")
+	cmd.Env = append(os.Environ(), "TDPTEST_CHILD=driver")
+	out, err := cmd.CombinedOutput()
+	if err == nil || !strings.Contains(string(out), "shows a line break by its name") {
+		t.Errorf("a Driver did not fail on a line break in a toast: %v\n%s", err, out)
 	}
 }

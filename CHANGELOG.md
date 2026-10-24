@@ -2,6 +2,13 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.9.15
+
+- tdptest: a Driver fails a test whose frames showed a line break by its name in Red (`\n`, `\r`) by default, in an
+  app's own tests too, reported when the test ends. `Driver.AllowLineBreaks` lets it be, for data with such names on
+  purpose, set any time before the end; `Check` sets it when the `App` is `Tricky`. It takes the place of v0.4.18's
+  `Driver.LineBreaks`, which was off by default (sshu SS43)
+
 ## v0.4.18 — tdp v0.9.15
 
 - An error popup's message and a toast's text come a row at a time (components, control characters; sshu SS43):
