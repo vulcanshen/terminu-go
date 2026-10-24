@@ -2,6 +2,14 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.9.14
+
+- Where `h|l` switch tabs the lib writes `h|l:tab` in the hint, the app giving nothing (components/layout/panel,
+  layout/popup, dialog/note, hint; filu FL27): on a panel of two tabs or more after `Enter`, in a viewer of two tabs
+  or more (the compare's `UNIFIED`/`SPLIT`, a viewer of pages) first. Not with one tab, nor while `h|l` do something
+  else: a panel's mode, a viewer's selection, the compare's `SPLIT` off on a narrow terminal. Ahead of the
+  panel's own keys, it is dropped after them when the hint does not fit
+
 ## v0.4.16 — tdp v0.9.13
 
 - A mode of several layers joins them with `>` (components/layout/panel, the frame): once selecting, a viewer's

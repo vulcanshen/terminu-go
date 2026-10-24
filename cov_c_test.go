@@ -1280,7 +1280,7 @@ func TestPanelModeLabelKeptWhenNarrow(t *testing.T) {
 func TestPanelHint(t *testing.T) {
 	ta := newTestApp(t)
 	bottom := ta.Frame()[38]
-	if got := covCPlain(Cut(bottom, 0, 40)); !strings.HasPrefix(got, "┗━ Enter:logs m:mark ━") || !strings.HasSuffix(got, "━ 1 of 40 ━┛") {
+	if got := covCPlain(Cut(bottom, 0, 40)); !strings.HasPrefix(got, "┗━ Enter:logs h|l:tab ━") || !strings.HasSuffix(got, "━ 1 of 40 ━┛") {
 		t.Errorf("pods: %q", got)
 	}
 	if got := covCPlain(Cut(bottom, 80, 120)); !strings.HasPrefix(got, "└─ Enter:edit ─") {
@@ -1378,6 +1378,7 @@ func TestPanelFrameTextSpacing(t *testing.T) {
 
 func TestPanelHintContent(t *testing.T) {
 	ta := newTestApp(t)
+	ta.pods.Tabs = nil // the panel's own keys, no h|l:tab
 	hint := func() (string, []string) {
 		lines := covCCrop(ta.Frame(), 0, 40)
 		b := covCPlain(lines[38])
@@ -1406,7 +1407,7 @@ func TestPanelHintDrop(t *testing.T) {
 		w    int
 		hint string
 	}{
-		{120, " Enter:logs m:mark "},
+		{120, " Enter:logs h|l:tab "}, // m:mark goes first: h|l:tab is before it
 		{90, " Enter:logs "},
 		{60, ""},
 	}

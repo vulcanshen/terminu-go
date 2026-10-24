@@ -211,6 +211,11 @@ func (p *Panel) hint() (out []KeyHint, off []bool) {
 	} else if h, ok := p.Body.(interface{ EnterHint() string }); ok && h.EnterHint() != "" {
 		add("Enter", h.EnterHint(), false)
 	}
+	// h|l switch tabs: written after Enter while they do, two tabs or more
+	// and no mode (components/layout/panel, hint).
+	if len(p.Tabs) > 0 && p.mode == nil {
+		add("h|l", "tab", false)
+	}
 	for _, a := range p.Actions {
 		if a.Key == "Enter" || a.Hint == "" || a.hidden() || !p.scopeApplies(a) {
 			continue

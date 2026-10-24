@@ -534,7 +534,7 @@ func TestM5WritingByPosition(t *testing.T) {
 		t.Errorf("footer: %q", got)
 	}
 	f := ta.Frame()
-	if got := covBText(f[len(f)-2], 0, 40); !strings.HasPrefix(got, "┗━ Enter:logs m:mark ━") {
+	if got := covBText(f[len(f)-2], 0, 40); !strings.HasPrefix(got, "┗━ Enter:logs h|l:tab ━") {
 		t.Errorf("panel hint: %q", got)
 	}
 	// The key reference: two columns, the keys bare.

@@ -248,3 +248,55 @@ func TestCompareResize(t *testing.T) {
 		}
 	}
 }
+
+// TestHintTab: where h|l switch tabs the hint says h|l:tab, the app giving
+// nothing: on a panel of two tabs or more after Enter, in a viewer first;
+// not with one tab, nor while h|l do something else, a mode, the selection,
+// SPLIT off on a narrow terminal (panel-17, panel-19, popup-10, popup-11;
+// filu FL27).
+func TestHintTab(t *testing.T) {
+	ta := newTestApp(t)
+	ta.resize(240, 40)
+	pods := func() string { return covCPlain(Cut(ta.Frame()[38], 0, 80)) }
+	if got := pods(); !strings.HasPrefix(got, "┗━ Enter:logs h|l:tab m:mark") {
+		t.Errorf("a panel of two tabs: %q", got)
+	}
+	ta.press("D")
+	if got := pods(); strings.Contains(got, "h|l") {
+		t.Errorf("in a mode h|l do not switch tabs: %q", got)
+	}
+	ta.press("Esc")
+	ta.pods.Tabs = nil
+	if got := pods(); strings.Contains(got, "h|l") {
+		t.Errorf("one tab: %q", got)
+	}
+	ta.Viewer(&Viewer{Title: "DevTools", Tabs: []string{"Console", "Network"}, Lines: []string{"x"}})
+	ta.settle()
+	h := ta.topView().(*viewerView).hint()
+	if len(h) == 0 || h[0] != (KeyHint{"h|l", "tab"}) || h[len(h)-1].Key != "Esc" {
+		t.Errorf("a viewer of two tabs: %v", h)
+	}
+	ta.press("v")
+	if fmt.Sprint(ta.topView().(*viewerView).hint()) != "[{v select} {Esc cancel}]" {
+		t.Error("the selection mode writes h|l:tab")
+	}
+	ta.press("Esc", "Esc")
+	ta.Viewer(&Viewer{Title: "Log", Lines: []string{"x"}})
+	ta.settle()
+	if fmt.Sprint(ta.topView().(*viewerView).hint()) != "[{v visual} {Esc close}]" {
+		t.Errorf("no tabs: %v", ta.topView().(*viewerView).hint())
+	}
+	ta.press("Esc")
+
+	tc, _ := compareApp(t)
+	tc.press("C", "j", "Enter")
+	if h := tc.topView().(*viewerView).hint(); h[0] != (KeyHint{"h|l", "tab"}) {
+		t.Errorf("the compare: %v", h)
+	}
+	tc.press("Esc")
+	tc.resize(90, 30)
+	tc.press("Enter")
+	if h := tc.topView().(*viewerView).hint(); h[0].Key == "h|l" {
+		t.Errorf("SPLIT off, h|l switch nothing: %v", h)
+	}
+}

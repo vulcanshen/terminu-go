@@ -507,6 +507,7 @@ func TestK1DigitGlobalNotInPanelKeyRef(t *testing.T) {
 
 func TestM6HintListsDisabled(t *testing.T) {
 	ta := newTestApp(t)
+	ta.pods.Tabs = nil // room in the hint for m:mark, no h|l:tab
 	off := false
 	ta.pods.Actions[1].Disabled = func() bool { return off }
 	hint := func() string { return ta.rowWith("Enter:logs") }

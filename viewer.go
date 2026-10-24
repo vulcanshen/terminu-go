@@ -216,6 +216,9 @@ func (vv *viewerView) hint() []KeyHint {
 		return []KeyHint{{v.Select.Key, "select"}, {"Esc", "cancel"}}
 	}
 	var h []KeyHint
+	if v.tabsToSwitch() {
+		h = append(h, KeyHint{"h|l", "tab"}) // first: a viewer has no Enter (components/layout/popup, hint)
+	}
 	for _, k := range v.Keys {
 		h = append(h, KeyHint{k.Key, k.Desc})
 	}
@@ -223,6 +226,18 @@ func (vv *viewerView) hint() []KeyHint {
 		h = append(h, KeyHint{v.Select.Key, strings.ToLower(cmpOr(v.Select.Name, "select"))})
 	}
 	return append(h, KeyHint{"Esc", "close"})
+}
+
+// tabsToSwitch reports two tabs or more h|l can switch to now, out of the
+// selection mode, where h|l move the cursor.
+func (v *Viewer) tabsToSwitch() bool {
+	n := 0
+	for i := range v.Tabs {
+		if v.tabOff == nil || !v.tabOff(i) {
+			n++
+		}
+	}
+	return n >= 2 && !v.inMode
 }
 
 func (vv *viewerView) measure(sw, sh int) (int, int) {
