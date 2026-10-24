@@ -2,7 +2,7 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.9.15
+## v0.4.20 — tdp v0.9.15
 
 - tdptest's line break check finds a `\n` drawn by its name wherever it is: in a list's cell or a value, on the
   cursor row, in an unfocused panel and under a popup, where the row is dimmed. It looked for the names' exact colour
