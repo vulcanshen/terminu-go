@@ -129,6 +129,16 @@ func TestCheckboxSelectAllInPlace(t *testing.T) {
 	}
 }
 
+// blockStart is the cell where a drawn row's first background starts.
+func blockStart(row string) int {
+	for _, c := range covCCells(row) {
+		if c.St.Bg.Set {
+			return c.Col
+		}
+	}
+	return -1
+}
+
 // colOf is the cell where s starts in the first line of lines holding it.
 func colOf(lines []string, s string) int {
 	for _, l := range lines {
@@ -165,6 +175,14 @@ func TestCheckboxSelectAllIndent(t *testing.T) {
 	if all, opt := colOf(lines, "Select all"), colOf(lines, "x11"); all < 0 || opt != all+2 {
 		t.Errorf("on a form Select all at %d, an option at %d", all, opt)
 	}
+	// The focus block of an option starts at its glyph, the indent outside.
+	ta.press("j")
+	if fv := ta.topView().(*formView); fv.focus.option != 1 {
+		t.Fatalf("focus on %d", fv.focus.option)
+	}
+	if blockStart(ta.rowWith("x11")) != colOf(strings.Split(ta.screenText(), "\n"), glyphUnchecked+" x11") {
+		t.Errorf("on a form the block does not start at the glyph: %q", ta.rowWith("x11"))
+	}
 	ta.covBCloseAll()
 
 	v := &Values{Fields: []*Field{{Label: "Notify", Options: []string{"errors", "success"}, Multi: true}}}
@@ -174,6 +192,11 @@ func TestCheckboxSelectAllIndent(t *testing.T) {
 	}
 	if all, opt := colOf(lines, "Select all"), colOf(lines, "success"); all < 0 || opt != all+2 {
 		t.Errorf("on a panel Select all at %d, an option at %d", all, opt)
+	}
+	v.Key("j", keyMsg("j"))
+	row := v.Draw(40, 3, true)[1]
+	if blockStart(row) != colOf([]string{StripStyles(row)}, glyphUnchecked+" errors") {
+		t.Errorf("on a panel the block does not start at the glyph: %q", row)
 	}
 
 	off := &FormField{Label: "Agent", Options: []string{"forward", "x11"}, Multi: true, OptionDisabled: func(int) bool { return true }}

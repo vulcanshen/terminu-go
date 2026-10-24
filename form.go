@@ -482,12 +482,13 @@ func (fv *formView) draw(w, h int, layer Color) []string {
 				}
 			}
 			for i := range f.Options {
-				opt := indent + fv.option(f, i)
+				// An option's block starts at its glyph, the indent outside it
+				// (components/dialog/form, focus).
 				if fv.focus == (formItem{itemField, f, i}) {
-					rows = append(rows, " "+lead(first && i == 0)+fv.block(opt, room+arrow, layer))
+					rows = append(rows, " "+lead(first && i == 0)+indent+fv.block(fv.option(f, i), room-Width(indent)+arrow, layer))
 					continue
 				}
-				rows = append(rows, " "+lead(first && i == 0)+Fit(opt, room)+pad)
+				rows = append(rows, " "+lead(first && i == 0)+indent+Fit(fv.option(f, i), room-Width(indent))+pad)
 			}
 		default:
 			value := fv.value(f)

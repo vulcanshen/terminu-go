@@ -200,19 +200,24 @@ func (v *Values) Draw(w, h int, focused bool) []string {
 			}
 			itemRow = append(itemRow, len(rows))
 			value := v.valueText(f, k)
+			ind := "" // an option under Select all, further in, outside the block
+			if f.hasAll() && k > 0 {
+				ind = optIndent
+			}
 			if idx == v.cursor && !f.disabled() {
 				fit := Fit
 				if f.Path {
 					fit = FitLeft
 				}
-				// A swatch keeps its colour on the block (components/color).
-				rows = append(rows, " "+lead+"  "+onBlock(fit(value, valW), On(Subtext1))+Fg(Subtext1).Render(glyphHard))
+				// A swatch keeps its colour on the block (components/color);
+				// an option's block starts at its glyph (dialog/form).
+				rows = append(rows, " "+lead+"  "+ind+onBlock(fit(value, valW-Width(ind)), On(Subtext1))+Fg(Subtext1).Render(glyphHard))
 			} else {
 				fit := Fit
 				if f.Path {
 					fit = FitLeft
 				}
-				rows = append(rows, " "+lead+"  "+fit(value, valW)+Repeat(" ", arrow))
+				rows = append(rows, " "+lead+"  "+ind+fit(value, valW-Width(ind))+Repeat(" ", arrow))
 			}
 			idx++
 		}
@@ -249,7 +254,7 @@ func (v *Values) valueText(f *Field, k int) string {
 		if k == 0 {
 			return selectAllText(f.allOn())
 		}
-		return optIndent + v.optionText(f, k-1) // the options under Select all, further in
+		return v.optionText(f, k-1) // the options under Select all, drawn further in
 	}
 	return v.optionText(f, k)
 }

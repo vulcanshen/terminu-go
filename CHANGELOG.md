@@ -2,6 +2,12 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.9.12
+
+- On a form and a value panel an option under `Select all` has its focus block start at its own glyph, the two
+  cells of indent outside it (components/dialog/form, focus; form-16), so the steps still show with the focus on it;
+  `Select all`'s block starts at the value's column as before, and a checkbox popup's cursor stays a whole row
+
 ## v0.4.14 — tdp v0.9.12
 
 - A checkbox group's options are two cells further in than its `Select all`, on a form, a value panel and in a
