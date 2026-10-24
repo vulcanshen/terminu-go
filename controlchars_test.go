@@ -250,3 +250,50 @@ func TestReadingContent(t *testing.T) {
 	ta.settle()
 	check("a viewer", ta.screenText(), strings.Join(ta.Frame(), "\n"))
 }
+
+// TestShowsLineBreak: the line break check finds a \n drawn by its name in a
+// list's cell and a panel's value, the cursor row, an unfocused panel and
+// under a popup, dimmed; not a backslash and an n typed as text, nor a
+// Mantle colour code (sshu, on v0.4.19).
+func TestShowsLineBreak(t *testing.T) {
+	found := func(lines []string) bool {
+		for _, l := range lines {
+			if showsLineBreak(l) {
+				return true
+			}
+		}
+		return false
+	}
+	ta := newTestApp(t)
+	if found(ta.Frame()) {
+		t.Fatal("a frame with no line break in it is taken for one")
+	}
+	ta.list.SetRows([]Row{{ID: "0", Cells: []string{"first", "0"}}, {ID: "1", Cells: []string{"line\nbreak", "1"}}})
+	if !found(ta.Frame()) {
+		t.Error("a list cell")
+	}
+	ta.press("j")
+	if !found(ta.Frame()) {
+		t.Error("the cursor row")
+	}
+	ta.press("Tab")
+	if !found(ta.Frame()) {
+		t.Error("an unfocused panel, dimmed")
+	}
+	ta.press("Space")
+	if !found(ta.Frame()) {
+		t.Error("under a popup, dimmed")
+	}
+	ta.press("Esc")
+	ta.list.SetRows([]Row{{ID: "0", Cells: []string{`line\nbreak`, "0"}}})
+	if found(ta.Frame()) {
+		t.Error("a backslash and an n as text are taken for a line break")
+	}
+	ta.values.Fields[0].Value = func() string { return "a\rb" }
+	if !found(ta.Frame()) {
+		t.Error("a value on a panel")
+	}
+	if showsLineBreak(Style{Fg: Blue, Bg: Mantle}.Render(`\n`)) {
+		t.Error("a 24 in a colour code is taken for the mark of names")
+	}
+}

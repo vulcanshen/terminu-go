@@ -19,8 +19,50 @@ import (
 var nameSGR = "\x1b[" + Fg(Red).sgr() + ";24m"
 
 // nameOnBlock is a name on a block: Red under Base, as a typing row's cursor
-// on a control character (components/input/README).
-var nameOnBlock = "\x1b[" + Style{Fg: Base, Bg: Red}.sgr() + "m"
+// on a control character (components/input/README); with the same mark as
+// nameSGR.
+var nameOnBlock = "\x1b[" + Style{Fg: Base, Bg: Red}.sgr() + ";24m"
+
+// nameMarked reports an SGR sequence carrying the names' mark, 24, as a
+// parameter of its own, not a colour's: so it is found on a dimmed row too,
+// where the colours were written again (tdptest's line break check).
+func nameMarked(seq string) bool {
+	params := strings.Split(strings.TrimSuffix(strings.TrimPrefix(seq, "\x1b["), "m"), ";")
+	for i := 0; i < len(params); i++ {
+		switch params[i] {
+		case "38", "48":
+			if i+1 < len(params) && params[i+1] == "2" {
+				i += 4
+			} else if i+1 < len(params) && params[i+1] == "5" {
+				i += 2
+			}
+		case "24":
+			return true
+		}
+	}
+	return false
+}
+
+// showsLineBreak reports a drawn row with a line break's name in it, \n or
+// \r drawn by its name in Red: in a name or a short text, dimmed or on a
+// block too.
+func showsLineBreak(row string) bool {
+	name, run := false, ""
+	found := false
+	walk(row, func(seq string, cells int) {
+		if cells == 0 && isSGR(seq) {
+			if name && (strings.HasPrefix(run, `\n`) || strings.HasPrefix(run, `\r`)) {
+				found = true
+			}
+			name, run = nameMarked(seq), ""
+			return
+		}
+		if name {
+			run += seq
+		}
+	})
+	return found || name && (strings.HasPrefix(run, `\n`) || strings.HasPrefix(run, `\r`))
+}
 
 // Escape is text as a name or a short text is drawn (components, control
 // characters): each control character (C0, DEL, C1), Tab, \n and ESC too,

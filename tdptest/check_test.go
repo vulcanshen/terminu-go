@@ -166,3 +166,25 @@ func TestDriverFindsLineBreaks(t *testing.T) {
 		t.Errorf("a Driver did not fail on a line break in a toast: %v\n%s", err, out)
 	}
 }
+
+// TestDriverFindsDimmedLineBreaks: the Driver finds a line break drawn by
+// its name in a list cell under a popup, dimmed (a child test process, which
+// must fail; sshu, on v0.4.19).
+func TestDriverFindsDimmedLineBreaks(t *testing.T) {
+	if os.Getenv("TDPTEST_CHILD") == "dimmed" {
+		ty := newTiny()
+		d := Start(t, ty.App, 80, 24)
+		d.Press("Space")
+		d.Do(func() tea.Cmd {
+			ty.list.SetRows([]terminu.Row{{ID: "1", Cells: []string{"first"}}, {ID: "2", Cells: []string{"line\nbreak"}}})
+			return nil
+		})
+		return
+	}
+	cmd := exec.Command(os.Args[0], "-test.run=^TestDriverFindsDimmedLineBreaks$")
+	cmd.Env = append(os.Environ(), "TDPTEST_CHILD=dimmed")
+	out, err := cmd.CombinedOutput()
+	if err == nil || !strings.Contains(string(out), "shows a line break by its name") {
+		t.Errorf("a Driver did not fail on a line break in a dimmed list: %v\n%s", err, out)
+	}
+}

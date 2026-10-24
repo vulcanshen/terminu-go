@@ -2,6 +2,13 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.9.15
+
+- tdptest's line break check finds a `\n` drawn by its name wherever it is: in a list's cell or a value, on the
+  cursor row, in an unfocused panel and under a popup, where the row is dimmed. It looked for the names' exact colour
+  codes, which dimming writes again, so it found them in toasts and error popups only (sshu, on v0.4.19). The names
+  carry their mark, the attribute `24`, on a block too
+
 ## v0.4.19 — tdp v0.9.15
 
 - tdptest: a Driver fails a test whose frames showed a line break by its name in Red (`\n`, `\r`) by default, in an

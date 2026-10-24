@@ -99,12 +99,5 @@ func init() {
 	}
 	testhook.Timers = func(app any) tea.Cmd { return app.(*App).sendTimers() }
 	testhook.Once = func() tea.Cmd { return once(nil) }
-	testhook.LineBreak = func(row string) bool {
-		for _, mark := range []string{nameSGR, nameOnBlock} {
-			if strings.Contains(row, mark+`\n`) || strings.Contains(row, mark+`\r`) {
-				return true
-			}
-		}
-		return false
-	}
+	testhook.LineBreak = showsLineBreak
 }
