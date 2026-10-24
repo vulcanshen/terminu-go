@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	tea "github.com/charmbracelet/bubbletea"
+
 	terminu "github.com/vulcanshen/terminu-go"
 )
 
@@ -115,5 +117,34 @@ func TestCheckTiny(t *testing.T) {
 	}
 	if len(homes) != want {
 		t.Errorf("%d launches, want %d: one for the least size, then each size with each icon width", len(homes), want)
+	}
+}
+
+// breakingApp is the small app with a line break in a toast of its own, at
+// start.
+func breakingApp() *terminu.App {
+	ty := newTiny()
+	ty.App.Start = func() tea.Cmd { return ty.App.Toast(terminu.Info, "Saved.\nIt takes effect now.") }
+	return ty.App
+}
+
+// TestCheckFindsLineBreaks: Check fails an app whose own text carries a line
+// break, drawn by its name in Red; it runs in a child test process, which
+// must fail (components-30; sshu SS43). An app saying its data is Tricky is
+// not failed for one.
+func TestCheckFindsLineBreaks(t *testing.T) {
+	if os.Getenv("TDPTEST_CHILD") == "breaking" {
+		Check(t, App{Name: "tiny", New: breakingApp})
+		return
+	}
+	cmd := exec.Command(os.Args[0], "-test.run=^TestCheckFindsLineBreaks$", "-test.short")
+	cmd.Env = append(os.Environ(), "TDPTEST_CHILD=breaking")
+	out, err := cmd.CombinedOutput()
+	if err == nil || !strings.Contains(string(out), "shows a line break by its name") {
+		t.Errorf("Check did not fail on a line break in a toast: %v\n%s", err, out)
+	}
+	d := Start(t, breakingApp(), 80, 24) // LineBreaks off by default
+	if !d.Has(`\n`) {
+		t.Error("the toast does not show the line break by its name")
 	}
 }

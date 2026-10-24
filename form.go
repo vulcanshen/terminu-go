@@ -728,7 +728,7 @@ func (fv *formView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 			label := it.field.Label
 			return true, a.open(&noteView{
 				glyph: fv.f.Glyph, title: Upper(label), name: label, known: true, enterCloses: true, onlyClose: true,
-				text: "Press [Enter] to edit " + label + ".", textStyle: Fg(Text),
+				text: []string{"Press [Enter] to edit " + label + "."}, textStyle: Fg(Text),
 				hint: []KeyHint{{"Enter|Esc", "close"}},
 			})
 		}

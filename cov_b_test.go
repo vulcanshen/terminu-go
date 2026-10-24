@@ -556,7 +556,7 @@ func TestM5WritingByPosition(t *testing.T) {
 	}
 	// Sentences: keys in square brackets, as written.
 	ta.press("Esc", "D", "Tab")
-	if tv, ok := ta.toast.view.(*toastView); !ok || !strings.Contains(tv.text, "[Esc]") {
+	if tv, ok := ta.toast.view.(*toastView); !ok || !strings.Contains(strings.Join(tv.text, " "), "[Esc]") {
 		t.Errorf("the lib's own sentence names its key in brackets: %+v", ta.toast.view)
 	}
 	ta.press("Esc", "Esc")

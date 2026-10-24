@@ -1,6 +1,6 @@
-# tdp v0.9.14 coverage
+# tdp v0.9.15 coverage
 
-tdp v0.9.14 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
+tdp v0.9.15 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
 （[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -250,6 +250,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | §大寫 | 要大寫：panel 膠囊與 tab、畫面 chip、popup 標題、表頭、清單的分組標題、一列一個值的 label、menu 與 key reference 的區塊標題；熱鍵標記裡的字母照原樣；名稱、路徑在標題與 hint 裡都照原樣（表單按鈕的 hint 只有動詞小寫：`Enter:export hosts.yaml`） | 每個畫面；畫面 chip `[t]ERMINAL`（小寫的熱鍵照原樣）；T terminal popup 的標題 `SESSION: shell`；D「Form: long」的 `EDIT: prod-db-01`；D「Form: with actions」的 `Export hosts.yaml` | `TestUppercaseWhereRequired`、`TestUppercaseKeepsHotkeyAndNames`、`TestPopupTitleSubject`、`TestFormButtonSubject` |
 | §大寫 | 不改：值、menu 的 label 與說明、hint 與 footer 的說明、按鍵名、模式名、app 的內容 | 同上 | `TestUppercaseLeavesContent` |
 | components §控制字元 | 名字與短字（表單與 panel 上的值、清單的格子與位置列、menu、popup 的標題、toast、confirm、error popup、選項、說明列、錯誤列、空狀態、statusbar、tab 的名稱、finder 的項目）裡每個控制字元，連 Tab、`\n`、顏色碼的 ESC，都畫成紅色的名字，不丟、不換成空白、不送給終端機；色塊上 Red 底 Base 字（lib：`Escape`；app 要上色的另外給 `Span`：`Row.Styled`、`Field.Styled`、`FormField.Styled`、`App.Status`） | 任何地方：展示場的資料沒有控制字元，靠測試 | `TestControlCharsNamesAndShortTexts`、`TestControlCharsOnABlock`、`TestSpansStyled`；tdptest 的 `TestTrickyValuesEverywhere` |
+| components §控制字元 | app 自己寫的字不帶換行字元：error popup 的訊息、toast 的字一列一列給（`Error`、`ErrorAbout`、`Toast` 收好幾個字串），每一列另起一列、太長折行、列跟列之間不空列；元素裡的 `\n` 是外面來的，照舊畫成紅色的名字；tdptest 沒標 `Tricky` 時，畫面上有紅色的 `\n` 就失敗（`Driver.LineBreaks`）（components-30、31，sshu 的 SS43；components-32 是 app 的事） | D「Error popup: long」 | `TestMessageRows`、tdptest 的 `TestCheckFindsLineBreaks` |
 | components §控制字元 | 拿來讀的內容（viewer、panel 上的 log、檔案預覽、finder 的預覽）照終端機的樣子畫，見 note 的「viewer 裡的 Tab 與控制字元」；app 自己畫的 body 用 `Reading` | P `[2] LOG`（彩色的等級） | `TestReadingContent`、`TestReadingForAppBodies` |
 | components §控制字元 | 名字與短字的例外：app 標成「一行文字」的清單欄（原始碼、log 的一行）裡，Tab 畫成 `input_tab_width` 格空白，其他控制字元照舊畫成紅色的名字（lib：`Column.Line`，`Styled` 的字也一樣） | I `[2] FILES` 的 `Lines` 分頁：`main.go` 一行一列，`Text` 欄的縮排 | `TestControlCharsLineColumn` |
 

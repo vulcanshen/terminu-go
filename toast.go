@@ -37,7 +37,7 @@ func (k ToastKind) duration() time.Duration {
 // nor is dimmed, and every key but Esc goes through it.
 type toastView struct {
 	kind  ToastKind
-	text  string
+	text  []string // its rows, each folded on its own
 	lines []string
 	id    int
 	// most is the app's cap on its lines (App.ToastLines), 0 for none.
@@ -50,9 +50,17 @@ func (t *toastView) hint() []KeyHint { return []KeyHint{{"Esc", "close"}} }
 
 func (t *toastView) measure(sw, sh int) (int, int) {
 	most := max(min(sw-2, 120), 1)
-	text := Escape(t.text) // a short text (components, control characters)
-	w := min(max(Width(text)+4, Width(titleCapsule(t.kind.glyph(), t.kind.title(), Base, 1<<20))+4, hintWidth(t.hint())+6), most)
-	lines := Wrap(text, w-4)
+	text := make([]string, len(t.text))
+	widest := 0
+	for i, s := range t.text {
+		text[i] = Escape(s) // a short text (components, control characters)
+		widest = max(widest, Width(text[i]))
+	}
+	w := min(max(widest+4, Width(titleCapsule(t.kind.glyph(), t.kind.title(), Base, 1<<20))+4, hintWidth(t.hint())+6), most)
+	var lines []string
+	for _, s := range text {
+		lines = append(lines, Wrap(s, w-4)...)
+	}
 	// As many lines as the app allows, and as fit above the bottom two rows;
 	// the last one kept ends in "…".
 	n := len(lines)

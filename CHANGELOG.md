@@ -2,6 +2,17 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.9.15
+
+- An error popup's message and a toast's text come a row at a time (components, control characters; sshu SS43):
+  `Error(title, message...)`, `ErrorAbout(title, subject, message...)`, `Toast(kind, text...)`, each string a row
+  of its own, folded when too long, no blank row between; calls of one string compile as they did. The app's own
+  text carries no line break, so a `\n` on the screen is from outside and stays its name in Red. The App Log has
+  the rows on one line
+- tdptest: `Driver.LineBreaks` fails a frame showing a line break by its name in Red (`\n`, `\r`); `Check` sets it
+  as `ColourCodes`, but when the `App` says its data is `Tricky`; an app's own tests may set it
+- The showcase's long error popup gives its rows one by one
+
 ## v0.4.17 — tdp v0.9.14
 
 - Where `h|l` switch tabs the lib writes `h|l:tab` in the hint, the app giving nothing (components/layout/panel,

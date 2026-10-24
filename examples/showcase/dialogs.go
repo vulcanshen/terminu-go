@@ -155,11 +155,13 @@ func (ds *dialogsScreen) scenarios() []scenario {
 			return a.Error("Rename failed", "assets.png could not be renamed: a file called backgrounds.png is already there.")
 		}},
 		{"Error popup: long", "note", "a message longer than the popup: [j]|[k] scroll it", func() tea.Cmd {
-			msg := "The deploy of api to prod failed: 3 of 5 pods did not become ready. The last error from each:"
+			// A row each, no line break in the app's own text (components,
+			// control characters).
+			msg := []string{"The deploy of api to prod failed: 3 of 5 pods did not become ready. The last error from each:"}
 			for i := range 40 {
-				msg += fmt.Sprintf("\napi-7d4f-%02d: readiness probe failed: GET /healthz: dial tcp 10.244.1.%d:8080: connect: connection refused", i+1, 17+i)
+				msg = append(msg, fmt.Sprintf("api-7d4f-%02d: readiness probe failed: GET /healthz: dial tcp 10.244.1.%d:8080: connect: connection refused", i+1, 17+i))
 			}
-			return a.Error("Deploy failed", msg)
+			return a.Error("Deploy failed", msg...)
 		}},
 		{"Popup: the app’s own", "app’s own", "the app draws the inside, the lib the frame: draw on the grid, [Tab] to Save; Esc and Ctrl-C say when changed", ds.draw},
 		{"Quit: the app’s own flow", "menu", "the next [q] opens a menu of ways to leave; Ctrl-C again leaves at once", ds.quitFlow},

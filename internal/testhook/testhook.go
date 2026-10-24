@@ -51,4 +51,7 @@ var (
 	// Once is one of the lib's timers that run once, sent by the app and the
 	// lib both: it comes back at once when its timer does.
 	Once func() tea.Cmd
+	// LineBreak reports a drawn row showing a line break by its name in Red
+	// (\n, \r): in a name or a short text.
+	LineBreak func(row string) bool
 )

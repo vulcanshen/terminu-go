@@ -207,7 +207,7 @@ func TestFormActionRun(t *testing.T) {
 	// Success or Info is the app's (components/dialog/toast, toast-16).
 	b.res = FormResult{Toast: "Tested web-01", Info: true}
 	ta.deliver(ta.press("Enter"))
-	if tv := ta.toast.view.(*toastView); tv.text != "Tested web-01" || tv.kind != Info {
+	if tv := ta.toast.view.(*toastView); strings.Join(tv.text, " ") != "Tested web-01" || tv.kind != Info {
 		t.Errorf("an Info toast for a thing done: %q %v", tv.text, tv.kind)
 	}
 	if len(fv.errs) != 0 || strings.Contains(ta.screenText(), "Host is required") {

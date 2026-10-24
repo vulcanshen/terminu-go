@@ -695,9 +695,12 @@ func (a *App) relayout() {
 }
 
 // Toast shows a short message from the bottom (components/dialog/toast); a
-// second one replaces the first and starts its time again.
-func (a *App) Toast(kind ToastKind, text string) tea.Cmd {
-	a.Log(kind, text) // every toast, the same words (components/dialog/note, App Log)
+// second one replaces the first and starts its time again. Each string of
+// text is a row of its own, folded when too long: the app's own text has no
+// line break in it, so a \n on the screen is from outside, drawn by its
+// name (components, control characters).
+func (a *App) Toast(kind ToastKind, text ...string) tea.Cmd {
+	a.Log(kind, strings.Join(text, " ")) // every toast, the same words (components/dialog/note, App Log)
 	a.toastSeq++
 	v := &toastView{kind: kind, text: text, id: a.toastSeq, most: a.ToastLines}
 	if a.toast != nil && !a.toast.closing {
@@ -726,14 +729,17 @@ func (a *App) Confirm(ask Ask, accept func() tea.Cmd) tea.Cmd {
 }
 
 // Error opens an error popup over the top popup (components/dialog/note): an
-// action failed.
-func (a *App) Error(title, message string) tea.Cmd { return a.ErrorAbout(title, "", message) }
+// action failed. Each string of message is a row of its own, folded when too
+// long, as Toast's (components, control characters).
+func (a *App) Error(title string, message ...string) tea.Cmd {
+	return a.ErrorAbout(title, "", message...)
+}
 
 // ErrorAbout is Error naming what failed: subject goes after ": " in the
 // title, kept as it is, RENAME FAILED: notes.md (components/dialog/note).
-func (a *App) ErrorAbout(title, subject, message string) tea.Cmd {
-	a.Log(Error, errorText(title, subject, message)) // an error is logged too (Rules F5)
-	return a.open(errorPopup(title, subject, message))
+func (a *App) ErrorAbout(title, subject string, message ...string) tea.Cmd {
+	a.Log(Error, errorText(title, subject, strings.Join(message, " "))) // an error is logged too (Rules F5)
+	return a.open(errorPopup(title, subject, message...))
 }
 
 // Menu opens a menu of sections (Rules M8); running a row closes the menu

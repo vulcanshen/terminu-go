@@ -73,7 +73,7 @@ func TestViewerSelectsByDefault(t *testing.T) {
 	if got := string(takeClipboard()); got != "\x1b]52;c;a2V5\a" { // "key"
 		t.Errorf("on the clipboard: %q", got)
 	}
-	if ta.toast == nil || ta.toast.view.(*toastView).kind != Success || ta.toast.view.(*toastView).text != "Copied" {
+	if ta.toast == nil || ta.toast.view.(*toastView).kind != Success || strings.Join(ta.toast.view.(*toastView).text, " ") != "Copied" {
 		t.Error("a Success toast says it is copied")
 	}
 }
@@ -548,5 +548,44 @@ func TestPopupSubjectErrorMenu(t *testing.T) {
 	ta.settle()
 	if text := ta.screenText(); !strings.Contains(text, "OPEN WITH: notes.md") {
 		t.Errorf("menu title:\n%s", text)
+	}
+}
+
+// TestMessageRows: an error popup's message and a toast's text come a row at
+// a time: each on a row of its own, folded when too long, no blank row
+// between; a \n inside a row is from outside and drawn by its name in Red
+// (components-31; components, control characters).
+func TestMessageRows(t *testing.T) {
+	ta := newTestApp(t)
+	ta.Error("Deploy failed", "Stopped.", "api-7d4f-01: readiness probe failed")
+	ta.settle()
+	text := ta.screenText()
+	lines := strings.Split(text, "\n")
+	first, second := -1, -1
+	for i, l := range lines {
+		if strings.Contains(l, "Stopped.") {
+			first = i
+		}
+		if strings.Contains(l, "api-7d4f-01") {
+			second = i
+		}
+	}
+	if first < 0 || second != first+1 {
+		t.Errorf("the rows of an error popup: %d, %d\n%s", first, second, text)
+	}
+	ta.press("Esc")
+	ta.Toast(Info, "Saved.", "It takes effect now.")
+	ta.settle()
+	text = ta.screenText()
+	if r1, r2 := strings.Index(text, "Saved."), strings.Index(text, "It takes effect now."); r1 < 0 || r2 < 0 ||
+		strings.Count(text[r1:r2], "\n") != 1 {
+		t.Errorf("the rows of a toast:\n%s", text)
+	}
+	if !strings.Contains(strings.Join(ta.logs.lines(), "\n"), "Saved. It takes effect now.") {
+		t.Error("the App Log does not have the toast on one line")
+	}
+	ta.Toast(Info, "a\nb")
+	if !strings.Contains(strings.Join(ta.Frame(), "\n"), nameSGR+`\n`) {
+		t.Error("a \\n inside a row is not drawn by its name")
 	}
 }

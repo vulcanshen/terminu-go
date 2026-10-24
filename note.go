@@ -9,10 +9,11 @@ import (
 type noteView struct {
 	glyph, title string
 	lines        []string // drawn lines, already as wide as they will be
-	// text, when set, is a paragraph in textStyle the lines are folded from
-	// at the width it gets, each time it is measured: too long, it folds,
-	// never cut (an error popup, the typing note; components/dialog/note).
-	text      string
+	// text, when set, is the paragraphs in textStyle the lines are folded
+	// from at the width it gets, each time it is measured, each on a row of
+	// its own: too long, it folds, never cut (an error popup, the typing
+	// note; components/dialog/note).
+	text      []string
 	textStyle Style
 	// build, when set, makes the lines for a room of so many cells, each
 	// time it is measured: a key reference whose "what each row is" section
@@ -37,10 +38,16 @@ func (n *noteView) measure(sw, sh int) (int, int) {
 	if n.build != nil {
 		n.lines = n.build(1 << 20) // as wide as they are, for the width
 	}
-	if n.text != "" {
+	if len(n.text) > 0 {
+		widest := 0
+		for _, p := range n.text {
+			widest = max(widest, Width(p))
+		}
 		n.lines = nil
-		for _, l := range Wrap(n.text, max(min(max(Width(n.text), 20), w-4), 1)) {
-			n.lines = append(n.lines, n.textStyle.Render(l))
+		for _, p := range n.text {
+			for _, l := range Wrap(p, max(min(max(widest, 20), w-4), 1)) {
+				n.lines = append(n.lines, n.textStyle.Render(l))
+			}
 		}
 	}
 	if n.known {
@@ -204,10 +211,14 @@ func keyReference(title string, sections []refSection) *noteView {
 
 // errorPopup is a popup's action failing (components/dialog/note, error
 // popup): Red frame and text, the fire glyph, Enter or Esc to close.
-func errorPopup(title, subject, message string) *noteView {
+func errorPopup(title, subject string, message ...string) *noteView {
 	red := Red
+	text := make([]string, len(message))
+	for i, m := range message {
+		text[i] = Escape(m) // a short text: a \n from outside by its name (components, control characters)
+	}
 	return &noteView{
-		glyph: glyphError, title: popupTitle(title, subject), text: Escape(message), textStyle: Fg(Red), known: true, color: &red, enterCloses: true,
+		glyph: glyphError, title: popupTitle(title, subject), text: text, textStyle: Fg(Red), known: true, color: &red, enterCloses: true,
 		hint: []KeyHint{{"Enter|Esc", "close"}}, name: title,
 	}
 }

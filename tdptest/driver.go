@@ -51,6 +51,12 @@ type Driver struct {
 	// FormField.Styled). Check sets it, but when its App says the seeded data
 	// is Tricky; a test feeding Tricky leaves it off.
 	ColourCodes bool
+	// LineBreaks, when set, fails a frame that shows a line break by its
+	// name in Red (\n): the app's own text has none, it gives its rows one
+	// by one (Error, Toast, Ask.Details), so with no tricky data one on the
+	// screen is the app's (components, control characters). Check sets it
+	// as ColourCodes; an app's own tests may set it too.
+	LineBreaks bool
 
 	t      testing.TB
 	app    *terminu.App
@@ -69,6 +75,8 @@ type Driver struct {
 	notes  []string
 	copied []string
 	broke  int
+	// broken is how many frames showed a line break's name (LineBreaks).
+	breaks int
 	// coloured is how many frames showed a colour code as text (ColourCodes).
 	coloured int
 }
@@ -517,6 +525,15 @@ func (d *Driver) check() {
 			if code := colourText.FindString(terminu.StripStyles(l)); code != "" {
 				d.coloured++
 				d.t.Errorf("tdptest: row %d shows the colour code %s as text: a colour of the app's own goes in spans (Row.Styled, Field.Styled, FormField.Styled)%s", i+1, code, d.where())
+				break
+			}
+		}
+	}
+	if d.LineBreaks && d.breaks < 3 {
+		for i, l := range lines {
+			if testhook.LineBreak(l) {
+				d.breaks++
+				d.t.Errorf("tdptest: row %d shows a line break by its name, \\n in Red: the app's own text has none; give its rows one by one (Error, Toast, Ask.Details)%s", i+1, d.where())
 				break
 			}
 		}
