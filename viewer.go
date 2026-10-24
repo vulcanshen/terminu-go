@@ -176,11 +176,27 @@ type viewerView struct {
 	labelled
 }
 
-func (vv *viewerView) modeName() string {
-	if vv.v.inMode {
-		return cmpOr(vv.v.Select.Name, "Select")
+func (vv *viewerView) modeName() string { return vv.v.modeName() }
+
+// modeName is the selection mode's name, its layers joined with ">" once
+// selecting (Visual>select; components/layout/panel, the frame); "" out of
+// it.
+func (v *Viewer) modeName() string {
+	switch {
+	case v.inMode && v.selecting:
+		return cmpOr(v.Select.Name, "Select") + ">select"
+	case v.inMode:
+		return cmpOr(v.Select.Name, "Select")
 	}
 	return ""
+}
+
+// escDesc is what Esc does in the selection mode: a layer back, or out.
+func (v *Viewer) escDesc() string {
+	if v.selecting {
+		return "unselect, back to " + cmpOr(v.Select.Name, "Select")
+	}
+	return "leave " + cmpOr(v.Select.Name, "Select")
 }
 
 func (vv *viewerView) title() string {
@@ -195,7 +211,7 @@ func (vv *viewerView) hint() []KeyHint {
 	v := vv.v
 	switch {
 	case v.selecting:
-		return []KeyHint{{v.Select.copyKey(), "copy"}, {"Esc", "cancel"}}
+		return []KeyHint{{v.Select.copyKey(), "copy"}, {"Esc", "unselect"}}
 	case v.inMode:
 		return []KeyHint{{v.Select.Key, "select"}, {"Esc", "cancel"}}
 	}
@@ -477,7 +493,7 @@ func (vv *viewerView) draw(w, h int, layer Color) []string {
 		box.color = Yellow // a mode marks its frame: the mode colour and its name (Rules K11)
 	}
 	lab := vv.labelFor(vv.modeName())
-	box.mode, box.closed = lab.name, 1-lab.shown
+	box.mode, box.closed, box.modeW = lab.name, 1-lab.shown, lab.room
 	return box.draw(w, body)
 }
 
@@ -802,7 +818,13 @@ func (vv *viewerView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 		case "Space": // the mode's Space menu (Rules K11)
 			return true, a.selectModeMenu(v, func(k string) tea.Cmd { _, cmd := vv.key(a, k, tea.KeyMsg{}); return cmd })
 		case "Esc":
-			v.inMode, v.selecting = false, false // at any step: the whole mode, no copy
+			// A layer at a time, no copy: selecting, the range goes and the
+			// cursor stays; else the whole mode (Rules K11).
+			if v.selecting {
+				v.selecting = false
+			} else {
+				v.inMode = false
+			}
 		case v.Select.Key:
 			if !v.selecting { // pressed again once selecting, it does nothing
 				v.selecting = true
@@ -907,7 +929,7 @@ func (vv *viewerView) keyRef() []refSection {
 			first = KeyRow{Key: v.Select.copyKey(), Desc: "copy the selection and leave"}
 		}
 		return []refSection{
-			{rows: []KeyRow{first, {Key: "Esc", Desc: "leave " + cmpOr(v.Select.Name, "Select")}}},
+			{rows: []KeyRow{first, {Key: "Esc", Desc: v.escDesc()}}},
 			{title: "move", rows: move},
 		}
 	}

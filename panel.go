@@ -275,7 +275,7 @@ func (p *Panel) draw(n, w, h int, focused bool) []string {
 	mode := lab.name // still there while it closes
 	b := box{width: w, lines: lines, color: color, hintKey: Fg(Blue)}
 	// A line segment stays before the top-right corner (or the mode's name).
-	b.head = drawChain(p.capsules(n), color, max(w-3-modeRoom(mode), 1))
+	b.head = drawChain(p.capsules(n), color, max(w-3-modeRoom(mode, lab.room), 1))
 	if p.Loading {
 		b.after = Fg(color).Render(loadingFrame()) // the frame's colour (components/layout/popup)
 	}
@@ -321,17 +321,18 @@ func (p *Panel) modeName() string {
 		return p.mode.Name
 	}
 	if t, ok := p.Body.(*Terminal); ok {
-		return t.mode
+		return t.modeName()
 	}
 	return ""
 }
 
-// modeRoom is how much of the top border a mode name takes.
-func modeRoom(mode string) int {
+// modeRoom is how much of the top border a mode name takes, in room cells
+// of name at least (the longest name while a layer grows).
+func modeRoom(mode string, room int) int {
 	if mode == "" {
 		return 0
 	}
-	return Width(mode) + 3
+	return max(Width(mode), room) + 3
 }
 
 func blankLines(w, h int) []string {

@@ -131,6 +131,7 @@ type popupBox struct {
 	loading bool
 	mode    string
 	closed  float64 // how far the mode name is closed (box.modeClosed)
+	modeW   int     // the cells the title leaves the mode name: the longest one's while a layer moves
 	hint    []KeyHint
 	scroll  string
 	bare    bool // no padding at all (terminal)
@@ -138,7 +139,7 @@ type popupBox struct {
 
 func (p popupBox) draw(w int, body []string) []string {
 	b := box{width: w, lines: heavyLines, color: p.color, hintKey: Fg(Blue), mode: p.mode, modeClosed: p.closed}
-	room := w - 4 - modeRoom(p.mode)
+	room := w - 4 - modeRoom(p.mode, p.modeW)
 	b.title = titleCapsule(p.glyph, p.title, p.color, room)
 	if len(p.tabs) > 0 {
 		// The tabs follow one line segment after the title (layout/popup).

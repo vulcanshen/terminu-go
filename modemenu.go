@@ -104,8 +104,12 @@ func (a *App) selectModeMenu(v *Viewer, press func(key string) tea.Cmd) tea.Cmd 
 			}
 		}
 	}
-	keys = append(keys, leaveRow("cancel", do("Esc")))
-	return a.modeMenu(a.modeTitle(), cmpOr(v.Select.Name, "Select"), item, keys)
+	verb := "cancel" // the hint's Esc
+	if v.selecting {
+		verb = "unselect"
+	}
+	keys = append(keys, leaveRow(verb, do("Esc")))
+	return a.modeMenu(a.modeTitle(), v.modeName(), item, keys)
 }
 
 // reorderModeMenu is the Space menu of a reorder's Drag mode.

@@ -276,7 +276,7 @@ func TestNoteHotkeysAndMode(t *testing.T) {
 	if !v.selecting {
 		t.Fatal("the second v did not start the selection")
 	}
-	if h := ta.topView().(*viewerView).hint(); fmt.Sprint(h) != "[{y copy} {Esc cancel}]" {
+	if h := ta.topView().(*viewerView).hint(); fmt.Sprint(h) != "[{y copy} {Esc unselect}]" {
 		t.Errorf("hint while selecting: %v", h)
 	}
 	ta.press("?")
@@ -297,7 +297,13 @@ func TestNoteHotkeysAndMode(t *testing.T) {
 	if got != "Pod" {
 		t.Errorf("the selection starts at the cursor: %q", got)
 	}
-	ta.press("v", "v", "Esc")
+	// Esc a layer at a time: selecting, back to Visual, the cursor where it
+	// is; then out of the whole mode, and only the mode (note-37, K11-3).
+	ta.press("v", "l", "v", "l", "Esc")
+	if !v.inMode || v.selecting || v.col != 2 || ta.top() == nil {
+		t.Errorf("Esc while selecting: in the mode %v, selecting %v, cursor at %d", v.inMode, v.selecting, v.col)
+	}
+	ta.press("Esc")
 	if v.inMode || v.selecting || ta.top() == nil {
 		t.Error("Esc leaves the whole mode and only the mode")
 	}

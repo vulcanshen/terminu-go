@@ -2,6 +2,16 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.9.13
+
+- A mode of several layers joins them with `>` (components/layout/panel, the frame): once selecting, a viewer's
+  selection mode is `Visual>select`, in a popup and on a PTY too. `Esc` goes a layer back: selecting, the range
+  goes and the cursor stays, back to `Visual`; in `Visual`, out of the mode; neither copies (Rules K11). Selecting,
+  the hint is `y:copy Esc:unselect` and the Space menu's `VISUAL>SELECT MODE` leaves with `[Esc] Unselect`
+- A layer more grows from the name's tail a character every 32ms, the right end still, a layer less goes back the
+  same way, a switch halfway turns where it is, and leaving the whole mode from a layer (`y`) closes the whole name
+  from its middle; the title keeps the longest name's room all the while
+
 ## v0.4.15 — tdp v0.9.12
 
 - On a form and a value panel an option under `Select all` has its focus block start at its own glyph, the two

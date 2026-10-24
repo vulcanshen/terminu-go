@@ -273,7 +273,7 @@ func (t *Terminal) hint() []KeyHint {
 	case t.mode == historyMode:
 		return []KeyHint{{"?", "help"}, {"j|k", "scroll"}, {"Esc", "live"}}
 	case t.mode == visualMode && t.sel.selecting:
-		return []KeyHint{{"y", "copy"}, {"Esc", "cancel"}}
+		return []KeyHint{{"y", "copy"}, {"Esc", "unselect"}}
 	case t.mode == visualMode:
 		return []KeyHint{{"v", "select"}, {"Esc", "cancel"}}
 	}
@@ -389,7 +389,7 @@ func (t *Terminal) modeKey(a *App, key string) (cmd tea.Cmd, ok bool) {
 	if key == "?" {
 		return a.open(t.modeRef()), true
 	}
-	if key == "Esc" {
+	if key == "Esc" && !(t.mode == visualMode && t.sel.selecting) { // selecting: a layer back, below
 		t.leaveMode()
 		return nil, true
 	}
@@ -416,7 +416,7 @@ func (t *Terminal) modeKey(a *App, key string) (cmd tea.Cmd, ok bool) {
 		t.back = min(max(t.back, 0), most)
 		return nil, true
 	}
-	if key != "v" && key != "y" && !isMoveKey(key) {
+	if key != "v" && key != "y" && key != "Esc" && !isMoveKey(key) {
 		return nil, false
 	}
 	_, cmd = (&viewerView{v: t.sel}).key(a, key, tea.KeyMsg{})
@@ -661,7 +661,16 @@ type termView struct {
 	labelled
 }
 
-func (tv *termView) modeName() string { return tv.t.mode }
+func (tv *termView) modeName() string { return tv.t.modeName() }
+
+// modeName is the mode the terminal is in, its layers joined with ">"
+// (Visual>select).
+func (t *Terminal) modeName() string {
+	if t.mode == visualMode && t.sel != nil {
+		return t.sel.modeName()
+	}
+	return t.mode
+}
 
 // topRows are the rows a terminal popup leaves above it: the screen chips
 // and their divider, or the statusbar (Rules F7, the terminal exception).
@@ -690,7 +699,7 @@ func (tv *termView) draw(w, h int, layer Color) []string {
 		box.color = Yellow // a mode marks its frame (Rules K11)
 	}
 	lab := tv.labelFor(tv.modeName())
-	box.mode, box.closed = lab.name, 1-lab.shown
+	box.mode, box.closed, box.modeW = lab.name, 1-lab.shown, lab.room
 	return box.draw(w, body)
 }
 

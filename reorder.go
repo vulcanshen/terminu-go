@@ -125,7 +125,7 @@ func (rv *reorderView) draw(w, h int, layer Color) []string {
 		box.color = Yellow // the Drag mode marks its frame: the mode colour and its name (Rules K11)
 	}
 	lab := rv.labelFor(rv.modeName())
-	box.mode, box.closed = lab.name, 1-lab.shown
+	box.mode, box.closed, box.modeW = lab.name, 1-lab.shown, lab.room
 	return box.draw(w, body)
 }
 

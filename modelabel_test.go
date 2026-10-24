@@ -86,3 +86,140 @@ func TestModeLabelFrames(t *testing.T) {
 		}
 	}
 }
+
+// TestModeLabelLayers: a layer more grows from the name's tail a character
+// every 32ms, the right end and the title still; a layer less goes back the
+// same way; a switch halfway turns it; y leaving the whole mode closes the
+// whole name from its middle (panel-149, panel-150; note-34).
+func TestModeLabelLayers(t *testing.T) {
+	ta, clk := logApp(t)
+	ta.Viewer(&Viewer{Title: "Log", Lines: []string{"one two three"}})
+	ta.settle()
+	label := func() (string, int) {
+		t.Helper()
+		for _, l := range strings.Split(ta.screenText(), "\n") {
+			if i, j := strings.Index(l, "┫"), strings.Index(l, "┣"); i >= 0 && j > i {
+				return l[i+len("┫") : j], Width(l[:j])
+			}
+		}
+		return "", -1
+	}
+	title := func() int { return colOf(strings.Split(ta.screenText(), "\n"), "LOG") }
+	step := func(d time.Duration, want string) {
+		t.Helper()
+		clk.t = clk.t.Add(d)
+		if got, _ := label(); got != want {
+			t.Errorf("after %v: %q, want %q", d, got, want)
+		}
+	}
+	ta.Update2(keyMsg("v"))
+	step(6*frameTime, "Visual")
+	ta.Update(labelMsg{})
+	_, right := label()
+	head := title()
+	ta.Update2(keyMsg("v")) // a layer more
+	step(0, "Visual")
+	step(frameTime, "Visual>")
+	step(frameTime, "Visual>s")
+	if _, r := label(); r != right || title() != head {
+		t.Errorf("the right end moved %d to %d, or the title %d to %d", right, r, head, title())
+	}
+	ta.Update2(keyMsg("Esc")) // halfway: turns where it is
+	step(frameTime, "Visual>")
+	ta.Update2(keyMsg("v")) // and turns again
+	step(frameTime, "Visual>s")
+	step(6*frameTime, "Visual>select")
+	ta.Update(labelMsg{})
+	if text := ta.screenText(); !strings.Contains(text, "y:copy Esc:unselect") {
+		t.Errorf("selecting, the hint:\n%s", text)
+	}
+	ta.Update2(keyMsg("Esc")) // a layer less: from the tail
+	step(frameTime, "Visual>selec")
+	step(6*frameTime, "Visual")
+	ta.Update(labelMsg{})
+	if _, r := label(); r != right {
+		t.Errorf("back to Visual the right end is at %d, was %d", r, right)
+	}
+	ta.Update2(keyMsg("v"))
+	clk.t = clk.t.Add(7 * frameTime)
+	ta.Update(labelMsg{})
+	ta.Update2(keyMsg("y")) // out of the whole mode from a layer: closes from the middle
+	step(0, "Visual>select")
+	clk.t = clk.t.Add(2 * frameTime) // two characters off, one each end: from the tail it would be Visual>sele
+	if got, _ := label(); got != "isual>selec" {
+		t.Errorf("leaving with y does not close from the middle: %q", got)
+	}
+	takeClipboard()
+}
+
+// TestModeMenuLayers: the selection mode's Space menu once selecting names
+// the whole mode, VISUAL>SELECT MODE, and leaves with [Esc] Unselect.
+func TestModeMenuLayers(t *testing.T) {
+	ta := newTestApp(t)
+	ta.Viewer(&Viewer{Title: "Log", Lines: []string{"one two"}})
+	ta.settle()
+	ta.press("v", "v", "Space")
+	if text := ta.screenText(); !strings.Contains(text, "VISUAL>SELECT MODE") || !strings.Contains(text, "[Esc] Unselect") {
+		t.Errorf("the menu once selecting:\n%s", text)
+	}
+}
+
+// TestModeLabelLayersRoom: while a layer grows the title keeps the longest
+// name's room, so a long title is cut the same all the while; y halfway
+// through closes from the middle what is shown (panel-150).
+func TestModeLabelLayersRoom(t *testing.T) {
+	ta, clk := logApp(t)
+	ta.Viewer(&Viewer{Title: strings.Repeat("long title ", 20), Lines: []string{"one two three"}})
+	ta.settle()
+	title := func() string {
+		for _, l := range strings.Split(ta.screenText(), "\n") {
+			if i := strings.Index(l, glyphRoundRight); i >= 0 && strings.Contains(l, "LONG") {
+				return l[:i]
+			}
+		}
+		return ""
+	}
+	ta.Update2(keyMsg("v"))
+	clk.t = clk.t.Add(6 * frameTime)
+	ta.Update(labelMsg{})
+	ta.Update2(keyMsg("v"))
+	first := title()
+	for range 7 {
+		clk.t = clk.t.Add(frameTime)
+		if got := title(); got != first {
+			t.Fatalf("the title moved while the layer grew:\n%q\n%q", first, got)
+		}
+	}
+	ta.Update(labelMsg{})
+	ta.Update2(keyMsg("Esc"))
+	clk.t = clk.t.Add(7 * frameTime)
+	ta.Update(labelMsg{})
+	ta.Update2(keyMsg("v"))
+	clk.t = clk.t.Add(2 * frameTime) // Visual>s, growing
+	ta.Update2(keyMsg("y"))
+	clk.t = clk.t.Add(2 * frameTime)
+	if !strings.Contains(ta.screenText(), "┫isual>┣") {
+		t.Errorf("y while growing does not close from the middle:\n%s", ta.screenText())
+	}
+	takeClipboard()
+}
+
+// TestTerminalSelectEscLayer: on a PTY too Esc goes a layer back: selecting,
+// back to Visual; then out (K11-3).
+func TestTerminalSelectEscLayer(t *testing.T) {
+	ta, term, _ := termWithHistory(t)
+	ta.Update(altV)
+	ta.settle()
+	ta.press("v")
+	if term.modeName() != "Visual>select" {
+		t.Fatalf("selecting on a PTY: %q", term.modeName())
+	}
+	ta.press("Esc")
+	if term.Mode() != "Visual" || term.sel.selecting {
+		t.Errorf("Esc while selecting: %q, selecting %v", term.Mode(), term.sel.selecting)
+	}
+	ta.press("Esc")
+	if term.Mode() != "" {
+		t.Errorf("Esc in Visual: still %q", term.Mode())
+	}
+}
