@@ -128,3 +128,65 @@ func TestCheckboxSelectAllInPlace(t *testing.T) {
 		t.Error("an option unticked, Select all stays ticked on the panel")
 	}
 }
+
+// colOf is the cell where s starts in the first line of lines holding it.
+func colOf(lines []string, s string) int {
+	for _, l := range lines {
+		if i := strings.Index(l, s); i >= 0 {
+			return Width(l[:i])
+		}
+	}
+	return -1
+}
+
+// TestCheckboxSelectAllIndent: the options are two cells further in than
+// Select all, on a form, a value panel and in a checkbox popup, where they
+// stay so while filtering; with every option disabled Select all is too
+// (checkbox-31, checkbox-32, form-14).
+func TestCheckboxSelectAllIndent(t *testing.T) {
+	ta := newTestApp(t)
+	ta.Checks(Checks{Title: "Namespaces", Options: []string{"default", "kube-system"}})
+	ta.settle()
+	lines := strings.Split(ta.screenText(), "\n")
+	all, opt := colOf(lines, "Select all"), colOf(lines, "kube-system")
+	if all < 0 || opt != all+2 {
+		t.Errorf("in the popup Select all at %d, an option at %d", all, opt)
+	}
+	ta.press("Tab", "k", "u")
+	if got := colOf(strings.Split(ta.screenText(), "\n"), "kube-system"); got != opt {
+		t.Errorf("filtering moved the option from %d to %d", opt, got)
+	}
+	ta.covBCloseAll()
+
+	agent := &FormField{Label: "Agent", Options: []string{"forward", "x11"}, Multi: true}
+	ta.Form(&Form{Title: "Host", Fields: []*FormField{agent}, Submit: func() (tea.Cmd, error) { return nil, nil }})
+	ta.settle()
+	lines = strings.Split(ta.screenText(), "\n")
+	if all, opt := colOf(lines, "Select all"), colOf(lines, "x11"); all < 0 || opt != all+2 {
+		t.Errorf("on a form Select all at %d, an option at %d", all, opt)
+	}
+	ta.covBCloseAll()
+
+	v := &Values{Fields: []*Field{{Label: "Notify", Options: []string{"errors", "success"}, Multi: true}}}
+	lines = v.Draw(40, 3, true)
+	for i := range lines {
+		lines[i] = StripStyles(lines[i])
+	}
+	if all, opt := colOf(lines, "Select all"), colOf(lines, "success"); all < 0 || opt != all+2 {
+		t.Errorf("on a panel Select all at %d, an option at %d", all, opt)
+	}
+
+	off := &FormField{Label: "Agent", Options: []string{"forward", "x11"}, Multi: true, OptionDisabled: func(int) bool { return true }}
+	ta.Form(&Form{Title: "Host", Fields: []*FormField{{Label: "Name", Value: func() string { return "x" }}, off},
+		Submit: func() (tea.Cmd, error) { return nil, nil }})
+	ta.settle()
+	fv := ta.topView().(*formView)
+	for _, it := range fv.fieldItems() {
+		if it.field == off {
+			t.Errorf("a group with every option disabled has a focus item: %d", it.option)
+		}
+	}
+	if !strings.Contains(ta.rowWith("Select all"), Fg(Surface2).Render(glyphUnchecked+" Select all")) {
+		t.Error("Select all is not drawn disabled")
+	}
+}

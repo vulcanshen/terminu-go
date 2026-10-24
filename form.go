@@ -58,6 +58,16 @@ func (f *FormField) hasAll() bool { return f.Multi && len(f.Options) >= 2 }
 
 func (f *FormField) allOn() bool { return allChecked(len(f.Options), f.Checked, f.optionDisabled) }
 
+// allOff reports every option disabled: Select all is too.
+func (f *FormField) allOff() bool {
+	for i := range f.Options {
+		if !f.optionDisabled(i) {
+			return false
+		}
+	}
+	return true
+}
+
 func (f *FormField) optionUnavailable(i int) bool {
 	return f.OptionUnavailable != nil && f.OptionUnavailable(i)
 }
@@ -311,7 +321,7 @@ func (fv *formView) fieldItems() []formItem {
 			continue
 		}
 		if len(f.Options) > 0 {
-			if f.hasAll() {
+			if f.hasAll() && !f.allOff() {
 				out = append(out, formItem{itemField, f, optAll})
 			}
 			for i := range f.Options {
@@ -458,19 +468,26 @@ func (fv *formView) draw(w, h int, layer Color) []string {
 		switch {
 		case len(f.Options) > 0:
 			first := !f.hasAll()
+			indent := ""
 			if f.hasAll() {
-				if all := selectAllText(f.allOn()); fv.focus == (formItem{itemField, f, optAll}) {
+				indent = optIndent // the options under Select all, further in
+				all := selectAllText(f.allOn())
+				if f.allOff() {
+					all = Fg(Surface2).Render(StripStyles(all))
+				}
+				if fv.focus == (formItem{itemField, f, optAll}) {
 					rows = append(rows, " "+lead(true)+fv.block(all, room+arrow, layer))
 				} else {
 					rows = append(rows, " "+lead(true)+Fit(all, room)+pad)
 				}
 			}
 			for i := range f.Options {
+				opt := indent + fv.option(f, i)
 				if fv.focus == (formItem{itemField, f, i}) {
-					rows = append(rows, " "+lead(first && i == 0)+fv.block(fv.option(f, i), room+arrow, layer))
+					rows = append(rows, " "+lead(first && i == 0)+fv.block(opt, room+arrow, layer))
 					continue
 				}
-				rows = append(rows, " "+lead(first && i == 0)+Fit(fv.option(f, i), room)+pad)
+				rows = append(rows, " "+lead(first && i == 0)+Fit(opt, room)+pad)
 			}
 		default:
 			value := fv.value(f)

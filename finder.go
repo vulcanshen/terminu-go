@@ -485,7 +485,7 @@ func (f *finderView) measure(sw, sh int) (int, int) {
 	n := len(rows) // the list's rows, a checkbox popup's Select all among them
 	if f.kind == findChecks && len(rows) >= 2 {
 		n++
-		content = max(content, Width(glyphMarked)+1+Width(selectAllLabel))
+		content = max(content+Width(optIndent), Width(glyphMarked)+1+Width(selectAllLabel))
 	}
 	count := len(strconv.Itoa(len(rows)))*2 + 1
 	content = max(content+Width(glyphHard), Width(glyphTyping)+1+8+2+count) // the typing row: the angle, eight cells, the count
@@ -579,11 +579,15 @@ func (f *finderView) drawList(w, h int, layer Color) []string {
 		i := f.shown[k]
 		r := f.row(i)
 		mark := f.mark(i, r)
+		ind := ""
+		if i != optAll && f.kind == findChecks && len(rows) >= 2 {
+			ind = optIndent // under Select all, further in, filtered too
+		}
 		label := f.rowLabel(r)
 		if k == f.cursor {
 			plain := label
 			if mark != "" {
-				plain = mark + " " + label
+				plain = ind + mark + " " + label
 			}
 			line := cursorRow(plainNames(plain), inner, On(layer))
 			if !f.onList {
@@ -607,7 +611,7 @@ func (f *finderView) drawList(w, h int, layer Color) []string {
 			}
 			line = markStyle.Render(mark) + " " + line
 		}
-		body = append(body, " "+Fit(line, text)+Repeat(" ", arrow))
+		body = append(body, " "+Fit(ind+line, text)+Repeat(" ", arrow))
 	}
 	scroll := ""
 	if len(f.shown) > n {

@@ -2,6 +2,12 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.9.12
+
+- A checkbox group's options are two cells further in than its `Select all`, on a form, a value panel and in a
+  checkbox popup, where they stay so while filtering hides it (components/input/checkbox, select all; kbu KB31)
+- With every option of a form's group disabled, its `Select all` is disabled too: drawn in Surface2, not a focus item
+
 ## v0.4.13 — tdp v0.9.11
 
 - Every checkbox group (two options or more) has a first row of its own, `Select all` (components/input/checkbox,

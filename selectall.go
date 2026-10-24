@@ -13,6 +13,10 @@ const optAll = -2
 
 const selectAllLabel = "Select all"
 
+// optIndent is how much further in a group's options are than Select all, as
+// a list group's items are than its title (layout/panel).
+const optIndent = "  "
+
 // allChecked reports every option of n checked, those skip leaves aside not
 // counted; false with none to count.
 func allChecked(n int, checked []bool, skip func(int) bool) bool {

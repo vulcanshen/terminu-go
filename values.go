@@ -249,8 +249,13 @@ func (v *Values) valueText(f *Field, k int) string {
 		if k == 0 {
 			return selectAllText(f.allOn())
 		}
-		k-- // the options after Select all
+		return optIndent + v.optionText(f, k-1) // the options under Select all, further in
 	}
+	return v.optionText(f, k)
+}
+
+// optionText is option k of f, or f's value when it has no options.
+func (v *Values) optionText(f *Field, k int) string {
 	switch {
 	case len(f.Options) > 0 && f.Multi:
 		on := k < len(f.Checked) && f.Checked[k]

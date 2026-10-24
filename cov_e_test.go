@@ -166,7 +166,11 @@ func TestFormOptionsDrawn(t *testing.T) {
 		t.Fatalf("the options are not drawn on the form:\n%s", strings.Join(plain, "\n"))
 	}
 	for i, o := range opts {
-		if r := covERow(plain, o); r != first+i || covECol(plain[r], o) != covECol(plain[first], opts[0]) {
+		col := covECol(plain[first], opts[0])
+		if i >= 4 { // a checkbox group's options, further in than its Select all
+			col += 2
+		}
+		if r := covERow(plain, o); r != first+i || covECol(plain[r], o) != col {
 			t.Errorf("one option a row, one under the other: %q on row %d", o, r)
 		}
 	}
