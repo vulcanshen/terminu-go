@@ -60,11 +60,19 @@ func (f *Field) hasErr() bool { return f.Err != nil && f.Err() }
 // items is how many places the cursor stops at in the field: one per option
 // drawn in place, one otherwise.
 func (f *Field) items() int {
+	if f.hasAll() {
+		return len(f.Options) + 1 // Select all first
+	}
 	if len(f.Options) > 0 {
 		return len(f.Options)
 	}
 	return 1
 }
+
+// hasAll reports a checkbox group with a Select all row: two options or more.
+func (f *Field) hasAll() bool { return f.Multi && len(f.Options) >= 2 }
+
+func (f *Field) allOn() bool { return allChecked(len(f.Options), f.Checked, nil) }
 
 // Values is a panel body with one value per row: a settings screen
 // (layout/panel). It moves like a form; a value takes effect when it is set.
@@ -74,7 +82,7 @@ type Values struct {
 	Header [2]string
 	// OnMove runs when the cursor comes to another place, by a key or not,
 	// the first time included: the field, and the option in it (-1 for a
-	// field not drawn in place). It runs before the frame is drawn, so a
+	// field not drawn in place, -2 for a checkbox group's Select all). It runs before the frame is drawn, so a
 	// details panel follows in the same frame (layout/panel, details).
 	OnMove func(f *Field, option int) tea.Cmd
 	// EmptyFact and EmptyHint are what it says with no fields, in Overlay0, as
@@ -97,6 +105,9 @@ func (v *Values) itemList() []valueItem {
 	var out []valueItem
 	for _, f := range v.Fields {
 		if len(f.Options) > 0 {
+			if f.hasAll() {
+				out = append(out, valueItem{f, optAll})
+			}
 			for i := range f.Options {
 				out = append(out, valueItem{f, i})
 			}
@@ -234,6 +245,12 @@ func (v *Values) Draw(w, h int, focused bool) []string {
 
 // valueText is item k of f as shown.
 func (v *Values) valueText(f *Field, k int) string {
+	if f.hasAll() {
+		if k == 0 {
+			return selectAllText(f.allOn())
+		}
+		k-- // the options after Select all
+	}
 	switch {
 	case len(f.Options) > 0 && f.Multi:
 		on := k < len(f.Checked) && f.Checked[k]
@@ -343,6 +360,9 @@ func (v *Values) Key(key string, _ tea.KeyMsg) (bool, tea.Cmd) {
 			return true, nil
 		}
 		switch {
+		case len(f.Options) > 0 && f.Multi && it.option == optAll:
+			f.Checked = checkAll(len(f.Options), f.Checked, !f.allOn(), nil)
+			return true, run(f.OnChange)
 		case len(f.Options) > 0 && f.Multi:
 			for len(f.Checked) < len(f.Options) {
 				f.Checked = append(f.Checked, false)
@@ -373,6 +393,8 @@ func (v *Values) Actions() []Action {
 	f := items[v.cursor].field
 	var label, desc string
 	switch {
+	case len(f.Options) > 0 && f.Multi && items[v.cursor].option == optAll:
+		label, desc = "Toggle", "every option"
 	case len(f.Options) > 0 && f.Multi:
 		label, desc = "Toggle", "this option"
 	case len(f.Options) > 0:

@@ -187,6 +187,7 @@ type finderView struct {
 	visible  int
 	filtered string
 	checked  []bool // the checkbox popup's checks, on screen
+	allIn    bool   // its Select all row was in shown at the last refilter
 	written  func()
 	onCancel func() tea.Cmd // a select's, a checkbox popup's or a file-picker's OnCancel
 }
@@ -315,7 +316,7 @@ func (c *Checks) view(written func(), live bool) *finderView {
 	}
 	fv.rows()
 	// A row checked on screen is Green before Enter applies it (components/input/checkbox).
-	fv.green = func(i int, _ finderRow) bool { return fv.checked[i] }
+	fv.green = func(i int, _ finderRow) bool { return fv.isChecked(i) }
 	fv.enter = func(a *App, _ int, _ finderRow) tea.Cmd {
 		was := make([]bool, len(fv.checked))
 		copy(was, c.Checked)
@@ -329,6 +330,8 @@ func (c *Checks) view(written func(), live bool) *finderView {
 		return tea.Batch(a.answer(), runDone(c.Done, slices.Clone(fv.checked)))
 	}
 	fv.refilter()
+	// The option the app says, or the first option: not Select all
+	// (components/input/checkbox).
 	if k := slices.Index(fv.shown, c.Cursor); k >= 0 {
 		fv.cursor = k
 	}
@@ -351,7 +354,8 @@ func (f *finderView) wrote() {
 func (f *finderView) refilter() {
 	rows := f.rows()
 	typed := f.ed.value()
-	if typed != f.filtered {
+	retyped := typed != f.filtered
+	if retyped {
 		f.cursor, f.top = 0, 0
 		f.filtered = typed
 	}
@@ -360,11 +364,24 @@ func (f *finderView) refilter() {
 		words = f.words(typed)
 	}
 	f.shown = f.shown[:0]
+	if f.kind == findChecks && typed == "" && len(rows) >= 2 {
+		f.shown = append(f.shown, optAll) // Select all, hidden while filtering
+	}
 	for i, r := range rows {
 		if f.search != nil || Matches(cmpOr(r.match, r.text), words) {
 			f.shown = append(f.shown, i)
 		}
 	}
+	// Select all coming in as the options do (or going) with nothing typed
+	// anew: the cursor stays on its option.
+	if all := len(f.shown) > 0 && f.shown[0] == optAll; all != f.allIn && !retyped {
+		if all {
+			f.cursor++
+		} else if f.cursor > 0 {
+			f.cursor--
+		}
+	}
+	f.allIn = len(f.shown) > 0 && f.shown[0] == optAll
 	f.cursor = min(max(f.cursor, 0), max(len(f.shown)-1, 0))
 }
 
@@ -373,9 +390,32 @@ func (f *finderView) at() (int, finderRow, bool) {
 	if f.cursor >= len(f.shown) {
 		return 0, finderRow{}, false
 	}
-	rows := f.rows()
 	i := f.shown[f.cursor]
-	return i, rows[i], true
+	return i, f.row(i), true
+}
+
+// row is row i, or the Select all row of a checkbox popup.
+func (f *finderView) row(i int) finderRow {
+	if i == optAll {
+		return finderRow{text: selectAllLabel}
+	}
+	return f.rows()[i]
+}
+
+// isChecked reports row i ticked on screen: Select all when every option is.
+func (f *finderView) isChecked(i int) bool {
+	if i == optAll {
+		return allChecked(len(f.checked), f.checked, nil)
+	}
+	return f.checked[i]
+}
+
+// options counts the rows shown that are options, not Select all.
+func (f *finderView) options() int {
+	if len(f.shown) > 0 && f.shown[0] == optAll {
+		return len(f.shown) - 1
+	}
+	return len(f.shown)
 }
 
 // mark is what goes before a row's text: the radio or checkbox glyph, an icon.
@@ -387,7 +427,7 @@ func (f *finderView) mark(i int, r finderRow) string {
 		}
 		return glyphRadioOff
 	case findChecks:
-		if f.checked[i] {
+		if f.isChecked(i) {
 			return glyphMarked
 		}
 		return glyphUnchecked
@@ -442,15 +482,20 @@ func (f *finderView) measure(sw, sh int) (int, int) {
 	for _, r := range rows {
 		content = max(content, Width(f.mark(0, r))+1+Width(f.rowLabel(r)))
 	}
+	n := len(rows) // the list's rows, a checkbox popup's Select all among them
+	if f.kind == findChecks && len(rows) >= 2 {
+		n++
+		content = max(content, Width(glyphMarked)+1+Width(selectAllLabel))
+	}
 	count := len(strconv.Itoa(len(rows)))*2 + 1
 	content = max(content+Width(glyphHard), Width(glyphTyping)+1+8+2+count) // the typing row: the angle, eight cells, the count
 	w := max(content+3, Width(titleCapsule(f.glyph, f.title(1<<20), Base, 1<<20))+4,
 		hintWidth(f.listHint(true))+6, hintWidth(f.typingHint(true))+6)
-	h := min(len(rows)+6, max(sh-2, 3))
-	if len(rows) > h-6 {
+	h := min(n+6, max(sh-2, 3))
+	if n > h-6 {
 		// Room for the scroll position at its widest too, so the hint stays
 		// whole (components/layout/popup, width).
-		widest := scrollText(true, len(rows), 0, len(rows))
+		widest := scrollText(true, n, 0, n)
 		w = max(w, scrollRoom(f.listHint(true), widest), scrollRoom(f.typingHint(true), widest))
 	}
 	return min(w, most), h
@@ -512,7 +557,7 @@ func (f *finderView) drawInfo(w, h int, layer Color) []string {
 func (f *finderView) drawList(w, h int, layer Color) []string {
 	inner := w - 2
 	rows := f.rows()
-	count := strconv.Itoa(len(f.shown)) + "/" + strconv.Itoa(len(rows))
+	count := strconv.Itoa(f.options()) + "/" + strconv.Itoa(len(rows))
 	body := []string{
 		typingRow(f.ed, inner, count, !f.onList, layer),
 		" " + Fg(Overlay0).Render(Repeat("─", inner-2)) + " ",
@@ -532,7 +577,7 @@ func (f *finderView) drawList(w, h int, layer Color) []string {
 			continue
 		}
 		i := f.shown[k]
-		r := rows[i]
+		r := f.row(i)
 		mark := f.mark(i, r)
 		label := f.rowLabel(r)
 		if k == f.cursor {
@@ -768,7 +813,9 @@ func (f *finderView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 		}
 	case "Space":
 		if f.kind == findChecks {
-			if i, _, ok := f.at(); ok {
+			if i, _, ok := f.at(); ok && i == optAll {
+				f.checked = checkAll(len(f.checked), f.checked, !f.isChecked(optAll), nil)
+			} else if ok {
 				f.checked[i] = !f.checked[i]
 			}
 		}

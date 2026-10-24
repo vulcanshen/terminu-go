@@ -2167,6 +2167,9 @@ func covCValuesApp(t *testing.T, tabs ...string) *covCValues {
 // item is the name of the item under the cursor: an option, or a label.
 func (c *covCValues) item() string {
 	it := c.vals.itemList()[c.vals.cursor]
+	if it.option == optAll {
+		return "Select all"
+	}
 	if it.option >= 0 {
 		return it.field.Options[it.option]
 	}
@@ -2176,8 +2179,8 @@ func (c *covCValues) item() string {
 func TestValuePanelMoves(t *testing.T) {
 	c := covCValuesApp(t)
 	for _, s := range []struct{ key, want string }{
-		{"j", "row"}, {"l", "column"}, {"↓", "status"}, {"→", "clock"}, {"j", "Name"},
-		{"k", "clock"}, {"h", "status"}, {"↑", "column"}, {"←", "row"}, {"k", "Name"},
+		{"j", "row"}, {"l", "column"}, {"↓", "Select all"}, {"→", "status"}, {"j", "clock"}, {"j", "Name"},
+		{"k", "clock"}, {"h", "status"}, {"↑", "Select all"}, {"←", "column"}, {"k", "row"}, {"k", "Name"},
 	} {
 		c.press(s.key)
 		if got := c.item(); got != s.want {
@@ -2212,7 +2215,7 @@ func TestValuePanelEnter(t *testing.T) {
 	if c.vals.Fields[1].Selected != 1 || c.top() != nil || c.item() != "column" {
 		t.Errorf("radio: selected %d, popup %T, focus on %s", c.vals.Fields[1].Selected, c.topView(), c.item())
 	}
-	c.press("j", "Enter")
+	c.press("j", "j", "Enter") // past Select all
 	if len(c.vals.Fields[2].Checked) == 0 || !c.vals.Fields[2].Checked[0] || c.item() != "status" {
 		t.Errorf("checkbox: %v, focus on %s", c.vals.Fields[2].Checked, c.item())
 	}

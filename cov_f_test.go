@@ -1542,8 +1542,8 @@ func TestCheckbox(t *testing.T) {
 	agent := &Field{Label: "Agent", Options: []string{"forward", "x11"}, Multi: true, Checked: []bool{true, false}}
 	v := &Values{Fields: []*Field{{Label: "Name", Value: func() string { return "web" }}, notify, agent}}
 	lines := v.Draw(40, 5, true)
-	if !strings.Contains(lines[1], Fg(Text).Render(glyphUnchecked+" on")) || !strings.Contains(lines[2], Fg(Green).Render(glyphMarked+" forward")) ||
-		!strings.Contains(lines[3], Fg(Text).Render(glyphUnchecked+" x11")) {
+	if !strings.Contains(lines[1], Fg(Text).Render(glyphUnchecked+" on")) || !strings.Contains(lines[2], Fg(Text).Render(glyphUnchecked+" Select all")) ||
+		!strings.Contains(lines[3], Fg(Green).Render(glyphMarked+" forward")) || !strings.Contains(lines[4], Fg(Text).Render(glyphUnchecked+" x11")) {
 		t.Errorf("checkboxes:\n%s", strings.Join(covFText(lines), "\n"))
 	}
 	// Enter turns one over in place.
@@ -1564,8 +1564,8 @@ func TestCheckbox(t *testing.T) {
 		if n := strings.Count(strings.Join(text, "\n"), "┏"); n != 1 {
 			t.Errorf("%d boxes, want one: no preview", n)
 		}
-		if !strings.Contains(text[4], glyphUnchecked+" "+opts[0]) {
-			t.Errorf("row %q", text[4])
+		if !strings.Contains(text[4], glyphUnchecked+" Select all") || !strings.Contains(text[5], glyphUnchecked+" "+opts[0]) {
+			t.Errorf("rows %q, %q", text[4], text[5])
 		}
 		return ta.top().w
 	}
@@ -2107,12 +2107,13 @@ func TestCheckboxUnavailableInPlace(t *testing.T) {
 		OptionUnavailable: func(i int) bool { return i == 1 }}
 	v := &Values{Fields: []*Field{agent}}
 	lines := v.Draw(40, 3, true)
-	if !strings.Contains(lines[1], Fg(Surface2).Render(glyphMarked+" X11")) {
+	if !strings.Contains(lines[2], Fg(Surface2).Render(glyphMarked+" X11")) {
 		t.Errorf("on a panel:\n%s", strings.Join(covFText(lines), "\n"))
 	}
 	v.Key("j", keyMsg("j"))
+	v.Key("j", keyMsg("j"))
 	v.Key("Enter", keyMsg("Enter"))
-	if v.cursor != 1 || agent.Checked[1] {
+	if v.cursor != 2 || agent.Checked[1] {
 		t.Errorf("on a panel: the cursor on %d, X11 ticked %v", v.cursor, agent.Checked[1])
 	}
 

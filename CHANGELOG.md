@@ -2,6 +2,17 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.9.11
+
+- Every checkbox group (two options or more) has a first row of its own, `Select all` (components/input/checkbox,
+  select all; kbu KB31): on a form and a value panel on the label's row, a focus item, the options under it; first in
+  a checkbox popup's list, scrolling with it, hidden while something is typed. It is not an option: not in the value,
+  not counted among the five drawn on a form; the app gives nothing. Ticking it ticks every option, the unavailable
+  ones too, unticking unticks them all, with the keys and at the time an option's tick takes effect (at once on a
+  form and a panel, on `Enter` in a popup); it is ticked only while every option is. A popup's cursor starts on the
+  first option, a form's focus on the first option or, landing on the group, its first ticked one, never on it. A
+  value panel's `OnMove` gets `-2` on it
+
 ## v0.4.12 — tdp v0.9.10
 
 - A mode's name opens a character a frame: the junctions first, then one more character every 32ms, so every frame

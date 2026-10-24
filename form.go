@@ -53,6 +53,11 @@ func (f *FormField) disabled() bool { return f.Disabled != nil && f.Disabled() }
 
 func (f *FormField) optionDisabled(i int) bool { return f.OptionDisabled != nil && f.OptionDisabled(i) }
 
+// hasAll reports a checkbox group with a Select all row: two options or more.
+func (f *FormField) hasAll() bool { return f.Multi && len(f.Options) >= 2 }
+
+func (f *FormField) allOn() bool { return allChecked(len(f.Options), f.Checked, f.optionDisabled) }
+
 func (f *FormField) optionUnavailable(i int) bool {
 	return f.OptionUnavailable != nil && f.OptionUnavailable(i)
 }
@@ -208,6 +213,9 @@ func (a *App) Form(f *Form) tea.Cmd {
 	fv.focus = fv.main()
 	if items := fv.fieldItems(); len(items) > 0 {
 		fv.focus = items[0]
+		if items[0].option == optAll && len(items) > 1 {
+			fv.focus = items[1] // the first option, not Select all (components/input/checkbox)
+		}
 	}
 	if f.Focus != nil && !f.Focus.disabled() {
 		fv.focus = fv.landing(f.Focus)
@@ -303,6 +311,9 @@ func (fv *formView) fieldItems() []formItem {
 			continue
 		}
 		if len(f.Options) > 0 {
+			if f.hasAll() {
+				out = append(out, formItem{itemField, f, optAll})
+			}
 			for i := range f.Options {
 				if !f.optionDisabled(i) {
 					out = append(out, formItem{itemField, f, i})
@@ -395,6 +406,9 @@ func (fv *formView) hint() []KeyHint {
 // fieldRows is how many rows a field takes.
 func fieldRows(f *FormField) int {
 	n := max(len(f.Options), 1)
+	if f.hasAll() {
+		n++ // Select all, on the label's row
+	}
 	if f.Stacked {
 		n++
 	}
@@ -443,12 +457,20 @@ func (fv *formView) draw(w, h int, layer Color) []string {
 		room := cw - indent
 		switch {
 		case len(f.Options) > 0:
+			first := !f.hasAll()
+			if f.hasAll() {
+				if all := selectAllText(f.allOn()); fv.focus == (formItem{itemField, f, optAll}) {
+					rows = append(rows, " "+lead(true)+fv.block(all, room+arrow, layer))
+				} else {
+					rows = append(rows, " "+lead(true)+Fit(all, room)+pad)
+				}
+			}
 			for i := range f.Options {
 				if fv.focus == (formItem{itemField, f, i}) {
-					rows = append(rows, " "+lead(i == 0)+fv.block(fv.option(f, i), room+arrow, layer))
+					rows = append(rows, " "+lead(first && i == 0)+fv.block(fv.option(f, i), room+arrow, layer))
 					continue
 				}
-				rows = append(rows, " "+lead(i == 0)+Fit(fv.option(f, i), room)+pad)
+				rows = append(rows, " "+lead(first && i == 0)+Fit(fv.option(f, i), room)+pad)
 			}
 		default:
 			value := fv.value(f)
@@ -673,7 +695,7 @@ func (fv *formView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 	case "Space":
 		// On a checkbox option Space ticks it too, as in a checkbox popup;
 		// elsewhere it does nothing (Rules K5).
-		if it := fv.focus; it.kind == itemField && it.field.Multi && it.option >= 0 {
+		if it := fv.focus; it.kind == itemField && it.field.Multi && it.option != -1 {
 			return true, fv.enter(a)
 		}
 		return true, nil
@@ -711,6 +733,9 @@ func (fv *formView) enter(a *App) tea.Cmd {
 	}
 	f := it.field
 	switch {
+	case len(f.Options) > 0 && f.Multi && it.option == optAll:
+		f.Checked = checkAll(len(f.Options), f.Checked, !f.allOn(), f.optionDisabled)
+		fv.dirty = true
 	case len(f.Options) > 0 && f.Multi:
 		for len(f.Checked) < len(f.Options) {
 			f.Checked = append(f.Checked, false)
@@ -940,7 +965,7 @@ func (fv *formView) keyRef() []refSection {
 	if slices.ContainsFunc(fv.f.Fields, func(f *FormField) bool { return f.Multi && len(f.Options) > 0 }) {
 		it := fv.focus
 		rows = append(rows, KeyRow{Key: "Space", Desc: "toggle the checkbox option",
-			Disabled: it.kind != itemField || !it.field.Multi || it.option < 0})
+			Disabled: it.kind != itemField || !it.field.Multi || it.option == -1})
 	}
 	if len(fv.errs) > 0 {
 		it := fv.focus

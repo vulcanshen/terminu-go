@@ -160,7 +160,7 @@ func TestFormOptionsDrawn(t *testing.T) {
 	ta.settle()
 	_, plain := covEPopup(ta)
 	opts := []string{glyphRadioOn + " password", glyphRadioOff + " privatekey", glyphRadioOff + " credential",
-		glyphMarked + " forward", glyphUnchecked + " x11"}
+		glyphUnchecked + " Select all", glyphMarked + " forward", glyphUnchecked + " x11"}
 	first := covERow(plain, opts[0])
 	if first < 0 {
 		t.Fatalf("the options are not drawn on the form:\n%s", strings.Join(plain, "\n"))
