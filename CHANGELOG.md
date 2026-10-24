@@ -2,7 +2,7 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.9.11
+## v0.4.13 — tdp v0.9.11
 
 - Every checkbox group (two options or more) has a first row of its own, `Select all` (components/input/checkbox,
   select all; kbu KB31): on a form and a value panel on the label's row, a focus item, the options under it; first in
