@@ -2,6 +2,23 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v0.5.0 — tdp v0.10.0
+
+- A popup of the app's own is the eighth kind of popup (tdp F1, popup.8). With values to submit it works as a form:
+  `Popup.Actions` (`PopupActions`: `Button`, `Buttons` of `FormButton`, `Submit`, `SubmitLong`, `OnCancel`, `Name`,
+  `Content`) puts the action area under the content, the main submit at the bottom right. `Tab` and `Shift-Tab` go
+  between the content and the buttons; on the buttons the keys are the lib's; long buttons put the loading icon after
+  the title. A body may have `Changed() bool`, after which `Esc` asks before discarding (tdp F3), `Check() string`,
+  which keeps an error row and stops a submit with the problem in it (tdp popup.7), and `Focus(on bool)`, told before
+  each `Draw` whether the focus is on the content. `Tab`, `Shift-Tab`, `Esc` and `q` no longer reach such a body, and
+  `q` does nothing there (tdp K9); its hint is its own keys, the lib adding `Tab:actions Esc:cancel`, and its key
+  reference gets the lib's rows. `Space` still reaches every body: on a cell with several values it goes to the next
+  one (tdp K5). A popup without `Actions` works as before
+- The showcase's Draw popup takes Save from the lib; clearing the drawing with `x` and saving shows the error row
+- Comments cite tdp as `tdp K4` and by section ID (`tdp popup.8`), or a whole component by its file (`tdp form`);
+  `docs/coverage.md` gives the section IDs as its sources
+- `docs/dev-remarks.md` stays as this repo's own notes: tdp no longer covers developer documents (tdp P5)
+
 ## v0.4.22 — tdp v0.9.16
 
 - `Terminal.OnLeave` runs when the exit key is accepted, asked first or not, once the focus is out (and, with
