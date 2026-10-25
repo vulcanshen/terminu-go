@@ -1,6 +1,6 @@
-# tdp v0.9.15 coverage
+# tdp v0.9.16 coverage
 
-tdp v0.9.15 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
+tdp v0.9.16 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
 （[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -20,7 +20,7 @@ app 名 `showcase`，五個畫面，畫面 chip 列 `[P]ANELS [I]NPUTS [D]IALOGS
 | `[P]ANELS` | panel 的每一種樣子與狀態 | `[1] PODS`：一般清單（tab `PODS` / `EVENTS`、表頭排序、標記、cursor、40 列、截斷、panel filter、`[D]rag` 模式）；`[2] LOG`：串流內容、沒有 cursor，`Enter` 開 viewer、`[F]reeze` 是不暫停 `Tab` 的模式；`[3] SETTINGS`：一列一個值 |
 | `[I]NPUTS` | 每一種 input | `[1] INPUTS`：一列一個值，每一種 input（含各方案）各一列，`Enter` 打開它的 popup（`Host` 是 app 自己給預覽的 finder）；`[2] FILES`：清單，`[/] Find` 開一般的 finder（有預覽）、`[S]low index` 是結果慢慢進來的 finder、`[V]iew` 用 viewer 開檔案 |
 | `[D]IALOGS` | 每一種 dialog 與疊法 | `[1] DIALOGS`：每一列是一個情境（某一種 dialog、某一種狀態、某一種疊法），`Enter` 開它 |
-| `[t]ERMINAL` | PTY 的兩種放法（畫面的鍵是小寫的 `t`） | `[1] SHELL`：PTY 放在 panel 裡；`[2] SESSIONS`：清單，`[Alt-t]erm` 開 terminal popup |
+| `[t]ERMINAL` | PTY 的兩種放法（畫面的鍵是小寫的 `t`） | `[1] SHELL`：PTY 放在 panel 裡；`[2] SESSIONS`：清單，`[Alt-t]erm` 開 terminal popup；第一列 `panel` 代表 `[1] SHELL`，cursor 在那一列時指著它 |
 | `[K]INDS` | 清單分組與跟著 cursor 換的明細 | `[1] KINDS`：分組的一般清單（五組、16 種、panel filter）；`[2]`：`[1]` cursor 那一種的明細（一列一個值），標題 `[2] KIND: pods`，名稱照原樣 |
 
 **展示場自己的動作**（切換狀態用，順便測了 M 章）：P 的 Space menu（panel operation）有 `Empty`（清空這個 panel）、`Loading`
@@ -275,6 +275,9 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | 出處 | 規定 | 展示場 | 測試 |
 |---|---|---|---|
 | panel §框 | focus：Blue 粗線 `┏━┓`；失焦：Surface2 細直角線 `┌─┐`；同寬不位移；失焦內容淡化（串流除外） | `Tab` 換 panel | `TestPanelFrameFocus` |
+| panel §框 | 被指到的 panel（app 選用；lib：`List.Points`）：有 focus 的清單 cursor 那一列代表畫面上另一個 panel 時，那個 panel 的框 Lavender、照樣細線直角、不變成 focus，膠囊串跟著換色，內容照失焦淡化（串流、PTY 除外）（panel-151） | T `[2] SESSIONS` 的 `panel` 列，看 `[1] SHELL` 的框 | `TestPointedPanel` |
+| panel §框 | cursor 換列就換成指那一列的 panel；那一列的 panel 不在畫面上（別的畫面、版面沒排進來）或沒有對應時，沒有 panel 被指到（panel-152） | T `[2] SESSIONS` 從 `panel` 移到 `shell` | `TestPointedFollowsCursor` |
+| panel §框 | 只在清單有 focus 時才指：focus 到被指的 panel 上照 focus 畫，focus 到別的 panel 上沒有 panel 被指到；被 popup 蓋住時一起淡化（panel-153） | T 在 `panel` 列按 `Tab`；按 `Space` 開 menu | `TestPointedOnlyFromFocus` |
 | panel §框 | 上框左邊 `[N] label` 膠囊緊接框角；`N` 是跳到該 panel 的數字鍵；有 tab 時 `[N]` 自己一段、第一個 tab 的名字就是 label，在第一個 tab 時 `[N]` 與它之間一個空格（`[2] PODS`）；loading icon 放整串膠囊後、前後各空一格 | P `[1] PODS` 的 tab；`Loading` | `TestPanelTitle`、`TestPanelTabChain`、`TestPanelLoadingIconAfterChain` |
 | panel §框 | 上框右邊模式名，夾在接頭之間（粗線 `┫ ┣`、細線 `┤ ├`），模式色加粗、大小寫照原樣；盡量一個詞；放不下先截標題；膠囊跟著換模式色 | P `[1] PODS` 的 `[D]rag`（粗線）；P `[2] LOG` 的 `[F]reeze` 之後按 `Tab`（細線）；縮窄 | `TestPanelModeLabel`、`TestPanelModeLabelKeptWhenNarrow` |
 | panel §框 | 下框左邊 hint（每個 panel 都有；focus 在 panel filter 打字列上、在 panel 裡的 PTY 時不寫，回來時再寫）；下框右邊捲動位置 | 每個 panel；P 按 `/` 打字；T `[1] SHELL` 按 `Enter` 進去 | `TestPanelHint`、`TestPanelNoHintWhileFiltering`、`TestK10ExitKeyShown` |

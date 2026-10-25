@@ -1583,7 +1583,7 @@ func (a *App) panelArea(w, h int) []string {
 		return area
 	}
 	if a.narrow(s) {
-		return Pad2(s.Focused().draw(s.at()+1, w, h, true), w, h)
+		return Pad2(s.Focused().draw(s.at()+1, w, h, true, false), w, h)
 	}
 	var rects []Rect
 	if s.Layout != nil {
@@ -1599,6 +1599,7 @@ func (a *App) panelArea(w, h int) []string {
 			x += pw
 		}
 	}
+	pointed := s.pointed(len(rects))
 	for i, p := range s.Panels {
 		if i >= len(rects) {
 			break
@@ -1608,9 +1609,28 @@ func (a *App) panelArea(w, h int) []string {
 			fp.hide = a.HideSecretsInPreview // the app's setting, as a file-picker's preview has it
 		}
 		p.setLabel(a.labelOf(p))
-		Composite(area, p.draw(i+1, r.W, r.H, i == s.at()), r.X, r.Y, w)
+		Composite(area, p.draw(i+1, r.W, r.H, i == s.at(), p == pointed), r.X, r.Y, w)
 	}
 	return area
+}
+
+// pointed is the panel the focused list's cursor row stands for (List.Points):
+// nil when the focus is on no such list, the row stands for none, or its
+// panel is not among the first shown the layout has room for.
+func (s *Screen) pointed(shown int) *Panel {
+	l, ok := s.Focused().Body.(*List)
+	if !ok || l.Points == nil {
+		return nil
+	}
+	r, ok := l.Current()
+	if !ok {
+		return nil
+	}
+	p := l.Points(r)
+	if i := slices.Index(s.Panels, p); i < 0 || i >= shown {
+		return nil
+	}
+	return p // the list's own is drawn focused
 }
 
 // Pad2 makes lines exactly w × h.

@@ -2,6 +2,17 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v0.4.21 — tdp v0.9.16
+
+- A pointed panel (layout/panel, the frame; sshu SS44): `List.Points` says which panel on the screen a row stands
+  for. While the list has the focus, the panel its cursor's row stands for has its frame in Lavender, its capsules
+  with it, still thin and square: it is not focused, and its content is dimmed as any panel's without the focus
+  (a stream's and a PTY's not). Another row points at its own panel, or at none when its panel is not on the screen;
+  with the focus on another panel nothing is pointed at; under a popup it is dimmed with the rest. Optional: lists
+  without `Points` draw as before
+- The showcase's [t]ERMINAL: the first row of [2] SESSIONS stands for [1] SHELL and points at it; `Enter` there goes
+  to the panel
+
 ## v0.4.20 — tdp v0.9.15
 
 - tdptest's line break check finds a `\n` drawn by its name wherever it is: in a list's cell or a value, on the

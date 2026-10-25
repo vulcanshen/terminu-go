@@ -108,6 +108,13 @@ type List struct {
 	// shows that row in the same frame (layout/panel, details). It does not
 	// run while no row is under the cursor.
 	OnMove func(Row) tea.Cmd
+	// Points, when set, is the panel on the screen a row stands for, nil for
+	// none (layout/panel, the frame: a pointed panel; whether a list has one
+	// is the app's). While the list has the focus, the panel its cursor's row
+	// stands for is pointed at: its frame Lavender, still thin and square, not
+	// focused, its content dimmed as any panel without the focus. A panel not
+	// on the screen is not pointed at.
+	Points func(Row) *Panel
 
 	rows   []Row
 	groups bool   // some row has a Group

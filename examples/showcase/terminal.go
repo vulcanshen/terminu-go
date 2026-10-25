@@ -10,7 +10,8 @@ import (
 
 // terminalScreen is [T]ERMINAL: a program in a PTY, placed both ways. [1]
 // SHELL is a PTY in a panel (Enter goes in); [2] SESSIONS opens each session
-// in a terminal popup.
+// in a terminal popup, but its first row, which stands for [1] SHELL: the
+// cursor on it points at that panel (layout/panel, the frame).
 type terminalScreen struct {
 	s        *showcase
 	screen   *terminu.Screen
@@ -31,6 +32,9 @@ var sessions = []session{
 	{"top", "a full-screen program", []string{"top"}},
 	{"vi", "an editor that wants Esc", []string{"vi"}},
 }
+
+// panelRow is the sessions row that stands for [1] SHELL.
+const panelRow = "panel"
 
 // busy is the showcase standing still for a while, so that keys pile up
 // behind it (record C2: two Escs while the app is busy).
@@ -58,18 +62,27 @@ func newTerminalScreen(s *showcase) *terminalScreen {
 		{Key: "Alt-v", Desc: "the selection mode: the screen holds still, v selects, y copies"},
 		{Key: "Ctrl-C", Desc: "to the shell, as every other key"},
 	}}}
-	ts.list = &terminu.List{Columns: []terminu.Column{{Title: "Session"}, {Title: "Status", Drop: 2}, {Title: "What", Shrink: true, Drop: 1}}}
+	ts.list = &terminu.List{Columns: []terminu.Column{{Title: "Session"}, {Title: "Status", Drop: 2}, {Title: "What", Shrink: true, Drop: 1}},
+		Points: func(r terminu.Row) *terminu.Panel {
+			if r.ID == panelRow {
+				return ts.shellP
+			}
+			return nil
+		}}
 	ts.refresh()
 	open := func() tea.Cmd {
 		r, ok := ts.list.Current()
 		if !ok {
 			return nil
 		}
+		if r.ID == panelRow {
+			return a.Focus(ts.shellP)
+		}
 		return a.OpenTerminal(ts.session(r.ID))
 	}
 	list := &terminu.Panel{Label: "Sessions", Body: ts.list, Actions: []terminu.Action{
 		// A session clears the Space menu it is opened from (Rules T1).
-		{Key: "Enter", Label: "Open", Desc: "the session in a terminal popup", Scope: terminu.ItemScope, Hint: "open", Do: open, Clear: true},
+		{Key: "Enter", Label: "Open", Desc: "the session in a terminal popup; the panel row goes to [1] SHELL", Scope: terminu.ItemScope, Hint: "open", Do: open, Clear: true},
 		{Key: "Alt-t", Label: "term", Desc: "the same, from anywhere in the list", Scope: terminu.ItemScope, Hint: "term", Do: open, Clear: true},
 	}}
 	// A lowercase screen key in a lowercase name: the chip keeps the marked
@@ -137,8 +150,9 @@ func (ts *terminalScreen) session(name string) *terminu.Terminal {
 }
 
 func (ts *terminalScreen) refresh() {
-	rows := make([]terminu.Row, len(sessions))
-	for i, s := range sessions {
+	rows := []terminu.Row{{ID: panelRow, Cells: []string{panelRow, "in a panel", "the shell in [1] SHELL: the cursor here points at it"},
+		Styled: [][]terminu.Span{nil, {{Text: "in a panel", Style: terminu.Fg(terminu.Overlay0)}}}}}
+	for _, s := range sessions {
 		// The status in its colour: a cell's colours come as spans.
 		status, style := "not started", terminu.Fg(terminu.Overlay0)
 		if t := ts.sessions[s.name]; t != nil {
@@ -148,8 +162,8 @@ func (ts *terminalScreen) refresh() {
 				status, style = "live", terminu.Fg(terminu.Green)
 			}
 		}
-		rows[i] = terminu.Row{ID: s.name, Cells: []string{s.name, status, s.what},
-			Styled: [][]terminu.Span{nil, {{Text: status, Style: style}}}}
+		rows = append(rows, terminu.Row{ID: s.name, Cells: []string{s.name, status, s.what},
+			Styled: [][]terminu.Span{nil, {{Text: status, Style: style}}}})
 	}
 	ts.list.SetRows(rows)
 }

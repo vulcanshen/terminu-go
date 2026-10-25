@@ -264,14 +264,18 @@ func (p *Panel) capsules(n int) []Capsule {
 	return caps
 }
 
-// draw draws the panel, frame and all, in w × h cells.
-func (p *Panel) draw(n, w, h int, focused bool) []string {
+// draw draws the panel, frame and all, in w × h cells; pointed, the focused
+// list's cursor row stands for it (List.Points).
+func (p *Panel) draw(n, w, h int, focused, pointed bool) []string {
 	if w < 2 || h < 2 {
 		return blankLines(w, h)
 	}
 	lines, color := lightLines, Surface2
-	if focused {
+	switch {
+	case focused:
 		lines, color = heavyLines, Blue
+	case pointed: // only the frame's colour changes, its capsules' with it
+		color = Lavender
 	}
 	if p.modeName() != "" {
 		color = Yellow
