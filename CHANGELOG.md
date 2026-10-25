@@ -2,6 +2,14 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.9.16
+
+- `Terminal.OnLeave` runs when the exit key is accepted, asked first or not, once the focus is out (and, with
+  `Ends`, the program told to stop): where the focus goes after leaving is the app's (Rules K10), such as back to
+  the list row of the session left (sshu SS45). The app's own keys that call `Hide` do not run it; unset, nothing
+  changes
+- The showcase: leaving [1] SHELL puts the focus on its row in [2] SESSIONS
+
 ## v0.4.21 — tdp v0.9.16
 
 - A pointed panel (layout/panel, the frame; sshu SS44): `List.Points` says which panel on the screen a row stands

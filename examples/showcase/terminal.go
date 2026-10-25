@@ -11,13 +11,15 @@ import (
 // terminalScreen is [T]ERMINAL: a program in a PTY, placed both ways. [1]
 // SHELL is a PTY in a panel (Enter goes in); [2] SESSIONS opens each session
 // in a terminal popup, but its first row, which stands for [1] SHELL: the
-// cursor on it points at that panel (layout/panel, the frame).
+// cursor on it points at that panel (layout/panel, the frame). Leaving the
+// shell puts the focus on that row, where the app wants it (Rules K10).
 type terminalScreen struct {
 	s        *showcase
 	screen   *terminu.Screen
 	shell    *terminu.Terminal
 	shellP   *terminu.Panel
 	list     *terminu.List
+	listP    *terminu.Panel
 	sessions map[string]*terminu.Terminal
 }
 
@@ -80,7 +82,7 @@ func newTerminalScreen(s *showcase) *terminalScreen {
 		}
 		return a.OpenTerminal(ts.session(r.ID))
 	}
-	list := &terminu.Panel{Label: "Sessions", Body: ts.list, Actions: []terminu.Action{
+	ts.listP = &terminu.Panel{Label: "Sessions", Body: ts.list, Actions: []terminu.Action{
 		// A session clears the Space menu it is opened from (Rules T1).
 		{Key: "Enter", Label: "Open", Desc: "the session in a terminal popup; the panel row goes to [1] SHELL", Scope: terminu.ItemScope, Hint: "open", Do: open, Clear: true},
 		{Key: "Alt-t", Label: "term", Desc: "the same, from anywhere in the list", Scope: terminu.ItemScope, Hint: "term", Do: open, Clear: true},
@@ -88,7 +90,7 @@ func newTerminalScreen(s *showcase) *terminalScreen {
 	// A lowercase screen key in a lowercase name: the chip keeps the marked
 	// letter as it is, [t]ERMINAL (Rules M5, panel: capitals).
 	ts.screen = &terminu.Screen{Name: "terminal", Key: "t", Desc: "a terminal in a panel and in a popup",
-		Panels: []*terminu.Panel{ts.shellP, list}, NarrowBelow: 60, Layout: func(w, h int) []terminu.Rect {
+		Panels: []*terminu.Panel{ts.shellP, ts.listP}, NarrowBelow: 60, Layout: func(w, h int) []terminu.Rect {
 			left := w * 3 / 5
 			return []terminu.Rect{{X: 0, Y: 0, W: left, H: h}, {X: left, Y: 0, W: w - left, H: h}}
 		}}
@@ -96,7 +98,7 @@ func newTerminalScreen(s *showcase) *terminalScreen {
 }
 
 func (ts *terminalScreen) newShell() *terminu.Terminal {
-	t := &terminu.Terminal{Title: "Shell", Interactive: true}
+	t := &terminu.Terminal{Title: "Shell", Interactive: true, OnLeave: ts.leftShell}
 	// Alt-l gives every key to the shell (a family app running inside takes
 	// Alt-v and PgUp itself) and takes them back (components/dialog/terminal).
 	t.Keys = []terminu.TerminalKey{{Key: "Alt-l", Desc: "lock", Do: func() tea.Cmd {
@@ -114,10 +116,17 @@ func (ts *terminalScreen) slowStart() tea.Cmd {
 	ready := time.Now().Add(3 * time.Second)
 	ts.shell = &terminu.Terminal{Title: "Shell", Subject: "slow-host", Interactive: true,
 		Command:  []string{"sh", "-c", `echo "connecting to slow-host…"; sleep 3; echo connected; exec "${SHELL:-sh}"`},
-		NotReady: func() bool { return time.Now().Before(ready) }}
+		NotReady: func() bool { return time.Now().Before(ready) }, OnLeave: ts.leftShell}
 	ts.shellP.Body = ts.shell
 	ts.shell.Enter()
 	return ts.shell.Start()
+}
+
+// leftShell is the exit key leaving [1] SHELL: the focus goes to its row in
+// [2] SESSIONS.
+func (ts *terminalScreen) leftShell() tea.Cmd {
+	ts.list.Select(panelRow)
+	return ts.s.app.Focus(ts.listP)
 }
 
 func (ts *terminalScreen) session(name string) *terminu.Terminal {

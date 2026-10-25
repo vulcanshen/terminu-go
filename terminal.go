@@ -69,6 +69,11 @@ type Terminal struct {
 	NotReady func() bool
 	// OnExit runs when the program ends.
 	OnExit func(err error) tea.Cmd
+	// OnLeave runs when the exit key is accepted (asked first or not), once
+	// the focus is out and, with Ends, the program told to stop: where the
+	// focus goes now is the app's (Rules K10), such as back to the list row
+	// of the session left. The app's own keys that call Hide do not run it.
+	OnLeave func() tea.Cmd
 	// OnFirstOutput runs when the program first prints something after
 	// Start: an ssh that has connected, to end the panel's loading and
 	// NotReady (Rules K10, F7).
@@ -518,12 +523,13 @@ func (t *Terminal) key(a *App, key string, msg tea.KeyMsg) tea.Cmd {
 }
 
 // leave is the exit key accepted: the focus comes out, and with Ends the
-// program stops.
+// program stops; then the app's OnLeave.
 func (t *Terminal) leave(a *App) tea.Cmd {
 	if t.Ends {
 		t.Stop()
 	}
-	return t.Hide(a)
+	hide := t.Hide(a)
+	return tea.Batch(hide, run(t.OnLeave))
 }
 
 // Hide takes the focus out and leaves the program running: its popup closes,
