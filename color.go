@@ -37,7 +37,7 @@ func (c Color) R() uint8 { return c.RGB[0] }
 func (c Color) G() uint8 { return c.RGB[1] }
 func (c Color) B() uint8 { return c.RGB[2] }
 
-// The family colours, catppuccin-mocha (components/color). Each meaning has
+// The family colours, catppuccin-mocha (tdp color). Each meaning has
 // one colour (Principle P4); the comment is what tdp uses it for.
 var (
 	Base     = Hex("#1e1e2e") // text on blocks
@@ -57,7 +57,7 @@ var (
 )
 
 // layerColors are the popup layer colours, lerp(Lavender, Sapphire, K/4)
-// with each channel rounded half up (components/color).
+// with each channel rounded half up (tdp color).
 var layerColors = [4]Color{Hex("#A4C0FA"), Hex("#94C3F5"), Hex("#84C5F1"), Hex("#74c7ec")}
 
 // LayerColor is the colour of the popup at layer k, the bottom one being 1;
@@ -122,8 +122,8 @@ var sgrAt = regexp.MustCompile(`^\x1b\[[0-9;:]*m`)
 
 // onBlock draws styled text on a cursor block: every character turns to the
 // block's style, Base on the block's colour, except the swatches, runs of █
-// whose content is a colour, which keep their own (components/color, the
-// cursor block).
+// whose content is a colour, which keep their own (tdp
+// color.2).
 func onBlock(s string, block Style) string {
 	var out, plain strings.Builder // plain: the text waiting to go on the block
 	flush := func() {
@@ -188,13 +188,13 @@ func sgrRGB(fg bool, c RGB) string {
 	return lead + ";2;" + strconv.Itoa(int(c[0])) + ";" + strconv.Itoa(int(c[1])) + ";" + strconv.Itoa(int(c[2]))
 }
 
-// --- dimming (Rules F8, T2; components/color) -------------------------------
+// --- dimming (tdp F8, T2; tdp color) -------------------------------
 
 // dimKeep is how much of a colour survives: dim(c) = c × 0.45 + t × 0.55.
 const dimKeep = 0.45
 
 // dimTo is t, what dimming fades toward: #0c0c13, one step darker than Crust
-// as Base, Mantle and Crust step down; never drawn itself (components/color).
+// as Base, Mantle and Crust step down; never drawn itself (tdp color).
 var dimTo = RGB{0x0c, 0x0c, 0x13}
 
 // DimRGB fades c toward #0c0c13 (dimTo). It never lightens: a channel darker

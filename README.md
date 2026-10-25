@@ -15,7 +15,8 @@ Screens the library does not own (a full-screen lock screen, several terminals s
 draw such a screen yourself with `App.Canvas`, and confirm, toast and every kind of input open over it as they do
 anywhere else. A popup of your own (a grid to draw on) goes on the same
 stack as the library's: you draw what is inside and handle its keys; the frame, the animation, the fading and `Esc` are
-the library's, and its confirms and inputs open over yours.
+the library's, and its confirms and inputs open over yours. When it has values to submit, it works as a form: the
+library puts the buttons under your content and does `Tab`, the error row, and the question before `Esc` discards changes.
 
 It is built on [Bubble Tea](https://github.com/charmbracelet/bubbletea) v1 and [Lip Gloss](https://github.com/charmbracelet/lipgloss) v1.
 
@@ -77,7 +78,7 @@ func main() {
 ```
 
 `x` marks the task under the cursor done. `Space` lists what can be done there, `?` lists the keys, `V` opens the
-splash, `q` leaves. Every terminu app has a splash with its own mark (tdp Rules S); `icon.svg` is that mark, and the
+splash, `q` leaves. Every terminu app has a splash with its own mark (tdp S1, S5); `icon.svg` is that mark, and the
 example uses a copy of terminu's.
 
 To see everything it does, run the showcase, an example app that shows every component on fake data:
@@ -121,7 +122,7 @@ still there.
 
 ## Settings
 
-Two of the user's settings are shared by every terminu app (tdp Rules E3). The library does not read config files: the
+Two of the user's settings are shared by every terminu app (tdp E3). The library does not read config files: the
 app reads them from its own and hands them over.
 
 | Key | What it does | Default | Set |
@@ -193,7 +194,7 @@ in whenever it is due.
 
 ## Which terminu design
 
-terminu-go implements **tdp v0.9.16**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
+terminu-go implements **tdp v0.10.0**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
 
 ## Links
 

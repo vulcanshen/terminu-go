@@ -9,7 +9,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// Tests of a viewer's line numbers (components/dialog/note).
+// Tests of a viewer's line numbers (tdp note).
 
 // viewerRows is the top popup's text rows, styled: the margin rows and the
 // frame's top and bottom left out.
@@ -93,7 +93,7 @@ func TestViewerLineNumbersStream(t *testing.T) {
 	ta.settle()
 	for _, n := range []int{1, 99, 999} {
 		v.Lines = numberedLines(n)
-		ta.growLoading() // a loading popup grows with its lines (Rules F7)
+		ta.growLoading() // a loading popup grows with its lines (tdp F7)
 		if p := covDPlain(viewerRows(ta)); !strings.HasPrefix(p[0], "┃   1 line 1") {
 			t.Errorf("%d lines: %q, not a three-digit column", n, p[0])
 		}
@@ -120,7 +120,7 @@ func TestViewerCopyNoNumbers(t *testing.T) {
 }
 
 // TestViewerTabs: a tab in a viewer's text is drawn as spaces, coloured or
-// not, cursor on it or not, and every row stays its width (Rules L4); a copy
+// not, cursor on it or not, and every row stays its width (tdp L4); a copy
 // keeps the tab. The showcase's main.go broke the frame with one.
 func TestViewerTabs(t *testing.T) {
 	for _, lang := range []string{"", "go"} {
@@ -154,8 +154,8 @@ func TestViewerTabs(t *testing.T) {
 // TestViewerControlChars: in a viewer and a file preview a tab is
 // input_tab_width spaces, the \r of a CRLF line break is not drawn, and any
 // other control character is its name in Red, never sent to the terminal:
-// every row stays its width (Rules L4). A copy keeps the text as it is
-// (components/dialog/note).
+// every row stays its width (tdp L4). A copy keeps the text as it is
+// (tdp note).
 func TestViewerControlChars(t *testing.T) {
 	for _, lang := range []string{"", "go"} {
 		ta := newTestApp(t)
@@ -241,7 +241,7 @@ func TestViewerFoldsAtSpaces(t *testing.T) {
 // TestViewerTabGutterOnlyGrows: with tabs, the line numbers' column is as
 // wide as the widest tab seen since the viewer opened: a tab with more lines
 // widens it, going back to one with fewer keeps it; opening again starts
-// from the tab it opens on (components/dialog/note).
+// from the tab it opens on (tdp note).
 func TestViewerTabGutterOnlyGrows(t *testing.T) {
 	ta := newTestApp(t)
 	ta.resize(80, 24)
@@ -276,7 +276,7 @@ func TestViewerTabGutterOnlyGrows(t *testing.T) {
 // TestViewerScrollsRows: a folded viewer scrolls a drawn row at a time, as
 // less does; the scroll position names the lines its first and last rows
 // belong to; a line taller than the frame is read whole
-// (components/dialog/note, components/layout/popup).
+// (tdp note, popup).
 func TestViewerScrollsRows(t *testing.T) {
 	ta := newTestApp(t)
 	ta.resize(80, 14) // 8 rows of text, 70 cells each
@@ -331,7 +331,7 @@ func TestViewerScrollsRows(t *testing.T) {
 }
 
 // TestViewerSyntaxColours: a viewer colours its lines as the file preview
-// colours a text file (components/dialog/note): the language given by name,
+// colours a text file (tdp note): the language given by name,
 // by file name or by content type; plain text in Text; the numbers in
 // Overlay0; a selection Yellow with Base text, the syntax colours not shown
 // in it.
@@ -401,7 +401,7 @@ func TestViewerSyntaxColours(t *testing.T) {
 
 // An escape sequence in a viewer line that is not a style is shown, not
 // obeyed: its ESC and BEL by name in Red, the rest as it is; a style stays
-// a style (components/dialog/note).
+// a style (tdp note).
 func TestViewerEscapeSequencesShown(t *testing.T) {
 	ta := newTestApp(t)
 	v := &Viewer{Title: "Log", Lines: []string{"\x1b[2J\x1b[Hclear", "\x1b]0;t\x07x", Fg(Peach).Render("styled")}}

@@ -5,8 +5,8 @@ import tea "github.com/charmbracelet/bubbletea"
 // FilePreview is a panel's body that shows a file or a directory as a
 // file-picker's preview does: a tree, a text file in colour with line numbers,
 // an image, a PDF, hex; with Info, its four facts under it
-// (components/input/file-picker). As a details panel it follows its list's
-// cursor: set Path in the list's OnMove (layout/panel, details). It takes no
+// (tdp file-picker). As a details panel it follows its list's
+// cursor: set Path in the list's OnMove (tdp panel.13). It takes no
 // keys and does not scroll, as a preview does not.
 type FilePreview struct {
 	Path string

@@ -44,7 +44,7 @@ func compareApp(t *testing.T) (*testApp, *bool) {
 // TestCompareMode: the compare key enters the mode, its row the anchor;
 // the compare keys are off on the anchor and on a row that cannot be
 // compared; Enter compares; the same text is an Info toast; Esc leaves, the
-// anchor gone (components/layout/panel, compare mode: panel-138 to 144).
+// anchor gone (tdp panel.9).
 func TestCompareMode(t *testing.T) {
 	ta, _ := compareApp(t)
 	ta.press("C")
@@ -179,7 +179,7 @@ func TestCompareAnchorGone(t *testing.T) {
 }
 
 // TestModeKeyDisabled: a mode key that cannot be pressed now does nothing
-// and is in the disabled colour in its key reference (Rules M6).
+// and is in the disabled colour in its key reference (tdp M6).
 func TestModeKeyDisabled(t *testing.T) {
 	ta := newTestApp(t)
 	ran := false

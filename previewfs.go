@@ -10,8 +10,8 @@ import (
 
 // PreviewFS is where a file preview reads: the local disk when nil, or a file
 // system the app gives, such as a remote host's over SFTP, so its files get
-// the same preview, tree and facts (components/input/file-picker, the
-// preview). Paths are the app's own, slash-separated as SFTP's are.
+// the same preview, tree and facts (tdp file-picker.3).
+// Paths are the app's own, slash-separated as SFTP's are.
 type PreviewFS interface {
 	Open(name string) (PreviewFile, error)
 	Stat(name string) (fs.FileInfo, error)

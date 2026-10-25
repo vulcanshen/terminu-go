@@ -168,7 +168,7 @@ func TestSpansStyled(t *testing.T) {
 }
 
 // TestTabWidthWithoutRun: the app's input_tab_width is the one text is
-// drawn with when it is driven without Run, as in its own tests (Rules E3).
+// drawn with when it is driven without Run, as in its own tests (tdp E3).
 func TestTabWidthWithoutRun(t *testing.T) {
 	ta := newTestApp(t)
 	ta.InputTabWidth = 8

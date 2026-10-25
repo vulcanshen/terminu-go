@@ -125,7 +125,7 @@ func TestVTResize(t *testing.T) {
 
 func TestTerminalCursorBlock(t *testing.T) {
 	// The program asks for a bar (DECSCUSR 6): not drawn; the cursor stays a
-	// block in Text with Base on it (components/dialog/terminal).
+	// block in Text with Base on it (tdp terminal).
 	v := vtAfter(4, 1, "ab\x1b[6 q")
 	if got := v.text()[0]; got != "ab" {
 		t.Errorf("DECSCUSR left %q", got)

@@ -15,13 +15,13 @@ type Body interface {
 	// something with it. Movement keys arrive here.
 	Key(key string, msg tea.KeyMsg) (bool, tea.Cmd)
 	// HasItem reports whether the cursor is on an item, so that item
-	// operations apply (Rules M2).
+	// operations apply (tdp M2).
 	HasItem() bool
 	// Scroll is the scroll position for the bottom border after the last
 	// Draw ("3 of 40", "1-20 of 120"), "" when everything fits.
 	Scroll() string
 	// MoveKeys are the movement keys that work here, for the key
-	// reference's move section (Rules K6).
+	// reference's move section (tdp K6).
 	MoveKeys() []KeyRow
 }
 
@@ -38,7 +38,7 @@ type KeySection struct {
 }
 
 // Mode is a temporary state of a panel in which some keys mean something of
-// their own and Esc leaves (Rules K11).
+// their own and Esc leaves (tdp K11).
 type Mode struct {
 	Name string // shown at the right of the top border: one word
 	// Keys are the mode's own keys: the only ones that work besides the
@@ -65,9 +65,9 @@ type ModeKey struct {
 	// Do runs it, with the key pressed.
 	Do func(key string) tea.Cmd
 	// Disabled reports that it cannot be pressed now: in the disabled colour
-	// in the footer and the key reference, pressing it does nothing (Rules M6).
+	// in the footer and the key reference, pressing it does nothing (tdp M6).
 	Disabled func() bool
-	// In the mode's Space menu (components/dialog/menu, in a mode): Item puts
+	// In the mode's Space menu (tdp menu.4): Item puts
 	// it under ITEM OPERATION, a key acting on the item under the cursor or
 	// the range selected; the others go under the mode's name, a NoFooter one
 	// (a movement key) only shown. Label names its row, its hotkey marked
@@ -99,8 +99,8 @@ func (k ModeKey) takes(key string) bool {
 	return false
 }
 
-// Failure is what a panel shows when its content could not be had (layout/panel,
-// loading and errors): a fact in Red and a hint naming a key.
+// Failure is what a panel shows when its content could not be had (tdp panel.5):
+// a fact in Red and a hint naming a key.
 type Failure struct {
 	Fact, Hint string
 }
@@ -110,7 +110,7 @@ type Failure struct {
 type Panel struct {
 	labelled // its mode's name as drawn (modelabel.go)
 	// Label is the panel's name after its [N]. With tabs it is the first
-	// tab's name: a panel has no other name (layout/panel, tabs).
+	// tab's name: a panel has no other name (tdp panel.4).
 	Label string
 	// Name, when set, is the name of the one thing the panel shows, kept as it
 	// is after the label, upper case, and ": " ([2] PODS: nginx-7d4f); with no
@@ -124,14 +124,14 @@ type Panel struct {
 	OnTab func(tab int) tea.Cmd
 	Body  Body
 	// Actions are the panel's item and panel operations; a "Enter" key is
-	// what Enter does here (Rules K3).
+	// what Enter does here (tdp K3).
 	Actions []Action
 	// Details is the panel that shows the item under this panel's cursor
-	// (components/layout/panel, details): the "Enter" action may send the
+	// (tdp panel.13): the "Enter" action may send the
 	// focus there (Action.ToDetails).
 	Details *Panel
 	// Stream marks streaming content, which is not dimmed when unfocused
-	// (Rules T2).
+	// (tdp T2).
 	Stream bool
 	// Loading puts the loading icon after the capsule chain; LoadingText is
 	// what an empty panel says meanwhile ("loading pods…").
@@ -139,22 +139,22 @@ type Panel struct {
 	LoadingText string
 	// Fail, when set and the panel has nothing to show, is shown in its middle.
 	Fail *Failure
-	// OnEsc is the app's "one level up" for Esc on this panel (Rules K4); it
+	// OnEsc is the app's "one level up" for Esc on this panel (tdp K4); it
 	// reports whether there was one.
 	OnEsc func() tea.Cmd
 	// HintPressableOnly leaves what cannot run now out of the bottom-border
-	// hint (Rules M6: the app's choice); otherwise it is listed in the
+	// hint (tdp M6: the app's choice); otherwise it is listed in the
 	// disabled colour, as in the Space menu and ?.
 	HintPressableOnly bool
 	// OtherKeys are sections of its ? about another surface that has no key
-	// reference of its own (Rules M6: a PTY, a grid), after the panel's own.
+	// reference of its own (tdp M6: a PTY, a grid), after the panel's own.
 	OtherKeys []KeySection
 
 	mode *Mode
 	app  *App
 }
 
-// EnterMode puts the panel in m; Esc leaves it (Rules K11).
+// EnterMode puts the panel in m; Esc leaves it (tdp K11).
 func (p *Panel) EnterMode(m *Mode) { p.mode = m }
 
 // LeaveMode leaves the mode without running its OnExit.
@@ -188,14 +188,14 @@ func (p *Panel) scopeApplies(a Action) bool {
 }
 
 // hint is the panel's bottom-border hint: what Enter does, then the actions
-// that ask to be in it (layout/panel); off marks the ones that cannot run now
-// (Rules M6). None while typing in its filter.
+// that ask to be in it (tdp panel); off marks the ones that cannot run now
+// (tdp M6). None while typing in its filter.
 func (p *Panel) hint() (out []KeyHint, off []bool) {
 	if p.typing() {
 		return nil, nil
 	}
 	// In its PTY the panel's keys go to the program: no hint, as on a filter's
-	// typing row; the footer has the exit key (components/layout/panel).
+	// typing row; the footer has the exit key (tdp panel).
 	if t, ok := p.Body.(*Terminal); ok && t.inside {
 		return nil, nil
 	}
@@ -212,7 +212,7 @@ func (p *Panel) hint() (out []KeyHint, off []bool) {
 		add("Enter", h.EnterHint(), false)
 	}
 	// h|l switch tabs: written after Enter while they do, two tabs or more
-	// and no mode (components/layout/panel, hint).
+	// and no mode (tdp panel.1).
 	if len(p.Tabs) > 0 && p.mode == nil {
 		add("h|l", "tab", false)
 	}
@@ -240,7 +240,7 @@ func (p *Panel) labelText() string {
 // title is "[N] label", as the Space menu and the key reference write it.
 func (p *Panel) title(n int) string { return "[" + itoa(n) + "] " + p.labelText() }
 
-// capsules are the panel's [N] and its tabs (layout/panel, capsule chain):
+// capsules are the panel's [N] and its tabs (tdp panel.4):
 // [N] is a part of its own, always filled; of the tabs only the current one
 // is. On the first tab [N] and it meet with blank as wide as a join, no join
 // drawn, so the text does not move when the tab changes: "[2] PODS", as a
@@ -286,7 +286,7 @@ func (p *Panel) draw(n, w, h int, focused, pointed bool) []string {
 	// A line segment stays before the top-right corner (or the mode's name).
 	b.head = drawChain(p.capsules(n), color, max(w-3-modeRoom(mode, lab.room), 1))
 	if p.Loading {
-		b.after = Fg(color).Render(loadingFrame()) // the frame's colour (components/layout/popup)
+		b.after = Fg(color).Render(loadingFrame()) // the frame's colour (tdp popup)
 	}
 	b.mode, b.modeClosed = mode, 1-lab.shown
 	inner, ih := w-2, h-2
@@ -311,12 +311,12 @@ func (p *Panel) draw(n, w, h int, focused, pointed bool) []string {
 		b.scroll = p.Body.Scroll()
 	}
 	_, pty := p.Body.(*Terminal)
-	if !focused && !p.Stream && !pty { // a program's screen is live, like a stream (Rules T2)
+	if !focused && !p.Stream && !pty { // a program's screen is live, like a stream (tdp T2)
 		b.body = DimLines(b.body)
 	}
 	if !focused {
 		// The hint dims on every panel without the focus, a stream's too: it
-		// is not what streams (Rules T2).
+		// is not what streams (tdp T2).
 		b.hintKey = Fg(DimColor(Blue))
 		b.hintWords = DimColor(Overlay0)
 	}
@@ -352,7 +352,7 @@ func blankLines(w, h int) []string {
 	return out
 }
 
-// emptyState is a sentence and a hint centred in w × h (layout/screen, empty
+// emptyState is a sentence and a hint centred in w × h (tdp screen.8
 // states), with a blank line between them. Too long, each folds at its spaces
 // (components, wrapping), every line centred one cell from the frame: never
 // cut.
@@ -379,12 +379,12 @@ func emptyState(w, h int, fact string, factStyle Style, hint string, hintStyle S
 }
 
 // EmptyState draws an empty panel's two sentences, the fact and the hint
-// naming keys, both in Overlay0 (layout/screen); keys written as [A] in the
+// naming keys, both in Overlay0 (tdp screen); keys written as [A] in the
 // hint stay as they are.
 func EmptyState(w, h int, fact, hint string) []string {
 	return emptyState(w, h, fact, Fg(Overlay0), hint, Fg(Overlay0))
 }
 
 // bracketKeys leaves a sentence as it is: keys in sentences are already
-// written in brackets by whoever wrote it (Rules M5).
+// written in brackets by whoever wrote it (tdp M5).
 func bracketKeys(s string) string { return strings.TrimSpace(s) }

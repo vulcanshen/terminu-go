@@ -20,7 +20,7 @@ func runAll(cmd tea.Cmd) {
 
 // TestTerminalOnLeave: the exit key accepted, OnLeave runs once the focus
 // is out and its command is run: here it puts the focus on the other panel,
-// where the app wants it (Rules K10). Esc on the confirm and the app's own
+// where the app wants it (tdp K10). Esc on the confirm and the app's own
 // Hide do not run it; an exit key that does not ask, on a terminal that
 // ends, does.
 func TestTerminalOnLeave(t *testing.T) {

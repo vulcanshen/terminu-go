@@ -58,13 +58,13 @@ type PopupActions struct {
 // A body may also have QuitNote() string: what quitting now would lose
 // ("Changes to kamonu are not saved."), "" for nothing. The quit flow's
 // confirm puts it last, in Peach, and asks first even when App.Quit is nil
-// (Rules K9: the quit flow is the app's).
+// (tdp K9: the quit flow is the app's).
 //
 // A body that scrolls may also have Scroll() string: its scroll position
 // ("3 of 40", "1-20 of 120"), "" when everything fits. The lib draws it on
 // the right of the bottom frame line in the layer colour and, when the popup
 // opens, makes it wide enough for it and the whole hint
-// (components/layout/popup, when the content does not fit).
+// (tdp popup.6).
 //
 // A body with Actions may also have:
 //   - Changed() bool: something was changed, to be lost by Esc; once it says
@@ -80,11 +80,11 @@ type PopupBody interface {
 	// frame line, h rows between the blank rows above and below. It is asked
 	// when the popup opens and when the terminal changes size; the lib makes
 	// it wide enough for the title and the hint, and no bigger than the
-	// screen allows (Rules F7).
+	// screen allows (tdp F7).
 	Size(sw, sh int) (w, h int)
 	// Draw returns h lines of w cells; layer is the popup's colour. The cell
 	// at either end is the blank margin, which only a full-row cursor covers
-	// (components/layout/popup).
+	// (tdp popup).
 	Draw(w, h int, layer Color) []string
 	// Key handles a key while the popup is on top and reports whether it
 	// did. The lib does the keys it leaves: Esc closes the popup, ? opens its
@@ -143,13 +143,13 @@ func (a *App) ClosePopup(b PopupBody) tea.Cmd {
 }
 
 // CloseAll closes every popup, the lib's and the app's, each playing its own
-// closing at the same time (Rules F2), as when what was done ends the whole
-// stack (Rules T1; a long session started from a viewer). A confirm or an
+// closing at the same time (tdp F2), as when what was done ends the whole
+// stack (tdp T1; a long session started from a viewer). A confirm or an
 // input closed this way is cancelled (OnCancel).
 func (a *App) CloseAll() tea.Cmd { return a.closeAll() }
 
 // CloseTop closes the n popups on top, the lowest of them animating, as the
-// last step of a flow ends the steps under it (Rules T1); a step that has
+// last step of a flow ends the steps under it (tdp T1); a step that has
 // been answered is not cancelled.
 func (a *App) CloseTop(n int) tea.Cmd {
 	var open []*layer

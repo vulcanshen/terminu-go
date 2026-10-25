@@ -7,7 +7,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// CoreKey is a core key of the app's own (Rules K1).
+// CoreKey is a core key of the app's own (tdp K1).
 type CoreKey struct {
 	Key, Desc string
 	Do        func() tea.Cmd
@@ -23,14 +23,14 @@ func (a *App) coreKey(key string) *CoreKey {
 }
 
 // isCoreKey reports a key that means the same on every surface: the table of
-// Rules K1, and the app's own.
+// tdp K1, and the app's own.
 func (a *App) isCoreKey(key string) bool {
 	return slices.Contains([]string{"Tab", "Shift-Tab", "Enter", "Esc", "Space", "?", "!", "q", "Ctrl-C"}, key) ||
 		len(key) == 1 && key[0] >= '1' && key[0] <= '9' || a.coreKey(key) != nil
 }
 
 // typingOrMode reports the surfaces where the app's core keys do not work:
-// a typing row (Rules K8) and a panel or a popup in a mode (K11). A PTY never
+// a typing row (tdp K8) and a panel or a popup in a mode (tdp K11). A PTY never
 // gets here.
 func (a *App) typingOrMode() bool {
 	if l := a.top(); l != nil {
@@ -46,7 +46,7 @@ func (a *App) typingOrMode() bool {
 }
 
 // checkKeys refuses hotkeys that are not the app's to take: a global or a
-// screen key on a core key or a movement letter (Rules K1, K12), and any
+// screen key on a core key or a movement letter (tdp K1, K12), and any
 // hotkey on one of the app's own core keys.
 func (a *App) checkKeys() error {
 	for _, ck := range a.CoreKeys {

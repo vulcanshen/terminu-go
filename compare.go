@@ -7,10 +7,10 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-const glyphCompare = "\U000F018A" // nf-md-compare: the compare popup (components/dialog/note)
+const glyphCompare = "\U000F018A" // nf-md-compare: the compare popup (tdp note)
 
 // Compare is what a list's compare mode needs from the app
-// (components/layout/panel, compare mode; components/dialog/note, compare):
+// (tdp panel.9; tdp note.8):
 // the key, which rows can be compared and their text. The lib does the rest.
 type Compare struct {
 	// Key is the compare key (the app's choice, kbu's C): on a row it enters
@@ -19,7 +19,7 @@ type Compare struct {
 	Key string
 	// Can reports a row that can be compared: text, or shown as text. A row
 	// it says no to has no Compare action, and in the mode the compare keys
-	// are off on it (Rules M2, M6). Nil: every row.
+	// are off on it (tdp M2, M6). Nil: every row.
 	Can func(Row) bool
 	// Name is the row as the title names it; its first cell when nil.
 	Name func(Row) string
@@ -27,7 +27,7 @@ type Compare struct {
 	Text func(Row) (string, error)
 	// Split is which the compare shows, UNIFIED or SPLIT: the lib reads it
 	// and sets it as the user switches, for the app to keep with its state
-	// (Rules E3). Nil: kept while the app runs.
+	// (tdp E3). Nil: kept while the app runs.
 	Split *bool
 }
 
@@ -44,7 +44,7 @@ func (c Compare) name(r Row) string {
 }
 
 // splitMin is the narrowest terminal SPLIT is drawn on, as the finder's
-// side by side (components/dialog/note, compare).
+// side by side (tdp note.8).
 const splitMin = 96
 
 // comparing is a compare mode under way.
@@ -57,10 +57,10 @@ type comparing struct {
 }
 
 // CompareAction is l's Compare item action, for p's Actions: on a row c can
-// compare it enters the compare mode (Rules K11), that row the anchor
+// compare it enters the compare mode (tdp K11), that row the anchor
 // (List.Anchor). In the mode j|k, u|d and gg|G move; c.Key or Enter
 // compares the row under the cursor with the anchor, off on the anchor and
-// on a row c cannot compare (Rules M6); the same text on both sides is an
+// on a row c cannot compare (tdp M6); the same text on both sides is an
 // Info toast, not a popup. Esc leaves it, the anchor gone; Tab and the
 // digits wait; an anchor no longer in the list ends it with a Warning toast.
 // The rows need their IDs.
@@ -281,7 +281,7 @@ func backtrack(trace [][]int, x, y, ao, bo int) []diffOp {
 }
 
 // hunks are the stretches of ops a compare shows: each change with 3 lines
-// either side, the ones that meet joined (components/dialog/note, compare).
+// either side, the ones that meet joined (tdp note.8).
 func hunks(ops []diffOp) [][2]int {
 	var out [][2]int
 	for i, o := range ops {

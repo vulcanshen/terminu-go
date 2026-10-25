@@ -1465,7 +1465,7 @@ func TestF8BorderKeepsLayerColor(t *testing.T) {
 }
 
 // TestF7WidthKnownUnlockContent is the part of TestF7WidthKnown the lib does
-// not do: an unlock mask of n characters is 2n − 1 cells (layout/popup's PIN:
+// not do: an unlock mask of n characters is 2n − 1 cells (tdp popup.2, the PIN:
 // 12 + 11 spaces + 4 = 27), so its box is 2n + 3 when the mask is the widest.
 func TestF7WidthKnownUnlockContent(t *testing.T) {
 	ta := newTestApp(t)
@@ -1556,7 +1556,7 @@ func TestT2StreamNotDimmed(t *testing.T) {
 		t.Errorf("an unfocused PTY is dimmed: %s", got)
 	}
 	// The hint of a stream without the focus dims all the same: it is not
-	// what streams (Rules T2).
+	// what streams (tdp T2).
 	log.Stream = true
 	log.Actions = []Action{{Key: "Enter", Label: "View", Desc: "the log", Scope: PanelScope, Hint: "view", Do: func() tea.Cmd { return nil }}}
 	if got := covBAt(ta.rowWith("Enter:view"), 40, 80, "Enter").fg; got != covBDim(Blue) {
@@ -1564,10 +1564,10 @@ func TestT2StreamNotDimmed(t *testing.T) {
 	}
 }
 
-// A menu that clears itself for the popup it opens (Rules T1, a drill-down):
+// A menu that clears itself for the popup it opens (tdp T1, a drill-down):
 // both animations play at once, and the closing menu is not a layer, so the
 // new popup has the first layer's colour from its first frame
-// (components/color).
+// (tdp color).
 func TestT1SourceClosesWhileTargetOpens(t *testing.T) {
 	ta := newTestApp(t)
 	ta.Menu("Open", MenuSection{Actions: []Action{{Key: "o", Label: "Open", Desc: "the YAML", Clear: true,
@@ -1594,7 +1594,7 @@ func TestT1SourceClosesWhileTargetOpens(t *testing.T) {
 
 // TestT1KeepByDefault: run from a menu, what an action opens keeps the menu
 // under it, to come back to; an action that opens nothing closes it. A
-// confirm before it is only a door (Rules T1, F4; components/dialog/menu).
+// confirm before it is only a door (tdp T1, F4; tdp menu).
 func TestT1KeepByDefault(t *testing.T) {
 	ta := newTestApp(t)
 	opens := Action{Key: "y", Label: "YAML", Desc: "look at it", Do: func() tea.Cmd { return ta.Viewer(testViewer()) }}
@@ -1660,7 +1660,7 @@ func TestT1KeepByDefault(t *testing.T) {
 
 // TestF2LayersCloseTogether: several popups closing at once each play their
 // own closing, at their own size and in their own layer's colour, all in the
-// same nine frames (Rules F2; components/layout/popup).
+// same nine frames (tdp F2; tdp popup).
 func TestF2LayersCloseTogether(t *testing.T) {
 	ta := newTestApp(t)
 	ta.press("Space", "G", "Enter")
@@ -1696,7 +1696,7 @@ func TestF2LayersCloseTogether(t *testing.T) {
 
 // TestF7ShortScreenKeepsFooter: on a screen too short for a popup, it is
 // drawn no taller than its height, so the chip row and the footer stay in
-// sight (Rules F7; demou DM5).
+// sight (tdp F7; demou DM5).
 func TestF7ShortScreenKeepsFooter(t *testing.T) {
 	calls := inputOpeners(t)
 	for name, open := range dialogOpeners() {
@@ -1715,12 +1715,12 @@ func TestF7ShortScreenKeepsFooter(t *testing.T) {
 			}
 			rows := []int{0, sh - 1}
 			if name == "terminal" {
-				rows = rows[:1] // it covers the footer (Rules F7)
+				rows = rows[:1] // it covers the footer (tdp F7)
 			}
 			for _, row := range rows {
 				want := StripStyles(before[row])
 				if name == "error" && row == sh-1 {
-					// The error is logged, unseen (components/layout/screen).
+					// The error is logged, unseen (tdp screen).
 					want = Pad(strings.Replace(strings.TrimRight(want, " "), "!:log", "!:1 error", 1), 80)
 				}
 				if got := StripStyles(after[row]); got != want {
@@ -1733,7 +1733,7 @@ func TestF7ShortScreenKeepsFooter(t *testing.T) {
 
 // TestInputShortScreenKeepsTypingRow: an input too short for its prompt keeps
 // the typing row in sight, and the error row while there is room for both
-// (components/layout/popup; demou DM6).
+// (tdp popup; demou DM6).
 func TestInputShortScreenKeepsTypingRow(t *testing.T) {
 	for sh := 5; sh <= 10; sh++ {
 		ta := newTestApp(t)
@@ -1754,7 +1754,7 @@ func TestInputShortScreenKeepsTypingRow(t *testing.T) {
 
 // TestOnCancel: a confirm or an input closed with no answer, by Esc or by the
 // popup under it closing, runs its OnCancel, once; an answer does not, even
-// one that leaves the value as it was (Rules F6; webu WB3, sshu SS8).
+// one that leaves the value as it was (tdp F6; webu WB3, sshu SS8).
 func TestOnCancel(t *testing.T) {
 	ta := newTestApp(t)
 	cases := []struct {
@@ -1806,7 +1806,7 @@ func TestOnCancel(t *testing.T) {
 
 // TestF6AskFor: an action can make its question when it runs, after Hidden
 // and Disabled, or ask nothing; from the Space menu its confirm opens over
-// the menu, and Esc goes back to it (Rules F6, T1; kamonu KM12, filu FL15,
+// the menu, and Esc goes back to it (tdp F6, T1; kamonu KM12, filu FL15,
 // sshu SS29, webu WB15).
 func TestF6AskFor(t *testing.T) {
 	ta := newTestApp(t)

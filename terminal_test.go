@@ -44,7 +44,7 @@ func termWithHistory(t *testing.T) (*testApp, *Terminal, *bytes.Buffer) {
 }
 
 // TestTerminalEmptyUntilItSpeaks: started, it is empty until its program
-// prints, so the panel's LoadingText shows in its middle (layout/panel).
+// prints, so the panel's LoadingText shows in its middle (tdp panel).
 func TestTerminalEmptyUntilItSpeaks(t *testing.T) {
 	ta, term, _ := ptyApp(t)
 	ta.Screen().Panels[0].Loading, ta.Screen().Panels[0].LoadingText = true, "connecting to web-01…"
@@ -59,13 +59,13 @@ func TestTerminalEmptyUntilItSpeaks(t *testing.T) {
 
 // TestTerminalHistoryMode: PgUp goes into the History mode; its keys scroll
 // back, Esc goes back to the live screen, any other key leaves it and goes to
-// the program, q too (components/dialog/terminal, Rules K11).
+// the program, q too (tdp terminal, tdp K11).
 // altV is Alt-v as the terminal sends it.
 var altV = tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("v"), Alt: true}
 
 // TestTerminalNotInteractive: a PTY the app opens to run one program has no
 // History mode and no selection: PgUp and Alt-v go to the program, the hint
-// does not offer them (components/dialog/terminal, terminal-21).
+// does not offer them (tdp terminal, terminal-21).
 func TestTerminalNotInteractive(t *testing.T) {
 	ta, term, sent := termWithHistory(t)
 	term.Interactive = false
@@ -184,7 +184,7 @@ func TestTerminalHistoryMode(t *testing.T) {
 
 // TestTerminalSelectMode: Alt-v puts an interactive terminal in the
 // selection mode, a viewer's: the screen holds still, the cursor goes up
-// into the history, y copies with a Success toast (components/dialog/terminal).
+// into the history, y copies with a Success toast (tdp terminal).
 func TestTerminalSelectMode(t *testing.T) {
 	ta, term, sent := termWithHistory(t)
 	takeClipboard()
@@ -223,7 +223,7 @@ func TestTerminalSelectMode(t *testing.T) {
 
 // TestTerminalExitKey: the exit key is the app's, Alt-Esc unless it says;
 // the hint shows it as it is now; another asks first only when the app says
-// (Rules K10; sshu SS5, SS6).
+// (tdp K10; sshu SS5, SS6).
 func TestTerminalExitKey(t *testing.T) {
 	ta, term, sent := ptyApp(t)
 	term.ExitKey = "Alt-q"
@@ -381,7 +381,7 @@ func TestTerminalPopupSize(t *testing.T) {
 		t.Errorf("the popup covers the footer; the last row is %q", last)
 	}
 	// No footer: the ends of the last row are blank, none of its words show
-	// (components/dialog/terminal).
+	// (tdp terminal).
 	if !strings.HasPrefix(last, " ┗") || !strings.HasSuffix(last, "┛ ") {
 		t.Errorf("the footer shows at the ends of the last row: %q", last)
 	}
@@ -441,7 +441,7 @@ func TestTerminalResizeWhileExiting(t *testing.T) {
 
 // TestTerminalKeyTakesSeveral: one of the app's keys in a PTY can take
 // several keys, written once in the footer, and its DoKey hears which
-// (Rules K10, M5; sshu SS12).
+// (tdp K10, M5; sshu SS12).
 func TestTerminalKeyTakesSeveral(t *testing.T) {
 	ta, term, sent := ptyApp(t)
 	var got []string
@@ -459,7 +459,7 @@ func TestTerminalKeyTakesSeveral(t *testing.T) {
 }
 
 // TestTerminalFirstOutput: a terminal tells the app once when its program
-// first prints, so the app can end the panel's loading (Rules K10, F7; sshu
+// first prints, so the app can end the panel's loading (tdp K10, F7; sshu
 // SS11).
 func TestTerminalFirstOutput(t *testing.T) {
 	ta := newTestApp(t)

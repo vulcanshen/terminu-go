@@ -9,7 +9,7 @@ import (
 )
 
 // A mode's name opens from its middle on the frame and closes back to the
-// line (components/layout/panel, the frame): the junctions side by side
+// line (tdp panel.1): the junctions side by side
 // first, then one more character each frame of 32ms, as a popup's (Rules
 // F2), so every frame changes and the length goes with the name's; by the
 // clock. Only the name moves: the mode and the frame's colour change at once

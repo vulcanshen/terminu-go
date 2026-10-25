@@ -49,7 +49,7 @@ func (t *Pager) clamp() {
 // Empty reports whether there is nothing to show.
 func (t *Pager) Empty() bool { return len(t.rows) == 0 }
 
-// HasItem is false: a text has no items (Rules K3: Enter works on the whole panel).
+// HasItem is false: a text has no items (tdp K3: Enter works on the whole panel).
 func (t *Pager) HasItem() bool { return false }
 
 // Draw draws the lines seen from the top, one cell from the frame.
@@ -80,7 +80,7 @@ func (t *Pager) Draw(w, h int, focused bool) []string {
 func (t *Pager) Scroll() string { return t.scroll }
 
 // MoveKeys are the scrolling keys; none when every line fits, nothing to
-// scroll (Rules M6).
+// scroll (tdp M6).
 func (t *Pager) MoveKeys() []KeyRow {
 	if len(t.rows) <= t.height {
 		return nil

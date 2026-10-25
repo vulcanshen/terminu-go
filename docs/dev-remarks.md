@@ -1,7 +1,7 @@
 # terminu-go 開發者備忘
 
 terminu-go 是 terminu design principle（tdp）的 Go 實作：給 app 呼叫的 lib，加上展示場 `examples/showcase`。遵循 terminu design
-principle，目前對應 tdp v0.9.16。這個 repo 的任務與規範的讀法見 [`CLAUDE.md`](../CLAUDE.md)。
+principle，目前對應 tdp v0.10.0。這個 repo 的任務與規範的讀法見 [`CLAUDE.md`](../CLAUDE.md)。
 
 ## 運作方式
 
@@ -139,6 +139,10 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
 - **lib 自己的名字標記用一個特定的 SGR**：要讓色塊上的名字變成 Red 底，畫到一半的字串裡得認得哪些是名字。用私有區的字元或
   另外的結構都要改動所有量寬度、截斷的地方；一個只有 lib 會寫出來的 SGR（多一個 `24`）走得過既有的每一條路。
 - **App Log 的 `!` 只在 panel 上**：K1 的表寫「在 panel 上打開」；popup 裡不作用，跟 `Space` 一樣。
+- **app 自己的 popup 有要送出的值時就是一張表單**（tdp popup.8：照表單）：`Popup.Actions` 開的是 `formView`，欄位區換成 app 的
+  body（`itemContent` 一個停點）。動作區、`Tab`、按鈕上的鍵、放棄的 confirm、`q`、跑得久的按鈕、錯誤列走表單同一份程式，所以兩邊
+  不會各長各的；body 只回答 `Changed`、`Check`，`Focus` 讓它知道要不要畫自己的 cursor。內容上的鍵照舊先給 body，`Tab`、
+  `Shift-Tab`、`Esc`、`q` 不給：它們在表單上是固定的。
 
 ## 已否決，不要重提
 
@@ -164,9 +168,10 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   splash 對 `docs/icon.svg`）、`coverage.md` 標上 checklist 的條目編號、自動打開每個動作的 popup、把設定檔改壞再開、檢查 app 沒寫到
   沙盒以外。
 
-## 偏離 tdp
+## 做不到的規定
 
-（沒有。lib 不偏離 tdp（rules E8）：做不到或不好用的記成盲點，規範改了 lib 才跟著改。）
+（沒有。lib 不自己另做（tdp E8）：做不到或不好用的回報成 tdp 的缺漏，記成盲點，規範改了 lib 才跟著改。tdp v0.10.0 起開發者
+文件不在 tdp 的範圍裡（tdp P5），這份備忘照舊留著，給接手的人與 AI 協作用。）
 
 ## 設計文件導讀
 

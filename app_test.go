@@ -20,7 +20,7 @@ type testApp struct {
 }
 
 // anySize lets a test app draw itself on any terminal: the tests of other
-// things use small ones (Rules L1: the app may lower its least size).
+// things use small ones (tdp L1: the app may lower its least size).
 func anySize(a *App) *App {
 	a.MinWidth, a.MinHeight = 1, 1
 	return a
@@ -298,7 +298,7 @@ func TestK11HotkeysSilentInMode(t *testing.T) {
 	if ta.Screen().focus != 0 || ta.toast == nil {
 		t.Error("a digit in a paused mode should answer with a toast and stay")
 	}
-	ta.press("Esc") // the toast first (K11)
+	ta.press("Esc") // the toast first (tdp K11)
 	if ta.pods.InMode() == nil {
 		t.Error("the first Esc left the mode while a toast was up")
 	}
@@ -310,7 +310,7 @@ func TestK11HotkeysSilentInMode(t *testing.T) {
 
 func TestM5KeysJoinedWithBar(t *testing.T) {
 	// Keys doing one thing are joined with |, drawn in the words colour,
-	// Overlay0, not in the key colour (Rules M5).
+	// Overlay0, not in the key colour (tdp M5).
 	bar := Fg(Overlay0).Render("|")
 	if h := renderHints([]KeyHint{{"Enter|Tab", "list"}}, 40, Fg(Blue), Overlay0); h != Fg(Blue).Render("Enter")+bar+Fg(Blue).Render("Tab")+Fg(Overlay0).Render(":list") {
 		t.Errorf("hint: %q", h)
@@ -410,7 +410,7 @@ func TestF2NoKeysWhileOpening(t *testing.T) {
 
 // TestL4EveryRowFullWidth draws every screen and popup at many sizes, with an
 // icon one cell and two, and checks that every row is exactly the terminal's
-// width and the screen exactly its height (Rules L4, E5). Some are shorter
+// width and the screen exactly its height (tdp L4, E5). Some are shorter
 // than a popup's frame: a popup is cut off there, never a panic.
 func TestL4EveryRowFullWidth(t *testing.T) {
 	sizes := [][2]int{{80, 40}, {120, 40}, {100, 30}, {60, 20}, {30, 12}, {200, 50},
@@ -527,7 +527,7 @@ func TestM6HintListsDisabled(t *testing.T) {
 
 // TestE3TabsDrawnAsSpaces: a tab in the text of a panel or a popup is drawn as
 // input_tab_width spaces, as in a viewer, and counted so: a row holding one
-// is still exactly as wide as the terminal (Rules E3, L4).
+// is still exactly as wide as the terminal (tdp E3, L4).
 // TestInitSendsLibTimers: the timers of a toast Start opens go out with
 // Init, whatever Start returns, not at the first message.
 func TestInitSendsLibTimers(t *testing.T) {
@@ -573,7 +573,7 @@ func TestE3TabsDrawnAsSpaces(t *testing.T) {
 // TestValueControlChars: a value on a form or a panel writes every control
 // character as its red name, a tab and ESC too, a colour code included, as on
 // a typing row; colours of the app's own come as spans (components, control
-// characters; components/input/README, Rules E3).
+// characters; tdp input, tdp E3).
 func TestValueControlChars(t *testing.T) {
 	v := "a\tb\nc\x1b[31md"
 	got := valueText(v, Fg(Text))
@@ -606,7 +606,7 @@ func TestValueControlChars(t *testing.T) {
 	if text := ta.screenText(); !strings.Contains(text, `go\ttest`) {
 		t.Errorf("a form value: %q", text)
 	}
-	// Text that is only read keeps its tab as spaces (Rules E3).
+	// Text that is only read keeps its tab as spaces (tdp E3).
 	if got := Pad("make\tcheck", 20); !strings.Contains(got, "make    check") {
 		t.Errorf("text on the screen: %q", got)
 	}
@@ -634,7 +634,7 @@ func TestSpinning(t *testing.T) {
 }
 
 // TestAppMovesFocus: the app moves the focus or the screen where the user
-// expects it (Rules K3); the focus stays on its panel when panels come and
+// expects it (tdp K3); the focus stays on its panel when panels come and
 // go, and a screen whose panels got fewer does not panic (sshu SS3).
 func TestAppMovesFocus(t *testing.T) {
 	ta := newTestApp(t)
@@ -670,7 +670,7 @@ func TestAppMovesFocus(t *testing.T) {
 }
 
 // TestQuitFlowOfTheApp: the quit flow can be the app's own action, a menu of
-// ways to leave; a second Ctrl-C during it still leaves at once (Rules K9).
+// ways to leave; a second Ctrl-C during it still leaves at once (tdp K9).
 func TestQuitFlowOfTheApp(t *testing.T) {
 	ta := newTestApp(t)
 	ta.QuitFlow = func() tea.Cmd {
@@ -706,8 +706,8 @@ func TestQuitFlowOfTheApp(t *testing.T) {
 
 // TestL1LeastSize: under the app's least size, 80 × 40 unless it says less,
 // only its name and what it needs are drawn, in the middle; no key acts but
-// Ctrl-C twice; what it was showing comes back as it grows (Rules L1,
-// components/layout/screen; tdp E5 down to 1×1).
+// Ctrl-C twice; what it was showing comes back as it grows (tdp L1,
+// tdp screen; tdp E5 down to 1×1).
 func TestL1LeastSize(t *testing.T) {
 	ta := newTestApp(t)
 	ta.MinWidth, ta.MinHeight = 0, 0
@@ -791,7 +791,7 @@ func TestL1LeastSize(t *testing.T) {
 }
 
 // TestOnResize: the app hears of a new terminal size after the lib has laid
-// the screen out again (Rules L1; kbu KB20).
+// the screen out again (tdp L1; kbu KB20).
 func TestOnResize(t *testing.T) {
 	ta := newTestApp(t)
 	var got [][2]int

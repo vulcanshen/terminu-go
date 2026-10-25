@@ -34,11 +34,11 @@ var (
 	// Toast reports a toast on the screen, not closing.
 	Toast func(app any) bool
 	// Typing reports keys going to a typing row, a mode or a PTY: ? and q
-	// are not the core keys there (Rules K8).
+	// are not the core keys there (tdp K8).
 	Typing func(app any) bool
 	// Screens is the app's screens, a []*terminu.Screen.
 	Screens func(app any) any
-	// MinSize is the app's least size (Rules L1).
+	// MinSize is the app's least size (tdp L1).
 	MinSize func(app any) (w, h int)
 	// Clipboard is the text waiting to go to the clipboard, taken; ok false
 	// when there is none.

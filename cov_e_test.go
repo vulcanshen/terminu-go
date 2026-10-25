@@ -867,7 +867,7 @@ func TestKeyReferenceMoveSection(t *testing.T) {
 	if move := covEKeys(plain)["MOVE"]; !slices.Equal(move, []string{"j|k", "u|d", "gg|G", "h|l"}) {
 		t.Errorf("a list with tabs moves with j|k u|d gg|G and switches tabs with h|l: %v", move)
 	}
-	// Three lines that fit: nothing to scroll, no move section (Rules M6).
+	// Three lines that fit: nothing to scroll, no move section (tdp M6).
 	ta.press("Esc", "2", "?")
 	_, plain = covEPopup(ta)
 	if move, ok := covEKeys(plain)["MOVE"]; ok {
@@ -882,7 +882,7 @@ func TestKeyReferenceMoveSection(t *testing.T) {
 	if move := covEKeys(plain)["MOVE"]; slices.Contains(move, "h|l") || !slices.Contains(move, "j|k") {
 		t.Errorf("without tabs there is no h|l: %v", move)
 	}
-	// A value panel without tabs is a one-dimensional list: h|k, j|l (Rules K12).
+	// A value panel without tabs is a one-dimensional list: h|k, j|l (tdp K12).
 	ta.press("Esc", "3", "?")
 	_, plain = covEPopup(ta)
 	if move := covEKeys(plain)["MOVE"]; !slices.Equal(move, []string{"h|k", "j|l", "u|d", "gg|G"}) {
@@ -908,7 +908,7 @@ func TestKeyReferenceMoveSection(t *testing.T) {
 
 // TestKeyReferenceScrollOnlyWhenItScrolls: a confirm's or a note's key
 // reference lists its scroll keys only when its content does not all fit
-// (Rules M6).
+// (tdp M6).
 func TestKeyReferenceScrollOnlyWhenItScrolls(t *testing.T) {
 	ta := newTestApp(t)
 	ta.Confirm(Ask{Title: "Delete", Question: "Delete it?", Verb: "delete", Details: []string{"one", "two"}}, nil)
@@ -946,7 +946,7 @@ func TestKeyReferenceScrollOnlyWhenItScrolls(t *testing.T) {
 
 // TestKeyReferenceRowsFold: in the "what each row is" section a long
 // description folds in the right column, the name's column blank under it;
-// the sections of keys stay one line a key (components/dialog/note).
+// the sections of keys stay one line a key (tdp note).
 func TestKeyReferenceRowsFold(t *testing.T) {
 	ta := newTestApp(t)
 	ta.resize(60, 40)
@@ -978,7 +978,7 @@ func TestKeyReferenceRowsFold(t *testing.T) {
 
 // TestKeyReferenceWhatEachRowIs: a value panel's key reference may start with
 // what each row is, the setting's name in Text, not a key's Blue
-// (layout/panel, components/dialog/note).
+// (tdp panel, note).
 func TestKeyReferenceWhatEachRowIs(t *testing.T) {
 	ta := newTestApp(t)
 	vals := ta.Screen().Panels[2].Body.(*Values)
@@ -1293,7 +1293,7 @@ func TestToastKeysPassThrough(t *testing.T) {
 
 // TestFormKeyReferenceFollowsFields: the form's key reference lists Space
 // only when it has checkbox options and e only when a field is wrong, each
-// in the disabled colour where the focus cannot use it (Rules M6).
+// in the disabled colour where the focus cannot use it (tdp M6).
 func TestFormKeyReferenceFollowsFields(t *testing.T) {
 	ta := newTestApp(t)
 	keys := func() map[string]bool {
@@ -1332,7 +1332,7 @@ func TestFormKeyReferenceFollowsFields(t *testing.T) {
 }
 
 // TestK6ShiftTabInKeyReference: with Shift-Tab going to the previous panel,
-// the panel's key reference says so with Tab (Rules K6; filu FL7).
+// the panel's key reference says so with Tab (tdp K6; filu FL7).
 func TestK6ShiftTabInKeyReference(t *testing.T) {
 	for _, on := range []bool{false, true} {
 		ta := newTestApp(t)
@@ -1367,7 +1367,7 @@ func TestM6HiddenGlobalNotInKeyReference(t *testing.T) {
 // TestValuesEnterInMenuAndKeys: what Enter does on a one-value-per-row panel
 // is in its Space menu and its key reference too, from the same place as the
 // hint; on a disabled field in the disabled colour; an Enter the app
-// registered itself is the only one (Rules M3, M6, K6; ccdrawu CD19).
+// registered itself is the only one (tdp M3, M6, K6; ccdrawu CD19).
 func TestValuesEnterInMenuAndKeys(t *testing.T) {
 	ta := newTestApp(t)
 	ta.press("3", "?")

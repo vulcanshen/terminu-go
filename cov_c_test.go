@@ -12,8 +12,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// Tests for components/color, components §圖與間距 and §大寫, layout/screen
-// and layout/panel (docs/coverage.md).
+// Tests for color, components.2–4, layout/screen and layout/panel
+// (docs/coverage.md).
 
 // --- reading a drawn line back --------------------------------------------------
 
@@ -339,7 +339,7 @@ func TestWarningColorFixed(t *testing.T) {
 	ta.Confirm(ask, nil)
 	ta.settle()
 	covCWant(t, "a warning on layer 2", ta.Frame(), "Everything", Peach, Color{})
-	// Covered by another popup it is dimmed with the rest (Rules F8).
+	// Covered by another popup it is dimmed with the rest (tdp F8).
 	ta.Error("Failed", "boom")
 	ta.settle()
 	lines := ta.Frame()
@@ -500,7 +500,7 @@ func TestCursorBlock(t *testing.T) {
 	if st := covCStyleOf(t, ta.Frame(), "[Enter] Logs"); st != (covCStyle{Fg: Base, Bg: LayerColor(1), Bold: true}) {
 		t.Errorf("popup cursor: %+v", st)
 	}
-	// The block without the focus has its cursor dimmed once more (P6): the
+	// The block without the focus has its cursor dimmed once more (tdp P6): the
 	// list under a panel filter's typing row...
 	ta.press("Esc", "/")
 	if st := covCStyleOf(t, pods(), "pod-00"); st.Bg != DimColor(Subtext1) || st.Fg != DimColor(Base) {
@@ -652,7 +652,7 @@ func TestDimDefaultFg(t *testing.T) {
 	}
 }
 
-// --- components §圖與間距、§大寫 ------------------------------------------------------
+// --- components.2、components.4 ------------------------------------------------------
 
 func TestTwoCellColumnGap(t *testing.T) {
 	// Table columns.
@@ -773,7 +773,7 @@ func TestUppercaseKeepsHotkeyAndNames(t *testing.T) {
 }
 
 // TestPopupTitleSubject: a popup that names what it acts on writes the name
-// after ": ", as it is (components/layout/popup, "Title").
+// after ": ", as it is (tdp popup, "Title").
 func TestPopupTitleSubject(t *testing.T) {
 	const subject = "filu ~/Work"
 	cases := []struct {
@@ -1098,7 +1098,7 @@ func TestEmptyState(t *testing.T) {
 		t.Errorf("not in the middle: %d rows above, %d below", above, below)
 	}
 	// Too long: it folds at its spaces, each line centred, one cell from the
-	// frame; nothing cut (layout/screen, empty states).
+	// frame; nothing cut (tdp screen.8).
 	lines := EmptyState(20, 9, "No pods in this namespace yet", "Press [A] to add a pod")
 	var text []string
 	for _, l := range lines {
@@ -1139,12 +1139,12 @@ func TestPanelFrameFocus(t *testing.T) {
 			t.Errorf("row %d column %d: %q in %v, want %q in %v", c.row, c.col, got.Ch, got.St.Fg, c.ch, c.fg)
 		}
 	}
-	// Without the focus the content is dimmed, but for a stream (Rules T2).
+	// Without the focus the content is dimmed, but for a stream (tdp T2).
 	covCWant(t, "unfocused panel", covCCrop(lines, 80, 120), "NAME", DimColor(Blue), Color{})
 	if st := covCStyleOf(t, covCCrop(lines, 40, 80), "one"); st.Fg.Set {
 		t.Errorf("an unfocused stream is dimmed: %v", st.Fg)
 	}
-	// Changing the focus moves nothing (Rules L5).
+	// Changing the focus moves nothing (tdp L5).
 	r0, before := covCFind(t, lines, "pod-01")
 	ta.press("Tab")
 	lines = ta.Frame()
@@ -1319,7 +1319,7 @@ func TestPanelNoHintWhileFiltering(t *testing.T) {
 
 // TestPanelHintNoItems: with no item in its list, filtered to nothing or
 // empty to begin with, the hint leaves out Enter and the keys on an item and
-// keeps those on the whole panel (components/layout/panel, hint).
+// keeps those on the whole panel (tdp panel.1).
 func TestPanelHintNoItems(t *testing.T) {
 	ta := &testApp{App: anySize(New("test"))}
 	l := groupList()
@@ -1522,7 +1522,7 @@ func TestCapsuleChainShrink(t *testing.T) {
 		}
 	}
 	// The chosen part alone too long: its text cut from the end with …, its
-	// slanted ends drawn (layout/panel, capsule chain).
+	// slanted ends drawn (tdp panel.4).
 	if got := covCPlain(drawChain(caps, Blue, 7)); got != sl+"[1]…"+h+"…" {
 		t.Errorf("7 cells: the chosen part cut, its ends drawn: %q", got)
 	}
@@ -1575,7 +1575,7 @@ func TestListCursor(t *testing.T) {
 	}
 	check(Base, Subtext1, Subtext1)
 	ta.press("Tab")
-	check(DimColor(Base), DimColor(Subtext1), DimColor(Subtext1)) // the whole block dims (Rules T2)
+	check(DimColor(Base), DimColor(Subtext1), DimColor(Subtext1)) // the whole block dims (tdp T2)
 }
 
 // TestListAnchor: the row a mode keeps picked (List.Anchor) is Yellow with
@@ -1805,7 +1805,7 @@ func TestListTruncate(t *testing.T) {
 
 // TestListColumnsGiveWay: columns that do not fit are taken away whole, the
 // header with them, in the app's order, the name never; then the rest narrow
-// in proportion; they come back as the panel grows (layout/panel).
+// in proportion; they come back as the panel grows (tdp panel).
 func TestListColumnsGiveWay(t *testing.T) {
 	l := &List{Columns: []Column{{Title: "Name", Shrink: true}, {Title: "Status", Drop: 2}, {Title: "Node", Drop: 1}}}
 	l.SetRows([]Row{{Cells: []string{"web-0123456789", "Running", "worker-01"}}})
@@ -1837,7 +1837,7 @@ func TestListColumnsGiveWay(t *testing.T) {
 	}
 	// The shrinkable columns share what the short ones leave, each at least
 	// its MinWidth, the rest as each would take more; the short ones keep
-	// their width (layout/panel).
+	// their width (tdp panel).
 	p := &List{Columns: []Column{{Title: "A", Shrink: true}, {Title: "B"}, {Title: "C", Shrink: true}}}
 	p.SetRows([]Row{{Cells: []string{strings.Repeat("a", 30), strings.Repeat("b", 6), strings.Repeat("c", 20)}}})
 	if ws := p.widths(50); !slices.Equal(ws, []int{24, 6, 16}) {
@@ -1864,7 +1864,7 @@ func TestListColumnsGiveWay(t *testing.T) {
 	if ws := short.widths(20); !slices.Equal(ws, []int{20, -1}) {
 		t.Errorf("no shrinkable column: the one the edge falls in is cut its own way, the rest not drawn: %v", ws)
 	}
-	// Cut with "…", not chopped at the frame (layout/panel, truncation).
+	// Cut with "…", not chopped at the frame (tdp panel.5).
 	if row := strings.Trim(covCPlain(short.Draw(1+20+1, 2, false)[1]), " "+glyphHard); row != strings.Repeat("n", 19)+"…" {
 		t.Errorf("cut from the end: %q", row)
 	}
@@ -1873,7 +1873,7 @@ func TestListColumnsGiveWay(t *testing.T) {
 	if row := strings.Trim(covCPlain(mid.Draw(1+7+2+17+1, 2, false)[1]), " "+glyphHard); row != "Running  demo-app…66-gm72n" {
 		t.Errorf("the last column cut its own way, in the middle: %q", row)
 	}
-	// A list of one column with no title has no header (layout/panel).
+	// A list of one column with no title has no header (tdp panel).
 	one := &List{Columns: []Column{{}}}
 	one.SetRows([]Row{{Cells: []string{"Kinds"}}, {Cells: []string{"Pods"}}})
 	if first := strings.Trim(covCPlain(one.Draw(20, 3, false)[0]), " "+glyphHard); first != "Kinds" {
@@ -1900,7 +1900,7 @@ func TestTruncateMiddle(t *testing.T) {
 }
 
 // TestListSortGroups: sorting keeps the app's groups apart, the lower first,
-// and sorts within each, either way; no title between them (layout/panel).
+// and sorts within each, either way; no title between them (tdp panel).
 func TestListSortGroups(t *testing.T) {
 	l := &List{Columns: []Column{{Title: "Name"}}}
 	l.SetRows([]Row{
@@ -1931,7 +1931,7 @@ func TestListSortGroups(t *testing.T) {
 }
 
 // TestListFixedOrder: the same rows, set in another order, come out in the
-// same order (layout/panel): ties go by ID.
+// same order (tdp panel): ties go by ID.
 func TestListFixedOrder(t *testing.T) {
 	rows := []Row{{ID: "ctx-b", Cells: []string{"prod"}}, {ID: "ctx-a", Cells: []string{"prod"}}, {ID: "ctx-c", Cells: []string{"dev"}}}
 	l := &List{Columns: []Column{{Title: "Context"}}}
@@ -1991,7 +1991,7 @@ func TestListMarkAndSelectByID(t *testing.T) {
 // TestListLocationRow: a list's location row is its first row, one cell from
 // the frame, in Lavender, cut from the front, above the filter's typing row
 // and the header; the cursor and the scroll position leave it out
-// (layout/panel, location row).
+// (tdp panel.10).
 func TestListLocationRow(t *testing.T) {
 	l := &List{Columns: []Column{{Title: "Name"}}, Filterable: true, Location: "~/Documents/sideproj/terminu/components/layout"}
 	var rows []Row
@@ -2068,7 +2068,7 @@ func TestPanelName(t *testing.T) {
 
 // TestPanelTabSpaceIsAJoin: on the first tab [N] and the label meet with blank
 // as wide as a join, so the text does not move when the tab changes
-// (layout/panel, panel tabs).
+// (tdp panel.4).
 func TestPanelTabSpaceIsAJoin(t *testing.T) {
 	for _, pl := range []int{1, 2} {
 		withWidths(t, 1, pl)
@@ -2114,7 +2114,7 @@ func TestPanelError(t *testing.T) {
 	ta := newTestApp(t)
 	rows := ta.list.Rows()
 	ta.pods.Fail = &Failure{Fact: "Forbidden: pods in kube-system", Hint: "Press [R] to retry"}
-	// The old rows stay; the error goes to a toast, the app's (Rules F5).
+	// The old rows stay; the error goes to a toast, the app's (tdp F5).
 	if text := ta.screenText(); !strings.Contains(text, "pod-00") || strings.Contains(text, "Forbidden") {
 		t.Error("an error over old rows replaced them")
 	}
@@ -2247,7 +2247,7 @@ func TestValuePanelAppliesNow(t *testing.T) {
 }
 
 // TestValuePanelScrollByField: a value panel's scroll position counts fields,
-// as a form's does: a radio's options are one (layout/panel).
+// as a form's does: a radio's options are one (tdp panel).
 func TestValuePanelScrollByField(t *testing.T) {
 	v := &Values{Fields: []*Field{{Label: "Layout", Options: []string{"row", "column", "grid"}}}}
 	for i := range 9 {
@@ -2329,7 +2329,7 @@ func TestValuePanelLabels(t *testing.T) {
 }
 
 // A one-value-per-row panel's header is Overlay0, not the labels' Blue, and
-// is dimmed with the panel (components/layout/panel).
+// is dimmed with the panel (tdp panel).
 func TestValuePanelHeader(t *testing.T) {
 	ta := newTestApp(t)
 	ta.values.Header = [2]string{"Property", "Value"}
@@ -2401,8 +2401,8 @@ func TestPanelFilterFocusReturn(t *testing.T) {
 }
 
 // TestValuesEmptyState: a one-value-per-row panel with nothing to list says
-// so as a list does, the fact and the hint in Overlay0 (layout/screen, the
-// empty state; ccdrawu CD23).
+// so as a list does, the fact and the hint in Overlay0 (tdp screen.8;
+// ccdrawu CD23).
 func TestValuesEmptyState(t *testing.T) {
 	ta := newTestApp(t)
 	ta.values.Fields = nil

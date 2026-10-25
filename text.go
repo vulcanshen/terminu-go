@@ -19,7 +19,7 @@ import (
 var nameSGR = "\x1b[" + Fg(Red).sgr() + ";24m"
 
 // nameOnBlock is a name on a block: Red under Base, as a typing row's cursor
-// on a control character (components/input/README); with the same mark as
+// on a control character (tdp input); with the same mark as
 // nameSGR.
 var nameOnBlock = "\x1b[" + Style{Fg: Base, Bg: Red}.sgr() + ";24m"
 

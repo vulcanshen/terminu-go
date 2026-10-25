@@ -9,7 +9,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// The App Log (components/dialog/note, App Log; Rules F5): what the app did
+// The App Log (tdp note, App Log; tdp F5): what the app did
 // and what went wrong, newest last, kept in memory only. ! on a panel opens
 // it; every toast and error popup goes in by itself, the app logs its
 // actions and what it does in the background.
@@ -138,8 +138,8 @@ func (a *App) logOnScreen(v *Viewer) bool {
 }
 
 // logHint is the footer's ! pair: !:log, or how many errors (Red), else
-// warnings (Peach), came in since the App Log was last open (components/
-// layout/screen, the footer).
+// warnings (Peach), came in since the App Log was last open (tdp
+// screen.2).
 func (a *App) logHint() KeyHint {
 	l := &a.logs
 	l.mu.Lock()

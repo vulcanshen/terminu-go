@@ -7,7 +7,7 @@ import (
 )
 
 // icon is terminu's own mark, a copy of tdp's principle/icon.svg (v0.5.4):
-// the showcase draws it in its splash (Rules S5, E8).
+// the showcase draws it in its splash (tdp S5, E8).
 //
 //go:embed icon.svg
 var icon []byte

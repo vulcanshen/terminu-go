@@ -10,7 +10,7 @@ import (
 )
 
 // MoveAside asks what to do with a file of the app's own it cannot read
-// (Rules E3, when it cannot be read): its settings, its state or its data,
+// (tdp E3, when it cannot be read): its settings, its state or its data,
 // whatever the reason (a bad format, a broken file, no permission). The
 // confirm, MOVE ASIDE, names the path and why:
 //   - Enter (move) renames the file to <name>.bak (.bak.1, .bak.2… when that
@@ -24,7 +24,7 @@ import (
 // A cache that cannot be read is not asked about: throw it away and build it
 // again. Something outside the app that cannot be reached (a cluster, the
 // network) is not the app's own: the app goes on and says so where it shows
-// it (layout/panel, loading and errors). Data kept one record per file uses
+// it (tdp panel.5). Data kept one record per file uses
 // MoveAsideRecord.
 func (a *App) MoveAside(path string, err error, fresh func() tea.Cmd) tea.Cmd {
 	return a.moveAside(path, err, fresh, "start fresh")
@@ -33,7 +33,7 @@ func (a *App) MoveAside(path string, err error, fresh func() tea.Cmd) tea.Cmd {
 // MoveAsideRecord is MoveAside for data kept one record per file (a mark per
 // file): Enter only renames the record that cannot be read to <name>.bak,
 // making nothing new in its place, and runs reread, where the app reads the
-// rest as usual (Rules E3, when it cannot be read). The question is "Move it
+// rest as usual (tdp E3, when it cannot be read). The question is "Move it
 // to <name>.bak and go on without it?"; Esc leaves the app as MoveAside's.
 func (a *App) MoveAsideRecord(path string, err error, reread func() tea.Cmd) tea.Cmd {
 	return a.moveAside(path, err, reread, "go on without it")
@@ -66,7 +66,7 @@ func (a *App) moveAside(path string, err error, fresh func() tea.Cmd, then strin
 // the App Log naming its path, "No longer used: <path>; delete it if you
 // don't need it". The file is not deleted and there is no toast: what to do
 // with it is the user's. Call it at every start; the App Log starts empty
-// (Rules E3, files no longer used).
+// (tdp E3, files no longer used).
 func (a *App) NoLongerUsed(paths ...string) {
 	for _, p := range paths {
 		if _, err := os.Lstat(p); err == nil {

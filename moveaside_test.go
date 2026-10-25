@@ -13,8 +13,8 @@ import (
 // TestMoveAside: a file of the app's own it cannot read asks MOVE ASIDE, its
 // path and why; Enter renames it to .bak and runs fresh, the lib making
 // nothing in its place (the app goes on as on its first start); Esc leaves
-// the app, Run returning the path and the reason (Rules E3: E3-17, E3-18,
-// E3-20; components/dialog/confirm). The App Log's entry starts with a
+// the app, Run returning the path and the reason (tdp E3: E3-17, E3-18,
+// E3-20; tdp confirm). The App Log's entry starts with a
 // capital, as a toast does (note-78).
 func TestMoveAside(t *testing.T) {
 	dir := t.TempDir()
@@ -103,7 +103,7 @@ func TestMoveAsideRecord(t *testing.T) {
 
 // TestNoLongerUsed: a file the app no longer uses that is still there gets an
 // INFO in the App Log with its path, at every start; it is not deleted and
-// there is no toast; one that is gone says nothing (Rules E3, E3-23).
+// there is no toast; one that is gone says nothing (tdp E3, E3-23).
 func TestNoLongerUsed(t *testing.T) {
 	dir := t.TempDir()
 	old, gone := filepath.Join(dir, "errors.yaml"), filepath.Join(dir, "theme.yaml")

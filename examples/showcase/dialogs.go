@@ -14,7 +14,7 @@ import (
 )
 
 // moveAside breaks a pretend settings file and asks what to do with it, as
-// an app does when it cannot read a file of its own (Rules E3).
+// an app does when it cannot read a file of its own (tdp E3).
 func (ds *dialogsScreen) moveAside() tea.Cmd {
 	a := ds.s.app
 	path := filepath.Join(dataDir(), "settings.yaml")
@@ -236,7 +236,7 @@ var tasks = []string{
 var transferring = func() bool { return false }
 
 // quitFlow makes the next quit the app's own flow, a menu of ways to leave
-// (App.QuitFlow; Rules K9); after it the confirm comes back.
+// (App.QuitFlow; tdp K9); after it the confirm comes back.
 func (ds *dialogsScreen) quitFlow() tea.Cmd {
 	a := ds.s.app
 	a.QuitFlow = func() tea.Cmd {
@@ -254,7 +254,7 @@ func (ds *dialogsScreen) worklist() tea.Cmd {
 	a := ds.s.app
 	// A transfer that runs while the list is open: its row follows it, the
 	// loading icon turning; Enter asks to cancel it, with the row's full
-	// text (components/dialog/menu, work lists).
+	// text (tdp menu.5).
 	start, cancelled := time.Now(), false
 	progress := func() int { return min(int(time.Since(start)/(600*time.Millisecond)), 10) }
 	transferring = func() bool { return !cancelled && progress() < 10 }
@@ -359,7 +359,7 @@ func (ds *dialogsScreen) hostForm(_ *terminu.Form, fail bool) *terminu.Form {
 					}
 					return ""
 				}},
-			// No display here: X11 is not available (components/input/checkbox).
+			// No display here: X11 is not available (tdp checkbox).
 			{Label: "Agent", Options: []string{"forward", "X11"}, Multi: true, OptionUnavailable: func(i int) bool { return i == 1 }},
 			{Label: "Namespaces", Value: func() string { return joinChecked(namespaces, nsChecked) }, Empty: "none",
 				Edit: func() terminu.Input {
@@ -382,8 +382,8 @@ func (ds *dialogsScreen) hostForm(_ *terminu.Form, fail bool) *terminu.Form {
 	}
 }
 
-// actionsForm is the host form with more buttons (components/dialog/form,
-// the action area): Test and Scan keep the form open and need only Host;
+// actionsForm is the host form with more buttons (tdp form.7):
+// Test and Scan keep the form open and need only Host;
 // Save As is another submit; the main Connect takes long. Tab lands on
 // Connect, bottom right.
 func (ds *dialogsScreen) actionsForm() tea.Cmd {
@@ -427,13 +427,13 @@ func (ds *dialogsScreen) actionsForm() tea.Cmd {
 		return a.Toast(terminu.Info, "Saved a copy of "+f.Fields[0].Value()), nil
 	}}
 	// A button naming what it acts on: the hint keeps the name as it is,
-	// Enter:export hosts.yaml (components/dialog/form, hint).
+	// Enter:export hosts.yaml (tdp form.13).
 	export := &terminu.FormButton{Label: "Export", Subject: "hosts.yaml", Submit: func() (tea.Cmd, error) {
 		return a.Toast(terminu.Info, "Exported "+f.Fields[0].Value()+" to hosts.yaml"), nil
 	}}
 	// A button that runs a program in a terminal popup over the form; once it
 	// ends, the app reads back what it did: the key is on the host now, so
-	// Auth is privatekey (components/dialog/form).
+	// Auth is privatekey (tdp form).
 	copyKey := &terminu.FormButton{Label: "Copy key", Open: func() tea.Cmd {
 		host := hostF.Value()
 		if host == "" {
@@ -592,7 +592,7 @@ func (ds *dialogsScreen) yaml() tea.Cmd {
 		{Key: "N", Desc: "previous", Do: step(-1)},
 	}
 	// No Select: the selection mode every viewer has, copying to the
-	// terminal's clipboard (components/dialog/note).
+	// terminal's clipboard (tdp note).
 	return a.Viewer(v)
 }
 
@@ -604,7 +604,7 @@ func (ds *dialogsScreen) devtools() tea.Cmd {
 		v.Lines = []([]string){console, network}[tab]
 		return nil
 	}
-	// h|l switch the tabs, and move the cursor in the selection mode (Rules K12).
+	// h|l switch the tabs, and move the cursor in the selection mode (tdp K12).
 	// A Copy of the app's own takes the text instead of the clipboard.
 	v.Select = &terminu.Selection{Key: "v", Name: "Visual", Copy: func(text string) tea.Cmd {
 		return ds.s.app.Toast(terminu.Success, fmt.Sprintf("Copied %d characters", len([]rune(text))))
@@ -613,7 +613,7 @@ func (ds *dialogsScreen) devtools() tea.Cmd {
 }
 
 // table is a viewer of a table the app lays out: lines kept on their rows,
-// cut at the end, and no line numbers (components/dialog/note).
+// cut at the end, and no line numbers (tdp note).
 func (ds *dialogsScreen) table() tea.Cmd {
 	return ds.s.app.Viewer(&terminu.Viewer{Title: "Info", Subject: "assets/photo-large.png", Glyph: glyphList, NoWrap: true, NoNumbers: true,
 		Lines: []string{

@@ -6,11 +6,11 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// Field is one value of a Values panel (layout/panel, one value per row).
+// Field is one value of a Values panel (tdp panel.12).
 type Field struct {
 	Label string
-	// Value is the value as shown (components/input/README, how a value is
-	// shown); Empty is what an empty value means, shown in grey ("not set").
+	// Value is the value as shown (tdp input.10);
+	// Empty is what an empty value means, shown in grey ("not set").
 	// A control character in it, ESC too, is drawn by its name (Escape).
 	Value func() string
 	// Styled, when set, is how the value is shown in colours of the app's own
@@ -28,7 +28,7 @@ type Field struct {
 	Checked  []bool
 	// OptionUnavailable reports a checkbox option that is not available:
 	// drawn in Surface2, the tick too, but stopped on and flipped like any
-	// other (components/input/checkbox).
+	// other (tdp checkbox).
 	OptionUnavailable func(i int) bool
 	Disabled          func() bool
 	// Err marks the field's value as wrong: its label turns Red.
@@ -41,7 +41,7 @@ type Field struct {
 	OnChange func() tea.Cmd
 	// Desc, when set, says what the row means, for the "what each row is"
 	// section first in the panel's key reference: the label is a word or
-	// two (layout/panel, components/dialog/note). Whether a panel has the
+	// two (tdp panel, note). Whether a panel has the
 	// section is the app's: it has it when a field has a Desc.
 	Desc string
 }
@@ -75,7 +75,7 @@ func (f *Field) hasAll() bool { return f.Multi && len(f.Options) >= 2 }
 func (f *Field) allOn() bool { return allChecked(len(f.Options), f.Checked, nil) }
 
 // Values is a panel body with one value per row: a settings screen
-// (layout/panel). It moves like a form; a value takes effect when it is set.
+// (tdp panel). It moves like a form; a value takes effect when it is set.
 type Values struct {
 	Fields []*Field
 	// Header, when set, is the table header over the labels and the values.
@@ -83,10 +83,10 @@ type Values struct {
 	// OnMove runs when the cursor comes to another place, by a key or not,
 	// the first time included: the field, and the option in it (-1 for a
 	// field not drawn in place, -2 for a checkbox group's Select all). It runs before the frame is drawn, so a
-	// details panel follows in the same frame (layout/panel, details).
+	// details panel follows in the same frame (tdp panel.13).
 	OnMove func(f *Field, option int) tea.Cmd
 	// EmptyFact and EmptyHint are what it says with no fields, in Overlay0, as
-	// a list does (layout/screen, the empty state).
+	// a list does (tdp screen.8).
 	EmptyFact, EmptyHint string
 
 	at      valueItem // where OnMove last ran
@@ -177,7 +177,7 @@ func (v *Values) Draw(w, h int, focused bool) []string {
 	var itemRow []int // the row each item starts on
 	if v.Header[0] != "" {
 		// Dim text: a Blue header would run into the Blue labels under it
-		// (components/layout/panel).
+		// (tdp panel).
 		rows = append(rows, " "+Fg(Overlay0).Render(Pad(Upper(v.Header[0]), lw)+"  "+Fit(Upper(v.Header[1]), valW))+Repeat(" ", arrow))
 	}
 	headerRows := len(rows)
@@ -209,8 +209,8 @@ func (v *Values) Draw(w, h int, focused bool) []string {
 				if f.Path {
 					fit = FitLeft
 				}
-				// A swatch keeps its colour on the block (components/color);
-				// an option's block starts at its glyph (dialog/form).
+				// A swatch keeps its colour on the block (tdp color);
+				// an option's block starts at its glyph (tdp form).
 				rows = append(rows, " "+lead+"  "+ind+onBlock(fit(value, valW-Width(ind)), On(Subtext1))+Fg(Subtext1).Render(glyphHard))
 			} else {
 				fit := Fit
@@ -242,7 +242,7 @@ func (v *Values) Draw(w, h int, focused bool) []string {
 	v.scroll = ""
 	if len(body) > room {
 		// Counted in fields, as a form's: a radio's options are one
-		// (layout/panel, one value per row).
+		// (tdp panel.12).
 		v.scroll = scrollText(true, slices.Index(v.Fields, items[v.cursor].field)+1, 0, len(v.Fields))
 	}
 	return Pad2(out, w, h)
@@ -314,8 +314,8 @@ func (v *Values) fixCursor(items []valueItem, dir int) {
 // Scroll is "N of M" when the items do not all fit.
 func (v *Values) Scroll() string { return v.scroll }
 
-// MoveKeys are a one-dimensional list's (Rules K12); none with no fields,
-// nothing to move to (Rules M6).
+// MoveKeys are a one-dimensional list's (tdp K12); none with no fields,
+// nothing to move to (tdp M6).
 func (v *Values) MoveKeys() []KeyRow {
 	if len(v.Fields) == 0 {
 		return nil
@@ -324,7 +324,7 @@ func (v *Values) MoveKeys() []KeyRow {
 }
 
 // tabMoveKeys are its keys in a panel with tabs: h|l go to the tabs
-// (Rules K12).
+// (tdp K12).
 func (v *Values) tabMoveKeys() []KeyRow {
 	if len(v.Fields) == 0 {
 		return nil
@@ -336,7 +336,7 @@ func (v *Values) tabMoveKeys() []KeyRow {
 	}
 }
 
-// Key moves item by item and does Enter (layout/panel, one value per row).
+// Key moves item by item and does Enter (tdp panel.12).
 func (v *Values) Key(key string, _ tea.KeyMsg) (bool, tea.Cmd) {
 	items := v.itemList()
 	n := len(items)
@@ -394,7 +394,7 @@ func (v *Values) Key(key string, _ tea.KeyMsg) (bool, tea.Cmd) {
 
 // Actions are the panel's own item operation: what Enter does on the item
 // under the cursor, so the Space menu and ? have it as the hint does (Rules
-// M3, K6); in the disabled colour on a field that cannot be used now (M6).
+// M3, K6); in the disabled colour on a field that cannot be used now (tdp M6).
 func (v *Values) Actions() []Action {
 	items := v.itemList()
 	if v.cursor >= len(items) {

@@ -9,7 +9,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// Column is one column of a List (layout/panel, ordinary lists).
+// Column is one column of a List (tdp panel.5).
 type Column struct {
 	// Title is the column's header. A list of one column whose Title is ""
 	// has no header.
@@ -24,14 +24,14 @@ type Column struct {
 	// the shrinkable columns share the width the others leave, cut each its
 	// own way when too long, down to MinWidth (12 cells when unset). The
 	// other columns, short values (a state, a number, a date), keep the width
-	// of their widest value (layout/panel).
+	// of their widest value (tdp panel).
 	Shrink   bool
 	MinWidth int
 	// Drop is when the column is taken away, whole and its header with it,
 	// when the columns do not fit even with the shrinkable ones at their
 	// MinWidth: 1 first, then 2 and on; 0 never (the name). As the panel
 	// grows they come back in order, and the shrinkable ones grow back
-	// (layout/panel).
+	// (tdp panel).
 	Drop int
 	// Path cuts the column's values from the front ("…/.ssh/id_ed25519").
 	Path bool
@@ -49,7 +49,7 @@ type Column struct {
 type Row struct {
 	ID string // what marks are kept by; the row's place when empty
 	// Cells are the row's text, one per column: a control character in one,
-	// ESC too, is drawn by its name (Escape; layout/panel). The filter and
+	// ESC too, is drawn by its name (Escape; tdp panel). The filter and
 	// sorting go by them.
 	Cells []string
 	// Styled, when set for a cell, is how it is drawn in colours of the app's
@@ -61,10 +61,10 @@ type Row struct {
 	Sort []string
 	// SortGroup keeps rows apart when the list is sorted: the lower group
 	// first, sorting only within each (a file manager's directories before its
-	// files); no title is drawn between them (layout/panel). The rows of one
+	// files); no title is drawn between them (tdp panel). The rows of one
 	// group keep their order when the list is not sorted.
 	SortGroup int
-	// Group is the title of the group the row is in (layout/panel, groups).
+	// Group is the title of the group the row is in (tdp panel.11).
 	// A group's rows stay together, the groups in the order they first
 	// appear, sorted within; the rows are drawn two cells further in, under
 	// a title the cursor skips. A group with no row shown has no title.
@@ -78,38 +78,38 @@ type SortKey struct {
 }
 
 // List is a panel body with one item per row: a header, a cursor, marks, a
-// panel filter (layout/panel).
+// panel filter (tdp panel).
 type List struct {
 	Columns []Column
 	// Marks keeps a column for marks in front of every row (Principle P3,
 	// batches of marked items).
 	Marks bool
 	// Draggable keeps that column too, for the swap glyph of the row held in
-	// a Drag mode (layout/panel): Hold, MoveHeld, Drop.
+	// a Drag mode (tdp panel): Hold, MoveHeld, Drop.
 	Draggable bool
 	// Anchor is the ID of a row a mode keeps picked while the cursor moves
-	// on (a Compare mode's first pick, Rules K11): drawn whole in Yellow,
+	// on (a Compare mode's first pick, tdp K11): drawn whole in Yellow,
 	// the mode's, with Base text, not bold and no arrow, as a selected range
-	// (components/color, dialog/note). The cursor on it wins. "" is none.
+	// (tdp color, note). The cursor on it wins. "" is none.
 	Anchor string
 	// Filterable lets / open a panel filter on the list.
 	Filterable bool
-	// EmptyFact and EmptyHint are what an empty list says (layout/screen,
-	// empty states); keys in the hint written in brackets.
+	// EmptyFact and EmptyHint are what an empty list says (tdp screen.8);
+	// keys in the hint written in brackets.
 	EmptyFact, EmptyHint string
 	// Location, when set, is the list's location row: where the user is (a
 	// directory, a remote path, the level drilled into), in Lavender on the
 	// panel's first row, cut from the front. It is only shown: the cursor
 	// does not stop on it and the scroll position does not count it
-	// (layout/panel, location row). Whether a list has one is the app's.
+	// (tdp panel.10). Whether a list has one is the app's.
 	Location string
 	// OnMove runs when the cursor comes to another row, by a key or not, the
 	// first time included: before the frame is drawn, so a details panel
-	// shows that row in the same frame (layout/panel, details). It does not
+	// shows that row in the same frame (tdp panel.13). It does not
 	// run while no row is under the cursor.
 	OnMove func(Row) tea.Cmd
 	// Points, when set, is the panel on the screen a row stands for, nil for
-	// none (layout/panel, the frame: a pointed panel; whether a list has one
+	// none (tdp panel.1; whether a list has one
 	// is the app's). While the list has the focus, the panel its cursor's row
 	// stands for is pointed at: its frame Lavender, still thin and square, not
 	// focused, its content dimmed as any panel without the focus. A panel not
@@ -147,7 +147,7 @@ func (l *List) SetRows(rows []Row) {
 func (l *List) Rows() []Row { return l.rows }
 
 // SortBy sorts the list by keys, first key first: numbers by value, text as
-// text (layout/panel). nil keeps the rows' order. Rows the keys cannot tell
+// text (tdp panel). nil keeps the rows' order. Rows the keys cannot tell
 // apart go by their IDs, so the same rows come out in the same order however
 // they were set: a list must keep one order every time it is opened or
 // fetched again, and data with no order of its own (a kubeconfig's contexts)
@@ -174,7 +174,7 @@ func (l *List) Current() (Row, bool) {
 
 // Select puts the cursor on the row with this ID, the next frame scrolling
 // it into sight, and reports whether it is shown. After the app adds an item
-// (New, Copy, Import), it selects it (Rules K3); a row the panel filter hides
+// (New, Copy, Import), it selects it (tdp K3); a row the panel filter hides
 // is not shown, so the app clears the filter first if it wants it seen.
 func (l *List) Select(id string) bool {
 	for i, r := range l.view {
@@ -235,7 +235,7 @@ func (l *List) SetMarked(ids []string) {
 }
 
 // Hold picks up the row under the cursor in the panel's Drag mode
-// (layout/panel): it is drawn as the cursor in the mode's colour, Yellow,
+// (tdp panel): it is drawn as the cursor in the mode's colour, Yellow,
 // with the swap glyph in its mark column, until Drop. It reports whether
 // there was a row. The Drag mode and its keys are the app's (Panel.EnterMode).
 func (l *List) Hold() bool {
@@ -252,7 +252,7 @@ func (l *List) Drop() { l.held = false }
 
 // MoveHeld swaps the held row with the next or the previous row shown, the
 // cursor going with it. Past the ends it wraps: the last moved down goes to
-// the top and the others move down one (Rules K12). It moves the rows
+// the top and the others move down one (tdp K12). It moves the rows
 // themselves: a sorted list shows no move, so the app leaves the sort first.
 func (l *List) MoveHeld(down bool) {
 	if !l.held {
@@ -281,7 +281,7 @@ func (l *List) Typing() bool { return l.filter != nil && l.typing }
 func (l *List) Filtering() bool { return l.filter != nil }
 
 // OpenFilter puts a typing row at the top of the list, or goes back to it
-// to type on (layout/panel, panel filter).
+// to type on (tdp panel.14).
 func (l *List) OpenFilter() {
 	if l.filter == nil {
 		l.filter = newEditor("")
@@ -452,10 +452,10 @@ func (l *List) Draw(w, h int, focused bool) []string {
 	indent := ""
 	if l.groups && markW == 0 {
 		// Items two cells further in than their group's title; a mark column
-		// goes in those two cells (layout/panel, groups).
+		// goes in those two cells (tdp panel.11).
 		indent = "  "
 	}
-	textW := w - 1 - arrow - len(indent) // one cell of padding on the left, the arrow's on the right (layout/panel)
+	textW := w - 1 - arrow - len(indent) // one cell of padding on the left, the arrow's on the right (tdp panel)
 	widths := l.widths(textW - markW)
 	if l.headed() {
 		// The header goes in with the items, so the columns line up.
@@ -509,16 +509,16 @@ func (l *List) Draw(w, h int, focused bool) []string {
 			arrowStyle := Fg(Subtext1)
 			if l.held {
 				// The held row: the cursor in the mode's colour, the swap
-				// glyph in its mark column (layout/panel, Rules K11).
+				// glyph in its mark column (tdp panel, tdp K11).
 				cursor, arrowStyle = On(Yellow), Fg(Yellow)
 				mark = Pad(glyphSwap, markW)
 			}
 			if l.Typing() {
-				// The focus is on the typing row: the list's cursor is dimmed once (P6).
+				// The focus is on the typing row: the list's cursor is dimmed once (tdp P6).
 				cursor = Style{Fg: DimColor(Base), Bg: DimColor(Subtext1), Bold: true}
 				arrowStyle = Fg(DimColor(Subtext1))
 			}
-			// Base on the block, a swatch keeping its colour (components/color).
+			// Base on the block, a swatch keeping its colour (tdp color).
 			out = append(out, onBlock(Pad(" "+indent+mark+text, w-arrow), cursor)+arrowStyle.Render(glyphHard))
 			continue
 		}
@@ -578,12 +578,12 @@ func (l *List) moved() tea.Cmd {
 }
 
 // headed reports whether the list draws a header: one of a single column
-// with no title has none (layout/panel).
+// with no title has none (tdp panel).
 func (l *List) headed() bool {
 	return len(l.Columns) > 1 || len(l.Columns) == 1 && l.Columns[0].Title != ""
 }
 
-// widths are the columns' widths in w cells, two cells apart (layout/panel):
+// widths are the columns' widths in w cells, two cells apart (tdp panel):
 // a column as wide as its widest value or title, but the shrinkable ones,
 // which share what the others leave, down to their MinWidth. While even that
 // does not fit, columns are taken away whole in their Drop order (-1: not
@@ -676,7 +676,7 @@ func (l *List) widths(w int) []int {
 
 // cutLast narrows the column the edge falls in to what is left of w, so it is
 // cut its own way with "…", not chopped at the frame; the ones after it are
-// not drawn (layout/panel, truncation).
+// not drawn (tdp panel.5).
 func cutLast(ws []int, w int) []int {
 	used := 0
 	for c, x := range ws {
@@ -775,7 +775,7 @@ func (l *List) rowText(r int, ws []int) string {
 // filterRow is the typing row: the typed words one cell from the frame, the
 // count of matches over the total on the right; grey when the focus is on
 // the list. Typing means the panel has the focus: the angle takes its frame's
-// colour, Blue (components/layout/panel, panel filter).
+// colour, Blue (tdp panel.14).
 func (l *List) filterRow(w int, focused bool) string {
 	count := strconv.Itoa(len(l.view)) + "/" + strconv.Itoa(len(l.rows))
 	return typingRow(l.filter, w, count, l.typing && focused, Blue)
@@ -783,7 +783,7 @@ func (l *List) filterRow(w int, focused bool) string {
 
 // typingRow is a typing row that filters (a finder's, a panel filter's), w
 // wide: nf-fa-angle_right one cell from the frame, a space, the typed words,
-// the count of matches on the right in Overlay0 (components/input/finder).
+// the count of matches on the right in Overlay0 (tdp finder).
 // Lit while it has the focus: the angle in lit (a popup's layer colour, a
 // panel's frame colour), the words Lavender with a cursor; the whole row is
 // Overlay0 otherwise.
@@ -798,7 +798,7 @@ func typingRow(ed *lineEditor, w int, count string, focus bool, lit Color) strin
 }
 
 // typingAngle is what every typing row starts with: nf-fa-angle_right in c,
-// then a space (components/input/README, components/input/finder).
+// then a space (tdp input, finder).
 func typingAngle(c Color) string { return Fg(c).Render(glyphTyping) + " " }
 
 // angleWidth is how wide typingAngle is.
@@ -808,7 +808,7 @@ func angleWidth() int { return Width(glyphTyping) + 1 }
 func (l *List) Scroll() string { return l.scroll }
 
 // MoveKeys are the list's movement keys; none when nothing is shown,
-// nothing to move to (Rules M6).
+// nothing to move to (tdp M6).
 func (l *List) MoveKeys() []KeyRow {
 	if len(l.view) == 0 {
 		return nil
@@ -865,7 +865,7 @@ func (l *List) Key(key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 	return true, nil
 }
 
-// typeKey is a key on the filter's typing row (components/input/finder).
+// typeKey is a key on the filter's typing row (tdp finder).
 func (l *List) typeKey(key string, msg tea.KeyMsg) bool {
 	n := len(l.view)
 	switch key {

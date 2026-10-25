@@ -10,11 +10,11 @@ import (
 // clock is now; tests set it.
 var clock = time.Now
 
-// DatePicker picks a date, or a date and a time (components/input/datetime-picker).
+// DatePicker picks a date, or a date and a time (tdp datetime-picker).
 type DatePicker struct {
 	Title, Glyph string
 	// Subject is the one thing it acts on, kept as it is after ": " in the
-	// title: "EDIT: filu" (components/layout/popup).
+	// title: "EDIT: filu" (tdp popup).
 	Subject string
 	// Value is the value now; zero for none.
 	Value time.Time
@@ -29,11 +29,11 @@ type DatePicker struct {
 	// Commit, when set, writes a changed value back when Enter takes it, on
 	// the update loop, before Done: an error keeps the popup open with the
 	// value in it and opens an error popup over it, "RENAME FAILED"
-	// (components/layout/popup, the action failing; Rules F4).
+	// (tdp popup.7, F4).
 	Commit func(time.Time) error
 	// OnCancel runs when it closes with no answer: Esc, or the popup it is
 	// over closing it, so whoever waits for the answer (a web page's prompt,
-	// ssh's askpass) hears it was cancelled (Rules F6).
+	// ssh's askpass) hears it was cancelled (tdp F6).
 	OnCancel func() tea.Cmd
 }
 
@@ -126,7 +126,7 @@ func (dv *dateView) measure(sw, sh int) (int, int) {
 		w = max(w, hintWidth(dv.hint())+6)
 	}
 	dv.focus = saved
-	// The month row, the weekdays, six weeks always (Rules F7: the height
+	// The month row, the weekdays, six weeks always (tdp F7: the height
 	// does not change with the month).
 	return min(w, max(min(sw-2, 120), 1)), min(8+4, max(sh-2, 3))
 }
@@ -339,7 +339,7 @@ func (dv *dateView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {
 		}
 	case onTime:
 		if !vertical {
-			dv.onMinute = !dv.onMinute // two columns: a step wraps (Rules K12)
+			dv.onMinute = !dv.onMinute // two columns: a step wraps (tdp K12)
 		} else if dv.onMinute {
 			dv.minute = (dv.minute + dir + 12) % 12
 		} else {

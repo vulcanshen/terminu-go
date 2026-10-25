@@ -7,7 +7,7 @@ import (
 )
 
 // Matches reports whether text matches what was typed in a filter
-// (components/input/finder, matching): every space-separated word must appear
+// (tdp finder.7): every space-separated word must appear
 // in text as typed, in one piece, ignoring case; the words may come in any
 // order. Nothing typed matches everything.
 func Matches(text, typed string) bool {

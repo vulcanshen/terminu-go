@@ -19,7 +19,7 @@ const (
 	glyphFolderMove = "\U000F0252" // nf-md-folder_move: ". (this directory)"
 )
 
-// FilePicker picks a file (components/input/file-picker): a finder over a
+// FilePicker picks a file (tdp file-picker): a finder over a
 // directory, Enter going into a directory or choosing a file. With Dirs it
 // picks a directory instead: only directories are listed, and Enter on the
 // first row, ". (this directory)", chooses the one listed.
@@ -31,7 +31,7 @@ type FilePicker struct {
 	Root string
 	// Value is the file now, if any: the cursor starts on it, in Green.
 	Value string
-	// Dirs picks a directory (components/input/file-picker, choosing a
+	// Dirs picks a directory (tdp file-picker.7
 	// directory). Open it at the directory now (Root = Value): the cursor
 	// starts on ".", in Green.
 	Dirs bool
@@ -44,11 +44,11 @@ type FilePicker struct {
 	// Commit, when set, writes a changed value back when Enter takes it, on
 	// the update loop, before Done: an error keeps the popup open with the
 	// value in it and opens an error popup over it, "RENAME FAILED"
-	// (components/layout/popup, the action failing; Rules F4).
+	// (tdp popup.7, F4).
 	Commit func(path string) error
 	// OnCancel runs when it closes with no answer: Esc, or the popup it is
 	// over closing it, so whoever waits for the answer (a web page's prompt,
-	// ssh's askpass) hears it was cancelled (Rules F6).
+	// ssh's askpass) hears it was cancelled (tdp F6).
 	OnCancel func() tea.Cmd
 }
 
@@ -174,7 +174,7 @@ func (fp *filePicker) list(typed string) []finderRow {
 	switch {
 	case slices.Contains(strings.Split(dir, "/"), ".."):
 		// A path with .. in it is not followed up: no such directory
-		// (components/input/file-picker).
+		// (tdp file-picker).
 		fp.rows = nil
 	case glob != "":
 		fp.rows = fp.search(fp.start, glob)
@@ -183,7 +183,7 @@ func (fp *filePicker) list(typed string) []finderRow {
 	}
 	if fp.p.Dirs {
 		// Directories only; with a word or a wildcard typed there is no "."
-		// row (components/input/file-picker).
+		// row (tdp file-picker).
 		fp.rows = slices.DeleteFunc(fp.rows, func(r finderRow) bool { return !r.dir || word != "" && r.text == "." })
 	}
 	return fp.rows
@@ -202,7 +202,7 @@ func (fp *filePicker) row(p string, text string, dir bool) finderRow {
 }
 
 // readDir lists a directory: .. first (none at /), then the directories, then
-// the files, each by name (components/input/file-picker). Choosing a
+// the files, each by name (tdp file-picker). Choosing a
 // directory, ". (this directory)" comes before them all.
 func (fp *filePicker) readDir(dir string, hidden bool) []finderRow {
 	entries, err := dirEntries(dir, hidden)
@@ -398,7 +398,7 @@ func expandHome(p string) string {
 	return p
 }
 
-// homeShort writes the home directory as ~ (components/input/README).
+// homeShort writes the home directory as ~ (tdp input).
 func homeShort(p string) string {
 	home, err := os.UserHomeDir()
 	if err != nil || home == "" {

@@ -285,8 +285,7 @@ func TestPopupHintOrder(t *testing.T) {
 }
 
 // TestMenuLiveRows: a work list's rows follow their work while the menu is
-// open; Enter's word follows the row under the cursor (components/dialog/menu,
-// work lists).
+// open; Enter's word follows the row under the cursor (tdp menu.5).
 func TestMenuLiveRows(t *testing.T) {
 	ta := newTestApp(t)
 	done := 3
@@ -330,7 +329,7 @@ func TestPopupHintDrop(t *testing.T) {
 	if !strings.HasSuffix(bottom, " 1 of 7 ━┛") {
 		t.Errorf("the scroll position stays: %q", bottom)
 	}
-	// One pair at a time from the one before Esc (components/layout/popup).
+	// One pair at a time from the one before Esc (tdp popup).
 	pairs := []KeyHint{{"Enter", "install"}, {"Tab", "actions"}, {"Esc", "cancel"}}
 	for _, c := range []struct {
 		w    int
@@ -352,7 +351,7 @@ func TestPopupHintDrop(t *testing.T) {
 }
 
 // TestPopupWidthCountsScroll: a popup that scrolls is wide enough for its
-// whole hint and its scroll position at the widest (components/layout/popup):
+// whole hint and its scroll position at the widest (tdp popup):
 // Esc stays in sight, and the frame keeps its width while it scrolls.
 func TestPopupWidthCountsScroll(t *testing.T) {
 	check := func(name string, open func(ta *testApp), hint string, widest string) {
@@ -403,7 +402,7 @@ func TestPopupWidthCountsScroll(t *testing.T) {
 // TestFinderHintNoResults: with no results Enter does nothing on either row
 // and the hint leaves it out, back once there are results; a checkbox
 // popup's list still applies its checks and leaves out only Space; the hint
-// is whole (components/input/finder, components/input/checkbox; G93).
+// is whole (tdp finder, checkbox; G93).
 func TestFinderHintNoResults(t *testing.T) {
 	ta := newTestApp(t)
 	ta.resize(120, 30)
@@ -583,7 +582,7 @@ func TestPopupNarrowContentAlign(t *testing.T) {
 	ta.press("1", "2", "3")
 	row = covDTop(ta)[3]
 	// The cursor after the dots counts, a space and a block, blank without
-	// styles (components/input/password).
+	// styles (tdp password).
 	if left, right := covDGaps(row); !strings.Contains(row, "●") || left <= 1 || left-(right-2) > 1 || (right-2)-left > 1 {
 		t.Errorf("the unlock mask is centred: %q", row)
 	}
@@ -1137,7 +1136,7 @@ func TestConfirmHint(t *testing.T) {
 
 // TestLoadSelectAndChecks: a select or checkbox popup can open before its
 // options are there, loading in its title, as wide as it can be, and fill
-// as they come (Rules F7; kbu KB8).
+// as they come (tdp F7; kbu KB8).
 func TestLoadSelectAndChecks(t *testing.T) {
 	ta := newTestApp(t)
 	chose := -1
@@ -1171,7 +1170,7 @@ func TestLoadSelectAndChecks(t *testing.T) {
 
 // TestCommitFailureKeepsPopup: a write-back that fails opens an error popup
 // over the input, which stays with its value; closing it goes back there
-// (components/layout/popup, the action failing; Rules F4; ccdrawu CD24,
+// (tdp popup.7, F4; ccdrawu CD24,
 // filu FL18, sshu SS33, locku LK10).
 func TestCommitFailureKeepsPopup(t *testing.T) {
 	ta := newTestApp(t)

@@ -6,7 +6,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// ToastKind is what a toast says (components/dialog/toast): which one goes
+// ToastKind is what a toast says (tdp toast): which one goes
 // with the meaning of its colour.
 type ToastKind int
 

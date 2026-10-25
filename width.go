@@ -17,7 +17,7 @@ import (
 var (
 	iconCells      = 1 // a Nerd Font icon
 	powerlineCells = 1 // a powerline symbol: capsule ends, joins, the cursor arrow (tdp E5)
-	// tabCells is input_tab_width (Rules E3): a tab in text on the screen (a
+	// tabCells is input_tab_width (tdp E3): a tab in text on the screen (a
 	// viewer, a file preview, a list, a menu) is drawn as that many spaces,
 	// never sent to the terminal, so a row holding one keeps its width (Rules
 	// L4); a value on a form or a panel draws it as a red \t instead
@@ -178,7 +178,7 @@ func Truncate(s string, w int) string {
 		return "…"
 	}
 	// What fits before the cut and the styles set up to it, nothing after:
-	// "…" is drawn in the style of the text it stands for (components/color).
+	// "…" is drawn in the style of the text it stands for (tdp color).
 	// A wide character that would straddle the cut is left out.
 	var kept []string
 	col := 0

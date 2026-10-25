@@ -69,12 +69,12 @@ func newShowcase() *showcase {
 	s := &showcase{started: time.Now()}
 	a := terminu.New("showcase")
 	a.Quit = &terminu.Ask{Title: "Quit", Question: "Quit showcase?", Verb: "quit"}
-	// Its layouts still work in 60 × 20, below the default 80 × 40 (Rules L1).
+	// Its layouts still work in 60 × 20, below the default 80 × 40 (tdp L1).
 	a.MinWidth, a.MinHeight = 60, 20
 	a.QuitDesc = "leave the showcase"
 	a.Status = s.status
 	a.Splash = splash()
-	// A core key of the showcase's own (Rules K1): the same on every panel and
+	// A core key of the showcase's own (tdp K1): the same on every panel and
 	// popup.
 	a.CoreKeys = []terminu.CoreKey{{Key: "%", Desc: "the showcase's facts", Do: func() tea.Cmd {
 		return a.Viewer(&terminu.Viewer{Title: "Facts", Glyph: glyphYaml, Lines: s.facts()})
@@ -95,7 +95,7 @@ func newShowcase() *showcase {
 	a.Global = []terminu.Action{
 		{Key: "N", Label: "Narrow layout", Desc: "draw one panel at a time, as on a narrow terminal", Scope: terminu.GlobalScope,
 			Do: func() tea.Cmd { a.ForceNarrow = !a.ForceNarrow; return nil }},
-		// A digit: a global hotkey that only works in the global operation popup (Rules K1, M4).
+		// A digit: a global hotkey that only works in the global operation popup (tdp K1, M4).
 		{Key: "1", Label: "About", Desc: "what the showcase is", Scope: terminu.GlobalScope,
 			Do: func() tea.Cmd {
 				return a.Toast(terminu.Info, "About showcase "+version+": every component of terminu design")
@@ -117,19 +117,19 @@ func newShowcase() *showcase {
 	}
 	a.OnMsg = s.onMsg
 	a.Start = func() tea.Cmd {
-		// What the app does by itself goes in the App Log (components/dialog/note).
+		// What the app does by itself goes in the App Log (tdp note).
 		a.Log(terminu.Info, "Started; pretend files in /tmp/terminu-showcase")
 		// A pretend older showcase kept its layout in a file this one no
-		// longer uses: left alone, and every start says so (Rules E3).
+		// longer uses: left alone, and every start says so (tdp E3).
 		a.NoLongerUsed(oldLayout())
 		return a.Tick(time.Second, func(time.Time) tea.Msg { return logTick{} })
 	}
 	return s
 }
 
-// status is the statusbar (layout/screen): the layout with its hotkey, how
+// status is the statusbar (tdp screen): the layout with its hotkey, how
 // wide an icon is, the log's errors and warnings, the running job. Every
-// number keeps its width (Rules L2).
+// number keeps its width (tdp L2).
 func (s *showcase) status(int) []terminu.Span {
 	grey, here := terminu.Fg(terminu.Overlay0), terminu.Fg(terminu.Lavender)
 	narrow := "off"
@@ -138,7 +138,7 @@ func (s *showcase) status(int) []terminu.Span {
 	}
 	// Each group label: value, a space after the colon; two spaces between
 	// groups, no other mark (components, spacing). Each value keeps its
-	// width (Rules L2) but the last, which pushes nothing.
+	// width (tdp L2) but the last, which pushes nothing.
 	spans := []terminu.Span{
 		{Text: "[N]arrow: ", Style: grey}, {Text: narrow, Style: here},
 		{Text: "  icon: ", Style: grey}, {Text: fmt.Sprint(terminu.IconWidth()), Style: here},

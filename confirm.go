@@ -6,7 +6,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// confirmView is a confirm popup (components/dialog/confirm): what to read in
+// confirmView is a confirm popup (tdp confirm): what to read in
 // Overlay0 (a warning in Peach), a blank line, the question in Text last.
 // Enter accepts, Esc cancels, and nothing else answers it (no y, n: Rules
 // F6); Space does nothing.
@@ -14,7 +14,7 @@ type confirmView struct {
 	ask    Ask
 	accept func() tea.Cmd
 	// quit, when set, is Esc: it leaves the app instead of cancelling, the
-	// one confirm that does (Rules E3, MoveAside; components/dialog/confirm).
+	// one confirm that does (tdp E3, MoveAside; tdp confirm).
 	quit    func() tea.Cmd
 	content []string // wrapped, coloured
 	quest   []string
@@ -88,7 +88,7 @@ func (c *confirmView) draw(w, h int, layer Color) []string {
 	n := h - 4
 	var body []string
 	if len(c.content) > 0 {
-		// Only the content scrolls; the question stays last (components/dialog/confirm).
+		// Only the content scrolls; the question stays last (tdp confirm).
 		c.visible = max(n-len(c.quest)-1, 0)
 		c.top = min(max(c.top, 0), max(len(c.content)-c.visible, 0))
 		for i := c.top; i < c.top+c.visible; i++ {
@@ -143,7 +143,7 @@ func (c *confirmView) cancel() tea.Cmd { return run(c.ask.OnCancel) }
 func (c *confirmView) keyRef() []refSection {
 	secs := []refSection{{rows: []KeyRow{{Key: "Enter", Desc: c.ask.Verb}, {Key: "Esc", Desc: c.escVerb()}}}}
 	if len(c.content) > c.visible {
-		// Only when the details do not all fit (Rules M6).
+		// Only when the details do not all fit (tdp M6).
 		secs = append(secs, refSection{title: "move", rows: []KeyRow{{Key: "j|k", Desc: "scroll down, up"}}})
 	}
 	return secs

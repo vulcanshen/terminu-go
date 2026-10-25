@@ -166,7 +166,7 @@ func newInputsScreen(s *showcase) *inputsScreen {
 		}},
 		{Label: "Namespaces", Value: func() string { return joinChecked(namespaces, nsChecked) }, Empty: "none", Edit: func() tea.Cmd {
 			// kube-system and vault are out of reach: options not available,
-			// kube-system ticked from before (components/input/checkbox).
+			// kube-system ticked from before (tdp checkbox).
 			return a.Checks(terminu.Checks{Title: "Namespaces", Glyph: glyphTag, Options: namespaces, Checked: nsChecked,
 				Unavailable: func(i int) bool { return i == 1 || i == 7 },
 				Done:        func(c []bool) tea.Cmd { nsChecked = c; return nil }})
@@ -184,7 +184,7 @@ func newInputsScreen(s *showcase) *inputsScreen {
 		{Label: "Layout", Options: []string{"row", "column", "grid"}},
 		{Label: "Order", Options: []string{"asc", "desc"}},
 		{Label: "Notify", Options: []string{"notify on errors"}, Multi: true, Checked: []bool{true}},
-		// No display here: X11 is not available (components/input/checkbox).
+		// No display here: X11 is not available (tdp checkbox).
 		{Label: "Agent", Options: []string{"forward", "X11", "compression"}, Multi: true, Checked: []bool{true, false, true},
 			OptionUnavailable: func(i int) bool { return i == 1 }},
 		{Label: "Brightness", Value: func() string { return fmt.Sprint(brightness) }, Styled: func() []terminu.Span {
@@ -251,8 +251,8 @@ func newInputsScreen(s *showcase) *inputsScreen {
 	}
 	is.fileList.SetRows(fileRows())
 	is.fileList.SortBy(terminu.SortKey{Col: 0})
-	is.fileList.Location = projectDir // where the files are (layout/panel, location row)
-	// This panel's hint lists only what can be pressed now (Rules M6: the
+	is.fileList.Location = projectDir // where the files are (tdp panel.10)
+	// This panel's hint lists only what can be pressed now (tdp M6: the
 	// app's choice): View, disabled, leaves it.
 	is.files = &terminu.Panel{Label: "Files", Tabs: []string{"Lines"}, Body: is.fileList, HintPressableOnly: true, OnTab: is.switchTab}
 	is.files.Actions = append([]terminu.Action{
@@ -262,7 +262,7 @@ func newInputsScreen(s *showcase) *inputsScreen {
 		{Key: "L", Label: "Copy URL", Desc: "the file's address", Scope: terminu.ItemScope,
 			Do: func() tea.Cmd { return a.Toast(terminu.Info, "Copied the URL") }},
 		// This panel gives V to an action of its own: the splash does not open
-		// here (Rules S1).
+		// here (tdp S1).
 		{Key: "V", Label: "View", Desc: "the file's text", Scope: terminu.ItemScope, Hint: "view", Do: is.view,
 			Disabled: func() bool { return is.disabled }},
 	}, is.stateActions(is.files)...)
@@ -404,7 +404,7 @@ type grepDone struct {
 
 // grep searches the files' text: the app runs the search itself, off the
 // update loop, so typing never waits; each hit a row, its preview from the
-// line found (Finder.Search; components/input/finder).
+// line found (Finder.Search; tdp finder).
 func (is *inputsScreen) grep() tea.Cmd {
 	f := &terminu.Finder{Title: "Find in files", Glyph: glyphSearch, Verb: "open", Files: true,
 		Done: func(it terminu.FinderItem) tea.Cmd { return is.s.app.Toast(terminu.Info, "Opened "+it.Text) }}

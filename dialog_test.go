@@ -60,7 +60,7 @@ func testViewer() *Viewer {
 
 // TestViewerSelectsByDefault: every viewer has a selection mode; with no
 // Copy of the app's, y puts the text on the terminal's clipboard and a
-// Success toast says so (components/dialog/note).
+// Success toast says so (tdp note).
 func TestViewerSelectsByDefault(t *testing.T) {
 	ta := newTestApp(t)
 	takeClipboard()
@@ -79,7 +79,7 @@ func TestViewerSelectsByDefault(t *testing.T) {
 }
 
 // TestViewerNoWrapNoNumbers: an app may keep a viewer's long lines on one row,
-// cut with … at the end, and leave out its line numbers (components/dialog/note).
+// cut with … at the end, and leave out its line numbers (tdp note).
 func TestViewerNoWrapNoNumbers(t *testing.T) {
 	ta := newTestApp(t)
 	ta.resize(60, 20)
@@ -94,7 +94,7 @@ func TestViewerNoWrapNoNumbers(t *testing.T) {
 	if !strings.HasSuffix(strings.TrimRight(strings.TrimSuffix(text[3], "┃"), " "), "…") || !strings.HasPrefix(text[4], "┃ end") {
 		t.Errorf("the long line cut on its row, the next line under it: %q / %q", text[3], text[4])
 	}
-	// Three lines that fit: no scroll keys in its key reference (Rules M6).
+	// Three lines that fit: no scroll keys in its key reference (tdp M6).
 	ta.press("?")
 	if keys := covAKeys(covARef(t, ta)); keys["j|k"] {
 		t.Error("lines that fit list j|k")
@@ -104,7 +104,7 @@ func TestViewerNoWrapNoNumbers(t *testing.T) {
 // TestViewerNoWrapFollowsCursor: in a NoWrap viewer the selection's cursor
 // past the cut scrolls every line across to keep it in sight, as vim's
 // nowrap does, "…" where each is cut on either side; what is cut is still
-// selected and copied (G99, settled A; components/dialog/note).
+// selected and copied (G99, settled A; tdp note).
 func TestViewerNoWrapFollowsCursor(t *testing.T) {
 	ta := newTestApp(t)
 	ta.resize(40, 20)
@@ -152,7 +152,7 @@ func TestViewerNoWrapFollowsCursor(t *testing.T) {
 }
 
 // TestViewerSearchHits: a search's hits are underlined in their own colours,
-// the current one drawn as the cursor block; no Yellow (components/dialog/note).
+// the current one drawn as the cursor block; no Yellow (tdp note).
 func TestViewerSearchHits(t *testing.T) {
 	ta := newTestApp(t)
 	v := &Viewer{Title: "YAML", Lines: []string{"name: Nginx", "image: nginx:1.27"}, Lang: "yaml"}
@@ -409,7 +409,7 @@ func TestK1DigitsFreeInPopups(t *testing.T) {
 	}
 }
 
-// TestConfirmKeys: Enter and Esc are the only answers (Rules F6): y and n
+// TestConfirmKeys: Enter and Esc are the only answers (tdp F6): y and n
 // do nothing, and its ? lists just the two.
 func TestConfirmKeys(t *testing.T) {
 	ta := newTestApp(t)
@@ -520,7 +520,7 @@ func TestPopupTitleCutKeepsCapsule(t *testing.T) {
 
 // TestKeyReferenceTitleKeepsName: the key reference of a viewer upper-cases
 // what it shows and "keys", not the name of the thing (components, upper
-// case; components/dialog/note).
+// case; tdp note).
 func TestKeyReferenceTitleKeepsName(t *testing.T) {
 	ta := newTestApp(t)
 	v := testViewer()
@@ -535,7 +535,7 @@ func TestKeyReferenceTitleKeepsName(t *testing.T) {
 
 // TestPopupSubjectErrorMenu: an error popup and a menu about one thing keep
 // its name as it is after ": " in the title (components, upper case;
-// components/dialog/note; sshu SS33, filu FL14).
+// tdp note; sshu SS33, filu FL14).
 func TestPopupSubjectErrorMenu(t *testing.T) {
 	ta := newTestApp(t)
 	ta.ErrorAbout("Rename failed", "notes.md", "a file called notes.md is already there")

@@ -17,15 +17,15 @@ import (
 
 // Splash draws frame n (from 0) of the family's easter egg in w × h cells
 // (Rules S). done reports that the reveal is over; the last frame then stays
-// until a key. NewSplash makes the one Rules S5 describes.
+// until a key. NewSplash makes the one tdp S5 describes.
 type Splash func(frame, w, h int) (lines []string, done bool)
 
 type splashMsg struct{ id int }
 
-// splashTickTime is one tick of the reveal (Rules S5).
+// splashTickTime is one tick of the reveal (tdp S5).
 const splashTickTime = 10 * time.Millisecond
 
-// The mark's colours (Rules S5): the U frame, the same in every family app;
+// The mark's colours (tdp S5): the U frame, the same in every family app;
 // the letters in it; the squares under them, Surface0.
 var (
 	markFrame = Hex("#205090")
@@ -63,7 +63,7 @@ type splashRow struct {
 	style Style
 }
 
-// NewSplash is the family's splash (Rules S5): the mark in icon, the app's
+// NewSplash is the family's splash (tdp S5): the mark in icon, the app's
 // docs/icon.svg, cell for cell, and under it the app's name (its command's),
 // its version as `<app> version` prints it and a one-line intro, then the
 // family's author and the hint. The text is designed with the mark: a name,
@@ -137,12 +137,12 @@ func NewSplash(icon []byte, name, version, intro string) (Splash, error) {
 	return func(f, w, h int) ([]string, bool) {
 		if w < markWidth || h < splashRows {
 			// Too small for the whole block: the text alone, from the
-			// opening (Rules S5).
+			// opening (tdp S5).
 			return splashText(groups, f >= textHold, f >= textHold+textHold2, w, h), f >= text2
 		}
 		square := markSquare
 		if IconWidth() == 1 {
-			square += " " // a square takes two columns (E5)
+			square += " " // a square takes two columns (tdp E5)
 		}
 		// The whole block in the middle of the screen.
 		x, y := (w-markWidth)/2, (h-splashRows)/2
@@ -228,7 +228,7 @@ func abs(n int) int {
 	return n
 }
 
-// parseMark reads the cells of a family mark (Rules S5): the U frame's, and
+// parseMark reads the cells of a family mark (tdp S5): the U frame's, and
 // each letter's in the order the svg lists them.
 func parseMark(icon []byte) (frame []markCell, letters [][]markCell, err error) {
 	fail := func(format string, a ...any) error {
@@ -286,7 +286,7 @@ func parseMark(icon []byte) (frame []markCell, letters [][]markCell, err error) 
 }
 
 // takesV reports that p gave V to an action of its own: the splash does not
-// open there (Rules S1).
+// open there (tdp S1).
 func (p *Panel) takesV() bool {
 	for _, act := range p.Actions {
 		if act.Key == "V" {
@@ -310,7 +310,7 @@ func (p *Panel) takesV() bool {
 	return false
 }
 
-// openSplash opens the splash: only from a panel, only on V (Rules S4).
+// openSplash opens the splash: only from a panel, only on V (tdp S4).
 func (a *App) openSplash() tea.Cmd { return a.PlaySplash(a.Splash) }
 
 // PlaySplash plays s over the whole screen now, from its first frame, as V
@@ -327,7 +327,7 @@ func (a *App) PlaySplash(s Splash) tea.Cmd {
 
 // stepSplash moves the reveal on until it is over. The frame is the time
 // since it opened, a tick each 10ms: ticks that come late do not add up and
-// put the text off (Rules S5).
+// put the text off (tdp S5).
 func (a *App) stepSplash(msg splashMsg) tea.Cmd {
 	if !a.splashOn || msg.id != a.splashID {
 		return nil
@@ -339,7 +339,7 @@ func (a *App) stepSplash(msg splashMsg) tea.Cmd {
 	return a.after(splashTickTime, splashMsg{a.splashID})
 }
 
-// checkSplash refuses an app the splash cannot be opened in (Rules S1): none
+// checkSplash refuses an app the splash cannot be opened in (tdp S1): none
 // given, a global hotkey on V, or every panel giving V away.
 func (a *App) checkSplash() error {
 	if a.Splash == nil {

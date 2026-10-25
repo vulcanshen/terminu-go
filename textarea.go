@@ -9,31 +9,31 @@ import (
 	"github.com/rivo/uniseg"
 )
 
-// Textarea is multi-line text (components/input/textarea): it opens writing,
+// Textarea is multi-line text (tdp textarea): it opens writing,
 // with the value there and the cursor at its end; Esc moves to the moving
 // state, where Enter saves.
 type Textarea struct {
 	Title, Glyph string
 	// Subject is the one thing it acts on, kept as it is after ": " in the
-	// title: "EDIT: filu" (components/layout/popup).
+	// title: "EDIT: filu" (tdp popup).
 	Subject string
 	// Name is the text's name in its errors when the title is not ("Notes"
-	// on an "Edit"); left unset, the title names it (components/input/README).
+	// on an "Edit"); left unset, the title names it (tdp input).
 	Name string
 	Old  string
 	// Check, when set, judges a changed text on Enter: an error keeps it
-	// open and is written in the error row, as on a one-line input (Rules K3).
+	// open and is written in the error row, as on a one-line input (tdp K3).
 	Check func(string) error
 	// Done gets the new text. It is not called when it did not change.
 	Done func(string) tea.Cmd
 	// Commit, when set, writes a changed value back when Enter takes it, on
 	// the update loop, before Done: an error keeps the popup open with the
 	// value in it and opens an error popup over it, "RENAME FAILED"
-	// (components/layout/popup, the action failing; Rules F4).
+	// (tdp popup.7, F4).
 	Commit func(string) error
 	// OnCancel runs when it closes with no answer: Esc, or the popup it is
 	// over closing it, so whoever waits for the answer (a web page's prompt,
-	// ssh's askpass) hears it was cancelled (Rules F6).
+	// ssh's askpass) hears it was cancelled (tdp F6).
 	OnCancel func() tea.Cmd
 }
 
@@ -54,7 +54,7 @@ func (t Textarea) open(a *App, written func()) tea.Cmd {
 }
 
 // splitLines cuts text into its lines: "\n", "\r\n" and a lone "\r" are
-// each a line break (components/input/textarea: many terminals paste a line
+// each a line break (tdp textarea: many terminals paste a line
 // break as "\r").
 func splitLines(s string) []string {
 	s = strings.ReplaceAll(s, "\r\n", "\n")
@@ -62,7 +62,7 @@ func splitLines(s string) []string {
 }
 
 // graphemes is a line's characters. A pasted control character stays, one
-// character on its own, drawn as its red name (components/input/textarea, as
+// character on its own, drawn as its red name (tdp textarea, as
 // the one-line inputs).
 func graphemes(s string) []string {
 	var out []string
@@ -89,7 +89,7 @@ type textareaView struct {
 
 // cellW is how wide a character is drawn: a pasted tab takes input_tab_width
 // cells, not lined up to a tab stop; another control character its name
-// (components/input/textarea).
+// (tdp textarea).
 func (tv *textareaView) cellW(c string) int {
 	if c == "\t" {
 		return tv.tabW
@@ -98,7 +98,7 @@ func (tv *textareaView) cellW(c string) int {
 }
 
 // hasControl reports whether the text holds a control character other than
-// a line break or a tab: it is not saved (components/input/textarea).
+// a line break or a tab: it is not saved (tdp textarea).
 func (tv *textareaView) hasControl() bool {
 	for _, l := range tv.lines {
 		for _, c := range l {
@@ -119,7 +119,7 @@ func (tv *textareaView) value() string {
 }
 
 // vrow is one row on screen: a piece of a line (a line too long folds onto
-// the rows under it; components/input/textarea).
+// the rows under it; tdp textarea).
 type vrow struct{ line, start, end int }
 
 func (tv *textareaView) rows(w int) []vrow {
@@ -165,13 +165,13 @@ func (tv *textareaView) hint() []KeyHint {
 }
 
 // numWidth is the line numbers' column: at least two digits, so it widens
-// only at line 100, 1000… (components/input/textarea).
+// only at line 100, 1000… (tdp textarea).
 func (tv *textareaView) numWidth() int { return max(len(strconv.Itoa(len(tv.lines))), 2) }
 
 func (tv *textareaView) measure(sw, sh int) (int, int) {
 	w := popupWidth(sw, 0, false)
 	tv.textW = max(w-4-tv.numWidth()-1, 1)
-	// As tall as it can be; the text scrolls in it (components/input/textarea).
+	// As tall as it can be; the text scrolls in it (tdp textarea).
 	return w, max(sh-2, 3)
 }
 
@@ -180,14 +180,14 @@ func (tv *textareaView) draw(w, h int, layer Color) []string {
 	numW := tv.numWidth()
 	tv.textW = max(inner-2-numW-1, 1)
 	rows := tv.rows(tv.textW)
-	// The text, a blank row and the error row, which stays put (layout/popup).
+	// The text, a blank row and the error row, which stays put (tdp popup).
 	n := max(h-6, 1)
 	tv.visible = n
 	cur := tv.cursorRow(rows)
 	tv.top = scrollWindow(tv.top, cur, n, len(rows))
 	body := make([]string, 0, n)
 	// The value is Lavender; the cursor is a Lavender block while writing and
-	// a block of the layer colour while moving (components/input/textarea).
+	// a block of the layer colour while moving (tdp textarea).
 	style, cursor := Fg(Lavender), Style{Fg: Base, Bg: Lavender}
 	if !tv.writing {
 		cursor = On(layer)
@@ -313,7 +313,7 @@ func (tv *textareaView) writeKey(key string, msg tea.KeyMsg) tea.Cmd {
 	case "Enter":
 		tv.insert("\n")
 	case "Tab":
-		tv.insert(Repeat(" ", tv.tabW)) // spaces, input_tab_width of them (Rules K8)
+		tv.insert(Repeat(" ", tv.tabW)) // spaces, input_tab_width of them (tdp K8)
 	case "Space":
 		tv.insert(" ")
 	case "←":
@@ -507,7 +507,7 @@ func (tv *textareaView) moveKey(a *App, key string) (bool, tea.Cmd) {
 		return true, nil
 	case "Enter":
 		// A control character is not saved: the error row names the value,
-		// as on a one-line input (components/input/textarea).
+		// as on a one-line input (tdp textarea).
 		name := cmpOr(tv.t.Name, cmpOr(tv.t.Title, "The text"))
 		if tv.hasControl() {
 			tv.err = name + " can't have control characters"

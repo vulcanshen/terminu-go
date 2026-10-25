@@ -7,7 +7,7 @@ import (
 	"github.com/rivo/uniseg"
 )
 
-// Glyphs tdp names by code point (Rules E4: written as code points).
+// Glyphs tdp names by code point (tdp E4: written as code points).
 const (
 	glyphSlantLeft  = "\U0000E0BA" // nf-ple-lower_right_triangle: a capsule chain's left end, a join into a selected part
 	glyphSlantJoin  = "\U0000E0BC" // nf-ple-upper_left_triangle: a join out of a selected part
@@ -35,7 +35,7 @@ const (
 	glyphLog        = "\U0000F03A" // nf-fa-list: the App Log
 )
 
-// loadingFrames are nf-md-circle_slice_1 to _8 (components/layout/popup).
+// loadingFrames are nf-md-circle_slice_1 to _8 (tdp popup).
 var loadingFrames = [8]string{
 	"\U000F0A9E", "\U000F0A9F", "\U000F0AA0", "\U000F0AA1", "\U000F0AA2", "\U000F0AA3", "\U000F0AA4", "\U000F0AA5",
 }
@@ -72,7 +72,7 @@ func shrunk(text string) string {
 	return g
 }
 
-// drawChain draws a capsule chain (components/layout/panel) in color, in at
+// drawChain draws a capsule chain (tdp panel) in color, in at
 // most maxW cells: slanted ends, selected parts filled with color, unselected
 // ones on Mantle, every join a slant the way of the left end, in color on
 // Mantle: U+E0BC out of a selected part, U+E0BA into one, the thin U+E0BB
@@ -81,13 +81,13 @@ func shrunk(text string) string {
 // looks the same on any terminal ground. When it does not fit, unselected
 // parts shrink to their first character, then are folded away from the end
 // behind a "…"; the selected ones always stay, and one still too long is cut
-// from the end with "…", its slanted ends drawn (layout/panel, capsule chain).
+// from the end with "…", its slanted ends drawn (tdp panel.4).
 func drawChain(caps []Capsule, color Color, maxW int) string {
 	return drawChainOff(caps, nil, color, maxW)
 }
 
 // drawChainOff is drawChain with the unselected parts that cannot be chosen
-// now (off) in Surface2 (Rules M6).
+// now (off) in Surface2 (tdp M6).
 func drawChainOff(caps []Capsule, off []bool, color Color, maxW int) string {
 	if len(caps) == 0 || maxW <= 0 {
 		return ""
@@ -172,7 +172,7 @@ func drawChainOff(caps []Capsule, off []bool, color Color, maxW int) string {
 }
 
 // titleCapsule is a popup's title: glyph and text, upper case, in a capsule
-// rounded at both ends, filled with color (components/layout/popup).
+// rounded at both ends, filled with color (tdp popup).
 func titleCapsule(glyph, title string, color Color, maxW int) string {
 	text := Escape(title) // a name: control characters by name (components)
 	if glyph != "" {
@@ -189,7 +189,7 @@ func titleCapsule(glyph, title string, color Color, maxW int) string {
 // scrollText is a scroll position: "3 of 40" with a cursor, "1-20 of 120"
 // for what is seen without one.
 // scrollRoom is the width a popup that scrolls needs for its whole hint and
-// its scroll position at the widest (components/layout/popup): `┗━ `, the
+// its scroll position at the widest (tdp popup): `┗━ `, the
 // hint, at least ` ━ `, the position, ` ━┛`.
 func scrollRoom(pairs []KeyHint, widest string) int { return hintWidth(pairs) + Width(widest) + 9 }
 

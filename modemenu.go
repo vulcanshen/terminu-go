@@ -6,8 +6,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// modeMenu opens a mode's Space menu (components/dialog/menu, in a mode;
-// Rules K11), titled as where the mode is: ITEM OPERATION, what can be done
+// modeMenu opens a mode's Space menu (tdp menu.4,
+// K11), titled as where the mode is: ITEM OPERATION, what can be done
 // to the item under the cursor or the range selected, and <NAME> MODE, the
 // mode's own keys, its movement keys only shown. A row closes the menu and
 // does as its key does; Esc in the menu only closes it, back to the mode.
@@ -118,7 +118,7 @@ func (a *App) reorderModeMenu(rv *reorderView) tea.Cmd {
 		return func() tea.Cmd { _, cmd := rv.dragKey(a, key); return cmd }
 	}
 	item := []Action{{Key: "Enter", Label: "Drop", Desc: "it here", Do: do("Enter")}}
-	// Leaving says the hint's verb, Esc:cancel (components/dialog/menu, in a mode).
+	// Leaving says the hint's verb, Esc:cancel (tdp menu.4).
 	keys := []Action{moveRow("h|k", "move it up"), moveRow("j|l", "move it down"), leaveRow("cancel", do("Esc"))}
 	return a.modeMenu(a.modeTitle(), "Drag", item, keys)
 }

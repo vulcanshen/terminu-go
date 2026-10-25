@@ -6,13 +6,13 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// Reorder puts a set of items in an order by hand (components/input/reorder):
+// Reorder puts a set of items in an order by hand (tdp reorder):
 // the panel's Drag mode in a popup. D picks up the item under the cursor,
 // j|k move it, Enter drops it; Enter with nothing held writes the order back.
 type Reorder struct {
 	Title, Glyph string
 	// Subject is the one thing it acts on, kept as it is after ": " in the
-	// title: "EDIT: filu" (components/layout/popup).
+	// title: "EDIT: filu" (tdp popup).
 	Subject string
 	Options []string
 	// Done gets the new order: the options' indexes as they now stand
@@ -22,11 +22,11 @@ type Reorder struct {
 	// Commit, when set, writes a changed value back when Enter takes it, on
 	// the update loop, before Done: an error keeps the popup open with the
 	// value in it and opens an error popup over it, "RENAME FAILED"
-	// (components/layout/popup, the action failing; Rules F4).
+	// (tdp popup.7, F4).
 	Commit func(order []int) error
 	// OnCancel runs when it closes with no answer: Esc, or the popup it is
 	// over closing it, so whoever waits for the answer (a web page's prompt,
-	// ssh's askpass) hears it was cancelled (Rules F6).
+	// ssh's askpass) hears it was cancelled (tdp F6).
 	OnCancel func() tea.Cmd
 }
 
@@ -59,7 +59,7 @@ func (r Reorder) open(a *App, written func()) tea.Cmd {
 	return a.open(rv)
 }
 
-// The hints: nothing held, holding one (components/input/reorder).
+// The hints: nothing held, holding one (tdp reorder).
 var (
 	reorderHint     = []KeyHint{{"Enter", "apply"}, {"D", "drag"}, {"Esc", "cancel"}}
 	reorderHeldHint = []KeyHint{{"Enter", "drop"}, {"Esc", "cancel"}}
@@ -105,7 +105,7 @@ func (rv *reorderView) draw(w, h int, layer Color) []string {
 		switch {
 		case i == rv.cursor && rv.held:
 			// The held item: the cursor in the mode's colour, the swap glyph
-			// at its start (Rules K11).
+			// at its start (tdp K11).
 			body = append(body, cursorRow(Pad(glyphSwap, rv.lead())+item, inner, On(Yellow)))
 		case i == rv.cursor:
 			body = append(body, cursorRow(Repeat(" ", rv.lead())+item, inner, On(layer)))
@@ -122,7 +122,7 @@ func (rv *reorderView) draw(w, h int, layer Color) []string {
 	}
 	box := popupBox{color: layer, glyph: rv.r.Glyph, title: popupTitle(rv.r.Title, rv.r.Subject), hint: rv.hint(), scroll: scroll}
 	if rv.held {
-		box.color = Yellow // the Drag mode marks its frame: the mode colour and its name (Rules K11)
+		box.color = Yellow // the Drag mode marks its frame: the mode colour and its name (tdp K11)
 	}
 	lab := rv.labelFor(rv.modeName())
 	box.mode, box.closed, box.modeW = lab.name, 1-lab.shown, lab.room
@@ -152,7 +152,7 @@ func (rv *reorderView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {
 	}
 	half := max(rv.visible/2, 1)
 	switch key {
-	case "j", "l", "↓", "→": // a one-dimensional list (Rules K12)
+	case "j", "l", "↓", "→": // a one-dimensional list (tdp K12)
 		rv.cursor = (rv.cursor + 1) % n
 	case "k", "h", "↑", "←":
 		rv.cursor = (rv.cursor + n - 1) % n
@@ -181,7 +181,7 @@ func (rv *reorderView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {
 		return true, a.Confirm(Ask{Title: "Discard", Question: "Discard changes to " + rv.r.Title + "?", Verb: "discard"},
 			func() tea.Cmd { return a.closeTop() })
 	case "Space":
-		// Space does nothing here (Rules K5): D picks up.
+		// Space does nothing here (tdp K5): D picks up.
 	default:
 		return false, nil
 	}
@@ -189,13 +189,13 @@ func (rv *reorderView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {
 }
 
 // dragKey is a key in the Drag mode: only its own keys and the core keys of
-// Rules K11 work.
+// tdp K11 work.
 func (rv *reorderView) dragKey(a *App, key string) (bool, tea.Cmd) {
 	switch key {
 	case "?", "q", "Ctrl-C":
-		return false, nil // the mode's key reference, the quit flow (Rules K11)
+		return false, nil // the mode's key reference, the quit flow (tdp K11)
 	case "Space":
-		return true, a.reorderModeMenu(rv) // the mode's Space menu (Rules K11)
+		return true, a.reorderModeMenu(rv) // the mode's Space menu (tdp K11)
 	case "j", "l", "↓", "→":
 		rv.cursor = moveWrap(rv.order, rv.cursor, true)
 	case "k", "h", "↑", "←":
@@ -206,7 +206,7 @@ func (rv *reorderView) dragKey(a *App, key string) (bool, tea.Cmd) {
 			rv.changed = true
 		}
 	case "Esc":
-		// Back to where it was picked up, one layer at a time (Rules K4).
+		// Back to where it was picked up, one layer at a time (tdp K4).
 		rv.held, rv.order, rv.cursor = false, rv.before, rv.from
 	}
 	return true, nil
@@ -224,7 +224,7 @@ func (rv *reorderView) moved() bool {
 
 // moveWrap moves s[i] one place down or up and returns where it went. Past
 // the ends it wraps: the last moved down goes first and the others move down
-// one; the first moved up goes last (Rules K12).
+// one; the first moved up goes last (tdp K12).
 func moveWrap[T any](s []T, i int, down bool) int {
 	n := len(s)
 	switch {
@@ -260,7 +260,7 @@ func (rv *reorderView) surface() string {
 
 func (rv *reorderView) keyRef() []refSection {
 	if rv.held {
-		// Only the mode's keys (Rules K11).
+		// Only the mode's keys (tdp K11).
 		return []refSection{{title: "Drag", rows: []KeyRow{
 			{Key: "h|k", Desc: "move it up"},
 			{Key: "j|l", Desc: "move it down"},
@@ -279,7 +279,7 @@ func (rv *reorderView) keyRef() []refSection {
 }
 
 // oneWayKeys are the movement keys of a one-dimensional list: a form, a
-// value panel without tabs, a menu, a reorder (Rules K12, K6).
+// value panel without tabs, a menu, a reorder (tdp K12, K6).
 func oneWayKeys() []KeyRow {
 	return []KeyRow{
 		{Key: "h|k", Desc: "previous"},
@@ -292,5 +292,5 @@ func oneWayKeys() []KeyRow {
 func (rv *reorderView) typing() bool { return false }
 
 // inMode reports the Drag mode, where the app's own core keys do not work
-// (Rules K11).
+// (tdp K11).
 func (rv *reorderView) inMode() bool { return rv.held }

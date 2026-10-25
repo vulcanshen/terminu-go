@@ -10,7 +10,7 @@ import (
 	"github.com/charmbracelet/x/ansi"
 )
 
-// iconWidth is how many cells a Nerd Font icon advances the cursor (E5).
+// iconWidth is how many cells a Nerd Font icon advances the cursor (tdp E5).
 var iconWidth = 1
 
 // isIcon reports whether r is in a private use area, where Nerd Font glyphs live.
@@ -92,7 +92,7 @@ func pad(s string, w int) string {
 }
 
 // composite lays top over base at (x, y). Anything off screen is cut; it never
-// panics, whatever the sizes (E5).
+// panics, whatever the sizes (tdp E5).
 func composite(base, top []string, x, y, width int) []string {
 	out := append([]string(nil), base...)
 	x, y = max(x, 0), max(y, 0)

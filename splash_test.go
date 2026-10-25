@@ -408,7 +408,7 @@ func TestS5SplashRefusesBadIcon(t *testing.T) {
 // TestS5SplashTooSmall: a terminal under 50 columns or 30 rows gets the text
 // alone, centred both ways, in its two batches; too narrow, it wraps between
 // words; too short, the hint goes, then the author, then the intro, each with
-// the blank row above it, and the name and version stay (Rules S5).
+// the blank row above it, and the name and version stay (tdp S5).
 func TestS5SplashTooSmall(t *testing.T) {
 	icon, err := os.ReadFile("examples/showcase/icon.svg")
 	if err != nil {
@@ -504,9 +504,9 @@ func TestS5SplashTooSmall(t *testing.T) {
 }
 
 // TestS5SplashRefusesWideText: no row of the text is wider than the mark (50
-// columns); the lib refuses one when it builds the splash (Rules S5, E8).
+// columns); the lib refuses one when it builds the splash (tdp S5, E8).
 // TestPlaySplash: the app can play a splash of its own accord, any splash it
-// has; any key closes it, as the app's own on V (Rules S3; kamonu KM8).
+// has; any key closes it, as the app's own on V (tdp S3; kamonu KM8).
 func TestPlaySplash(t *testing.T) {
 	ta := withSplash(newTestApp(t))
 	played := 0
@@ -545,7 +545,7 @@ func TestS5SplashKeepsTime(t *testing.T) {
 	}
 }
 
-// TestS5SplashOneRow: one row: the name only (Rules S5).
+// TestS5SplashOneRow: one row: the name only (tdp S5).
 func TestS5SplashOneRow(t *testing.T) {
 	s, _ := showcaseSplash(t)
 	lines, _ := s(10000, 80, 1)

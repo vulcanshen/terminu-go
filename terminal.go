@@ -11,11 +11,11 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// Terminal is a program running in a PTY (components/dialog/terminal): a
+// Terminal is a program running in a PTY (tdp terminal): a
 // shell, an editor, a remote session. Put it in a panel as the panel's Body,
 // or open it in a terminal popup (App.OpenTerminal). While the focus is in
 // it every key goes to the program, but the exit key and the app's own keys
-// (Rules K10).
+// (tdp K10).
 type Terminal struct {
 	// Title is what runs, in capitals ("SHELL", "ALTERM"); Subject what it
 	// runs on, as it is ("myhost"): the popup's title reads "ALTERM: myhost".
@@ -35,7 +35,7 @@ type Terminal struct {
 	// Interactive marks a terminal the user types commands of their own in
 	// (a shell, an ssh session, kubectl exec), not one the app opens to run
 	// one program for one thing ($EDITOR, sudo asking for a password). It
-	// has the two modes of components/dialog/terminal, which every other PTY
+	// has the two modes of tdp terminal, which every other PTY
 	// leaves to its program, PgUp too:
 	//   - History, on PgUp: j|k, u|d, gg|G, PgUp|PgDn scroll back through
 	//     what went off the top, Esc goes back to the live screen, any other
@@ -53,9 +53,9 @@ type Terminal struct {
 	// and the app's own Keys (the one that takes them back): the user gave
 	// them all away (sshu's locked cell, a family app running inside). The
 	// selection is the program's then and PgUp|PgDn go to it, the innermost
-	// PTY scrolling its own history (components/dialog/terminal).
+	// PTY scrolling its own history (tdp terminal).
 	AllKeys bool
-	// ExitKey is the key that takes the focus out (Rules K10), Alt-Esc when
+	// ExitKey is the key that takes the focus out (tdp K10), Alt-Esc when
 	// unset; the app may change it while the program runs, and the hint and
 	// the footer show it as it is. Alt-Esc always asks first; another asks
 	// when ExitAsks.
@@ -71,12 +71,12 @@ type Terminal struct {
 	OnExit func(err error) tea.Cmd
 	// OnLeave runs when the exit key is accepted (asked first or not), once
 	// the focus is out and, with Ends, the program told to stop: where the
-	// focus goes now is the app's (Rules K10), such as back to the list row
+	// focus goes now is the app's (tdp K10), such as back to the list row
 	// of the session left. The app's own keys that call Hide do not run it.
 	OnLeave func() tea.Cmd
 	// OnFirstOutput runs when the program first prints something after
 	// Start: an ssh that has connected, to end the panel's loading and
-	// NotReady (Rules K10, F7).
+	// NotReady (tdp K10, F7).
 	OnFirstOutput func() tea.Cmd
 
 	mu      sync.Mutex
@@ -101,11 +101,11 @@ type Terminal struct {
 	pendingG bool // g pressed in a mode, waiting for gg
 }
 
-// TerminalKey is one of the app's own keys in a PTY (Rules K10).
+// TerminalKey is one of the app's own keys in a PTY (tdp K10).
 type TerminalKey struct {
 	// Key is how it is written in the footer and the hint ("Alt-←|→|↑|↓");
 	// Keys are the keys it takes, Key itself when empty, as a ModeKey's
-	// (Rules M5).
+	// (tdp M5).
 	Key  string
 	Keys []string
 	Desc string
@@ -130,7 +130,7 @@ type termExited struct{ t *Terminal }
 const exitKey = "Alt-Esc"
 
 // selectKey puts an interactive terminal in the selection mode: the
-// family's v, with Alt to get out of the program (components/dialog/terminal).
+// family's v, with Alt to get out of the program (tdp terminal).
 const selectKey = "Alt-v"
 
 // modes reports whether the terminal has its two modes now: interactive,
@@ -147,7 +147,7 @@ func (t *Terminal) fullScreen() bool {
 // exit is the exit key now.
 func (t *Terminal) exit() string { return cmpOr(t.ExitKey, exitKey) }
 
-// The modes a terminal has (Rules K11; components/dialog/terminal).
+// The modes a terminal has (tdp K11; tdp terminal).
 const (
 	historyMode = "History"
 	visualMode  = "Visual"
@@ -272,7 +272,7 @@ func (t *Terminal) exitVerb() string {
 }
 
 // hint is the exit key first, then the app's own keys
-// (components/dialog/terminal); in a mode, the mode's keys (Rules K11).
+// (tdp terminal); in a mode, the mode's keys (tdp K11).
 func (t *Terminal) hint() []KeyHint {
 	switch {
 	case t.mode == historyMode:
@@ -310,7 +310,7 @@ func (t *Terminal) resize(w, h int) {
 }
 
 // lines draws the screen in w × h; cursor draws the program's cursor, a block
-// in Text with Base on it whatever shape it asks for (components/dialog/terminal).
+// in Text with Base on it whatever shape it asks for (tdp terminal).
 func (t *Terminal) lines(w, h int, cursor bool) []string {
 	t.resize(w, h)
 	if t.mode == visualMode {
@@ -323,7 +323,7 @@ func (t *Terminal) lines(w, h int, cursor bool) []string {
 
 // held is the screen held still for the selection, in w × h: the history
 // and the screen as they were, scrolled to follow the cursor, the cursor and
-// the selection drawn as a viewer's (components/dialog/note).
+// the selection drawn as a viewer's (tdp note).
 func (t *Terminal) held(w, h int) []string {
 	v := t.sel
 	v.sync()
@@ -342,7 +342,7 @@ func (t *Terminal) held(w, h int) []string {
 }
 
 // selectMode holds the screen still and brings the selection's cursor out at
-// the start of the first line in sight (components/dialog/terminal).
+// the start of the first line in sight (tdp terminal).
 func (t *Terminal) selectMode(a *App, layer Color) {
 	t.mu.Lock()
 	var lines []string
@@ -431,7 +431,7 @@ func (t *Terminal) modeKey(a *App, key string) (cmd tea.Cmd, ok bool) {
 	return cmd, true
 }
 
-// modeRef is a mode's key reference (Rules K11).
+// modeRef is a mode's key reference (tdp K11).
 func (t *Terminal) modeRef() *noteView {
 	if t.mode == visualMode {
 		return keyReference(Upper(visualMode), (&viewerView{v: t.sel}).keyRef())
@@ -448,7 +448,7 @@ func (t *Terminal) modeRef() *noteView {
 // scroll is the position in the history, when scrolled back.
 func (t *Terminal) scroll() string {
 	if t.mode == visualMode {
-		// The cursor's line, N of M, as a viewer's selection (components/dialog/note).
+		// The cursor's line, N of M, as a viewer's selection (tdp note).
 		return scrollText(true, t.sel.line+1, 0, len(t.sel.Lines))
 	}
 	if t.back == 0 || t.screen == nil {
@@ -459,18 +459,18 @@ func (t *Terminal) scroll() string {
 	return scrollText(false, first, first+t.screen.h-1, total)
 }
 
-// key is a key while the focus is in the terminal (Rules K10).
+// key is a key while the focus is in the terminal (tdp K10).
 func (t *Terminal) key(a *App, key string, msg tea.KeyMsg) tea.Cmd {
 	if t.mode != "" {
 		if cmd, ok := t.modeKey(a, key); ok {
 			return cmd
 		}
 		// Not the mode's: it leaves the mode and goes on as in the live
-		// screen, q and Ctrl-C too (Rules K11).
+		// screen, q and Ctrl-C too (tdp K11).
 		t.leaveMode()
 	}
 	if key == t.exit() && (key == exitKey || t.ExitAsks) {
-		// Alt-Esc and two Escs are the same bytes: it always asks (Rules K10).
+		// Alt-Esc and two Escs are the same bytes: it always asks (tdp K10).
 		verb := t.exitVerb()
 		name := cmpOr(t.Subject, t.Title)
 		q := "Leave " + name + "? It keeps running."
@@ -499,7 +499,7 @@ func (t *Terminal) key(a *App, key string, msg tea.KeyMsg) tea.Cmd {
 		}
 	}
 	if t.modes() && key == "PgUp" && !t.fullScreen() {
-		// Back into the history: the History mode (components/dialog/terminal).
+		// Back into the history: the History mode (tdp terminal).
 		t.mu.Lock()
 		t.back = min(t.back+max(t.vt().h/2, 1), len(t.vt().history))
 		t.mu.Unlock()
@@ -639,7 +639,7 @@ func (t *Terminal) Draw(w, h int, focused bool) []string {
 func (t *Terminal) Key(string, tea.KeyMsg) (bool, tea.Cmd) { return false, nil }
 
 // Empty reports a program started that has printed nothing yet: the panel's
-// LoadingText shows in its middle meanwhile (layout/panel, loading).
+// LoadingText shows in its middle meanwhile (tdp panel.5).
 func (t *Terminal) Empty() bool { return t.started && !t.spoke }
 
 // HasItem: a terminal has no items.
@@ -654,7 +654,7 @@ func (t *Terminal) MoveKeys() []KeyRow { return nil }
 // --- the terminal popup ----------------------------------------------------------
 
 // OpenTerminal opens a terminal popup with t in it, starting it if it has not
-// started (components/dialog/terminal).
+// started (tdp terminal).
 func (a *App) OpenTerminal(t *Terminal) tea.Cmd {
 	a.terminals = slices.DeleteFunc(a.terminals, func(o *Terminal) bool { return o == t || o.exited })
 	a.terminals = append(a.terminals, t)
@@ -679,7 +679,7 @@ func (t *Terminal) modeName() string {
 }
 
 // topRows are the rows a terminal popup leaves above it: the screen chips
-// and their divider, or the statusbar (Rules F7, the terminal exception).
+// and their divider, or the statusbar (tdp F7, the terminal exception).
 func (a *App) topRows() int {
 	switch {
 	case len(a.screens) > 1 && a.h > 3:
@@ -702,7 +702,7 @@ func (tv *termView) draw(w, h int, layer Color) []string {
 	body := tv.t.lines(w-2, h-2, true)
 	box := popupBox{color: layer, glyph: glyphTerminal, title: tv.t.title(), hint: tv.t.hint(), scroll: tv.t.scroll(), bare: true}
 	if tv.t.mode != "" {
-		box.color = Yellow // a mode marks its frame (Rules K11)
+		box.color = Yellow // a mode marks its frame (tdp K11)
 	}
 	lab := tv.labelFor(tv.modeName())
 	box.mode, box.closed, box.modeW = lab.name, 1-lab.shown, lab.room

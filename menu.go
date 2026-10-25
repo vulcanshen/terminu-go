@@ -25,7 +25,7 @@ func (r menuRow) selectable() bool {
 	return r.kind == menuItem && !r.action.disabled() && !r.action.show
 }
 
-// menuView is a menu popup (components/dialog/menu): a list without search,
+// menuView is a menu popup (tdp menu): a list without search,
 // j/k to move, Enter or a hotkey to run a row.
 type menuView struct {
 	glyph, title string
@@ -36,9 +36,9 @@ type menuView struct {
 	top          int
 	inner        int
 	visible      int // rows the last draw had room for
-	// run runs a row's action; the app decides what closes (Rules T1).
+	// run runs a row's action; the app decides what closes (tdp T1).
 	run func(a *App, act Action) tea.Cmd
-	// space makes Space close it: the Space menu (Rules K5).
+	// space makes Space close it: the Space menu (tdp K5).
 	space bool
 	name  string
 }
@@ -85,7 +85,7 @@ func newMenu(title string, sections []MenuSection, tail []Action) *menuView {
 	return m
 }
 
-// step finds the next selectable row from i going by dir, wrapping (Rules K12).
+// step finds the next selectable row from i going by dir, wrapping (tdp K12).
 func (m *menuView) step(i, dir int) int {
 	n := len(m.rows)
 	for k := 1; k <= n; k++ {
@@ -114,7 +114,7 @@ func (m *menuView) rowWidth(r menuRow) int {
 }
 
 // hint is Enter:run Esc:close, Enter:detail on a row opening its full text
-// (components/dialog/menu: what Enter does there).
+// (tdp menu: what Enter does there).
 func (m *menuView) hint() []KeyHint {
 	verb := "run"
 	if m.cursor < len(m.rows) && m.rows[m.cursor].kind == menuItem {
@@ -189,7 +189,7 @@ func (m *menuView) draw(w, h int, color Color) []string {
 	for i := m.top; i < m.top+n && i < len(m.rows); i++ {
 		r := m.rows[i]
 		if r.kind == menuItem && r.action.Live != nil {
-			// Asked again at every draw: a work list's progress (components/dialog/menu).
+			// Asked again at every draw: a work list's progress (tdp menu).
 			label, desc := r.action.Live()
 			r.label, r.desc = MarkLabel(r.action.Key, label), desc
 		}
@@ -238,7 +238,7 @@ func (m *menuView) titleText() string {
 }
 
 // rowText is a row in w cells: label in Text, description in Overlay0 on the
-// right, cut with "…" when it does not fit (components/dialog/menu).
+// right, cut with "…" when it does not fit (tdp menu).
 func (m *menuView) rowText(r menuRow, w int) string {
 	label := Truncate(Escape(r.label), w)
 	room := w - Width(label) - 2
@@ -281,7 +281,7 @@ func (m *menuView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 	default:
 		for _, r := range m.rows {
 			// Enter runs the row under the cursor; Esc closes the menu, a
-			// mode's [Esc] Leave too (components/dialog/menu, in a mode).
+			// mode's [Esc] Leave too (tdp menu.4).
 			if r.kind == menuItem && r.action.Key == key && key != "Enter" && key != "Esc" {
 				if r.action.disabled() {
 					return true, nil
@@ -295,7 +295,7 @@ func (m *menuView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 }
 
 // towards is the selectable row nearest i, looking first by dir, then back:
-// u/d and gg/G stop at the ends (Rules K12).
+// u/d and gg/G stop at the ends (tdp K12).
 func (m *menuView) towards(i, dir int) int {
 	for j := i; j >= 0 && j < len(m.rows); j += dir {
 		if m.rows[j].selectable() {
@@ -332,7 +332,7 @@ func (m *menuView) keyRef() []refSection {
 func (m *menuView) typing() bool { return false }
 
 // plainLabel is an action's label as the key reference writes it: no hotkey
-// marker, its case as it is (components/dialog/note).
+// marker, its case as it is (tdp note).
 func plainLabel(a Action) string { return a.Label }
 
 func descTail(d string) string {

@@ -14,7 +14,7 @@ var (
 )
 
 // Clipboard puts text on the terminal's clipboard (OSC 52), as a viewer's
-// selection mode copies by default (components/dialog/note). It is sent with
+// selection mode copies by default (tdp note). It is sent with
 // the next frame.
 func Clipboard(text string) {
 	clipMu.Lock()

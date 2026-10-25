@@ -9,14 +9,14 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// FormField is one field of a Form (components/dialog/form).
+// FormField is one field of a Form (tdp form).
 type FormField struct {
 	Label string
 	// Stacked puts the label on a row of its own and the value under it, as
 	// wide as the inside: for long values (a URL, a path, a command).
 	Stacked bool
-	// Value is the value as shown (components/input/README, how a value is
-	// shown); Empty is what an empty value means, in grey ("not set").
+	// Value is the value as shown (tdp input.10);
+	// Empty is what an empty value means, in grey ("not set").
 	Value func() string
 	// Styled, when set, is how the value is shown in colours of the app's
 	// own (a swatch, ColorSpans): each piece's text drawn as Value's is
@@ -36,11 +36,11 @@ type FormField struct {
 	Multi    bool
 	Checked  []bool
 	// OptionDisabled reports an option that cannot be chosen now: drawn in
-	// the disabled colour and skipped (components/dialog/form).
+	// the disabled colour and skipped (tdp form).
 	OptionDisabled func(i int) bool
 	// OptionUnavailable reports a checkbox option that is not available:
 	// drawn in Surface2, the tick too, but stopped on and flipped like any
-	// other (components/input/checkbox).
+	// other (tdp checkbox).
 	OptionUnavailable func(i int) bool
 	Disabled          func() bool
 	// Check is the whole form's rule for this field (required, depends on
@@ -73,12 +73,12 @@ func (f *FormField) optionUnavailable(i int) bool {
 }
 
 // Form is several values filled in and submitted together
-// (components/dialog/form): Enter on a field opens its input popup, options
+// (tdp form): Enter on a field opens its input popup, options
 // are chosen on the form, the button submits.
 type Form struct {
 	Title, Glyph string
 	// Subject is the one thing it acts on, kept as it is after ": " in the
-	// title: "EDIT: filu" (components/layout/popup).
+	// title: "EDIT: filu" (tdp popup).
 	Subject string
 	// Name is the form in the discard question: "Discard changes to New host?"
 	Name   string
@@ -86,7 +86,7 @@ type Form struct {
 	// Button is the main submit button's text: what the form does ("Save").
 	// ButtonSubject is the name it acts on, kept as it is after the verb on
 	// the button and in the hint: "Overwrite KBU.svg", "Enter:overwrite
-	// KBU.svg" (components/dialog/form, hint).
+	// KBU.svg" (tdp form.13).
 	Button, ButtonSubject string
 	// Buttons are the action area's other buttons, row by row from the top,
 	// each row on the right. The main submit goes at the end of the last
@@ -101,16 +101,16 @@ type Form struct {
 	// SubmitLong is a Submit that takes long ("Connect"), in its place: it
 	// runs off the update loop, the loading icon after the title and Enter
 	// on its button doing nothing until it ends. ctx ends when the form
-	// closes first; what it returns then is dropped (components/dialog/form).
+	// closes first; what it returns then is dropped (tdp form).
 	SubmitLong func(ctx context.Context) (tea.Cmd, error)
 	// OnCancel runs when it closes without being submitted: Esc, its discard
 	// confirm, or the popup it is over closing it, as an Ask's and an input's
-	// do (Rules F6).
+	// do (tdp F6).
 	OnCancel func() tea.Cmd
 }
 
 // FormButton is a button of a form's action area besides the main submit
-// (components/dialog/form): another submit, or an action that keeps the
+// (tdp form): another submit, or an action that keeps the
 // form open. It has one of Submit, SubmitLong, Run and Open.
 type FormButton struct {
 	// Label is what it does ("Overwrite"); Subject the name it acts on, kept
@@ -137,11 +137,11 @@ type FormButton struct {
 	Back func() (changed bool)
 }
 
-// FormResult is what came of a form's action (components/dialog/form): Err
+// FormResult is what came of a form's action (tdp form): Err
 // opens an error popup, the focus on the button so that Enter tries again;
 // else Lines open a note to read; else Toast says it in one sentence, a
 // Success toast, or Info when Info is set: which one a thing done is, is the
-// app's (components/dialog/toast).
+// app's (tdp toast).
 type FormResult struct {
 	Toast string
 	Info  bool
@@ -174,7 +174,7 @@ type formView struct {
 	f     *Form
 	focus formItem
 	// back and backAction are the items of the field area and the action
-	// area the focus was last on: Tab returns there (components/dialog/form).
+	// area the focus was last on: Tab returns there (tdp form).
 	back, backAction formItem
 	// buttons are the action area's in reading order, nil the main submit.
 	buttons []*FormButton
@@ -197,7 +197,7 @@ type formView struct {
 
 // Form opens a form.
 // It panics on a field with more than five options: those go in a select or
-// a checkbox popup (components/dialog/form); on a form with both Submit and
+// a checkbox popup (tdp form); on a form with both Submit and
 // SubmitLong; and on a button with not one of Submit, SubmitLong, Run and Open:
 // mistakes in the program.
 func (a *App) Form(f *Form) tea.Cmd { return a.open(newFormView(f, nil)) }
@@ -235,7 +235,7 @@ func newFormView(f *Form, body PopupBody) *formView {
 	if items := fv.fieldItems(); len(items) > 0 {
 		fv.focus = items[0]
 		if items[0].option == optAll && len(items) > 1 {
-			fv.focus = items[1] // the first option, not Select all (components/input/checkbox)
+			fv.focus = items[1] // the first option, not Select all (tdp checkbox)
 		}
 	}
 	if f.Focus != nil && !f.Focus.disabled() {
@@ -287,8 +287,8 @@ func (fv *formView) buttonLabel(it formItem) string {
 }
 
 // buttonHint is what a button's Enter says in the hint: the verb in lower
-// case, the name as it is, "overwrite KBU.svg" (components/dialog/form, hint;
-// components/README, upper case).
+// case, the name as it is, "overwrite KBU.svg" (tdp form.13,
+// components.4).
 func (fv *formView) buttonHint(it formItem) string {
 	label, subject := fv.buttonParts(it)
 	if subject == "" {
@@ -298,7 +298,7 @@ func (fv *formView) buttonHint(it formItem) string {
 }
 
 // failed is the error popup of a button's work failing: its verb in the
-// title, the name after ": " as it is (components/layout/popup, title).
+// title, the name after ": " as it is (tdp popup.1).
 func (fv *formView) failed(a *App, it formItem, err error) tea.Cmd {
 	label, subject := fv.buttonParts(it)
 	n := errorPopup(label+" failed", "", err.Error())
@@ -307,7 +307,7 @@ func (fv *formView) failed(a *App, it formItem, err error) tea.Cmd {
 	return a.open(n)
 }
 
-// area is the stops of the area the focus is in (components/dialog/form):
+// area is the stops of the area the focus is in (tdp form):
 // the field area, or the buttons in reading order.
 func (fv *formView) area() []formItem {
 	if fv.focus.kind != itemButton {
@@ -332,6 +332,7 @@ func (fv *formView) buttonItems() []formItem {
 // Disabled fields are skipped.
 func (fv *formView) fieldItems() []formItem {
 	if fv.body != nil {
+		// The error row is no stop, as in an input popup. TODO(tdp G101)
 		return []formItem{{kind: itemContent, option: -1}}
 	}
 	var out []formItem
@@ -370,7 +371,7 @@ func (fv *formView) index(items []formItem) int {
 // landing is where the focus goes in a field it is sent to (the form opened
 // at it, a check failing on it, e back from the error row): the first option
 // with a value — a radio's chosen one, a checkbox group's first ticked one —
-// or else the first (components/dialog/form). Disabled options are skipped.
+// or else the first (tdp form). Disabled options are skipped.
 func (fv *formView) landing(f *FormField) formItem {
 	if len(f.Options) == 0 {
 		return formItem{itemField, f, -1}
@@ -404,7 +405,7 @@ func (fv *formView) button() string { return cmpOr(fv.f.Button, "Save") }
 
 func (fv *formView) hint() []KeyHint {
 	var h []KeyHint
-	// Tab names the area it goes to (components/dialog/form).
+	// Tab names the area it goes to (tdp form).
 	switch it := fv.focus; it.kind {
 	case itemError:
 		// The error row is in the field area: Tab goes to the actions.
@@ -474,7 +475,7 @@ func (fv *formView) draw(w, h int, layer Color) []string {
 	inner := w - 2
 	// The content, one cell from the frame on the left; on the right as much
 	// room as the arrow at the end of the focus block, on every row, so the
-	// arrow never covers a value (components/dialog/form, layout/popup).
+	// arrow never covers a value (tdp form, popup).
 	arrow := Width(glyphHard)
 	pad := Repeat(" ", arrow)
 	cw := inner - 1 - arrow
@@ -519,7 +520,7 @@ func (fv *formView) draw(w, h int, layer Color) []string {
 			}
 			for i := range f.Options {
 				// An option's block starts at its glyph, the indent outside it
-				// (components/dialog/form, focus).
+				// (tdp form.6).
 				if fv.focus == (formItem{itemField, f, i}) {
 					rows = append(rows, " "+lead(first && i == 0)+indent+fv.block(fv.option(f, i), room-Width(indent)+arrow, layer))
 					continue
@@ -544,7 +545,7 @@ func (fv *formView) draw(w, h int, layer Color) []string {
 		}
 	}
 	// The fields area scrolls the least that keeps the focused field whole;
-	// the error row, the separator and the buttons stay (components/dialog/form).
+	// the error row, the separator and the buttons stay (tdp form).
 	actions := fv.actionRows()
 	area := max(h-7-len(actions), 1)
 	fv.visible = area
@@ -568,7 +569,7 @@ func (fv *formView) draw(w, h int, layer Color) []string {
 	body = append(body, fv.actionArea(inner, layer)...)
 	scroll := ""
 	// The position counts fields only; on the error row or the button there
-	// is no field to count, so it is not written (components/dialog/form).
+	// is no field to count, so it is not written (tdp form).
 	if len(rows) > area && fv.focus.kind == itemField {
 		for i, f := range fv.f.Fields {
 			if f == fv.focus.field {
@@ -601,11 +602,11 @@ func (fv *formView) actionArea(inner int, layer Color) []string {
 }
 
 // isLoading reports an action running: the loading icon goes after the title
-// (components/dialog/form, the action area).
+// (tdp form.7).
 func (fv *formView) isLoading() bool { return len(fv.running) > 0 }
 
 // label is a field's label: the layer colour, Surface2 when disabled, Red
-// when its value is wrong (components/dialog/form). It is not upper case.
+// when its value is wrong (tdp form). It is not upper case.
 func (fv *formView) label(f *FormField, layer Color) string {
 	switch {
 	case fv.errs[f] != "":
@@ -664,7 +665,7 @@ func (fv *formView) option(f *FormField, i int) string {
 
 // block is the focus from the item's start to the frame: the layer colour,
 // Base bold, a swatch keeping its colour, the right-most cell an arrow
-// (components/dialog/form, components/color).
+// (tdp form, color).
 func (fv *formView) block(s string, w int, layer Color) string {
 	arrow := Width(glyphHard)
 	return onBlock(Fit(s, w-arrow), On(layer)) + Fg(layer).Render(glyphHard)
@@ -695,7 +696,7 @@ func (fv *formView) step(dir int) {
 
 // tab moves between the field area, the error row included, and the action
 // area, back to the item left in each; the first time to the main submit
-// (components/dialog/form, Rules K2).
+// (tdp form, tdp K2).
 func (fv *formView) tab() {
 	if fv.focus.kind != itemButton {
 		fv.focus = fv.backAction
@@ -759,7 +760,7 @@ func (fv *formView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 		return true, fv.escape(a)
 	case "Space":
 		// On a checkbox option Space ticks it too, as in a checkbox popup;
-		// elsewhere it does nothing (Rules K5).
+		// elsewhere it does nothing (tdp K5).
 		if it := fv.focus; it.kind == itemField && it.field.Multi && it.option != -1 {
 			return true, fv.enter(a)
 		}
@@ -770,7 +771,7 @@ func (fv *formView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 		if msg.Type != tea.KeyRunes || msg.Alt {
 			return true, nil
 		}
-		// Typing on a field one types in: a note says how (components/dialog/form).
+		// Typing on a field one types in: a note says how (tdp form).
 		if it := fv.focus; it.kind == itemField && it.field.Edit != nil && it.field.Edit().typed() {
 			label := it.field.Label
 			return true, a.open(&noteView{
@@ -779,7 +780,7 @@ func (fv *formView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 				hint: []KeyHint{{"Enter|Esc", "close"}},
 			})
 		}
-		return true, nil // q too: a form does not start the quit flow (Rules K9)
+		return true, nil // q too: a form does not start the quit flow (tdp K9)
 	}
 	return true, nil
 }
@@ -838,7 +839,7 @@ func (fv *formView) enter(a *App) tea.Cmd {
 }
 
 // press presses a button: a submit, or an action that keeps the form open
-// (components/dialog/form, the action area).
+// (tdp form.7).
 func (fv *formView) press(a *App, it formItem) tea.Cmd {
 	if fv.running[it.option] != nil {
 		return nil // it still runs: the same thing is not sent twice
@@ -883,7 +884,7 @@ func (fv *formView) press(a *App, it formItem) tea.Cmd {
 }
 
 // start runs a button's work off the update loop: the loading icon after the
-// title until it ends; the form closing ends ctx (components/dialog/form).
+// title until it ends; the form closing ends ctx (tdp form).
 func (fv *formView) start(it formItem, work func(ctx context.Context) formRan) tea.Cmd {
 	ctx, cancel := context.WithCancel(context.Background())
 	fv.running[it.option] = cancel
@@ -895,7 +896,7 @@ func (fv *formView) start(it formItem, work func(ctx context.Context) formRan) t
 }
 
 // closed is the form gone: what still runs is cancelled, and what it ends
-// with has nowhere to go (components/dialog/form).
+// with has nowhere to go (tdp form).
 func (fv *formView) closed() {
 	fv.gone = true
 	for _, cancel := range fv.running {
@@ -948,13 +949,13 @@ func (m formRan) done(a *App) tea.Cmd {
 	case m.res.Toast != "" && m.res.Info:
 		return a.Toast(Info, m.res.Toast)
 	case m.res.Toast != "":
-		return a.Toast(Success, m.res.Toast) // the action is done (components/dialog/toast)
+		return a.Toast(Success, m.res.Toast) // the action is done (tdp toast)
 	}
 	return nil
 }
 
 // check runs the Check of fields, the whole form's rules for them; the errors
-// stand until the next check (components/dialog/form, errors). On a problem
+// stand until the next check (tdp form.16). On a problem
 // the focus goes to the first field with one.
 func (fv *formView) check(fields []*FormField) bool {
 	fv.errs, fv.errOn, fv.bodyErr = map[*FormField]string{}, nil, ""
@@ -993,7 +994,7 @@ func (fv *formView) checkAll() bool {
 }
 
 // submit checks the whole form; with nothing wrong it does what the button is
-// for and closes (components/dialog/form, errors).
+// for and closes (tdp form.16).
 func (fv *formView) submit(a *App, it formItem, do func() (tea.Cmd, error)) tea.Cmd {
 	if !fv.checkAll() {
 		return nil
@@ -1014,7 +1015,7 @@ func (fv *formView) submit(a *App, it formItem, do func() (tea.Cmd, error)) tea.
 func (fv *formView) surface() string { return fv.f.Title }
 
 // enterDesc is what Enter does on this form, naming only the kinds of items
-// it has (Rules M6: what is not there is not listed).
+// it has (tdp M6: what is not there is not listed).
 func (fv *formView) enterDesc() string {
 	var edit, choose, toggle bool
 	for _, f := range fv.f.Fields {
@@ -1059,7 +1060,7 @@ func (fv *formView) setAnswered(a *App, on bool) {
 
 // keyRef lists Space only when the form has checkbox options and e only when
 // a field is wrong; either is in the disabled colour when it does nothing
-// where the focus is (Rules M6).
+// where the focus is (tdp M6).
 func (fv *formView) keyRef() []refSection {
 	if fv.body != nil {
 		return fv.bodyKeyRef()

@@ -248,7 +248,7 @@ func TestK1CustomCoreKeyEverywhere(t *testing.T) {
 			ta.press("Esc")
 		}
 	}
-	// A typing row takes it as a character (Rules K8).
+	// A typing row takes it as a character (tdp K8).
 	ta.ran = nil
 	ta.press("/", "!")
 	if len(ta.ran) > 0 || ta.list.filter.value() != "!" {
@@ -558,7 +558,7 @@ func TestK3InputUnchangedNoWrite(t *testing.T) {
 	}
 	// It opened empty: empty again closes only when empty passes its check;
 	// one that may not be empty is held back with its error, whether nothing
-	// was typed or it was typed and deleted (components/input/README).
+	// was typed or it was typed and deleted (tdp input).
 	for _, keys := range [][]string{{"Enter"}, {"a", "b", "Backspace", "Backspace", "Enter"}} {
 		ta.Text(TextInput{Title: "New name", Check: func(v string) error {
 			if v == "" {
@@ -889,7 +889,7 @@ func TestK6PopupKeysOnly(t *testing.T) {
 
 type covAAlias struct{ main, alt []string }
 
-// covAMoveSurface is a surface one moves on with the keys of Rules K12.
+// covAMoveSurface is a surface one moves on with the keys of tdp K12.
 type covAMoveSurface struct {
 	covASurface
 	aliases []covAAlias
@@ -972,7 +972,7 @@ func TestK7AliasEverywhere(t *testing.T) {
 }
 
 // Home and End move only on a typing row; everywhere else gg|G and 0|$ do
-// it, and Home and End do nothing (Rules K12).
+// it, and Home and End do nothing (tdp K12).
 func TestK12HomeEndOnlyTyping(t *testing.T) {
 	for _, s := range covAMoveSurfaces() {
 		for _, keys := range [][]string{{"End"}, {"G", "Home"}, {"j", "Home"}} {
@@ -1189,7 +1189,7 @@ func TestK11ModeCoreKeys(t *testing.T) {
 	ta.pods.EnterMode(&Mode{Name: "Drag", Exit: "cancel",
 		Keys:   []ModeKey{{Key: "j|k", Keys: []string{"j", "k"}, Desc: "move the pod", NoFooter: true, Do: func(string) tea.Cmd { return nil }}},
 		OnExit: func() tea.Cmd { exited++; return nil }})
-	ta.press("Space") // the mode's Space menu (Rules K11)
+	ta.press("Space") // the mode's Space menu (tdp K11)
 	if m, ok := ta.topView().(*menuView); !ok || !m.space {
 		t.Errorf("Space in a mode opened %T", ta.topView())
 	}

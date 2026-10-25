@@ -12,23 +12,23 @@ import (
 // popupView is one kind of popup's content and keys.
 type popupView interface {
 	// measure is the popup's outer size on a sw × sh screen, fixed when it
-	// opens (Rules F7).
+	// opens (tdp F7).
 	measure(sw, sh int) (w, h int)
 	// draw returns h lines of w cells, the frame included, in the layer
 	// colour.
 	draw(w, h int, layer Color) []string
 	// key handles a key while the popup is the top layer and reports whether
-	// it did; the app does the core keys it leaves (Rules K1).
+	// it did; the app does the core keys it leaves (tdp K1).
 	key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd)
 	// surface is the popup's name in its key reference's title.
 	surface() string
-	// keyRef is what its key reference lists: only its own keys (Rules K6).
+	// keyRef is what its key reference lists: only its own keys (tdp K6).
 	keyRef() []refSection
-	// typing reports the input state: ? and q are characters (Rules K8).
+	// typing reports the input state: ? and q are characters (tdp K8).
 	typing() bool
 }
 
-// animation (Rules F2, components/layout/popup): a line grows from the middle
+// animation (tdp F2, tdp popup): a line grows from the middle
 // (4 frames), holds (1), then the popup opens up and down (4); 32ms a frame.
 const (
 	frameTime  = 32 * time.Millisecond
@@ -57,7 +57,7 @@ func (l *layer) open() bool { return !l.closing && l.frame >= openFrames }
 // place centres the layer on a sw × sh screen.
 func (l *layer) place(sw, sh int) {
 	if v, ok := l.view.(interface{ at(sw, sh int) (int, int) }); ok {
-		l.x, l.y = v.at(sw, sh) // a terminal popup has its own place (Rules F7)
+		l.x, l.y = v.at(sw, sh) // a terminal popup has its own place (tdp F7)
 		return
 	}
 	l.x, l.y = (sw-l.w)/2, (sh-l.h)/2
@@ -88,7 +88,7 @@ func (l *layer) drawFrame(full []string, color Color) (rows []string, first, x i
 }
 
 // fitRows keeps a popup drawn on a screen too short for it to its height, so
-// the footer stays in sight (Rules F7): the rows blank inside the frame go
+// the footer stays in sight (tdp F7): the rows blank inside the frame go
 // first, from the top, then the rows above the bottom border.
 func fitRows(rows []string, h int) []string {
 	if len(rows) <= h {
@@ -114,11 +114,11 @@ type refSection struct {
 	title string
 	rows  []KeyRow
 	// names: the left column is the rows' names, in Text, not keys
-	// (components/dialog/note, what each row is).
+	// (tdp note.5).
 	names bool
 }
 
-// popupBox draws a popup frame (components/layout/popup): heavy line in
+// popupBox draws a popup frame (tdp popup): heavy line in
 // color, the title capsule one segment from the corner, the hint after one
 // segment, the scroll position before the last; one blank row above and
 // below the body, which comes in already as wide as the inside.
@@ -127,7 +127,7 @@ type popupBox struct {
 	glyph   string
 	title   string // as given: the caller has made it upper case where it should be
 	tabs    []Capsule
-	tabOff  []bool // tabs that cannot be chosen now (Rules M6)
+	tabOff  []bool // tabs that cannot be chosen now (tdp M6)
 	loading bool
 	mode    string
 	closed  float64 // how far the mode name is closed (box.modeClosed)
@@ -142,7 +142,7 @@ func (p popupBox) draw(w int, body []string) []string {
 	room := w - 4 - modeRoom(p.mode, p.modeW)
 	b.title = titleCapsule(p.glyph, p.title, p.color, room)
 	if len(p.tabs) > 0 {
-		// The tabs follow one line segment after the title (layout/popup).
+		// The tabs follow one line segment after the title (tdp popup).
 		left := room - Width(b.title) - 1
 		if left > 2 {
 			b.title += Fg(p.color).Render("━") + drawChainOff(p.tabs, p.tabOff, p.color, left)
@@ -171,7 +171,7 @@ func padRow(s string, inner int) string {
 }
 
 // cursorRow is a list row under the cursor: a block of color from frame to
-// frame, the text one cell in, the right-most cell an arrow (layout/popup).
+// frame, the text one cell in, the right-most cell an arrow (tdp popup).
 func cursorRow(plain string, inner int, block Style) string {
 	arrow := Width(glyphHard)
 	return block.Render(" "+Fit(plain, inner-1-arrow)) + Fg(block.Bg).Render(glyphHard)
@@ -182,14 +182,14 @@ func cursorRow(plain string, inner int, block Style) string {
 var spinAt atomic.Int64
 
 // loadingFrame is the loading icon now: the clock decides which of the eight
-// frames, 90ms each (components/layout/popup).
+// frames, 90ms each (tdp popup).
 func loadingFrame() string {
 	return loadingFrames[(spinAt.Load()/spinTime.Milliseconds())%8]
 }
 
 // LoadingFrame is the loading icon as it is now, for a row of the app's own
 // that is loading (a transfer in a work list): the same icon, turning with
-// the lib's. App.Spinning keeps it turning (components/layout/popup).
+// the lib's. App.Spinning keeps it turning (tdp popup).
 func LoadingFrame() string { return loadingFrame() }
 
 type spinMsg struct{}
@@ -197,7 +197,7 @@ type spinMsg struct{}
 // spinTime is one frame of the loading icon.
 const spinTime = 90 * time.Millisecond
 
-// popupWidth is Rules F7's width: content + 4 when it is known when the popup
+// popupWidth is tdp F7's width: content + 4 when it is known when the popup
 // opens, at least the title and hint, at most min(screen − 2, 120); the
 // maximum when it is not known.
 func popupWidth(sw, content int, known bool) int {
@@ -209,7 +209,7 @@ func popupWidth(sw, content int, known bool) int {
 }
 
 // scrollWindow keeps focus in sight in a window of n rows over total,
-// scrolling the least (components/layout/popup): the new first row.
+// scrolling the least (tdp popup): the new first row.
 func scrollWindow(top, focus, n, total int) int {
 	if focus < top {
 		top = focus

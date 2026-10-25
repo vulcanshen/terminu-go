@@ -28,7 +28,7 @@ import (
 const previewBytes = 64 << 10
 
 // fileKind is what a file is, for its preview and its TYPE
-// (components/input/file-picker).
+// (tdp file-picker).
 func fileKind(p string, head []byte) string {
 	name := strings.ToLower(filepath.Base(p))
 	switch {
@@ -74,7 +74,7 @@ func isText(b []byte) bool {
 }
 
 // filePreview is a file or a directory as a preview shows it, in w × h
-// (components/input/file-picker): a directory's or an archive's tree, an
+// (tdp file-picker): a directory's or an archive's tree, an
 // image as a data URI, a PDF's first pages, a text file in colour with line
 // numbers, anything else in hex. With hideSecrets, a private key shows its
 // first line only and any other file only its owner may read shows nothing.
@@ -85,7 +85,7 @@ func filePreview(p string, w, h int, hideSecrets bool, icon func(string, bool) (
 // previewIn is filePreview of p in fsys (the local disk when nil); a text
 // file starts near line when it is set: a search's hit on the third row, the
 // two lines above it in sight, nothing else marked, the line numbers the
-// file's own (components/input/finder).
+// file's own (tdp finder).
 func previewIn(fsys PreviewFS, p string, line, w, h int, hideSecrets bool, icon func(string, bool) (string, Color), tabW int) []string {
 	fsys = orLocal(fsys)
 	grey := func(s string) []string { return []string{Fg(Overlay0).Render(s)} }
@@ -170,9 +170,9 @@ func imageMIME(p string) string {
 }
 
 // drawn is a character of a file preview or a viewer as it is drawn
-// (components/dialog/note): a tab as tabW spaces (input_tab_width), any
+// (tdp note): a tab as tabW spaces (input_tab_width), any
 // other control character as its name (\r, \x07), never sent to the
-// terminal, so a row keeps its width (Rules L4).
+// terminal, so a row keeps its width (tdp L4).
 func drawn(c string, tabW int) string {
 	if c == "\t" {
 		return strings.Repeat(" ", tabW)
@@ -185,7 +185,7 @@ func drawn(c string, tabW int) string {
 
 // visibleText is a line as drawn gives it, the SGR sequences that style it
 // kept; any other escape sequence is characters, its ESC drawn by name, so
-// it is shown, not obeyed (components/dialog/note).
+// it is shown, not obeyed (tdp note).
 func visibleText(s string, tabW int) string {
 	if !strings.ContainsFunc(s, func(r rune) bool { return r < 0x20 || r >= 0x7f && r <= 0x9f }) {
 		return s
@@ -223,7 +223,7 @@ func stripSGR(s string) string {
 
 // fileText is a line of a file as drawn: every control character by its name,
 // ESC too, so an escape sequence written in the file is shown, not obeyed,
-// and nothing of it is lost (components/input/file-picker).
+// and nothing of it is lost (tdp file-picker).
 func fileText(s string, tabW int) string {
 	var b strings.Builder
 	for _, c := range graphemes(s) {
@@ -234,7 +234,7 @@ func fileText(s string, tabW int) string {
 
 // lsMode is a mode as ls -l writes it: the kind (- d l c b p s), then rwx
 // three times, s, S, t, T where setuid, setgid and sticky are
-// (components/input/file-picker).
+// (tdp file-picker).
 func lsMode(m fs.FileMode) string {
 	kind := byte('-')
 	switch {
@@ -278,7 +278,7 @@ func btoi(b bool) int {
 }
 
 // redNames is line, chars drawn as visibleText draws them and coloured, with
-// the names of the control characters in Red (components/dialog/note).
+// the names of the control characters in Red (tdp note).
 func redNames(line string, chars []string, tabW int) string {
 	var b strings.Builder
 	cell, from := 0, 0
@@ -300,7 +300,7 @@ func redNames(line string, chars []string, tabW int) string {
 }
 
 // crlf is line without the \r of a CRLF line break: it is part of the
-// break, not drawn (components/dialog/note).
+// break, not drawn (tdp note).
 func crlf(line string) (string, bool) { return strings.CutSuffix(line, "\r") }
 
 // linesFrom is h lines of r from line first on (counted from 1), and the
@@ -324,7 +324,7 @@ func linesFrom(r io.Reader, first, h int) (int, string) {
 // highlight is text in the colours of catppuccin-mocha (foreground only),
 // its line numbers in Overlay0; tabs and control characters as a viewer
 // draws them. A file with colour codes of its own is drawn in them instead,
-// not lexed; a \r inside a line leaves its last state (components/input/
+// not lexed; a \r inside a line leaves its last state (tdp
 // file-picker).
 func highlight(p, text string, h, tabW, first int) []string {
 	raw := strings.Split(strings.TrimRight(text, "\n"), "\n")
@@ -360,7 +360,7 @@ func highlight(p, text string, h, tabW, first int) []string {
 
 // colourise is lines in the colours of catppuccin-mocha as lexer reads them,
 // foreground only; what it leaves uncoloured is Text. A viewer colours its
-// content with it too (components/dialog/note).
+// content with it too (tdp note).
 func colourise(lexer chroma.Lexer, lines []string) []string {
 	style := styles.Get("catppuccin-mocha")
 	coloured := make([]strings.Builder, len(lines))
@@ -472,7 +472,7 @@ type treeNode struct {
 
 // drawTree draws entries three levels deep, depth first: the first level
 // without branches, the rest with ├─ └─ │ in Overlay0; at most h rows, the
-// last one "…" when there is more (components/input/file-picker).
+// last one "…" when there is more (tdp file-picker).
 func drawTree(top []*treeNode, h int, load func(*treeNode) []*treeNode, icon func(string, bool) (string, Color)) []string {
 	var out []string
 	more := false
@@ -484,7 +484,7 @@ func drawTree(top []*treeNode, h int, load func(*treeNode) []*treeNode, icon fun
 				return
 			}
 			last := i == len(nodes)-1
-			lead, next := "", "  " // the second level two cells in (components/input/file-picker)
+			lead, next := "", "  " // the second level two cells in (tdp file-picker)
 			if depth > 0 {
 				lead, next = prefix+"├─ ", prefix+"│  "
 				if last {
@@ -642,7 +642,7 @@ func archiveNames(fsys PreviewFS, p string) ([]string, error) {
 	return names, nil
 }
 
-// fileInfo is the four rows under a preview (components/input/file-picker):
+// fileInfo is the four rows under a preview (tdp file-picker):
 // TYPE, SIZE, MODIFIED, MODE; labels in the layer colour. TYPE is the
 // preview's kind, the size in 1024s with one decimal (a directory's in items,
 // hidden ones left out), the time local to the minute, the mode written as

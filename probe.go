@@ -44,7 +44,7 @@ type ProbeResult struct {
 
 // Probe finds out, before Bubble Tea takes the terminal, how many cells an icon
 // and a powerline symbol take (tdp E5) and the terminal's 16 colours
-// (components/color, dimming). Each width comes from the app's variable
+// (tdp color.4). Each width comes from the app's variable
 // (<APP>__ICON_WIDTH, <APP>__POWERLINE_WIDTH), then the family's
 // (TERMINU__ICON_WIDTH, TERMINU__POWERLINE_WIDTH), then the one brought over
 // ssh (LC_TERMINU_ICON_WIDTH, LC_TERMINU_POWERLINE_WIDTH), then asking the

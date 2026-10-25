@@ -8,7 +8,7 @@ import (
 	"github.com/rivo/uniseg"
 )
 
-// lineEditor is one typing row (components/input/README, editing keys): a
+// lineEditor is one typing row (tdp input.4): a
 // character is what looks like one (a CJK character, an emoji, a letter with
 // its combining marks); a pasted control character is one character too.
 type lineEditor struct {
@@ -104,7 +104,7 @@ func (e *lineEditor) key(name string, msg tea.KeyMsg) bool {
 }
 
 // ctrlName is how a control character (C0, DEL, C1) is written: \r, \n and
-// \t by name, the rest as \xNN (components/input/README, pasted control
+// \t by name, the rest as \xNN (tdp input.8
 // characters). ok is false for anything else.
 func ctrlName(c string) (name string, ok bool) {
 	switch c {
@@ -137,12 +137,12 @@ func cellText(c string, plain Style) string {
 
 // valueText is a value on a form or a panel: each control character, ESC
 // too, by its name in Red, not dropped, not a space, nothing read as a style
-// (components/input/README, how a value is shown; components, control
-// characters). Colours of the app's own come as spans (Field.Styled).
+// (tdp input.10,
+// components.5). Colours of the app's own come as spans (Field.Styled).
 func valueText(v string, style Style) string { return style.Render(Escape(v)) }
 
 // greyText is s as the user did not type it (the old value offered): through
-// the same filter as a paste, all of it grey (components/input/README).
+// the same filter as a paste, all of it grey (tdp input).
 func greyText(s string) string {
 	var b, run strings.Builder
 	flush := func() {
@@ -172,7 +172,7 @@ func cellWidth(c string) int {
 
 // view draws the row in w cells: the value in style, the cursor (when shown) a
 // block of cursorStyle, and the part near the cursor when the value is wider
-// than the row, a "…" on the side that is cut (components/input/README).
+// than the row, a "…" on the side that is cut (tdp input).
 // mask, when set, draws each character as something else (password).
 // suggest, when the value is empty, is offered in grey from the cursor's cell
 // on: the cursor sits on its first character (the grey suggestion).
@@ -284,8 +284,8 @@ func (e *lineEditor) view(w int, style, cursorStyle Style, showCursor bool, mask
 	return Pad(b.String(), w)
 }
 
-// suggestion is s offered in grey (components/input/README, the grey
-// suggestion): from the cursor's cell on, the cursor on its first character
+// suggestion is s offered in grey (tdp
+// input.5): from the cursor's cell on, the cursor on its first character
 // like any cursor, the rest Overlay0, cut with "…" when wider than w.
 func suggestion(s string, w int, cursorStyle Style, showCursor bool) string {
 	g := newEditor(s).g
@@ -298,7 +298,7 @@ func suggestion(s string, w int, cursorStyle Style, showCursor bool) string {
 
 // cursorOn draws the character under the cursor as a block; on a control
 // character the whole name is the block, Base on Red
-// (components/input/README).
+// (tdp input).
 func cursorOn(c string, cursorStyle Style) string {
 	if name, ok := ctrlName(c); ok {
 		return Style{Fg: Base, Bg: Red}.Render(name)
@@ -314,7 +314,7 @@ func boolInt(b bool) int {
 }
 
 // hasControl reports whether the value has a pasted control character, which
-// a one-line value that is used must not have (components/input/README).
+// a one-line value that is used must not have (tdp input).
 func (e *lineEditor) hasControl() bool {
 	for _, c := range e.g {
 		if _, ok := ctrlName(c); ok {

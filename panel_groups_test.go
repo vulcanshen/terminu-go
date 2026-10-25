@@ -9,7 +9,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// groupList is the list of components/layout/panel's groups example.
+// groupList is the list of the example in tdp panel.11.
 func groupList() *List {
 	l := &List{Filterable: true}
 	l.SetRows([]Row{
@@ -32,7 +32,7 @@ func plainLines(lines []string) []string {
 
 // TestPanelListGroups: a group title is Blue, upper case, not bold, one cell
 // from the frame; its items two cells further in; no blank row or separator
-// between groups (components/layout/panel, groups).
+// between groups (tdp panel.11).
 func TestPanelListGroups(t *testing.T) {
 	l := groupList()
 	out := l.Draw(24, 10, true)
@@ -64,7 +64,7 @@ func TestPanelListGroups(t *testing.T) {
 // TestPanelListGroupsMarks: with a mark column, the marks go in the two cells
 // the items are further in: the mark one cell from the frame, a space, the
 // text three cells in as with no marks; a group title keeps no mark column
-// (components/layout/panel, groups).
+// (tdp panel.11).
 func TestPanelListGroupsMarks(t *testing.T) {
 	withWidths(t, 1, 1)
 	l := groupList()
@@ -79,8 +79,7 @@ func TestPanelListGroupsMarks(t *testing.T) {
 
 // TestPanelListGroupsCursor: the cursor skips group titles: j|k step over
 // them, gg|G go to the first and last item, N of M counts items; scrolled to a
-// group's first item, its title stays on screen (components/layout/panel,
-// groups).
+// group's first item, its title stays on screen (tdp panel.11).
 func TestPanelListGroupsCursor(t *testing.T) {
 	l := groupList()
 	for _, step := range []struct{ key, want string }{
@@ -107,7 +106,7 @@ func TestPanelListGroupsCursor(t *testing.T) {
 }
 
 // TestPanelListGroupsFilter: a group the panel filter leaves no item of has
-// no title (components/layout/panel, groups).
+// no title (tdp panel.11).
 func TestPanelListGroupsFilter(t *testing.T) {
 	l := groupList()
 	l.OpenFilter()
@@ -122,7 +121,7 @@ func TestPanelListGroupsFilter(t *testing.T) {
 
 // TestPanelDetailsFollowCursor: a details panel shows the item under the
 // other panel's cursor at once, its label too, in the same frame; the focus
-// stays (components/layout/panel, details).
+// stays (tdp panel.13).
 func TestPanelDetailsFollowCursor(t *testing.T) {
 	ta := &testApp{App: anySize(New("test"))}
 	kinds := groupList()
@@ -150,7 +149,7 @@ func TestPanelDetailsFollowCursor(t *testing.T) {
 	if want := []string{"pods", "deployments", "statefulsets", "services"}; !slices.Equal(moves, want) {
 		t.Errorf("OnMove ran for %q, want %q: once per new item", moves, want)
 	}
-	// Unfocused, the group titles dim with the panel (Rules T2).
+	// Unfocused, the group titles dim with the panel (tdp T2).
 	ta.press("Tab")
 	if strings.Contains(strings.Join(ta.Frame(), "\n"), Fg(Blue).Render("WORKLOADS")) {
 		t.Errorf("the group title of an unfocused list is not dimmed")
@@ -158,7 +157,7 @@ func TestPanelDetailsFollowCursor(t *testing.T) {
 }
 
 // TestValuesOnMove: a value panel says where its cursor came to: the field and
-// the option in it (components/layout/panel, details).
+// the option in it (tdp panel.13).
 func TestValuesOnMove(t *testing.T) {
 	ta := newTestApp(t)
 	var got []string
@@ -175,8 +174,8 @@ func TestValuesOnMove(t *testing.T) {
 }
 
 // TestK3EnterToDetails: Enter on a list may send the focus to its details
-// panel, on the items the app says (Rules K3, components/layout/panel,
-// details).
+// panel, on the items the app says (tdp K3,
+// panel.13).
 func TestK3EnterToDetails(t *testing.T) {
 	ta := &testApp{App: anySize(New("test"))}
 	kinds := groupList()
@@ -200,7 +199,7 @@ func TestK3EnterToDetails(t *testing.T) {
 }
 
 // TestK3ToDetailsOnlyEnter: only Enter, on a panel whose details are another
-// panel of its screen, may send the focus there (Rules K3).
+// panel of its screen, may send the focus there (tdp K3).
 func TestK3ToDetailsOnlyEnter(t *testing.T) {
 	yes := func() bool { return true }
 	details := &Panel{Label: "Details", Body: &Pager{}}

@@ -72,7 +72,7 @@ func testPopup(b *testBody) Popup {
 
 // The lib draws the frame, the title with its subject and the hint around
 // what the app draws; the app gets the inside from frame line to frame line
-// (components/layout/popup).
+// (tdp popup).
 func TestAppPopupFrame(t *testing.T) {
 	ta := newTestApp(t)
 	b := &testBody{w: 52, h: 21}
@@ -106,7 +106,7 @@ func TestAppPopupFrame(t *testing.T) {
 	}
 }
 
-// Rules F7: wide enough for the title and the hint, no bigger than the
+// tdp F7: wide enough for the title and the hint, no bigger than the
 // screen allows; Draw gets what there is room for.
 func TestAppPopupSize(t *testing.T) {
 	ta := newTestApp(t)
@@ -139,13 +139,13 @@ func TestAppPopupSize(t *testing.T) {
 	}
 }
 
-// The app's keys first; Esc, ? and q it leaves are the lib's (Rules K1, K4,
+// The app's keys first; Esc, ? and q it leaves are the lib's (tdp K1, K4,
 // K6, K9). Ctrl-C never reaches it.
 func TestAppPopupKeys(t *testing.T) {
 	ta := newTestApp(t)
 	b := &testBody{w: 30, h: 5}
 	ta.Popup(testPopup(b))
-	// Not while it opens (Rules F2).
+	// Not while it opens (tdp F2).
 	ta.Update(keyMsg("j"))
 	if len(b.keys) != 0 {
 		t.Fatalf("a key while opening: %v", b.keys)
@@ -196,7 +196,7 @@ func TestAppPopupKeys(t *testing.T) {
 }
 
 // The lib's popups go over it, one layer at a time; ClosePopup closes it and
-// what is over it (Rules K4).
+// what is over it (tdp K4).
 func TestAppPopupStack(t *testing.T) {
 	ta := newTestApp(t)
 	b := &testBody{w: 30, h: 5}
@@ -254,7 +254,7 @@ func TestAppPopupComparable(t *testing.T) {
 }
 
 // A form's submit that opens the next popup: only the form closes, and the
-// new popup is the first layer from its first frame (Rules F8).
+// new popup is the first layer from its first frame (tdp F8).
 func TestAppPopupFromFormSubmit(t *testing.T) {
 	ta := newTestApp(t)
 	b := &testBody{w: 30, h: 5}
@@ -279,7 +279,7 @@ func TestAppPopupFromFormSubmit(t *testing.T) {
 }
 
 // What a popup of the app's own would lose goes last in the quit confirm, in
-// Peach (Rules K9: the quit flow is the app's).
+// Peach (tdp K9: the quit flow is the app's).
 func TestAppPopupQuitNote(t *testing.T) {
 	ta := newTestApp(t)
 	ta.Quit.Details = []string{"3 jobs are running."}
@@ -316,7 +316,7 @@ func TestAppPopupQuitNote(t *testing.T) {
 }
 
 // The quit confirm closed with the popup under it ends the quit flow: the
-// next Ctrl-C asks again (Rules K9).
+// next Ctrl-C asks again (tdp K9).
 func TestK9QuitConfirmClosedUnder(t *testing.T) {
 	ta := newTestApp(t)
 	b := &testBody{w: 30, h: 5}
@@ -344,7 +344,7 @@ func (b *scrollBody) Scroll() string { return b.at }
 
 // TestAppPopupScroll: an app popup whose body scrolls has its scroll position
 // on the right of the bottom frame line, in the layer colour, and room for it
-// with the whole hint (components/layout/popup; kamonu KM9).
+// with the whole hint (tdp popup; kamonu KM9).
 func TestAppPopupScroll(t *testing.T) {
 	ta := newTestApp(t)
 	b := &scrollBody{testBody: testBody{w: 10, h: 3}, at: "3 of 40"}
@@ -362,7 +362,7 @@ func TestAppPopupScroll(t *testing.T) {
 }
 
 // TestCloseAll: the app can close the whole stack, the lib's popups among it
-// (Rules T1; kbu KB10).
+// (tdp T1; kbu KB10).
 func TestCloseAll(t *testing.T) {
 	ta := newTestApp(t)
 	ta.Viewer(testViewer())
@@ -378,7 +378,7 @@ func TestCloseAll(t *testing.T) {
 
 // TestCanvas: a screen the app draws itself, whole, has the lib's popups and
 // toasts over it and no footer; its keys are the app's, the screens under it
-// get none, and only Ctrl-C is left to the quit flow (Rules E8, K9; locku
+// get none, and only Ctrl-C is left to the quit flow (tdp E8, K9; locku
 // LK1).
 func TestCanvas(t *testing.T) {
 	ta := newTestApp(t)

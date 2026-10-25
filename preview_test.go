@@ -34,7 +34,7 @@ func writeFile(t *testing.T, p string, data []byte, mode os.FileMode) {
 // TestFilePreviewEscapes: a file's colour codes colour it; an escape
 // sequence that is not one is shown, not obeyed: ESC by its red name, the
 // rest of it as text; a \r in a line leaves its last state
-// (components/input/file-picker, file-picker-93).
+// (tdp file-picker.1).
 func TestFilePreviewEscapes(t *testing.T) {
 	dir := t.TempDir()
 	writeFile(t, filepath.Join(dir, "log.txt"), []byte("ok \x1b[31mred\x1b[0m done\n\x1b[2Jclear\n10%\r100%\n"), 0o600)
@@ -51,7 +51,7 @@ func TestFilePreviewEscapes(t *testing.T) {
 	}
 }
 
-// TestLsMode: a mode as ls -l writes it (components/input/file-picker).
+// TestLsMode: a mode as ls -l writes it (tdp file-picker).
 func TestLsMode(t *testing.T) {
 	for _, c := range []struct {
 		m    fs.FileMode
@@ -126,7 +126,7 @@ func TestFilePreviewKinds(t *testing.T) {
 	}
 	tree := previewText(filePreview(filepath.Join(dir, "tree"), 40, 10, false, nil, 4))
 	// The second level two cells in, under the first level's name; three
-	// levels and no more (components/input/file-picker).
+	// levels and no more (tdp file-picker).
 	wantTree := glyphFolder + " a\n  └─ " + glyphFolder + " b\n     └─ " + glyphFolder + " c\n" + glyphFile + " z.txt"
 	if tree != wantTree {
 		t.Errorf("a tree is three levels deep:\n%s", tree)
@@ -194,7 +194,7 @@ func TestFileInfo(t *testing.T) {
 
 // TestFilePickerMetaDash: a link's SIZE, MODIFIED and MODE are its
 // target's; what cannot be had is — and the four rows stay
-// (components/input/file-picker).
+// (tdp file-picker).
 func TestFilePickerMetaDash(t *testing.T) {
 	dir := t.TempDir()
 	writeFile(t, filepath.Join(dir, "a.txt"), []byte("hello"), 0o600)
@@ -325,8 +325,8 @@ func (m memFS) ReadDir(name string) ([]fs.FileInfo, error) {
 }
 
 // TestFinderFilesInFS: a finder of files in a file system the app gives
-// previews them, their trees and their facts from it (components/input/
-// file-picker, the preview; sshu SS18).
+// previews them, their trees and their facts from it (tdp
+// file-picker.3; sshu SS18).
 // readAll draws a frame and reads at once what it asked to read in the
 // background, as the app does off the update loop; the screen then.
 func (ta *testApp) readAll() string {
@@ -361,7 +361,7 @@ func (ta *testApp) runAll(cmd tea.Cmd) {
 // TestFilePreviewReadInTheBackground: a file preview is read off the update
 // loop: meanwhile the loading icon after its title, "(loading…)" and blank
 // facts; what was read is kept for the row while the popup is open
-// (components/input/file-picker; sshu SS40).
+// (tdp file-picker; sshu SS40).
 func TestFilePreviewReadInTheBackground(t *testing.T) {
 	remote := memFS{"/srv/": "", "/srv/app.conf": "port = 22\n", "/srv/b.conf": "host = web\n"}
 	ta := newTestApp(t)
@@ -406,7 +406,7 @@ func TestFilePreviewReadInTheBackground(t *testing.T) {
 
 // TestPreviewFromALineThatFits: a file that fits in the preview is drawn
 // from its first line even when the preview starts from a later one
-// (components/input/finder).
+// (tdp finder).
 func TestPreviewFromALineThatFits(t *testing.T) {
 	fs := memFS{"/a.txt": "one\ntwo\nthree\nfour\nfive\n"}
 	lines := previewIn(fs, "/a.txt", 4, 40, 10, false, nil, 4)
@@ -444,7 +444,7 @@ func TestFinderFilesInFS(t *testing.T) {
 
 // TestFilePreviewPanel: a panel can show a file as a file-picker's preview
 // does, from a line a search found, with its facts under it
-// (components/input/file-picker; layout/panel, details; filu FL3, FL16).
+// (tdp file-picker; tdp panel.13; filu FL3, FL16).
 func TestFilePreviewPanel(t *testing.T) {
 	dir := t.TempDir()
 	var text []string
@@ -476,7 +476,7 @@ func TestFilePreviewPanel(t *testing.T) {
 }
 
 // TestFilePreviewPanelHidesSecrets: a panel's file preview keeps to the app's
-// hide_secrets_in_preview, as a file-picker's does (components/input/
+// hide_secrets_in_preview, as a file-picker's does (tdp
 // file-picker).
 func TestFilePreviewPanelHidesSecrets(t *testing.T) {
 	key := filepath.Join(t.TempDir(), "id_ed25519")

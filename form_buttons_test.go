@@ -28,7 +28,7 @@ func (ta *testApp) deliver(cmd tea.Cmd) {
 }
 
 // buttonsForm is a form with three buttons in two rows, Test above Save As
-// and the main Save (components/dialog/form, the action area).
+// and the main Save (tdp form.7).
 type buttonsForm struct {
 	f                 *Form
 	name, host        string
@@ -97,7 +97,7 @@ func TestFormButtonsLayout(t *testing.T) {
 }
 
 // The two areas: Tab between them, back to the item left, the first time to
-// the main submit; j|k and gg|G inside the area (components/dialog/form).
+// the main submit; j|k and gg|G inside the area (tdp form).
 func TestFormActionAreaMoves(t *testing.T) {
 	ta := newTestApp(t)
 	ta.Form(newButtonsForm().f)
@@ -135,7 +135,7 @@ func TestFormActionAreaMoves(t *testing.T) {
 // after the title, and says it is done in a toast; the form stays.
 // TestFormButtonOpens: a button can open a popup over the form, a terminal
 // popup for one; as it closes, Back reads what was done there into the
-// form, which then counts as changed (components/dialog/form; sshu SS19).
+// form, which then counts as changed (tdp form; sshu SS19).
 func TestFormButtonOpens(t *testing.T) {
 	ta := newTestApp(t)
 	key := ""
@@ -192,7 +192,7 @@ func TestFormActionRun(t *testing.T) {
 		t.Fatalf("Tab back to Test: %s", buttonAt(fv))
 	}
 	cmd := ta.press("Enter")
-	// One frame drawn once: the icon turns with the clock (layout/popup).
+	// One frame drawn once: the icon turns with the clock (tdp popup).
 	text := ta.screenText()
 	if !fv.isLoading() || !slices.ContainsFunc(loadingFrames[:], func(f string) bool { return strings.Contains(text, f) }) {
 		t.Errorf("the loading icon after the title while it runs: %v\n%s", fv.isLoading(), text)
@@ -204,7 +204,7 @@ func TestFormActionRun(t *testing.T) {
 	if !strings.Contains(ta.screenText(), "Connected to web-01") || ta.toast.view.(*toastView).kind != Success {
 		t.Error("success says so in a Success toast")
 	}
-	// Success or Info is the app's (components/dialog/toast, toast-16).
+	// Success or Info is the app's (tdp toast.2, toast-16).
 	b.res = FormResult{Toast: "Tested web-01", Info: true}
 	ta.deliver(ta.press("Enter"))
 	if tv := ta.toast.view.(*toastView); strings.Join(tv.text, " ") != "Tested web-01" || tv.kind != Info {
@@ -253,7 +253,7 @@ func TestFormActionResults(t *testing.T) {
 	if b.name != "web-01" || !fv.dirty {
 		t.Fatalf("Apply wrote the value, the form changed: %q, dirty %v", b.name, fv.dirty)
 	}
-	ta.press("Esc", "Esc") // the toast first (Rules K4), then the form
+	ta.press("Esc", "Esc") // the toast first (tdp K4), then the form
 	if !strings.Contains(ta.screenText(), "Discard changes to New host?") {
 		t.Error("Esc on a form an action changed asks first")
 	}
@@ -298,7 +298,7 @@ func TestFormButtonNeedsOne(t *testing.T) {
 }
 
 // On a cursor block the swatch keeps its colour, the hex turns Base
-// (components/color, the cursor block; components/input/color-picker, value).
+// (tdp color.2; tdp color-picker.4).
 func TestSwatchOnCursor(t *testing.T) {
 	c := Hex("#2A2A3C")
 	swatch := sgrRGB(true, c.RGB)
@@ -331,7 +331,7 @@ func TestSwatchOnCursor(t *testing.T) {
 }
 
 // While its work runs, Enter on the button does nothing and the hint leaves
-// its Enter out, back once it ends (components/dialog/form).
+// its Enter out, back once it ends (tdp form).
 func TestFormActionWhileRunning(t *testing.T) {
 	ta := newTestApp(t)
 	b := newButtonsForm()
@@ -357,7 +357,7 @@ func TestFormActionWhileRunning(t *testing.T) {
 }
 
 // Closed before its action ends, the form takes nothing back: ctx ends, and
-// no toast, note, error popup or Apply (components/dialog/form).
+// no toast, note, error popup or Apply (tdp form).
 func TestFormClosedDropsResult(t *testing.T) {
 	for _, close := range [][]string{{"Esc"}, {"j", "Enter"}} { // Esc; Save As, another submit
 		ta := newTestApp(t)
@@ -452,8 +452,8 @@ func TestFormSubmitAndSubmitLong(t *testing.T) {
 }
 
 // A button with a name: the verb in lower case in the hint, the name as it
-// is; a failure titled with the name after ": " (components/dialog/form,
-// hint; components/README, upper case).
+// is; a failure titled with the name after ": " (tdp form.13,
+// components.4).
 func TestFormButtonSubject(t *testing.T) {
 	ta := newTestApp(t)
 	over := &FormButton{Label: "Overwrite", Subject: "KBU.svg", Submit: func() (tea.Cmd, error) { return nil, errors.New("read-only") }}
@@ -478,8 +478,8 @@ func TestFormButtonSubject(t *testing.T) {
 }
 
 // TestFormFocusWideArrow: with the powerline arrow two cells wide, the
-// focused field still shows its whole value, no "…" (components/input, a value
-// is cut only when too long; demou DM14).
+// focused field still shows its whole value, no "…" (tdp input.3:
+// a value is cut only when too long; demou DM14).
 func TestFormFocusWideArrow(t *testing.T) {
 	for _, pw := range []int{1, 2} {
 		withWidths(t, 1, pw)

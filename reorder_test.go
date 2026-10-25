@@ -15,7 +15,7 @@ func testReorder(done *[]int) Reorder {
 }
 
 // The rows keep a cell for the glyph; the width is the widest hint's, 35
-// (components/input/reorder).
+// (tdp reorder).
 func TestReorderLayout(t *testing.T) {
 	ta := newTestApp(t)
 	var got []int
@@ -43,7 +43,7 @@ func TestReorderLayout(t *testing.T) {
 	}
 }
 
-// The example of components/input/reorder: Cost picked up, moved up, dropped,
+// The example of tdp reorder: Cost picked up, moved up, dropped,
 // then the order applied.
 func TestReorderDrag(t *testing.T) {
 	ta := newTestApp(t)
@@ -81,7 +81,7 @@ func TestReorderDrag(t *testing.T) {
 }
 
 // TestReorderOneWay: a reorder is a one-dimensional list: l and h move as j
-// and k do, the cursor and the held item (Rules K12).
+// and k do, the cursor and the held item (tdp K12).
 func TestReorderOneWay(t *testing.T) {
 	ta := newTestApp(t)
 	var got []int
@@ -102,7 +102,7 @@ func TestReorderOneWay(t *testing.T) {
 	}
 }
 
-// The held item wraps at the ends; the others move by one (Rules K12).
+// The held item wraps at the ends; the others move by one (tdp K12).
 func TestReorderDragWraps(t *testing.T) {
 	ta := newTestApp(t)
 	var got []int
@@ -125,7 +125,7 @@ func TestReorderDragWraps(t *testing.T) {
 }
 
 // Esc goes back one layer at a time: the held item back, then the popup,
-// asking first once the order changed (components/input/reorder, Rules K4).
+// asking first once the order changed (tdp reorder, tdp K4).
 func TestReorderEsc(t *testing.T) {
 	ta := newTestApp(t)
 	var got []int
@@ -169,7 +169,7 @@ func TestReorderEsc(t *testing.T) {
 	}
 }
 
-// In the Drag mode only its own keys and the core keys of Rules K11 work.
+// In the Drag mode only its own keys and the core keys of tdp K11 work.
 func TestReorderDragModeKeys(t *testing.T) {
 	ta := newTestApp(t)
 	ta.CoreKeys = []CoreKey{{Key: "!", Desc: "the app log", Do: ta.record("log")}}
@@ -200,7 +200,7 @@ func TestReorderDragModeKeys(t *testing.T) {
 	}
 }
 
-// Space does nothing in a reorder (Rules K5): D picks up.
+// Space does nothing in a reorder (tdp K5): D picks up.
 func TestReorderSpace(t *testing.T) {
 	ta := newTestApp(t)
 	var got []int
@@ -230,7 +230,7 @@ func TestReorderScroll(t *testing.T) {
 }
 
 // The panel's Drag mode: the held row as the cursor in Yellow, the swap
-// glyph in the mark column, wrapping at the ends (layout/panel).
+// glyph in the mark column, wrapping at the ends (tdp panel).
 func TestPanelDragHeldRow(t *testing.T) {
 	ta := newTestApp(t)
 	l := ta.list
@@ -270,7 +270,7 @@ func TestPanelDragHeldRow(t *testing.T) {
 }
 
 // The viewer's selection mode does not take the app's own core keys either
-// (Rules K11).
+// (tdp K11).
 func TestK11PopupModeCoreKeys(t *testing.T) {
 	ta := newTestApp(t)
 	ta.CoreKeys = []CoreKey{{Key: "!", Desc: "the app log", Do: ta.record("log")}}

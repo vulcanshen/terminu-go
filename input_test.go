@@ -80,7 +80,7 @@ func testFinder() *Finder {
 // TestFinderMatchesWhatTheAppSays: what the typed words are matched against
 // is the app's: the items' text, or their other content; or the app runs the
 // search itself and the list is its results, typing never waiting
-// (components/input/finder).
+// (tdp finder).
 func TestFinderMatchesWhatTheAppSays(t *testing.T) {
 	ta := newTestApp(t)
 	f := &Finder{Title: "Grep", Items: []FinderItem{
@@ -117,7 +117,7 @@ func TestFinderMatchesWhatTheAppSays(t *testing.T) {
 
 // TestInputUnchangedHeard: Enter on the value it opened with writes nothing
 // back, but the app hears of it when it asks (Unchanged): a flow ends, a
-// waiting page gets its answer (Rules K3, F6).
+// waiting page gets its answer (tdp K3, F6).
 func TestInputUnchangedHeard(t *testing.T) {
 	ta := newTestApp(t)
 	same, done := 0, 0
@@ -143,7 +143,7 @@ func TestInputUnchangedHeard(t *testing.T) {
 }
 
 // TestFormOnCancel: a form closed without being submitted tells the app, as
-// an Ask and an input do (Rules F6).
+// an Ask and an input do (tdp F6).
 func TestFormOnCancel(t *testing.T) {
 	ta := newTestApp(t)
 	cancelled := 0
@@ -181,7 +181,7 @@ func TestFormOnCancel(t *testing.T) {
 }
 
 // TestFormEnterDescribesItsFields: the key reference says what Enter does on
-// the kinds of items this form has (Rules M6).
+// the kinds of items this form has (tdp M6).
 func TestFormEnterDescribesItsFields(t *testing.T) {
 	ta := newTestApp(t)
 	ta.Form(testForm(nil))
@@ -202,7 +202,7 @@ func TestFormEnterDescribesItsFields(t *testing.T) {
 
 // TestInputPromptFolds: a long prompt folds (several sentences, its own line
 // breaks), the popup growing with it; at its tallest the last row it keeps
-// ends in "…" (components/input/README; webu WB20).
+// ends in "…" (tdp input; webu WB20).
 func TestInputPromptFolds(t *testing.T) {
 	ta := newTestApp(t)
 	ta.resize(60, 40)
@@ -429,7 +429,7 @@ func TestFinderTabBlocks(t *testing.T) {
 func TestFinderTypingAngle(t *testing.T) {
 	// The typing row starts with nf-fa-angle_right one cell from the frame:
 	// the layer colour while typing, Overlay0 with the rest of the row while
-	// the focus is on the list (components/input/finder).
+	// the focus is on the list (tdp finder).
 	row := func(lit bool) string {
 		ed := &lineEditor{}
 		return typingRow(ed, 30, "3/41", lit, LayerColor(1))
@@ -536,7 +536,7 @@ func TestFilePicker(t *testing.T) {
 
 // TestFilePickerDirMode: choosing a directory lists . → .. → directories, no
 // files; Enter on . chooses the directory listed, on another goes into it
-// (components/input/file-picker, choosing a directory).
+// (tdp file-picker.7).
 func TestFilePickerDirMode(t *testing.T) {
 	dir := fakeTree(t)
 	ta := newTestApp(t)
@@ -659,7 +659,7 @@ func TestGlobMatch(t *testing.T) {
 
 // TestFormTabBlocks: Tab|Shift-Tab go between the field area and the action
 // row, back to the item left; the error row goes with the button
-// (components/dialog/form, Rules K2).
+// (tdp form, tdp K2).
 func TestFormTabBlocks(t *testing.T) {
 	ta := newTestApp(t)
 	ta.Form(testForm(nil))
@@ -709,7 +709,7 @@ func TestFormTabBlocks(t *testing.T) {
 }
 
 // TestFormCheckboxSpace: on a checkbox option drawn on a form Space ticks it
-// as Enter does; it does nothing elsewhere on the form (Rules K5).
+// as Enter does; it does nothing elsewhere on the form (tdp K5).
 func TestFormCheckboxSpace(t *testing.T) {
 	ta := newTestApp(t)
 	f := testForm(nil)
@@ -834,7 +834,7 @@ func TestFormTypingNote(t *testing.T) {
 		t.Fatalf("typing on Name opens the note: %T", ta.topView())
 	}
 	// It takes only Enter and Esc: what is typed after it goes nowhere, q and
-	// ? too, the app's own core keys too (Rules K9, components/dialog/form).
+	// ? too, the app's own core keys too (tdp K9, tdp form).
 	ran := false
 	ta.CoreKeys = []CoreKey{{Key: "!", Desc: "app's", Do: func() tea.Cmd { ran = true; return nil }}}
 	ta.press("q", "?", "!", "y", "Space", "j", "Tab")
@@ -861,7 +861,7 @@ func TestFormTypingNote(t *testing.T) {
 	if _, ok := ta.topView().(*formView); !ok || ta.quitting {
 		t.Errorf("q on an option does nothing: %T, quitting %v", ta.topView(), ta.quitting)
 	}
-	// Too narrow, it folds; never cut (components/dialog/note).
+	// Too narrow, it folds; never cut (tdp note).
 	ta.covBCloseAll()
 	ta.resize(24, 20)
 	ta.Form(testForm(nil))
@@ -875,7 +875,7 @@ func TestFormTypingNote(t *testing.T) {
 
 // TestFormRightPadIsArrow: every row of a form keeps as much room on its
 // right as the focus block's arrow, two cells where a powerline symbol
-// takes two (components/dialog/form, layout/popup).
+// takes two (tdp form, popup).
 func TestFormRightPadIsArrow(t *testing.T) {
 	for _, pl := range []int{1, 2} {
 		withWidths(t, 1, pl)
@@ -887,7 +887,7 @@ func TestFormRightPadIsArrow(t *testing.T) {
 		for i, l := range lines[1 : len(lines)-1] {
 			p := StripStyles(l)
 			if strings.Contains(p, "─") {
-				break // the separator and the buttons keep one cell (layout/popup)
+				break // the separator and the buttons keep one cell (tdp popup)
 			}
 			if strings.Contains(p, glyphHard) {
 				continue // the focus block: its arrow is the room
@@ -941,7 +941,7 @@ func TestTextarea(t *testing.T) {
 }
 
 // A line break written as \r or \r\n in Old is no change: Esc closes without
-// asking and Enter writes nothing back (components/input/textarea).
+// asking and Enter writes nothing back (tdp textarea).
 func TestTextareaOldLineBreaksNoChange(t *testing.T) {
 	for _, old := range []string{"one\rtwo", "one\r\ntwo"} {
 		ta := newTestApp(t)
@@ -993,7 +993,7 @@ func TestTextareaUpToShorterRow(t *testing.T) {
 }
 
 // The line numbers' column is at least two digits: it widens at line 100,
-// not at line 10 (components/input/textarea).
+// not at line 10 (tdp textarea).
 func TestTextareaGutterTwoDigits(t *testing.T) {
 	start := func(lines int) string {
 		ta := newTestApp(t)
@@ -1157,7 +1157,7 @@ func TestFormScrollPosition(t *testing.T) {
 
 // The grey suggestion starts at the cursor's cell: the cursor sits on its
 // first character like any cursor, the rest is Overlay0, cut with "…" when it
-// is wider than the row (components/input/README).
+// is wider than the row (tdp input).
 func TestSuggestionUnderCursor(t *testing.T) {
 	cursor := Style{Fg: Base, Bg: Lavender}
 	ta := newTestApp(t)
@@ -1207,7 +1207,7 @@ func TestSuggestionUnderCursor(t *testing.T) {
 
 // A password that is set shows eight dots from the cursor's cell on, the
 // cursor on the first; the unlock look's are a cell apart and centred, 15
-// cells (components/input/password).
+// cells (tdp password).
 func TestOldPasswordDotsCursor(t *testing.T) {
 	cursor := Style{Fg: Base, Bg: Lavender}
 	ta := newTestApp(t)
@@ -1239,7 +1239,7 @@ func TestOldPasswordDotsCursor(t *testing.T) {
 
 // In the textarea's writing state Home and End go to the start and the end of
 // the whole text; the line's ends are 0|$ in the moving state
-// (components/input/textarea).
+// (tdp textarea).
 func TestTextareaHomeEnd(t *testing.T) {
 	ta := newTestApp(t)
 	ta.Textarea(Textarea{Title: "Comment", Old: "ab\ncde\nf"})
@@ -1264,7 +1264,7 @@ func TestTextareaHomeEnd(t *testing.T) {
 // In a textarea a pasted line break (\n, \r\n, a lone \r) is a line break;
 // any other control character stays, drawn as its red name and deleted whole,
 // and the text is not saved while it holds one: the error row names the value
-// (components/input/textarea).
+// (tdp textarea).
 func TestTextareaPasteControlChars(t *testing.T) {
 	ta := newTestApp(t)
 	got, calls := "", 0
@@ -1313,7 +1313,7 @@ func TestTextareaPasteControlChars(t *testing.T) {
 
 // TestCursorOnControlChar: a cursor on a control character makes the whole
 // name the block, Base on Red, on a typing row and in both textarea states
-// (components/input/README, textarea).
+// (tdp input, textarea).
 func TestCursorOnControlChar(t *testing.T) {
 	block := Style{Fg: Base, Bg: Red}.Render(`\x1b`)
 	ta := newTestApp(t)
@@ -1339,7 +1339,7 @@ func TestCursorOnControlChar(t *testing.T) {
 	}
 }
 
-// An option not available in a checkbox popup (components/input/checkbox):
+// An option not available in a checkbox popup (tdp checkbox):
 // drawn in Surface2, the tick too, but the cursor stops on it, Space flips it
 // and Enter writes back what is on screen; filtering lists it.
 func TestCheckboxPopupUnavailable(t *testing.T) {
@@ -1389,7 +1389,7 @@ func TestCheckboxPopupUnavailable(t *testing.T) {
 }
 
 // TestInputErrEmptyNamesValue: ErrEmpty in the error row names the value, as
-// every input error does (components/input/README; sshu SS15).
+// every input error does (tdp input; sshu SS15).
 func TestInputErrEmptyNamesValue(t *testing.T) {
 	ta := newTestApp(t)
 	notEmpty := func(v string) error {
@@ -1411,7 +1411,7 @@ func TestInputErrEmptyNamesValue(t *testing.T) {
 
 // TestTextareaCheck: a textarea with a check holds back a changed text that
 // fails it, the error row naming the text, the popup open; an unchanged
-// text closes unchecked (Rules K3; hostu, sshu SS19).
+// text closes unchecked (tdp K3; hostu, sshu SS19).
 func TestTextareaCheck(t *testing.T) {
 	ta := newTestApp(t)
 	got, calls := "", 0
@@ -1442,7 +1442,7 @@ func TestTextareaCheck(t *testing.T) {
 
 // TestInputSteps: a flow of inputs, each step a popup of its own over the one
 // before; Esc goes back a step with its value still there, and the last step
-// ends the flow, no step cancelled (Rules F1, F4, T1; locku LK7).
+// ends the flow, no step cancelled (tdp F1, F4, T1; locku LK7).
 func TestInputSteps(t *testing.T) {
 	ta := newTestApp(t)
 	var pins []string
@@ -1486,10 +1486,10 @@ func TestInputSteps(t *testing.T) {
 
 // TestInputSuggestedValue: with no old value the app may propose one, offered
 // in grey as the old value is; Enter with nothing touched takes it, checked
-// and written back (components/input/README, a suggested value).
+// and written back (tdp input.6).
 // A proposal taken with nothing touched is checked for control characters
 // as a typed value is, before the spaces go: nothing is written back
-// (components/input/README).
+// (tdp input).
 func TestInputSuggestedValueControlChars(t *testing.T) {
 	ta := newTestApp(t)
 	called := false
@@ -1582,7 +1582,7 @@ func TestInputGreyTakesABurst(t *testing.T) {
 }
 
 // TestNumberOptional: a number that may be empty is not checked against its
-// range when empty, and is written back empty (components/input/number).
+// range when empty, and is written back empty (tdp number).
 func TestNumberOptional(t *testing.T) {
 	ta := newTestApp(t)
 	got, calls := "x", 0
@@ -1603,7 +1603,7 @@ func TestNumberOptional(t *testing.T) {
 
 // TestNumberUnit: a number's unit is a row of its own under the value, the
 // whole word, in grey, under the value's first cell, counted in the width
-// (components/input/number).
+// (tdp number).
 func TestNumberUnit(t *testing.T) {
 	ta := newTestApp(t)
 	ta.Number(NumberInput{Title: "Refresh", Prompt: "1-60", Min: 1, Max: 60, Unit: "seconds between two runs of the job"})
@@ -1632,7 +1632,7 @@ func TestNumberUnit(t *testing.T) {
 
 // TestPasswordUnlockRows: the unlock look has no prompt row: two blank rows,
 // the typing row in the middle, a blank row, the error row; 7 rows with the
-// frame (components/input/password).
+// frame (tdp password).
 func TestPasswordUnlockRows(t *testing.T) {
 	ta := newTestApp(t)
 	ta.Password(PasswordInput{Title: "Unlock", Prompt: "never drawn", Unlock: true, MaxLen: 4,
@@ -1667,8 +1667,8 @@ func TestPasswordUnlockRows(t *testing.T) {
 }
 
 // TestPasswordPause: while the app pauses it, the error row counts down each
-// second and every key but Esc is swallowed (components/layout/popup, the
-// error row).
+// second and every key but Esc is swallowed (tdp
+// popup.7).
 func TestPasswordPause(t *testing.T) {
 	ta := newTestApp(t)
 	wrong := 0

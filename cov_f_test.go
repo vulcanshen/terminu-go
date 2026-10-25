@@ -149,7 +149,7 @@ func TestInputCommon(t *testing.T) {
 	if ta.top() != nil || got != "unset" {
 		t.Fatalf("Esc closes without writing: top %v, got %q", ta.top(), got)
 	}
-	// Enter writes the value back and closes (Rules K3).
+	// Enter writes the value back and closes (tdp K3).
 	ta.Text(text)
 	ta.settle()
 	ta.press("o", "k", "Enter")
@@ -158,7 +158,7 @@ func TestInputCommon(t *testing.T) {
 	}
 
 	// The part one does not type in (a select's list) keeps the core keys
-	// (Rules K1): Space does nothing, j moves, ? opens the key reference,
+	// (tdp K1): Space does nothing, j moves, ? opens the key reference,
 	// q and Ctrl-C start the quit flow.
 	ta.Select(Select{Title: "Profile", Options: []string{"a", "b", "c"}})
 	ta.settle()
@@ -203,7 +203,7 @@ func TestInputCommon(t *testing.T) {
 // Every one-line input's typing row starts with the angle in the layer
 // colour, one cell from the frame, then a space; the suggestion and the grey
 // dots start right after it, the cursor on their first character
-// (components/input/README).
+// (tdp input).
 func TestInputAngle(t *testing.T) {
 	ta := newTestApp(t)
 	angle := typingAngle(layerColors[0])
@@ -273,7 +273,7 @@ func TestSingleLineSkeleton(t *testing.T) {
 	if !strings.Contains(text[8], " Enter:rename Esc:cancel ") {
 		t.Errorf("hint: %s", text[8])
 	}
-	// Width: free typing takes Rules F7's most.
+	// Width: free typing takes tdp F7's most.
 	if w := ta.top().w; w != 118 {
 		t.Errorf("free typing is %d wide, want 118", w)
 	}
@@ -597,7 +597,7 @@ func TestPasteMarkers(t *testing.T) {
 
 // Every pasted control character stays, drawn in red: \r, \n and \t by
 // name, the rest as \xNN, never cut apart; Backspace takes one whole
-// (components/input/README).
+// (tdp input).
 func TestPasteControlChars(t *testing.T) {
 	ta := newTestApp(t)
 	ta.Text(TextInput{Title: "Name"})
@@ -908,7 +908,7 @@ func TestPasswordMasks(t *testing.T) {
 
 // The unlock look has a cursor where the next ● goes; once all the digits
 // are typed it is on the last ●, no cell more; centring counts it
-// (components/input/password).
+// (tdp password).
 func TestUnlockCursor(t *testing.T) {
 	ta := newTestApp(t)
 	ta.Password(PasswordInput{Title: "PIN", Prompt: "Up to 4 digits", Unlock: true, MaxLen: 4})
@@ -944,7 +944,7 @@ func TestUnlockCursor(t *testing.T) {
 	}
 	ta.press("Esc")
 
-	// A PIN of 12: 23 cells full, the box 43 wide for its hint (layout/popup).
+	// A PIN of 12: 23 cells full, the box 43 wide for its hint (tdp popup).
 	ta.Password(PasswordInput{Title: "PIN", Prompt: "Up to 12 digits", Unlock: true, MaxLen: 12})
 	ta.settle()
 	covFType(ta, strings.Repeat("7", 12))
@@ -958,7 +958,7 @@ func TestPasswordUnlockWidth(t *testing.T) {
 	ta.Password(PasswordInput{Title: "PIN", Prompt: "Up to 12 digits", Unlock: true, MaxLen: 12})
 	ta.settle()
 	// 12 digits are 23 cells, the hint "Enter:save Backspace:clear
-	// Esc:cancel" 37 + 6: 43 (layout/popup, width), from the first digit on.
+	// Esc:cancel" 37 + 6: 43 (tdp popup.2), from the first digit on.
 	if w := ta.top().w; w != 43 {
 		t.Errorf("the PIN box is %d wide, want 43", w)
 	}
@@ -1868,7 +1868,7 @@ func TestColorPickerLayout(t *testing.T) {
 
 // TestColorPickerNoColour: with no colour yet, old has no swatch and says
 // none in grey, new starts from #000000, and Choose always writes it back
-// (components/input/color-picker).
+// (tdp color-picker).
 func TestColorPickerNoColour(t *testing.T) {
 	ta := newTestApp(t)
 	var got []Color
@@ -1940,7 +1940,7 @@ func TestColorPickerKeys(t *testing.T) {
 }
 
 // Tab and Shift-Tab go between the channels and Choose, back to the channel
-// left (Rules K2, components/input/color-picker).
+// left (tdp K2, tdp color-picker).
 func TestColorPickerTab(t *testing.T) {
 	ta := newTestApp(t)
 	ta.PickColor(ColorPicker{Title: "Background", Value: Hex("#2A2A3C")})
@@ -1954,7 +1954,7 @@ func TestColorPickerTab(t *testing.T) {
 		}
 	}
 	// Tab from Choose goes back to the channel left, G; from B, l goes round
-	// to R, not on to Choose (Rules K12).
+	// to R, not on to Choose (tdp K12).
 	ta.press("Tab", "l", "l")
 	if cv.focus != 0 {
 		t.Errorf("l from B: focus %d, want R", cv.focus)
@@ -2068,7 +2068,7 @@ func TestFilePickerHint(t *testing.T) {
 	}
 }
 
-// An error names the value by its name (components/input/README): an input
+// An error names the value by its name (tdp input): an input
 // whose title says what it does ("Save as") is given the name; without one
 // the title names it, as on a form's field.
 func TestInputErrorNamesValue(t *testing.T) {
@@ -2100,7 +2100,7 @@ func TestInputErrorNamesValue(t *testing.T) {
 }
 
 // An option not available drawn in place, on a panel and on a form
-// (components/input/checkbox): Surface2, the tick too, but stopped on and
+// (tdp checkbox): Surface2, the tick too, but stopped on and
 // flipped like any other.
 func TestCheckboxUnavailableInPlace(t *testing.T) {
 	agent := &Field{Label: "Agent", Options: []string{"forward", "X11"}, Multi: true, Checked: []bool{false, true},
@@ -2133,8 +2133,8 @@ func TestCheckboxUnavailableInPlace(t *testing.T) {
 }
 
 // TestSearchInputNotBlocked: a text input that is only searched for draws a
-// pasted control character and takes it on Enter (components/input/README,
-// pasted control characters; kbu KB11).
+// pasted control character and takes it on Enter (tdp input.8;
+// kbu KB11).
 func TestSearchInputNotBlocked(t *testing.T) {
 	ta := newTestApp(t)
 	got := "unset"

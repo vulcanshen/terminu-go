@@ -7,27 +7,27 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// ColorPicker picks a colour (components/input/color-picker): old and new
+// ColorPicker picks a colour (tdp color-picker): old and new
 // side by side, the red, green and blue channels each chosen from a select.
 type ColorPicker struct {
 	Title, Glyph string
 	// Subject is the one thing it acts on, kept as it is after ": " in the
-	// title: "EDIT: filu" (components/layout/popup).
+	// title: "EDIT: filu" (tdp popup).
 	Subject string
 	// Value is the colour now; one not Set is no colour yet (the theme's
 	// own): old shows none and no swatch, new starts from #000000, and Choose
-	// always counts as a change (components/input/color-picker).
+	// always counts as a change (tdp color-picker).
 	Value Color
 	// Done gets the new colour. It is not called when it did not change.
 	Done func(Color) tea.Cmd
 	// Commit, when set, writes a changed value back when Enter takes it, on
 	// the update loop, before Done: an error keeps the popup open with the
 	// value in it and opens an error popup over it, "RENAME FAILED"
-	// (components/layout/popup, the action failing; Rules F4).
+	// (tdp popup.7, F4).
 	Commit func(Color) error
 	// OnCancel runs when it closes with no answer: Esc, or the popup it is
 	// over closing it, so whoever waits for the answer (a web page's prompt,
-	// ssh's askpass) hears it was cancelled (Rules F6).
+	// ssh's askpass) hears it was cancelled (tdp F6).
 	OnCancel func() tea.Cmd
 }
 
@@ -41,7 +41,7 @@ type colorView struct {
 	rgb   RGB
 	focus int // 0 R, 1 G, 2 B, 3 Choose
 	// back is the channel the focus was last on: Tab on Choose returns
-	// there (components/input/color-picker).
+	// there (tdp color-picker).
 	back    int
 	written func()
 }
@@ -54,7 +54,7 @@ func (c ColorPicker) open(a *App, written func()) tea.Cmd {
 func HexText(c Color) string { return strings.ToUpper(c.String()) }
 
 // ColorSpans is a colour as a value on a form or a panel shows it, for
-// Styled: a small swatch and its hex (components/input/color-picker).
+// Styled: a small swatch and its hex (tdp color-picker).
 func ColorSpans(c Color) []Span {
 	return []Span{{Text: "███", Style: Fg(c)}, {Text: " "}, {Text: HexText(c), Style: Fg(Text)}}
 }
@@ -64,10 +64,10 @@ var colorCols = [5]int{8, 8, 3, 3, 3}
 
 const colorRowW = 8 + 2 + 8 + 2 + 3 + 2 + 3 + 2 + 3
 
-// The focus goes R, G, B, then the Choose button (components/input/color-picker).
+// The focus goes R, G, B, then the Choose button (tdp color-picker).
 const colorChoose = 3
 
-// Tab names the area it goes to, as on a form (components/input/README).
+// Tab names the area it goes to, as on a form (tdp input).
 var (
 	colorChannelHint = []KeyHint{{"Enter", "edit"}, {"Tab", "actions"}, {"Esc", "cancel"}}
 	colorChooseHint  = []KeyHint{{"Enter", "choose"}, {"Tab", "fields"}, {"Esc", "cancel"}}
@@ -150,7 +150,7 @@ func (cv *colorView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {
 	}()
 	switch key {
 	// hjkl move inside an area, as on a form: among R, G and B, round at the
-	// ends (Rules K12); only Tab reaches Choose.
+	// ends (tdp K12); only Tab reaches Choose.
 	case "h", "k", "←", "↑":
 		if cv.focus != colorChoose {
 			cv.focus = (cv.focus + 2) % 3
@@ -160,7 +160,7 @@ func (cv *colorView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {
 			cv.focus = (cv.focus + 1) % 3
 		}
 	case "Tab", "Shift-Tab":
-		// The channels and the action area, as a form's two areas (Rules K2):
+		// The channels and the action area, as a form's two areas (tdp K2):
 		// either way is the other one.
 		if cv.focus == colorChoose {
 			cv.focus = cv.back

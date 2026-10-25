@@ -945,7 +945,7 @@ func renderCells(line []vtCell, w, cursorX int, cursorStyle Style) string {
 }
 
 // sgr is the escape that sets the attributes, in 24-bit colour (dimming
-// needs it, components/color).
+// needs it, tdp color).
 func (a vtAttr) sgr() string {
 	if a == (vtAttr{}) {
 		return ""

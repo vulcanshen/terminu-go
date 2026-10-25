@@ -124,7 +124,7 @@ func trickyEverywhere(t *testing.T, v string) {
 
 // TestTrickyValuesTyped types, pastes and bursts each value into a text
 // input: control characters are drawn, not sent, and Enter holds them back
-// (components/input/README).
+// (tdp input).
 func TestTrickyValuesTyped(t *testing.T) {
 	for i, v := range Tricky {
 		t.Run(fmt.Sprint(i), func(t *testing.T) {

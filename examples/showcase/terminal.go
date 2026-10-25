@@ -11,8 +11,8 @@ import (
 // terminalScreen is [T]ERMINAL: a program in a PTY, placed both ways. [1]
 // SHELL is a PTY in a panel (Enter goes in); [2] SESSIONS opens each session
 // in a terminal popup, but its first row, which stands for [1] SHELL: the
-// cursor on it points at that panel (layout/panel, the frame). Leaving the
-// shell puts the focus on that row, where the app wants it (Rules K10).
+// cursor on it points at that panel (tdp panel.1). Leaving the
+// shell puts the focus on that row, where the app wants it (tdp K10).
 type terminalScreen struct {
 	s        *showcase
 	screen   *terminu.Screen
@@ -57,7 +57,7 @@ func newTerminalScreen(s *showcase) *terminalScreen {
 			}},
 		{Label: "Slow start", Desc: "a shell that takes 3 seconds to connect", Scope: terminu.PanelScope, Do: ts.slowStart},
 	}}
-	// Inside the shell ? is the shell's own: its keys are told here (Rules M6).
+	// Inside the shell ? is the shell's own: its keys are told here (tdp M6).
 	ts.shellP.OtherKeys = []terminu.KeySection{{Title: "terminal", Rows: []terminu.KeyRow{
 		{Key: "Alt-Esc", Desc: "leave the shell, asked first"},
 		{Key: "PgUp", Desc: "the History mode: j|k, u|d, gg|G scroll back, Esc goes back"},
@@ -83,12 +83,12 @@ func newTerminalScreen(s *showcase) *terminalScreen {
 		return a.OpenTerminal(ts.session(r.ID))
 	}
 	ts.listP = &terminu.Panel{Label: "Sessions", Body: ts.list, Actions: []terminu.Action{
-		// A session clears the Space menu it is opened from (Rules T1).
+		// A session clears the Space menu it is opened from (tdp T1).
 		{Key: "Enter", Label: "Open", Desc: "the session in a terminal popup; the panel row goes to [1] SHELL", Scope: terminu.ItemScope, Hint: "open", Do: open, Clear: true},
 		{Key: "Alt-t", Label: "term", Desc: "the same, from anywhere in the list", Scope: terminu.ItemScope, Hint: "term", Do: open, Clear: true},
 	}}
 	// A lowercase screen key in a lowercase name: the chip keeps the marked
-	// letter as it is, [t]ERMINAL (Rules M5, panel: capitals).
+	// letter as it is, [t]ERMINAL (tdp M5, panel: capitals).
 	ts.screen = &terminu.Screen{Name: "terminal", Key: "t", Desc: "a terminal in a panel and in a popup",
 		Panels: []*terminu.Panel{ts.shellP, ts.listP}, NarrowBelow: 60, Layout: func(w, h int) []terminu.Rect {
 			left := w * 3 / 5
@@ -100,7 +100,7 @@ func newTerminalScreen(s *showcase) *terminalScreen {
 func (ts *terminalScreen) newShell() *terminu.Terminal {
 	t := &terminu.Terminal{Title: "Shell", Interactive: true, OnLeave: ts.leftShell}
 	// Alt-l gives every key to the shell (a family app running inside takes
-	// Alt-v and PgUp itself) and takes them back (components/dialog/terminal).
+	// Alt-v and PgUp itself) and takes them back (tdp terminal).
 	t.Keys = []terminu.TerminalKey{{Key: "Alt-l", Desc: "lock", Do: func() tea.Cmd {
 		t.AllKeys = !t.AllKeys
 		t.Keys[0].Desc = map[bool]string{true: "unlock", false: "lock"}[t.AllKeys]
@@ -110,7 +110,7 @@ func (ts *terminalScreen) newShell() *terminu.Terminal {
 }
 
 // slowStart is a shell that takes a while to connect: until then only
-// Ctrl-C and the exit key go through (Rules K10).
+// Ctrl-C and the exit key go through (tdp K10).
 func (ts *terminalScreen) slowStart() tea.Cmd {
 	ts.shell.Stop()
 	ready := time.Now().Add(3 * time.Second)

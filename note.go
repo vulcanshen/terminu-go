@@ -4,7 +4,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// noteView is a read-only popup that scrolls (components/dialog/note): a key
+// noteView is a read-only popup that scrolls (tdp note): a key
 // reference, a viewer, an error popup, the typing note on a form.
 type noteView struct {
 	glyph, title string
@@ -12,7 +12,7 @@ type noteView struct {
 	// text, when set, is the paragraphs in textStyle the lines are folded
 	// from at the width it gets, each time it is measured, each on a row of
 	// its own: too long, it folds, never cut (an error popup, the typing
-	// note; components/dialog/note).
+	// note; tdp note).
 	text      []string
 	textStyle Style
 	// build, when set, makes the lines for a room of so many cells, each
@@ -21,7 +21,7 @@ type noteView struct {
 	build func(room int) []string
 	// onlyClose takes every key but Enter and Esc and does nothing with them,
 	// ? and q too: the typing note, which comes while the user is still typing
-	// (components/dialog/form, Rules K9).
+	// (tdp form, tdp K9).
 	onlyClose    bool
 	known        bool   // the width is known when it opens; a viewer's is not
 	color        *Color // the frame's colour when it is not the layer's (Red)
@@ -143,7 +143,7 @@ func (n *noteView) keyRef() []refSection {
 	}
 	secs := []refSection{{rows: rows}}
 	if len(n.lines) > n.visible {
-		// Only when it does not all fit (Rules M6).
+		// Only when it does not all fit (tdp M6).
 		secs = append(secs, refSection{title: "move", rows: []KeyRow{
 			{Key: "j|k", Desc: "scroll down, up"},
 			{Key: "u|d", Desc: "half a page up, down"},
@@ -157,7 +157,7 @@ func (n *noteView) keyRef() []refSection {
 // keys do not act there either.
 func (n *noteView) typing() bool { return n.onlyClose }
 
-// keyReference builds the key reference of a surface (components/dialog/note),
+// keyReference builds the key reference of a surface (tdp note),
 // title its name cased as a title is (a name in it as it is, components'
 // upper case), "KEYS" after it:
 // a section title is a hexagon and upper case, one cell from the frame; every
@@ -173,7 +173,7 @@ func keyReference(title string, sections []refSection) *noteView {
 	// The rows in room cells. A row of keys is one line, cut when too long;
 	// a row of "what each row is" folds its description in the right column,
 	// the name's column left blank under it: it is a sentence to read
-	// (components/dialog/note).
+	// (tdp note).
 	build := func(room int) []string {
 		var lines []string
 		for _, s := range sections {
@@ -209,7 +209,7 @@ func keyReference(title string, sections []refSection) *noteView {
 	}
 }
 
-// errorPopup is a popup's action failing (components/dialog/note, error
+// errorPopup is a popup's action failing (tdp note.6
 // popup): Red frame and text, the fire glyph, Enter or Esc to close.
 func errorPopup(title, subject string, message ...string) *noteView {
 	red := Red

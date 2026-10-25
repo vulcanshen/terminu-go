@@ -71,7 +71,7 @@ func TestTruncate(t *testing.T) {
 }
 
 // TestTruncateKeepsStyle: "…" is drawn in the style of the text it stands
-// for, and plain text stays plain (components/color).
+// for, and plain text stays plain (tdp color).
 func TestTruncateKeepsStyle(t *testing.T) {
 	withWidths(t, 1, 1)
 	for _, c := range []struct {

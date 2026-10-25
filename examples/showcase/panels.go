@@ -58,7 +58,7 @@ func newPanelsScreen(s *showcase) *panelsScreen {
 	ps.pods = &terminu.Panel{Label: "Pods", Tabs: []string{"Events"}, Body: ps.podList, LoadingText: "loading pods…"}
 	ps.pods.OnTab = ps.switchTab
 	ps.pods.Actions = ps.podActions()
-	// C compares two pods' pretend YAML (layout/panel, compare mode): the
+	// C compares two pods' pretend YAML (tdp panel.9): the
 	// lib does the mode and the popup; the app gives the key and the text.
 	ps.pods.Actions = append(ps.pods.Actions, s.app.CompareAction(ps.pods, ps.podList, terminu.Compare{Key: "C",
 		Text: func(r terminu.Row) (string, error) { return podYAML(r), nil }}))
@@ -214,7 +214,7 @@ func (ps *panelsScreen) podActions() []terminu.Action {
 				ps.logText.Append(terminu.Fg(terminu.Lavender).Render("── following " + ps.current() + " ──"))
 				return a.Toast(terminu.Info, "Following the log of "+ps.current())
 			}},
-		// Disabled, it stays in the hint in the disabled colour (Rules M6).
+		// Disabled, it stays in the hint in the disabled colour (tdp M6).
 		{Key: "m", Label: "mark", Desc: "this pod, for a batch", Scope: terminu.ItemScope, Hint: "mark",
 			Disabled: func() bool { return ps.disabled },
 			Do:       func() tea.Cmd { ps.podList.ToggleMark(); return nil }},
@@ -235,7 +235,7 @@ func (ps *panelsScreen) podActions() []terminu.Action {
 		{Key: "D", Label: "Drag", Desc: "this pod to another place in the list", Scope: terminu.ItemScope,
 			Do: ps.startDrag},
 		// After adding an item the cursor goes to it, scrolled into sight
-		// (Rules K3): sorted by name, it lands far from where the cursor was.
+		// (tdp K3): sorted by name, it lands far from where the cursor was.
 		{Key: "n", Label: "New", Desc: "a pod, the cursor going to it", Scope: terminu.PanelScope,
 			Hidden: func() bool { return ps.pods.Tab != 0 },
 			Do: func() tea.Cmd {
@@ -329,7 +329,7 @@ func (ps *panelsScreen) freeze() tea.Cmd {
 	return nil
 }
 
-// startDrag enters the Drag mode (Rules K11): j|k move the pod, Enter drops
+// startDrag enters the Drag mode (tdp K11): j|k move the pod, Enter drops
 // it, Esc puts it back.
 func (ps *panelsScreen) startDrag() tea.Cmd {
 	ps.dragFrom = ps.current()
@@ -343,7 +343,7 @@ func (ps *panelsScreen) startDrag() tea.Cmd {
 			{Key: "j|k", Keys: []string{"j", "k", "↓", "↑"}, Desc: "move it down, up", NoFooter: true,
 				Do: func(key string) tea.Cmd { ps.podList.MoveHeld(key == "j" || key == "↓"); return nil }},
 			// The drop acts on the pod held: ITEM OPERATION in the mode's
-			// Space menu (components/dialog/menu, in a mode).
+			// Space menu (tdp menu.4).
 			{Key: "Enter", Desc: "drop", Item: true, MenuDesc: "the pod here", Do: func(string) tea.Cmd {
 				ps.podList.Drop()
 				ps.pods.LeaveMode()
@@ -361,7 +361,7 @@ func (ps *panelsScreen) startDrag() tea.Cmd {
 	return nil
 }
 
-// sortMenu is a two-step sort: a column, then a direction (Rules F1: each
+// sortMenu is a two-step sort: a column, then a direction (tdp F1: each
 // step its own popup).
 func (ps *panelsScreen) sortMenu() tea.Cmd {
 	a := ps.s.app

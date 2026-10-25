@@ -6,7 +6,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// Glyphs tdp names by code point (E4: written as code points).
+// Glyphs tdp names by code point (tdp E4: written as code points).
 const (
 	slantL    = "\U0000E0BA" // nf-ple-lower_right_triangle
 	hard      = "\U0000E0B0" // nf-pl-left_hard_divider: slanted right end, seam, cursor arrow
@@ -217,7 +217,7 @@ func e5Base(w, h int) []string {
 	return append(out, pad(sBlue.Render("Space")+sDim.Render(":menu ")+sBlue.Render("?")+sDim.Render(":help ")+sBlue.Render("q")+sDim.Render(":quit"), w))
 }
 
-// e5Popup draws a popup frame the way components/layout/popup describes.
+// e5Popup draws a popup frame the way tdp popup describes.
 func e5Popup(p popup) []string {
 	inner := p.width - 2
 	title := fg(cLayer1).Render(roundL) + filled(cLayer1).Render(p.title) + fg(cLayer1).Render(roundR)
@@ -253,7 +253,7 @@ func e5Screen(w, h int, k popupKind, over oversize) []string {
 	x, y := (w-p.width)/2, (h-len(box))/2
 	switch {
 	case p.toast:
-		y = h - 2 - len(box) // bottom frame on the third row from the bottom (F7)
+		y = h - 2 - len(box) // bottom frame on the third row from the bottom (tdp F7)
 	case k == pTerminal:
 		y = 1 // keeps the statusbar, covers the footer
 	}

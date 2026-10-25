@@ -18,7 +18,7 @@ func logApp(t *testing.T) (*testApp, *stillClock) {
 }
 
 // TestAppLogOnBang: ! on a panel opens the App Log, a viewer; not in a mode,
-// not on a typing row (Rules K1, K11; components/dialog/note, App Log).
+// not on a typing row (tdp K1, K11; tdp note, App Log).
 func TestAppLogOnBang(t *testing.T) {
 	ta, _ := logApp(t)
 	ta.press("!")
@@ -49,7 +49,7 @@ func TestAppLogOnBang(t *testing.T) {
 // four cells wide in its colour, what happened; every toast and error popup
 // goes in, the app logs its own; newest at the bottom, the log open at its
 // end, new entries coming in while it is open (note-76, note-77, note-78;
-// Rules F5).
+// tdp F5).
 func TestAppLogEntries(t *testing.T) {
 	ta, clk := logApp(t)
 	ta.Toast(Info, "Switched to Pods")

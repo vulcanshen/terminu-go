@@ -10,7 +10,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// Viewer is a note to read (components/dialog/note): a YAML view, a log, a
+// Viewer is a note to read (tdp note): a YAML view, a log, a
 // file. Its lines are numbered on the left and a long one folds onto the rows
 // under it. It scrolls, may have keys of its own and a selection mode, and
 // closes with Esc only. Keep the pointer: lines may keep arriving while
@@ -23,32 +23,32 @@ type Viewer struct {
 	Lines          []string
 	Loading        bool
 	// Lang is the language its lines are coloured in, as the file preview
-	// colours a text file (components/dialog/note): a chroma lexer's name or
+	// colours a text file (tdp note): a chroma lexer's name or
 	// alias ("yaml", "json"), a file name to judge by ("deploy.yaml"), or a
 	// content type ("application/json"). Unset or not known: plain text, in
 	// Text (an App Log).
 	Lang string
-	// Tabs, when set, follow the title (components/layout/popup); h/l switch
+	// Tabs, when set, follow the title (tdp popup); h/l switch
 	// them and OnTab fills Lines for the new one.
 	Tabs  []string
 	Tab   int
 	OnTab func(tab int) tea.Cmd
 	// Keys are the viewer's own hotkeys, first in its hint.
 	Keys []ViewerKey
-	// Select is its selection mode (Rules K11): every viewer has one
-	// (components/dialog/note). Unset, it is v, Visual, y copying to the
+	// Select is its selection mode (tdp K11): every viewer has one
+	// (tdp note). Unset, it is v, Visual, y copying to the
 	// terminal's clipboard with a Success toast.
 	Select *Selection
 	// NoWrap keeps a line too long on its row, cut with "…" at the end, for
 	// content that lines up (columns side by side, a table); lines fold by
-	// default (components/dialog/note).
+	// default (tdp note).
 	NoWrap bool
 	// NoNumbers leaves out the line numbers, for a table the app lays out
-	// itself, where they mean nothing (components/dialog/note).
+	// itself, where they mean nothing (tdp note).
 	NoNumbers bool
 	// Hits are what a search the app runs found (its own / and n|N): each
 	// underlined in its own colours, Hits[Current] drawn as the cursor block,
-	// "you are here" (components/dialog/note, the viewer's search; FindText
+	// "you are here" (tdp note.2; FindText
 	// finds them). No new colour: Yellow is the selection's.
 	Hits    []TextMatch
 	Current int
@@ -65,7 +65,7 @@ type Viewer struct {
 	left int
 	// colours caches the lines as drawn for the lines and Lang they are of.
 	colours viewerColours
-	// The selection mode (components/dialog/note): the first press of its
+	// The selection mode (tdp note): the first press of its
 	// key brings the cursor out (inMode), the second starts the selection
 	// there. The cursor and where the selection started are in characters
 	// of the plain lines.
@@ -78,7 +78,7 @@ type Viewer struct {
 	crlf []bool
 	// tabW is the user's input_tab_width: the spaces a tab is drawn as.
 	tabW int
-	// tabOff is a tab that cannot be chosen now (Rules M6): the compare's
+	// tabOff is a tab that cannot be chosen now (tdp M6): the compare's
 	// SPLIT on a narrow terminal.
 	tabOff func(i int) bool
 	// relayout lays the lines out again for a terminal sw wide, before it is
@@ -126,7 +126,7 @@ type Selection struct {
 	Name    string // the mode's name on the frame: "Visual"
 	CopyKey string // "y" when unset
 	// Copy takes the text copied. Unset, it goes on the terminal's
-	// clipboard and a Success toast says so (components/dialog/note).
+	// clipboard and a Success toast says so (tdp note).
 	Copy func(text string) tea.Cmd
 }
 
@@ -179,7 +179,7 @@ type viewerView struct {
 func (vv *viewerView) modeName() string { return vv.v.modeName() }
 
 // modeName is the selection mode's name, its layers joined with ">" once
-// selecting (Visual>select; components/layout/panel, the frame); "" out of
+// selecting (Visual>select; tdp panel.1); "" out of
 // it.
 func (v *Viewer) modeName() string {
 	switch {
@@ -217,7 +217,7 @@ func (vv *viewerView) hint() []KeyHint {
 	}
 	var h []KeyHint
 	if v.tabsToSwitch() {
-		h = append(h, KeyHint{"h|l", "tab"}) // first: a viewer has no Enter (components/layout/popup, hint)
+		h = append(h, KeyHint{"h|l", "tab"}) // first: a viewer has no Enter (tdp popup.1)
 	}
 	for _, k := range v.Keys {
 		h = append(h, KeyHint{k.Key, k.Desc})
@@ -261,7 +261,7 @@ func (vv *viewerView) measure(sw, sh int) (int, int) {
 	return w, h
 }
 
-// numWidth is the line numbers' column (components/dialog/note): at least
+// numWidth is the line numbers' column (tdp note): at least
 // three digits, and it only grows. A viewer's lines are known when it opens,
 // so the column keeps its width; lines that stream in widen it past 999; a
 // tab with more lines widens it, and going back to one with fewer keeps it.
@@ -306,7 +306,7 @@ func (v *Viewer) wrap(i int) []int {
 
 // maxTop is the last row that can be at the top, as a line and a row of it:
 // from there the rows to the end fill the view. It scrolls a row at a time
-// (components/dialog/note), so a line taller than the view is read whole.
+// (tdp note), so a line taller than the view is read whole.
 func (v *Viewer) maxTop() (line, sub int) {
 	rows := 0
 	for t := len(v.text) - 1; t >= 0; t-- {
@@ -322,7 +322,7 @@ func (v *Viewer) maxTop() (line, sub int) {
 // followAcross scrolls a NoWrap viewer to the left or the right as little as
 // keeps the selection's cursor in sight, as vim's nowrap does: every line
 // goes along, the part cut on either side marked with "…". Out of the mode
-// it is back at the start (Rules K11: back to before).
+// it is back at the start (tdp K11: back to before).
 func (v *Viewer) followAcross() {
 	if !v.NoWrap || !v.inMode || v.line >= len(v.plain) {
 		v.left = 0
@@ -386,7 +386,7 @@ func (v *Viewer) clampTop() {
 }
 
 // scrollRows scrolls n rows, down when n is positive: a folded line is
-// passed a row at a time, as less does (components/dialog/note).
+// passed a row at a time, as less does (tdp note).
 func (v *Viewer) scrollRows(n int) {
 	v.clampTop()
 	for ; n > 0; n-- {
@@ -408,7 +408,7 @@ func (v *Viewer) scrollRows(n int) {
 }
 
 // follow scrolls as little as it takes to show line whole (the selection
-// mode's cursor; components/dialog/note).
+// mode's cursor; tdp note).
 func (v *Viewer) follow(line int) {
 	if line < v.top || line == v.top && v.sub > 0 {
 		v.top, v.sub = line, 0
@@ -444,7 +444,7 @@ func (vv *viewerView) draw(w, h int, layer Color) []string {
 	v.clampTop()
 	// Each line's first row has its number, right-aligned, a space after it;
 	// the rows it folds onto leave the column blank. Numbers in Overlay0, the
-	// cursor's line in Text (components/dialog/note).
+	// cursor's line in Text (tdp note).
 	body := make([]string, 0, v.visible)
 	last, whole := v.top-1, true // the line of the last row in sight, and whether all of it is
 	for i := v.top; i < len(v.text) && len(body) < v.visible; i++ {
@@ -473,7 +473,7 @@ func (vv *viewerView) draw(w, h int, layer Color) []string {
 			}
 			if v.NoWrap {
 				// Too long, cut with "…" at the end; scrolled to the right,
-				// "…" at the start too (components/dialog/note).
+				// "…" at the start too (tdp note).
 				body = append(body, " "+num+v.nowrapRow(styled, v.textW)+" ")
 				continue
 			}
@@ -490,7 +490,7 @@ func (vv *viewerView) draw(w, h int, layer Color) []string {
 	}
 	// The scroll position, in lines, the numbers on the left: the lines the
 	// first and the last row in sight belong to, N-M of T; in the selection
-	// mode the cursor's line, N of M (components/dialog/note).
+	// mode the cursor's line, N of M (tdp note).
 	scroll := ""
 	if v.top > 0 || v.sub > 0 || last < len(v.text)-1 || !whole {
 		if v.inMode {
@@ -505,7 +505,7 @@ func (vv *viewerView) draw(w, h int, layer Color) []string {
 		box.tabOff = append(box.tabOff, v.tabOff != nil && v.tabOff(i))
 	}
 	if v.inMode {
-		box.color = Yellow // a mode marks its frame: the mode colour and its name (Rules K11)
+		box.color = Yellow // a mode marks its frame: the mode colour and its name (tdp K11)
 	}
 	lab := vv.labelFor(vv.modeName())
 	box.mode, box.closed, box.modeW = lab.name, 1-lab.shown, lab.room
@@ -518,7 +518,7 @@ type viewerColours struct {
 	lines, out []string
 }
 
-// coloured is the lines as drawn (components/dialog/note): in the colours
+// coloured is the lines as drawn (tdp note): in the colours
 // Lang reads them in, the file preview's; with no Lang, or one not known,
 // plain text in Text, where a line the app styled itself (a log's levels)
 // keeps its styles.
@@ -601,8 +601,8 @@ func (v *Viewer) selection() (pos, pos) {
 
 // lineView is line i as drawn, in the selection mode with the cursor, a
 // block of the layer colour, and the part selected in the mode's colour,
-// Yellow, its syntax colours not shown (components/dialog/note,
-// components/color).
+// Yellow, its syntax colours not shown (tdp note,
+// tdp color).
 func (vv *viewerView) lineView(i int, layer Color) string {
 	v := vv.v
 	line := v.coloured()[i]
@@ -625,7 +625,7 @@ func (vv *viewerView) lineView(i int, layer Color) string {
 		cx = v.col
 	}
 	// A search's hits on this line: each underlined, the current one the
-	// cursor block (components/dialog/note).
+	// cursor block (tdp note).
 	hit := make([]int, len(chars)) // 0 none, 1 a hit, 2 the current one
 	for n, m := range v.Hits {
 		if m.Line != i {
@@ -737,7 +737,7 @@ func (v *Viewer) prev(p pos) (pos, bool) {
 }
 
 // move moves the cursor through the text as vim does, without wrapping at
-// the ends (Rules K12): h|j|k|l, w|b|e, 0|$, u|d, gg|G. It reports whether
+// the ends (tdp K12): h|j|k|l, w|b|e, 0|$, u|d, gg|G. It reports whether
 // key moved.
 func (vv *viewerView) move(key string) bool {
 	v := vv.v
@@ -825,16 +825,16 @@ func (vv *viewerView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 	v := vv.v
 	v.sync()
 	if v.inMode {
-		// Other keys do nothing in the mode (Rules K11); h|l move the cursor,
-		// not the tabs (Rules K12).
+		// Other keys do nothing in the mode (tdp K11); h|l move the cursor,
+		// not the tabs (tdp K12).
 		switch key {
 		case "?", "q", "Ctrl-C":
-			return false, nil // the mode's key reference, the quit flow (Rules K11)
-		case "Space": // the mode's Space menu (Rules K11)
+			return false, nil // the mode's key reference, the quit flow (tdp K11)
+		case "Space": // the mode's Space menu (tdp K11)
 			return true, a.selectModeMenu(v, func(k string) tea.Cmd { _, cmd := vv.key(a, k, tea.KeyMsg{}); return cmd })
 		case "Esc":
 			// A layer at a time, no copy: selecting, the range goes and the
-			// cursor stays; else the whole mode (Rules K11).
+			// cursor stays; else the whole mode (tdp K11).
 			if v.selecting {
 				v.selecting = false
 			} else {
@@ -859,7 +859,7 @@ func (vv *viewerView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 		}
 		return true, nil
 	}
-	// No cursor: the keys scroll, h|l switch the tabs (components/dialog/note).
+	// No cursor: the keys scroll, h|l switch the tabs (tdp note).
 	half := max(v.visible/2, 1)
 	switch key {
 	case "j", "↓":
@@ -892,7 +892,7 @@ func (vv *viewerView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 			return true, run2tab(v.OnTab, v.Tab)
 		}
 	case "Enter", "Space":
-		// A note closes with Esc only (components/dialog/note).
+		// A note closes with Esc only (tdp note).
 	default:
 		if v.Select != nil && key == v.Select.Key {
 			// The cursor comes out at the start of the first line in sight;
@@ -926,7 +926,7 @@ func (vv *viewerView) surface() string  { return vv.title() }
 func (vv *viewerView) refTitle() string { return vv.title() }
 
 // inMode reports the selection mode, where the app's own core keys do not
-// work (Rules K11).
+// work (tdp K11).
 func (vv *viewerView) inMode() bool { return vv.v.inMode }
 
 func (vv *viewerView) keyRef() []refSection {
@@ -958,7 +958,7 @@ func (vv *viewerView) keyRef() []refSection {
 	rows = append(rows, KeyRow{Key: "Esc", Desc: "close"})
 	move = nil
 	if t, s := v.maxTop(); t > 0 || s > 0 {
-		// Only when it does not all fit (Rules M6).
+		// Only when it does not all fit (tdp M6).
 		move = []KeyRow{
 			{Key: "j|k", Desc: "scroll down, up"},
 			{Key: "u|d", Desc: "half a page up, down"},

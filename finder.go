@@ -14,7 +14,7 @@ type FinderItem struct {
 	ID   string // the app's own key for it
 	Text string // shown, and matched unless Match is set
 	// Match, when set, is what the typed words are matched against instead
-	// of Text: the item's other content, a file's text (components/input/finder:
+	// of Text: the item's other content, a file's text (tdp finder.7:
 	// what is matched is the app's choice).
 	Match string
 	// Icon, when set, goes before the text in IconColor (a file's type).
@@ -25,14 +25,14 @@ type FinderItem struct {
 	Line int
 }
 
-// Finder is a list with a search that goes somewhere (components/input/finder):
+// Finder is a list with a search that goes somewhere (tdp finder):
 // type to narrow the list, Enter on a row to go there, the row under the
 // cursor previewed beside it. Keep the pointer: rows may keep arriving —
 // append to Items while Loading is true.
 type Finder struct {
 	Title, Glyph string
 	// Subject is the one thing it acts on, kept as it is after ": " in the
-	// title: "EDIT: filu" (components/layout/popup).
+	// title: "EDIT: filu" (tdp popup).
 	Subject string
 	// Verb is what Enter on the list does, for the hint ("open").
 	Verb    string
@@ -43,7 +43,7 @@ type Finder struct {
 	Preview func(FinderItem) (title string, lines []string)
 	// Files says the items are files and directories, their IDs the paths:
 	// the preview shows them as a file-picker does, with their facts under
-	// it (components/input/file-picker), instead of Preview.
+	// it (tdp file-picker), instead of Preview.
 	Files bool
 	// FS is where Files reads the paths: the local disk when nil.
 	FS PreviewFS
@@ -52,19 +52,19 @@ type Finder struct {
 	// time they change and puts what it finds in Items as it comes, Loading
 	// meanwhile; the list is then Items as they are, not filtered again. It
 	// must not wait for the search: typing goes on while it runs
-	// (components/input/finder).
+	// (tdp finder).
 	Search func(typed string) tea.Cmd
 	Done   func(FinderItem) tea.Cmd
 }
 
-// Select picks one value from a list (components/input/select).
+// Select picks one value from a list (tdp select).
 type Select struct {
 	Title, Glyph string
 	// Subject is the one thing it acts on, kept as it is after ": " in the
-	// title: "EDIT: filu" (components/layout/popup).
+	// title: "EDIT: filu" (tdp popup).
 	Subject string
 	Options []string
-	// Keys, when set, are the options' hotkeys (Rules M5); "" for none.
+	// Keys, when set, are the options' hotkeys (tdp M5); "" for none.
 	Keys []string
 	// Selected is the value now; -1 for none.
 	Selected int
@@ -77,29 +77,29 @@ type Select struct {
 	// Commit, when set, writes a changed value back when Enter takes it, on
 	// the update loop, before Done: an error keeps the popup open with the
 	// value in it and opens an error popup over it, "RENAME FAILED"
-	// (components/layout/popup, the action failing; Rules F4).
+	// (tdp popup.7, F4).
 	Commit func(int) error
 	// OnCancel runs when it closes with no answer: Esc, or the popup it is
 	// over closing it, so whoever waits for the answer (a web page's prompt,
-	// ssh's askpass) hears it was cancelled (Rules F6).
+	// ssh's askpass) hears it was cancelled (tdp F6).
 	OnCancel func() tea.Cmd
 }
 
-// Checks picks several values (components/input/checkbox, the checkbox
+// Checks picks several values (tdp checkbox.2
 // popup): Space checks a row on screen only, Enter writes the whole set back.
 type Checks struct {
 	Title, Glyph string
 	// Subject is the one thing it acts on, kept as it is after ": " in the
-	// title: "EDIT: filu" (components/layout/popup).
+	// title: "EDIT: filu" (tdp popup).
 	Subject string
 	Options []string
 	Checked []bool
 	// Cursor is the option the cursor starts on, scrolled into sight; the
-	// app decides (components/input/checkbox). 0, the first, by default.
+	// app decides (tdp checkbox). 0, the first, by default.
 	Cursor int
 	// Unavailable reports an option that is not available: drawn in
 	// Surface2, the tick too, but the cursor stops on it and Space flips it
-	// like any other; what it means is the app's (components/input/checkbox).
+	// like any other; what it means is the app's (tdp checkbox).
 	Unavailable func(i int) bool
 	// Loading, for a checkbox popup opened with LoadChecks, is true while
 	// Options are still coming; Checked may be shorter than Options.
@@ -109,11 +109,11 @@ type Checks struct {
 	// Commit, when set, writes a changed value back when Enter takes it, on
 	// the update loop, before Done: an error keeps the popup open with the
 	// value in it and opens an error popup over it, "RENAME FAILED"
-	// (components/layout/popup, the action failing; Rules F4).
+	// (tdp popup.7, F4).
 	Commit func([]bool) error
 	// OnCancel runs when it closes with no answer: Esc, or the popup it is
 	// over closing it, so whoever waits for the answer (a web page's prompt,
-	// ssh's askpass) hears it was cancelled (Rules F6).
+	// ssh's askpass) hears it was cancelled (tdp F6).
 	OnCancel func() tea.Cmd
 }
 
@@ -163,14 +163,14 @@ type finderView struct {
 	// preview is the row under the cursor in w × h: a title and lines.
 	preview func(r finderRow, w, h int) (string, []string)
 	// info, for a preview of files, is the four rows of facts about it
-	// (components/input/file-picker).
+	// (tdp file-picker).
 	info    func(r finderRow, w int, layer Color) []string
 	loading func() bool
 	known   bool // the width is known when it opens
 	// enterRef, when set, is what Enter does in the key reference.
 	enterRef string
 	// slow marks a preview and facts read from files: they are read off the
-	// update loop (components/input/file-picker, read in the background);
+	// update loop (tdp file-picker.3);
 	// previewTitle is the preview box's title meanwhile.
 	slow         bool
 	previewTitle func(r finderRow) string
@@ -241,7 +241,7 @@ func (s Select) open(a *App, written func()) tea.Cmd { return a.open(s.view(writ
 // LoadSelect opens a select whose options are still coming: keep the
 // pointer and append to Options while Loading is true. Meanwhile the title
 // has the loading icon and the popup is as wide as it can be, its width not
-// known when it opens (Rules F7).
+// known when it opens (tdp F7).
 func (a *App) LoadSelect(s *Select) tea.Cmd { return a.open(s.view(nil, true)) }
 
 // view is the select's popup; live, it reads Options again as they come.
@@ -315,7 +315,7 @@ func (c *Checks) view(written func(), live bool) *finderView {
 		return rows
 	}
 	fv.rows()
-	// A row checked on screen is Green before Enter applies it (components/input/checkbox).
+	// A row checked on screen is Green before Enter applies it (tdp checkbox).
 	fv.green = func(i int, _ finderRow) bool { return fv.isChecked(i) }
 	fv.enter = func(a *App, _ int, _ finderRow) tea.Cmd {
 		was := make([]bool, len(fv.checked))
@@ -331,7 +331,7 @@ func (c *Checks) view(written func(), live bool) *finderView {
 	}
 	fv.refilter()
 	// The option the app says, or the first option: not Select all
-	// (components/input/checkbox).
+	// (tdp checkbox).
 	if k := slices.Index(fv.shown, c.Cursor); k >= 0 {
 		fv.cursor = k
 	}
@@ -349,7 +349,7 @@ func (f *finderView) wrote() {
 	}
 }
 
-// refilter applies what is typed (components/input/finder, matching); a
+// refilter applies what is typed (tdp finder.7); a
 // change of the typed words puts the cursor on the first match.
 func (f *finderView) refilter() {
 	rows := f.rows()
@@ -439,7 +439,7 @@ func (f *finderView) rowLabel(r finderRow) string { return Escape(cmpOr(r.label,
 
 // listHint is the list's hint. With no results Enter does nothing and is
 // left out; a checkbox popup's Enter still applies the checks, so only Space
-// goes (components/input/finder, components/input/checkbox).
+// goes (tdp finder, checkbox).
 func (f *finderView) listHint(results bool) []KeyHint {
 	// With no results the finder's own word, not another: the width was
 	// taken from it when the popup opened.
@@ -455,7 +455,7 @@ func (f *finderView) listHint(results bool) []KeyHint {
 }
 
 // typingHint is the typing row's hint: with no results its Enter does
-// nothing and is left out (components/input/finder).
+// nothing and is left out (tdp finder).
 func (f *finderView) typingHint(results bool) []KeyHint {
 	if !results {
 		return []KeyHint{{"Tab", "list"}, {"Esc", "cancel"}}
@@ -475,7 +475,7 @@ func (f *finderView) measure(sw, sh int) (int, int) {
 	rows := f.rows()
 	if !f.known {
 		// A finder with a preview takes the most height: the preview differs
-		// row by row and the box must not jump (components/input/finder).
+		// row by row and the box must not jump (tdp finder).
 		return most, max(sh-2, 3)
 	}
 	content := 0
@@ -494,7 +494,7 @@ func (f *finderView) measure(sw, sh int) (int, int) {
 	h := min(n+6, max(sh-2, 3))
 	if n > h-6 {
 		// Room for the scroll position at its widest too, so the hint stays
-		// whole (components/layout/popup, width).
+		// whole (tdp popup.2).
 		widest := scrollText(true, n, 0, n)
 		w = max(w, scrollRoom(f.listHint(true), widest), scrollRoom(f.typingHint(true), widest))
 	}
@@ -509,7 +509,7 @@ func (f *finderView) draw(w, h int, layer Color) []string {
 	// At 96 wide or more (w is the screen's width − 2 under 120) the list
 	// and the preview sit side by side, the facts under the preview. Below
 	// that the list and the facts share the top half and the preview takes
-	// the bottom, as wide as the popup (components/input/finder; G30).
+	// the bottom, as wide as the popup (tdp finder; G30).
 	lw := (w - 1) / 2
 	// Each box is cut or padded to its share: on a tiny screen a box would
 	// otherwise take more rows than it has.
@@ -591,7 +591,7 @@ func (f *finderView) drawList(w, h int, layer Color) []string {
 			}
 			line := cursorRow(plainNames(plain), inner, On(layer))
 			if !f.onList {
-				line = Dim(line) // the focus is on the typing row (P6)
+				line = Dim(line) // the focus is on the typing row (tdp P6)
 			}
 			body = append(body, line)
 			continue
@@ -637,7 +637,7 @@ func (f *finderView) drawPreview(w, h int, layer Color, withInfo bool) []string 
 	if _, r, ok := f.at(); ok {
 		if f.slow {
 			// Read in the background: meanwhile the loading icon after the
-			// title and "(loading…)" (components/input/file-picker).
+			// title and "(loading…)" (tdp file-picker).
 			title = f.previewTitle(r)
 			var done bool
 			lines, done = f.read.get(rowPath(r)+"\x00p"+itoa(inner-2)+"x"+itoa(area), func() []string {
@@ -677,7 +677,7 @@ func (f *finderView) drawPreview(w, h int, layer Color, withInfo bool) []string 
 
 // facts are the four rows of facts about the row under the cursor; read in
 // the background, their values are blank until they are there: not "—",
-// which says a value cannot be had (components/input/file-picker).
+// which says a value cannot be had (tdp file-picker).
 func (f *finderView) facts(r finderRow, w int, layer Color) []string {
 	if !f.slow {
 		return f.info(r, w, layer)
@@ -791,7 +791,7 @@ func (f *finderView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 				}
 			}
 		}
-		return true, nil // the typing row takes every key (Rules K8)
+		return true, nil // the typing row takes every key (tdp K8)
 	}
 	half := max(f.visible/2, 1)
 	switch key {
@@ -811,7 +811,7 @@ func (f *finderView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 		f.onList = false
 	case "Enter":
 		// A checkbox popup applies its checks with no results too: the filter
-		// does not change what is checked (components/input/checkbox).
+		// does not change what is checked (tdp checkbox).
 		if i, r, ok := f.at(); ok || f.kind == findChecks {
 			return true, f.enter(a, i, r)
 		}

@@ -11,7 +11,8 @@
 函式庫管不到的畫面（全螢幕的鎖定畫面、好幾個並排的終端機），照樣可以用它的零件：用 `App.Canvas` 自己畫那個畫面，
 confirm、toast 與每一種 input 照樣疊在上面，跟在其他地方一樣。
 app 自己的 popup（例如畫格子的）也放進同一疊：框裡畫什麼、按鍵做什麼由你決定；外框、開關動畫、淡化與 `Esc` 交給函式庫，
-函式庫的 confirm 與 input 也會疊在你的 popup 上面。
+函式庫的 confirm 與 input 也會疊在你的 popup 上面。裡面有要送出的值時，它就照表單：按鈕由函式庫放在你的內容下面，`Tab`、
+錯誤列，以及 `Esc` 丟掉改過的內容前先問，也由函式庫做。
 
 建在 [Bubble Tea](https://github.com/charmbracelet/bubbletea) v1 與 [Lip Gloss](https://github.com/charmbracelet/lipgloss) v1 上。
 
@@ -71,7 +72,7 @@ func main() {
 ```
 
 `x` 把 cursor 所在的待辦標成完成。`Space` 列出這裡能做什麼，`?` 列出按鍵，`V` 打開 splash，`q` 離開。每個 terminu app 都有
-一個畫著自己 mark 的 splash（tdp Rules S）；`icon.svg` 就是那個 mark，這個範例用的是 terminu 的副本。
+一個畫著自己 mark 的 splash（tdp S1、S5）；`icon.svg` 就是那個 mark，這個範例用的是 terminu 的副本。
 
 想看它做得到的全部，跑展示場（用假資料展示每一個元件的範例 app）：
 
@@ -108,7 +109,7 @@ app 讀不了自己的設定、狀態或資料（格式錯、檔案壞掉、沒�
 
 ## 設定
 
-使用者的設定裡，有兩個是 terminu 家族每個 app 共用的（tdp Rules E3）。函式庫不讀設定檔：由 app 從自己的設定檔讀出來交給它。
+使用者的設定裡，有兩個是 terminu 家族每個 app 共用的（tdp E3）。函式庫不讀設定檔：由 app 從自己的設定檔讀出來交給它。
 
 | key | 作用 | 預設 | 交給 |
 |---|---|---|---|
@@ -173,7 +174,7 @@ return app.Tick(300*time.Millisecond, func(time.Time) tea.Msg { return searchNow
 
 ## 實作哪一版 terminu design
 
-terminu-go 實作 **tdp v0.9.16**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
+terminu-go 實作 **tdp v0.10.0**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
 
 ## 相關連結
 

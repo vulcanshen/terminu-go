@@ -94,7 +94,7 @@ func TestStartSendsLibTimers(t *testing.T) {
 
 // TestOpeningKeepsItsTime: a frame tick the app returns and the lib sends
 // too runs once: the opening takes its 8 frames of 32ms, not half the time
-// (Rules F2).
+// (tdp F2).
 func TestOpeningKeepsItsTime(t *testing.T) {
 	ty := newTiny()
 	d := Start(t, ty.App, 80, 24)

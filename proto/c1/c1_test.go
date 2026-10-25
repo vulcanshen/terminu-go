@@ -41,7 +41,7 @@ func withIconWidth(t *testing.T, n int) {
 }
 
 // TestC1E5L4 is the L4 screen test run twice, icon one cell and two cells
-// (E5), with every popup fitting, wider, taller, and both.
+// (tdp E5), with every popup fitting, wider, taller, and both.
 func TestC1E5L4(t *testing.T) {
 	for _, n := range []int{1, 2} {
 		t.Run(fmt.Sprintf("icon%d", n), func(t *testing.T) {

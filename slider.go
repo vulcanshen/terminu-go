@@ -8,13 +8,13 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// Slider is a number in a range, shown as a track (components/input/slider).
+// Slider is a number in a range, shown as a track (tdp slider).
 // It has no keys of its own: Enter opens a select of the numbers from Bottom
 // to Top, Step apart.
 type Slider struct {
 	Title, Glyph string
 	// Subject is the one thing it acts on, kept as it is after ": " in the
-	// title: "EDIT: filu" (components/layout/popup).
+	// title: "EDIT: filu" (tdp popup).
 	Subject     string
 	Bottom, Top float64
 	// Step is the distance between two numbers: (Top − Bottom) / 10 when 0.
@@ -74,7 +74,7 @@ func (s Slider) open(a *App, written func()) tea.Cmd {
 }
 
 // SliderSpans is a value on a track of width cells in color, then the number
-// (components/input/slider): a heavy line with a dot where the value is. For
+// (tdp slider): a heavy line with a dot where the value is. For
 // Styled, the number in Value.
 func SliderSpans(value, bottom, top float64, width int, color Color) []Span {
 	at := 0

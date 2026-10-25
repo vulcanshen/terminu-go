@@ -17,7 +17,7 @@ import (
 type Rect struct{ X, Y, W, H int }
 
 // Screen is a set of panels shown together (Principle "Screen"). A screen's
-// panels are numbered from [1] by their order (Rules K1).
+// panels are numbered from [1] by their order (tdp K1).
 type Screen struct {
 	// Name is the screen's chip and its row in the global operation popup
 	// ("Panels"); Key is its global hotkey ("P"). Desc is that row's
@@ -26,10 +26,10 @@ type Screen struct {
 	Panels          []*Panel
 	// Layout places the panels in the panel area, one Rect each; nil puts
 	// them side by side in equal widths. How a screen is laid out is the
-	// app's (Rules L1).
+	// app's (tdp L1).
 	Layout func(w, h int) []Rect
 	// NarrowBelow is the width under which only the focused panel is drawn,
-	// across the whole width (layout/screen, narrow); at most 80.
+	// across the whole width (tdp screen.5); at most 80.
 	NarrowBelow int
 
 	focus int
@@ -62,9 +62,9 @@ func (s *Screen) at() int {
 // App is the whole terminal UI: screens of panels, the popups over them,
 // the footer. It is a Bubble Tea model.
 type App struct {
-	// Name is the app's name, for its environment variables (Rules E2).
+	// Name is the app's name, for its environment variables (tdp E2).
 	Name string
-	// Quit is the quit flow (Rules K9): nil leaves at once, an Ask confirms
+	// Quit is the quit flow (tdp K9): nil leaves at once, an Ask confirms
 	// first. A second Ctrl-C during the flow always leaves. With a popup open
 	// it always asks first: Quit <app>? when nil.
 	Quit *Ask
@@ -76,15 +76,15 @@ type App struct {
 	// leaves at once, as in any quit flow.
 	//
 	// With a popup open the lib runs it first and only then decides whether
-	// to stop it (Rules K9): when it opens nothing, the command it returns
+	// to stop it (tdp K9): when it opens nothing, the command it returns
 	// waits for Enter on Quit <app>?, and Esc drops it. So what cannot be
 	// undone (closing a session, stopping a task) goes in that command, not
 	// in QuitFlow itself.
 	QuitFlow func() tea.Cmd
 	// Global are the global operations besides switching screens and
-	// quitting (Principle P3); their hotkeys work on panels too (Rules M4).
+	// quitting (Principle P3); their hotkeys work on panels too (tdp M4).
 	Global []Action
-	// Status is the statusbar for w cells (layout/screen); nil for none. It
+	// Status is the statusbar for w cells (tdp screen); nil for none. It
 	// is spans, in the app's colours (Overlay0 words, a Lavender value...):
 	// a value from outside (a path) has its control characters drawn by
 	// name (components, control characters). Cut at w.
@@ -92,24 +92,24 @@ type App struct {
 	// Canvas, when set, is a screen the app draws itself, whole: a full-screen
 	// lock screen. The lib draws it instead of its screens, chips and footer,
 	// h lines of w cells, and puts its popups and toasts over it, so confirm,
-	// toast and every kind of input work there as anywhere (Rules E8).
+	// toast and every kind of input work there as anywhere (tdp E8).
 	Canvas func(w, h int) []string
 	// CanvasKey gets every key on the Canvas while no popup is open and
 	// reports whether it took it. Of what it leaves only Ctrl-C does
-	// something, the quit flow (Rules K9: App.Quit decides); no Space menu,
+	// something, the quit flow (tdp K9: App.Quit decides); no Space menu,
 	// no ?, no q: the screen is the app's.
 	CanvasKey func(key string, msg tea.KeyMsg) (bool, tea.Cmd)
 	// HideSecretsInPreview is the user's setting hide_secrets_in_preview,
 	// read from the app's settings file (tdp E3): a file preview shows only
 	// the first line of a private key, and nothing of a file only its owner
-	// may read (components/input/file-picker).
+	// may read (tdp file-picker).
 	HideSecretsInPreview bool
 	// InputTabWidth is the user's setting input_tab_width: how many spaces
 	// Tab puts in a textarea, and the spaces a tab in any text is drawn as;
-	// 4 when unset (components/input/textarea, Rules E3).
+	// 4 when unset (tdp textarea, tdp E3).
 	InputTabWidth int
 	// ToastLines caps how many lines a toast has, the last one kept ending in
-	// "…"; 0 for no cap (components/dialog/toast: the app's choice).
+	// "…"; 0 for no cap (tdp toast.2: the app's choice).
 	ToastLines int
 	// Spinning reports that a loading icon of the app's own is on the screen
 	// (LoadingFrame in a row), so the lib keeps drawing it turning.
@@ -117,14 +117,14 @@ type App struct {
 	// Progress is a long job's progress, 0 to 1, for the bar under the
 	// screen chips; ok false when there is none.
 	Progress func() (frac float64, ok bool)
-	// ShiftTab makes Shift-Tab go to the previous panel (Rules K2: the app's
+	// ShiftTab makes Shift-Tab go to the previous panel (tdp K2: the app's
 	// choice).
 	ShiftTab bool
 	// OnMsg gets the messages the lib does not handle itself.
 	OnMsg func(tea.Msg) tea.Cmd
 	// OnResize runs when the terminal changes size, after the lib has laid
 	// the screen out again: the place to change what depends on the width
-	// (which columns a list shows; Rules L1).
+	// (which columns a list shows; tdp L1).
 	OnResize func(w, h int) tea.Cmd
 	// ForceNarrow draws every screen narrow (for showing the narrow layout).
 	ForceNarrow bool
@@ -133,13 +133,13 @@ type App struct {
 	// Splash is the family's easter egg, opened with V on a panel (Rules S).
 	// Every app has one: Run refuses an app without it.
 	Splash Splash
-	// MinWidth and MinHeight are the app's least size (Rules L1): 80 × 40 when
+	// MinWidth and MinHeight are the app's least size (tdp L1): 80 × 40 when
 	// unset, the most they may be. On a smaller terminal only the app's name
 	// and "needs a terminal of at least W×H" are drawn, in the middle; every
 	// key is ignored, the PTY's too, but Ctrl-C pressed twice, which leaves.
 	// What the app was showing comes back as the terminal grows.
 	MinWidth, MinHeight int
-	// CoreKeys are core keys of the app's own (Rules K1): each means the same
+	// CoreKeys are core keys of the app's own (tdp K1): each means the same
 	// on every panel and popup, but on a typing row, in a PTY and in a mode;
 	// no hotkey may take one.
 	CoreKeys []CoreKey
@@ -177,7 +177,7 @@ type App struct {
 	terminals []*Terminal    // the terminal popups opened, for a test to stop
 }
 
-// minSize is the least size: the app's, 80 × 40 at most (Rules L1).
+// minSize is the least size: the app's, 80 × 40 at most (tdp L1).
 func (a *App) minSize() (w, h int) {
 	w, h = 80, 40
 	if a.MinWidth > 0 {
@@ -197,8 +197,8 @@ func (a *App) tooSmall() bool {
 
 // tinyScreen is all that is drawn under the least size: the app's name in
 // Blue bold and, under it, what size it needs in Overlay0, in the middle;
-// with one row, or no room for the second, the name alone (components/layout/
-// screen, smaller than the least size).
+// with one row, or no room for the second, the name alone (tdp
+// screen.7).
 func (a *App) tinyScreen(w, h int) []string {
 	mw, mh := a.minSize()
 	need := "needs a terminal of at least " + itoa(mw) + "×" + itoa(mh)
@@ -219,7 +219,7 @@ func (a *App) tinyScreen(w, h int) []string {
 func New(name string) *App { return &App{Name: name} }
 
 // AddScreen adds a screen. It panics when a panel registers a key that is
-// not the app's to take (Rules K1, K12): that is a mistake in the program.
+// not the app's to take (tdp K1, K12): that is a mistake in the program.
 func (a *App) AddScreen(s *Screen) *Screen {
 	for i, p := range s.Panels {
 		p.app = a
@@ -237,7 +237,7 @@ func (a *App) AddScreen(s *Screen) *Screen {
 }
 
 // checkToDetails refuses an action that sends the focus to the details
-// anywhere but the one place Rules K3 allows: Enter, on a panel whose Details
+// anywhere but the one place tdp K3 allows: Enter, on a panel whose Details
 // is another panel of the same screen.
 func checkToDetails(s *Screen, p *Panel, act Action) error {
 	switch {
@@ -254,7 +254,7 @@ func checkToDetails(s *Screen, p *Panel, act Action) error {
 // checkPanelKey refuses a hotkey that a core key or a movement letter owns
 // on a panel.
 // checkPopupKey is checkPanelKey for a popup's hotkey: the digits are free
-// there (Rules K1).
+// there (tdp K1).
 func checkPopupKey(key string) error {
 	if len(key) == 1 && key[0] >= '1' && key[0] <= '9' {
 		return nil
@@ -290,7 +290,7 @@ func (a *App) Size() (w, h int) { return a.w, a.h }
 // Run asks the terminal how wide an icon is and what its colours are, then
 // runs the app in the alternate screen. When the user leaves on MoveAside's
 // Esc it returns the path that cannot be read and why, for main to write to
-// stderr (Rules E3).
+// stderr (tdp E3).
 func (a *App) Run() error {
 	if err := a.checkSplash(); err != nil {
 		return err
@@ -360,7 +360,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // moved runs the OnMove of the screen's lists and value panels whose cursor
 // came to another item: after every message and before the frame is drawn
-// (layout/panel, details).
+// (tdp panel.13).
 func (a *App) moved() tea.Cmd {
 	s := a.Screen()
 	if s == nil {
@@ -392,7 +392,7 @@ func (a *App) inputTabWidth() int {
 }
 
 // growLoading measures again a popup that is loading, and once more when it
-// stops: only then may its height change while it is open (Rules F7).
+// stops: only then may its height change while it is open (tdp F7).
 func (a *App) growLoading() {
 	for _, l := range a.stack {
 		v, ok := l.view.(interface{ isLoading() bool })
@@ -541,7 +541,7 @@ func (a *App) top() *layer {
 	return nil
 }
 
-// closeTop starts closing the top popup (Rules F3, K4).
+// closeTop starts closing the top popup (tdp F3, K4).
 func (a *App) closeTop() tea.Cmd {
 	l := a.top()
 	if l == nil {
@@ -550,7 +550,7 @@ func (a *App) closeTop() tea.Cmd {
 	return a.closeLayer(l)
 }
 
-// layerOf is l's layer: the open popups under it, and itself (components/color).
+// layerOf is l's layer: the open popups under it, and itself (tdp color).
 func (a *App) layerOf(l *layer) int {
 	n := 1
 	for _, below := range a.stack {
@@ -579,7 +579,7 @@ func (a *App) closeLayer(l *layer) tea.Cmd {
 	if a.isQuitConfirm(l) {
 		a.quitting = false
 	}
-	// It closes in the colour of the layer it was (Rules F2).
+	// It closes in the colour of the layer it was (tdp F2).
 	if !l.shade.Set {
 		l.shade = LayerColor(a.layerOf(l))
 	}
@@ -605,8 +605,7 @@ func gone(l *layer) tea.Cmd {
 }
 
 // commitFailed is a popup's write-back failing: an error popup over it,
-// the popup and its value staying (components/layout/popup, the action
-// failing).
+// the popup and its value staying (tdp popup.7).
 func (a *App) commitFailed(title, subject string, err error) tea.Cmd {
 	a.Log(Error, errorText(title+" failed", subject, err.Error()))
 	return a.open(errorPopup(title+" failed", subject, err.Error()))
@@ -646,16 +645,16 @@ func (a *App) closeView(v popupView) tea.Cmd {
 	return a.closeLayers(a.stack[i:])
 }
 
-// closeAll closes every popup (Rules T1, when what was done ends the whole
+// closeAll closes every popup (tdp T1, when what was done ends the whole
 // stack): each plays its own closing at the same time, at its own size and
-// in its own layer's colour, about 288ms in all (Rules F2).
+// in its own layer's colour, about 288ms in all (tdp F2).
 func (a *App) closeAll() tea.Cmd {
 	a.quitting = false
 	return a.closeLayers(a.stack)
 }
 
 // closeUnder closes every popup under top as top opens: the sources it
-// clears, all together (Rules T1, F2).
+// clears, all together (tdp T1, F2).
 func (a *App) closeUnder(top *layer) tea.Cmd {
 	i := slices.Index(a.stack, top)
 	if i < 0 {
@@ -673,7 +672,7 @@ func (a *App) closeLayers(ls []*layer) tea.Cmd {
 		}
 	}
 	// Each keeps the colour of the layer it was, the ones under it closing
-	// too (Rules F2).
+	// too (tdp F2).
 	for _, l := range open {
 		l.shade = LayerColor(a.layerOf(l))
 	}
@@ -694,13 +693,13 @@ func (a *App) relayout() {
 	}
 }
 
-// Toast shows a short message from the bottom (components/dialog/toast); a
+// Toast shows a short message from the bottom (tdp toast); a
 // second one replaces the first and starts its time again. Each string of
 // text is a row of its own, folded when too long: the app's own text has no
 // line break in it, so a \n on the screen is from outside, drawn by its
 // name (components, control characters).
 func (a *App) Toast(kind ToastKind, text ...string) tea.Cmd {
-	a.Log(kind, strings.Join(text, " ")) // every toast, the same words (components/dialog/note, App Log)
+	a.Log(kind, strings.Join(text, " ")) // every toast, the same words (tdp note, App Log)
 	a.toastSeq++
 	v := &toastView{kind: kind, text: text, id: a.toastSeq, most: a.ToastLines}
 	if a.toast != nil && !a.toast.closing {
@@ -721,14 +720,14 @@ func (a *App) placeToast() {
 }
 
 // Confirm asks ask; accept runs when the user answers Enter. The popup under
-// it stays (Rules T1, a short confirm).
+// it stays (tdp T1, a short confirm).
 func (a *App) Confirm(ask Ask, accept func() tea.Cmd) tea.Cmd {
 	c := newConfirm(ask, nil)
 	c.accept = func() tea.Cmd { return tea.Batch(a.closeTop(), run(accept)) }
 	return a.open(c)
 }
 
-// Error opens an error popup over the top popup (components/dialog/note): an
+// Error opens an error popup over the top popup (tdp note): an
 // action failed. Each string of message is a row of its own, folded when too
 // long, as Toast's (components, control characters).
 func (a *App) Error(title string, message ...string) tea.Cmd {
@@ -736,13 +735,13 @@ func (a *App) Error(title string, message ...string) tea.Cmd {
 }
 
 // ErrorAbout is Error naming what failed: subject goes after ": " in the
-// title, kept as it is, RENAME FAILED: notes.md (components/dialog/note).
+// title, kept as it is, RENAME FAILED: notes.md (tdp note).
 func (a *App) ErrorAbout(title, subject string, message ...string) tea.Cmd {
-	a.Log(Error, errorText(title, subject, strings.Join(message, " "))) // an error is logged too (Rules F5)
+	a.Log(Error, errorText(title, subject, strings.Join(message, " "))) // an error is logged too (tdp F5)
 	return a.open(errorPopup(title, subject, message...))
 }
 
-// Menu opens a menu of sections (Rules M8); running a row closes the menu
+// Menu opens a menu of sections (tdp M8); running a row closes the menu
 // and everything under it.
 func (a *App) Menu(title string, sections ...MenuSection) tea.Cmd {
 	return a.MenuAbout(title, "", sections...)
@@ -778,7 +777,7 @@ func (a *App) acceptConfirm(c *confirmView) tea.Cmd {
 	return run(c.accept)
 }
 
-// runAction runs an action (Rules F6: asking first when it asks). From a menu,
+// runAction runs an action (tdp F6: asking first when it asks). From a menu,
 // it closes the menu and what is under it.
 func (a *App) runAction(act Action, fromMenu bool) tea.Cmd {
 	if act.disabled() || act.hidden() {
@@ -797,7 +796,7 @@ func (a *App) runAction(act Action, fromMenu bool) tea.Cmd {
 	}
 	// then does it where it was asked for: from a menu, what it opens keeps
 	// the menu under it unless it clears it; if it opens nothing the menu's
-	// work is done (Rules T1).
+	// work is done (tdp T1).
 	then := func() tea.Cmd {
 		if !fromMenu || act.Stay || act.Detail {
 			return do()
@@ -819,7 +818,7 @@ func (a *App) runAction(act Action, fromMenu bool) tea.Cmd {
 	if ask != nil {
 		c := newConfirm(*ask, nil)
 		// The confirm is only a door: accepted, it goes, and what the action
-		// does decides about the menu (Rules T1).
+		// does decides about the menu (tdp T1).
 		c.accept = func() tea.Cmd { return tea.Batch(a.answer(), then()) }
 		return a.open(c)
 	}
@@ -836,11 +835,11 @@ func (a *App) quitAction() Action {
 	return Action{Key: "q", Label: "Quit", Desc: desc, Scope: GlobalScope, Do: a.startQuit}
 }
 
-// startQuit is the quit flow (Rules K9). What a popup of the app's own would
+// startQuit is the quit flow (tdp K9). What a popup of the app's own would
 // lose goes last in the confirm, in Peach; it asks then even when Quit is nil.
 //
 // With a popup open (a toast is not one) the first q or Ctrl-C never leaves
-// at once (Rules K9): a flow that would leave there and then asks Quit <app>?
+// at once (tdp K9): a flow that would leave there and then asks Quit <app>?
 // first, its leaving put off to Enter; one that asks something of its own
 // asks only that.
 func (a *App) startQuit() tea.Cmd {
@@ -935,7 +934,7 @@ func (a *App) panelActions(p *Panel, scope Scope) []Action {
 	return out
 }
 
-// openSpaceMenu opens the focused panel's Space menu (Rules M2).
+// openSpaceMenu opens the focused panel's Space menu (tdp M2).
 func (a *App) openSpaceMenu() tea.Cmd {
 	s := a.Screen()
 	p := s.Focused()
@@ -959,7 +958,7 @@ func (a *App) openSpaceMenu() tea.Cmd {
 }
 
 // globalActions are every global operation: switching screens, the app's
-// own, quitting (Rules M4).
+// own, quitting (tdp M4).
 func (a *App) globalActions() []Action {
 	var out []Action
 	if len(a.screens) > 1 {
@@ -1002,7 +1001,7 @@ func (a *App) switchScreen(i int) tea.Cmd {
 // Focus moves the focus to p, on whichever screen it is, switching to that
 // screen. The app does it where the user expects the focus to move: after
 // what they pressed, never on something that happened in the background (a
-// load done, a job ended; Rules K3). A panel on no screen is left alone.
+// load done, a job ended; tdp K3). A panel on no screen is left alone.
 func (a *App) Focus(p *Panel) tea.Cmd {
 	for i, s := range a.screens {
 		if j := slices.Index(s.Panels, p); j >= 0 {
@@ -1013,7 +1012,7 @@ func (a *App) Focus(p *Panel) tea.Cmd {
 	return nil
 }
 
-// ShowScreen switches to s, as its chip's key does (Rules K3: when the user
+// ShowScreen switches to s, as its chip's key does (tdp K3: when the user
 // expects it).
 func (a *App) ShowScreen(s *Screen) tea.Cmd {
 	return a.switchScreen(slices.Index(a.screens, s))
@@ -1021,7 +1020,7 @@ func (a *App) ShowScreen(s *Screen) tea.Cmd {
 
 // --- the key reference -------------------------------------------------------
 
-// panelKeyRef is what ? lists on a panel (Rules K6, components/dialog/note).
+// panelKeyRef is what ? lists on a panel (tdp K6, tdp note).
 func (a *App) panelKeyRef(p *Panel) *noteView {
 	s := a.Screen()
 	row := func(act Action) KeyRow {
@@ -1047,7 +1046,7 @@ func (a *App) panelKeyRef(p *Panel) *noteView {
 	if p.Body != nil {
 		keys := p.Body.MoveKeys()
 		if b, ok := p.Body.(interface{ tabMoveKeys() []KeyRow }); ok && len(p.Tabs) > 0 {
-			keys = b.tabMoveKeys() // h|l go to the tabs (Rules K12)
+			keys = b.tabMoveKeys() // h|l go to the tabs (tdp K12)
 		}
 		move = append(move, keys...)
 	}
@@ -1058,7 +1057,7 @@ func (a *App) panelKeyRef(p *Panel) *noteView {
 	if len(s.Panels) > 1 {
 		tab := KeyRow{Key: "Tab", Desc: "next panel"}
 		if a.ShiftTab {
-			tab = KeyRow{Key: "Tab|Shift-Tab", Desc: "next panel, previous panel"} // Rules K6
+			tab = KeyRow{Key: "Tab|Shift-Tab", Desc: "next panel, previous panel"} // tdp K6
 		}
 		core = append(core, tab, KeyRow{Key: "1–" + itoa(len(s.Panels)), Desc: "jump to panel N"})
 	}
@@ -1074,7 +1073,7 @@ func (a *App) panelKeyRef(p *Panel) *noteView {
 	var app []KeyRow
 	for _, act := range a.globalActions() {
 		// On a panel a digit jumps to a panel: a global one works only in the
-		// global operation popup (Rules K1), so it is not a key here.
+		// global operation popup (tdp K1), so it is not a key here.
 		if act.Key == "" || act.Key == "q" || isDigit(act.Key) || own[act.Key] || act.hidden() {
 			continue
 		}
@@ -1082,7 +1081,7 @@ func (a *App) panelKeyRef(p *Panel) *noteView {
 	}
 	var sections []refSection
 	if v, ok := p.Body.(*Values); ok {
-		// What each row is, first, when the app says (layout/panel).
+		// What each row is, first, when the app says (tdp panel).
 		var rows []KeyRow
 		for _, f := range v.Fields {
 			if f.Desc != "" {
@@ -1098,7 +1097,7 @@ func (a *App) panelKeyRef(p *Panel) *noteView {
 		{title: "core keys", rows: core},
 		{title: "app-wide", rows: app},
 	}...)
-	// A section about another surface goes last (components/dialog/note).
+	// A section about another surface goes last (tdp note).
 	for _, o := range p.OtherKeys {
 		sections = append(sections, refSection{title: o.Title, rows: o.Rows})
 	}
@@ -1115,7 +1114,7 @@ func refTitle(v popupView) string {
 	return Upper(v.surface())
 }
 
-// modeKeyRef is a mode's key reference (Rules K11).
+// modeKeyRef is a mode's key reference (tdp K11).
 func (a *App) modeKeyRef(p *Panel) *noteView {
 	var rows []KeyRow
 	for _, k := range p.mode.Keys {
@@ -1131,7 +1130,7 @@ func (a *App) modeKeyRef(p *Panel) *noteView {
 func (a *App) handleKey(msg tea.KeyMsg) tea.Cmd {
 	key := KeyName(msg)
 	// Under the least size nothing can be seen: no key acts, none goes to a
-	// PTY; only Ctrl-C twice leaves at once (Rules L1, K9).
+	// PTY; only Ctrl-C twice leaves at once (tdp L1, K9).
 	if a.tooSmall() {
 		if key == "Ctrl-C" && a.tinyCtrlC {
 			return tea.Quit
@@ -1140,28 +1139,28 @@ func (a *App) handleKey(msg tea.KeyMsg) tea.Cmd {
 		return nil
 	}
 	a.tinyCtrlC = false
-	// Any key only closes the splash, Ctrl-C too (Rules S3).
+	// Any key only closes the splash, Ctrl-C too (tdp S3).
 	if a.splashOn {
 		a.splashOn = false
 		return nil
 	}
-	// A popup that is still opening takes no keys (Rules F2).
+	// A popup that is still opening takes no keys (tdp F2).
 	if l := a.top(); l != nil && l.frame < openFrames {
 		return nil
 	}
 	// In a PTY every key goes to the program, Esc and Ctrl-C too, but the
-	// exit key and the app's own keys (Rules K10).
+	// exit key and the app's own keys (tdp K10).
 	if t := a.ptyFocus(); t != nil {
-		if t.mode != "" && key == "Space" { // the mode's Space menu, not the program's (Rules K11)
+		if t.mode != "" && key == "Space" { // the mode's Space menu, not the program's (tdp K11)
 			return a.terminalModeMenu(t)
 		}
 		return t.key(a, key, msg)
 	}
-	// The second Ctrl-C of a quit flow leaves at once (Rules K9).
+	// The second Ctrl-C of a quit flow leaves at once (tdp K9).
 	if key == "Ctrl-C" && a.quitting {
 		return tea.Quit
 	}
-	// Esc takes the toast first (Rules K4, F3).
+	// Esc takes the toast first (tdp K4, F3).
 	if key == "Esc" && a.toast != nil && !a.toast.closing {
 		a.toast.closing = true
 		if a.toast.frame > openFrames {
@@ -1221,8 +1220,8 @@ func (a *App) popupKey(l *layer, key string, msg tea.KeyMsg) tea.Cmd {
 
 // prefix joins g with the key after it ("gg", "go"); ok is false while the g
 // waits. A lone g does nothing, and a key after it that makes no pair known
-// here acts as if the g had not been pressed (Rules K12); a core key after
-// it is always itself (K1).
+// here acts as if the g had not been pressed (tdp K12); a core key after
+// it is always itself (tdp K1).
 func (a *App) prefix(key string, known func(pair string) bool) (string, bool) {
 	if a.pending == "g" {
 		a.pending = ""
@@ -1321,7 +1320,7 @@ func (a *App) panelKey(key string, msg tea.KeyMsg) tea.Cmd {
 		}
 		return nil
 	}
-	// The panel's own hotkeys win over the global ones (Rules M4).
+	// The panel's own hotkeys win over the global ones (tdp M4).
 	for _, scope := range []Scope{ItemScope, PanelScope} {
 		for _, act := range a.panelActions(p, scope) {
 			if act.Key == key && key != "Enter" && !act.hidden() && p.scopeApplies(act) {
@@ -1373,10 +1372,10 @@ func refHas(secs []refSection, key string) bool {
 	return false
 }
 
-// modeKey is a key inside a mode (Rules K11).
+// modeKey is a key inside a mode (tdp K11).
 func (a *App) modeKey(p *Panel, key string, msg tea.KeyMsg) tea.Cmd {
 	switch {
-	case key == "!": // nothing in a mode (Rules K11)
+	case key == "!": // nothing in a mode (tdp K11)
 		return nil
 	case key == "Space":
 		return a.panelModeMenu(p)
@@ -1413,7 +1412,7 @@ func (a *App) modeKey(p *Panel, key string, msg tea.KeyMsg) tea.Cmd {
 	return nil
 }
 
-// toDetails sends the focus from the focused panel to its Details (Rules K3).
+// toDetails sends the focus from the focused panel to its Details (tdp K3).
 func (a *App) toDetails() {
 	s := a.Screen()
 	if s == nil || s.Focused() == nil {
@@ -1447,7 +1446,7 @@ func (a *App) focusChanged() {
 // View draws the whole screen.
 func (a *App) View() string { return strings.Join(a.Frame(), "\n") }
 
-// Frame is the screen as lines, each exactly as wide as the terminal (Rules L4).
+// Frame is the screen as lines, each exactly as wide as the terminal (tdp L4).
 func (a *App) Frame() []string {
 	w, h := a.w, a.h
 	if w <= 0 || h <= 0 {
@@ -1466,15 +1465,15 @@ func (a *App) Frame() []string {
 	}
 	lines := a.base()
 	if a.top() != nil {
-		lines = DimLines(lines) // everything under the top popup (Rules F8)
+		lines = DimLines(lines) // everything under the top popup (tdp F8)
 	}
 	top := a.top()
 	under, open := slices.Index(a.stack, top), 0
 	for i, l := range a.stack {
 		// A popup's layer counts the open ones under it: one closing is not
 		// a layer any more, and a target opening while its source closes
-		// has its own layer's colour from its first frame (components/color,
-		// Rules T1).
+		// has its own layer's colour from its first frame (tdp color,
+		// tdp T1).
 		color := LayerColor(open + 1)
 		if !l.closing {
 			open++
@@ -1521,7 +1520,7 @@ func (a *App) base() []string {
 	footer := a.footer(w)
 	if a.terminalOpen() {
 		// A terminal popup reaches the last row: no footer, its ends blank
-		// on either side of the frame (components/dialog/terminal).
+		// on either side of the frame (tdp terminal).
 		footer = ""
 	}
 	lines = append(lines, Pad(footer, w))
@@ -1536,7 +1535,7 @@ func (a *App) terminalOpen() bool {
 	})
 }
 
-// chipRow is the screen chips, the statusbar on the right (layout/screen).
+// chipRow is the screen chips, the statusbar on the right (tdp screen).
 func (a *App) chipRow(w int) string {
 	caps := make([]Capsule, len(a.screens))
 	for i, s := range a.screens {
@@ -1645,10 +1644,10 @@ func Pad2(lines []string, w, h int) []string {
 	return out
 }
 
-// footer is the bottom row (layout/screen, footer): what can be pressed now.
+// footer is the bottom row (tdp screen.2): what can be pressed now.
 func (a *App) footer(w int) string {
 	pairs := a.footerHints()
-	var off []bool // a mode's keys that cannot be pressed now (Rules M6)
+	var off []bool // a mode's keys that cannot be pressed now (tdp M6)
 	if s := a.Screen(); s != nil && s.Focused() != nil && s.Focused().mode != nil {
 		off = make([]bool, len(pairs))
 		for i, h := range pairs {
@@ -1667,11 +1666,11 @@ func (a *App) footerHints() []KeyHint {
 	}
 	p := s.Focused()
 	if t, ok := p.Body.(*Terminal); ok && t.inside {
-		return t.hint() // the exit key and the app's own (components/layout/screen)
+		return t.hint() // the exit key and the app's own (tdp screen)
 	}
 	switch {
 	case p.typing():
-		if !p.Body.HasItem() { // nothing matches: Enter does nothing (components/layout/screen)
+		if !p.Body.HasItem() { // nothing matches: Enter does nothing (tdp screen)
 			return []KeyHint{{"Tab", "list"}, {"Esc", "clear"}}
 		}
 		return []KeyHint{{"Enter|Tab", "list"}, {"Esc", "clear"}}

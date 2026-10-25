@@ -8,9 +8,9 @@ import (
 )
 
 // kindsScreen is [K]INDS: a list in groups and a details panel that follows
-// its cursor (components/layout/panel, groups and details). [1] KINDS is the
+// its cursor (tdp panel.11). [1] KINDS is the
 // resource kinds in groups; [2] is the kind under its cursor, named after it.
-// Enter on a namespaced kind goes into its details (Rules K3).
+// Enter on a namespaced kind goes into its details (tdp K3).
 type kindsScreen struct {
 	screen  *terminu.Screen
 	list    *terminu.List
@@ -52,7 +52,7 @@ func newKindsScreen(a *terminu.App) *kindsScreen {
 	}
 	ks.list.SetRows(rows)
 	// The details follow the cursor at once, with no Enter; the focus stays
-	// (components/layout/panel, details).
+	// (tdp panel.13).
 	ks.list.OnMove = func(r terminu.Row) tea.Cmd {
 		for i := range kinds {
 			if kinds[i].name == r.ID {
@@ -83,7 +83,7 @@ func newKindsScreen(a *terminu.App) *kindsScreen {
 	}}}
 	kindsPanel := &terminu.Panel{Label: "Kinds", Body: ks.list, Details: ks.details, Actions: []terminu.Action{
 		// Enter goes into a namespaced kind's details, the one place Enter
-		// changes panels (Rules K3); a cluster-wide kind is read-only here.
+		// changes panels (tdp K3); a cluster-wide kind is read-only here.
 		{Key: "Enter", Label: "Edit", Desc: "go into this kind's details", Scope: terminu.ItemScope, Hint: "edit",
 			ToDetails: func() bool { return !ks.kind.cluster },
 			Do: func() tea.Cmd {

@@ -15,7 +15,7 @@ var eraseRight = []byte("\x1b[K")
 // When the terminal gives icons two cells, a full line measures short and the
 // renderer sends eraseRight after it, with the cursor on the last column.
 // Terminals that follow xterm (Ghostty among them) then erase that last cell:
-// the right frame. Every line the App draws is the full width (L4), so the
+// the right frame. Every line the App draws is the full width (tdp L4), so the
 // erase never has anything left to clear and dropping it is safe.
 //
 // It embeds the file so bubbletea still finds the terminal (Fd) for raw mode
