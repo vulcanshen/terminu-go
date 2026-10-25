@@ -2,7 +2,7 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.9.16
+## v0.4.22 — tdp v0.9.16
 
 - `Terminal.OnLeave` runs when the exit key is accepted, asked first or not, once the focus is out (and, with
   `Ends`, the program told to stop): where the focus goes after leaving is the app's (Rules K10), such as back to
