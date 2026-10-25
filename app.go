@@ -895,10 +895,8 @@ func (a *App) askQuit(notes []string, accept func() tea.Cmd) tea.Cmd {
 func (a *App) quitNotes() []string {
 	var out []string
 	for _, l := range a.stack {
-		if v, ok := l.view.(*appPopup); ok && !l.closing {
-			if q, ok := v.p.Body.(interface{ QuitNote() string }); ok && q.QuitNote() != "" {
-				out = append(out, q.QuitNote())
-			}
+		if q, ok := bodyOf(l.view).(interface{ QuitNote() string }); ok && !l.closing && q.QuitNote() != "" {
+			out = append(out, q.QuitNote())
 		}
 	}
 	return out

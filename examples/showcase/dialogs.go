@@ -163,7 +163,7 @@ func (ds *dialogsScreen) scenarios() []scenario {
 			}
 			return a.Error("Deploy failed", msg...)
 		}},
-		{"Popup: the app’s own", "app’s own", "the app draws the inside, the lib the frame: draw on the grid, [Tab] to Save; Esc and Ctrl-C say when changed", ds.draw},
+		{"Popup: the app’s own", "app’s own", "the app draws the grid, the lib the frame and Save as on a form: [Tab] to Save, x then Save for the error row", ds.draw},
 		{"Quit: the app’s own flow", "menu", "the next [q] opens a menu of ways to leave; Ctrl-C again leaves at once", ds.quitFlow},
 		{"Move aside: a file it can’t read", "confirm", "its settings broken: Enter moves the file to .bak and starts as the first time, Esc quits the showcase", ds.moveAside},
 		{"Move aside: a record it can’t read", "confirm", "one record per file, one broken: Enter moves just that one to .bak and reads the rest", ds.moveAsideRecord},
