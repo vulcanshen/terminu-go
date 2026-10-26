@@ -71,7 +71,10 @@ type PopupActions struct {
 //     so, Esc asks first (tdp form.15).
 //   - Check() string: what is wrong with the values, "" for nothing. It runs
 //     at each submit; what it says goes in the error row and stays until the
-//     next check, the focus back on the content (tdp popup.7).
+//     next check, the focus back on the content (tdp popup.7). This error
+//     row takes no focus, as in an input popup. The error row is the app's
+//     to decide (G101): one that wants another, one the focus stops at say,
+//     leaves Check out and draws its own as the last rows of its content.
 //   - Focus(on bool): called before each Draw, whether the focus is on the
 //     content (true) or on a button (false): draw where the focus is only
 //     while it is there (tdp L5).

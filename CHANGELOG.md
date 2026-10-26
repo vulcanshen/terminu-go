@@ -2,6 +2,12 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.10.0
+
+- The error row of a popup of the app's own with `Actions` is the app's to decide (G101, settled by the user): the
+  lib's, from `Check`, takes no focus as in an input popup; an app that wants another leaves `Check` out and draws its
+  own as the last rows of its content. Nothing changes in the lib's behaviour
+
 ## v0.5.0 — tdp v0.10.0
 
 - A popup of the app's own is the eighth kind of popup (tdp F1, popup.8). With values to submit it works as a form:

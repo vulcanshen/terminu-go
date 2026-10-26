@@ -332,7 +332,7 @@ func (fv *formView) buttonItems() []formItem {
 // Disabled fields are skipped.
 func (fv *formView) fieldItems() []formItem {
 	if fv.body != nil {
-		// The error row is no stop, as in an input popup. TODO(tdp G101)
+		// The error row is no stop, as in an input popup (G101).
 		return []formItem{{kind: itemContent, option: -1}}
 	}
 	var out []formItem
