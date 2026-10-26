@@ -1,6 +1,6 @@
-# tdp v0.10.0 coverage
+# tdp v0.10.1 coverage
 
-tdp v0.10.0 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
+tdp v0.10.1 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
 （[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -359,7 +359,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | popup.8 | focus 在哪裡要看得出來、移動照 K12（popup-73）：內容的 focus 與 hjkl 是 app 畫的、app 收的；lib 在每次 `Draw` 前用 `Focus(on)` 告訴 body focus 在不在內容上，按鈕的 focus 是 lib 畫的 | D「Popup: the app’s own」：`hjkl` 移，`Tab` 到 Save 時格子上的 cursor 不見 | `TestAppPopupActions` |
 | popup.7 | 值錯太多次而暫停收值時倒數寫在錯誤列：Red、每秒更新（`try again in 27 s`）、倒數完清掉；暫停期間除了 `Esc` 都吞掉（lib：`PasswordInput.PausedUntil`） | I 的 `Unlock` 連錯三次 | `TestPasswordPause` |
 | popup.7 | 動作失敗開 error popup 蓋在上面，關掉回原本的 popup、值都在 | D「Form: save fails」 | `TestActionFailureErrorPopup`、`TestCommitFailureKeepsPopup`（input 寫回失敗：`Commit`） |
-| popup.7 | 照表單的 app 自己的 popup：body 有 `Check` 才預留錯誤列（內容下面空一列）；按送出時檢查，錯了寫在錯誤列（Red、離框一格）、focus 回到內容，到下一次檢查前不動；lib 的錯誤列不拿 focus，跟 input popup 一樣；錯誤列怎麼做 app 可以自行決定（G101，user 2026-10-26 定，等補進 tdp）：要別的樣子（例：可以 focus）就不給 `Check`，自己畫在內容的最後幾列 | D「Popup: the app’s own」按 `x` 清空、`Tab`、`Enter` | `TestAppPopupActionsCheck` |
+| popup.7 | 照表單的 app 自己的 popup：body 有 `Check` 才預留錯誤列（內容下面空一列）；按送出時檢查，錯了寫在錯誤列（Red、離框一格）、focus 回到內容，到下一次檢查前不動；lib 的錯誤列不拿 focus，跟 input popup 一樣；錯誤列怎麼做 app 可以自行決定（tdp popup.8；G101），錯誤照樣要看得到（F5）：要別的樣子（例：可以 focus）就不給 `Check`，自己畫在內容的最後幾列 | D「Popup: the app’s own」按 `x` 清空、`Tab`、`Enter` | `TestAppPopupActionsCheck` |
 
 ## dialog/form
 
