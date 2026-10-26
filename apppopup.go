@@ -50,6 +50,11 @@ type PopupActions struct {
 	// Content names the content in a button's hint, where Tab goes back
 	// to: "grid" in "Tab:grid"; "content" when unset (tdp form.13).
 	Content string
+	// ErrorSubject, when set, is the name the error popup of a failing
+	// button puts after ": " in its title ("SAVE FAILED: kamonu"), the
+	// buttons keeping their own text; unset, a button's own subject goes
+	// there, as on a form (tdp note.6, popup.1).
+	ErrorSubject string
 }
 
 // PopupBody is the inside of a popup of the app's own. It must be comparable,
@@ -118,7 +123,7 @@ func (a *App) Popup(p Popup) tea.Cmd {
 		fv := newFormView(&Form{Title: p.Title, Glyph: p.Glyph, Subject: p.Subject, Name: cmpOr(x.Name, p.Subject),
 			Button: x.Button, ButtonSubject: x.ButtonSubject, Buttons: x.Buttons,
 			Submit: x.Submit, SubmitLong: x.SubmitLong, OnCancel: x.OnCancel}, p.Body)
-		fv.content = x.Content
+		fv.content, fv.errSubject = x.Content, x.ErrorSubject
 		return a.open(fv)
 	}
 	return a.open(&appPopup{p: p})

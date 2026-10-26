@@ -2,6 +2,7 @@ package terminu
 
 import (
 	"context"
+	"errors"
 	"slices"
 	"strings"
 	"testing"
@@ -303,5 +304,26 @@ func TestAppPopupActionsScrollAndClose(t *testing.T) {
 	ta.settle()
 	if ta.top() != nil {
 		t.Errorf("ClosePopup leaves %d layers", len(ta.stack))
+	}
+}
+
+// PopupActions.ErrorSubject names the thing in the title of a failure's error
+// popup, SAVE FAILED: kamonu, and leaves the button as it is; unset, the
+// title has the button's own subject, here none (tdp note.6, popup.1).
+func TestAppPopupActionsErrorSubject(t *testing.T) {
+	for _, c := range []struct{ subject, title string }{{"kamonu", "SAVE FAILED: kamonu"}, {"", "SAVE FAILED"}} {
+		ta := newTestApp(t)
+		ta.Popup(Popup{Title: "Draw", Subject: "kamonu", Body: &gridBody{}, Actions: &PopupActions{Button: "Save", ErrorSubject: c.subject,
+			Submit: func() (tea.Cmd, error) { return nil, errors.New("disk full") }}})
+		ta.settle()
+		if row := ta.rowWith("Save"); strings.Contains(row, "Save kamonu") {
+			t.Errorf("%q: the button took the subject: %q", c.subject, row)
+		}
+		ta.press("Tab", "Enter")
+		ta.settle()
+		n, ok := ta.topView().(*noteView)
+		if !ok || n.title != c.title {
+			t.Errorf("%q: the error popup %T is titled %q, want %q", c.subject, ta.topView(), n.title, c.title)
+		}
 	}
 }

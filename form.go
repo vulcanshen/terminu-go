@@ -189,10 +189,12 @@ type formView struct {
 	visible int
 	// body, when set, is a popup of the app's own with values to submit,
 	// its content in place of the fields (tdp popup.8); content names it in
-	// a button's hint, bodyErr is its problem at the last check.
-	body    PopupBody
-	content string
-	bodyErr string
+	// a button's hint, bodyErr is its problem at the last check; errSubject,
+	// set, is the name a failure's title takes in place of a button's.
+	body       PopupBody
+	content    string
+	bodyErr    string
+	errSubject string
 }
 
 // Form opens a form.
@@ -301,6 +303,7 @@ func (fv *formView) buttonHint(it formItem) string {
 // title, the name after ": " as it is (tdp popup.1).
 func (fv *formView) failed(a *App, it formItem, err error) tea.Cmd {
 	label, subject := fv.buttonParts(it)
+	subject = cmpOr(fv.errSubject, subject)
 	n := errorPopup(label+" failed", "", err.Error())
 	n.title = popupTitle(label+" failed", subject)
 	a.Log(Error, errorText(label+" failed", subject, err.Error()))

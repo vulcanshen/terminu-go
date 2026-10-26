@@ -2,6 +2,12 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v0.10.1
+
+- `PopupActions.ErrorSubject`: the name the error popup of a failing button puts after ": " in its title
+  (`SAVE FAILED: kamonu`), the buttons keeping their own text. Until now only `ButtonSubject` put a name there, and it
+  put the name on the button too (`Save kamonu`). Unset, nothing changes (kamonu)
+
 ## v0.5.1 — tdp v0.10.1
 
 - The error row of a popup of the app's own with `Actions` is the app's to decide (tdp popup.8, from G101): the
