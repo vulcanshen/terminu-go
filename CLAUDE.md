@@ -16,31 +16,32 @@ terminu design（tdp）的 Go 實作：一個像 bubbletea 那樣讓 app 直接�
 這個 repo 有兩個目的，順序不能顛倒：
 
 1. **驗證規範。** 完全照 tdp 的文字寫出 lib 與展示場，找出規範沒寫、寫得模糊、前後矛盾、或做出來不好用的地方（下面叫「盲點」）。
-   tdp v0.3.0 從零改寫過，v0.4.0 補上了這個 repo 第一批回報的 22 條盲點（紀錄裡 G1–G22 都在「已定」），v0.5.0 換了外觀，
-   v0.5.1 補上第二批的 G23–G29，v0.5.2 補上第三批的 G30–G46（G43 擱著），v0.5.3 補上 G47，v0.5.4 補上第四批的 G48–G66，v0.5.5 補上第五批的 G67–G77，v0.5.6 補上第六批的 G78–G82，v0.5.7 補上 G83，v0.5.8 補上 G84，v0.5.9 補上 G85，v0.6.0 刪掉 S5 講畫 mark 工具的那一句（kamonu 的 KM4），v0.6.1 補上 G86（kamonu 的 KM5），v0.6.2 補上 ccdrawu 的 CD1、CD2（清單的分組、明細），v0.6.3 補上 CD3（K3 唯一的例外：`Enter` 可以把 focus 送到明細），v0.6.4 補上 CD4（E3 的 Windows），v0.6.5 補上 CD6（K2：有動作列的 popup，color picker 也用 `Tab` 在欄位區與動作列之間來回），v0.6.6 補上 CD9（新元件 reorder：panel 的 Drag mode 放進 popup；K12 拿著的一項到頭尾繞回），v0.6.7 補上 kamonu 的 KM1、KM3（表單的動作區可以有好幾個按鈕、`Tab` 切兩區、hjkl 在區裡移；cursor 蓋到色塊時色塊保留自己的顏色），v0.6.8 補上 G89（按鈕的工作還在跑時 `Enter` 不作用、hint 拿掉；表單關掉時還在跑的動作取消），v0.6.9 補上 kamonu 的 KM6（按鈕的 hint 只有動詞小寫，名稱、路徑照原樣），v0.6.10 補上 G90（source 收起、target 同時打開：在收的不算一層、不跳色），v0.6.11 補上 kamonu 的 KM7（輸入的錯誤點名值的名字：標題是動作時由 app 另外給），v0.6.12 補上 ccdrawu 的 CD10（一列一個值的 panel 的表頭用 Overlay0），v0.6.13 補上 CD11（checkbox 停用的選項：整列 Surface2、cursor 跳過、勾著的維持原狀），v0.6.14 修正 CD11 的打開時（停在 app 指定的那一項，停用時往後找、再往前找），v0.6.15 把 CD11 改成「不可用的選項」（整列 Surface2，但 cursor 照樣停、照樣能勾，意思由 app 決定；取代 v0.6.13、v0.6.14 的跳過），v0.7.0 加了 project 這一層（家族 app 的 repo：目錄、Makefile、版本、CHANGELOG、發布；畫面的規定沒變，lib 與展示場照 E8 的表），v0.7.1 加了條目清單 checklist（把規範拆成可檢查的項目，判 app 符合 tdp 多少；lib 不套），並修了拆清單時找到的缺漏、加了「折行」通則，也收了 G92、G93，v0.7.2 收了 G94、panel filter 篩到空時的 footer 與 hint、F7 的高度上限，v0.7.3 把清單改成數 gene、收了 G95，v0.7.4 清單多一種判定「判不了」；
-   還沒有任何 app 照它做過，
-   這個 repo 是第一個。
-2. **成為家族共用的 lib。** 規範確認之後，家族的五個 app（kbu、filu、sshu、webu、locku）改用這個 lib，不再各自實作規範。
-   第一個改用的是 locku。
+   這個 repo 是第一個照 tdp 做的實作。找到的盲點記在紀錄裡（G 編號），一批一批補進了 tdp：哪一版補了哪些，見 tdp 的 CHANGELOG
+   與紀錄的「已定」。
+2. **成為家族共用的 lib。** 規範在 2026-10-13 確認（見「怎樣算規範確認」），家族的 app 都已改用這個 lib，不再各自實作規範：
+   原本的五個（kbu、filu、sshu、webu、locku），加上 kamonu、ccdrawu、demou。它們用 GitHub 上打了 tag 的版本，本機再用
+   `go.work` 指到這個 repo。lib 的缺漏多半經 terminu 的 session 轉來，成員也會直接回報。
 
 ## 規範是唯一的依據
 
 ### 讀什麼
 
-- 讀 terminu **最新 tag** 的內容（現在是 v0.7.4）。main 上還沒發版的改動不算；不確定時用
-  `git -C ~/Documents/sideproj/terminu diff v0.7.4 -- principle components` 看有沒有差。
+- 讀 terminu **最新 tag** 的內容（現在是 v0.10.0）。main 上還沒發版的改動不算；不確定時用
+  `git -C ~/Documents/sideproj/terminu diff v0.10.0 -- principle components` 看有沒有差。
 - **v0.5.0 換了外觀**（配色不變）：框線、膠囊、menu 區塊標題、cursor 尾端的箭頭、標題大寫、固定的開關動畫。規範的圖現在用真的
   Nerd Font 字形。畫框、膠囊、cursor 的程式集中在少數幾個地方，不要散在各元件裡寫死 —— 外觀之後可能還會調。
 - 規定只認這些檔的文字：`principle/README-zh_TW.md`、`principle/rules-zh_TW.md`、`components/` 底下全部。
-  照 `components/README-zh_TW.md` 的順序讀：color → layout → dialog → input。
+  照 `components/README-zh_TW.md` 的順序讀：color → layout → dialog → input。`project/` 也是規定，但管的是 app 的 repo，
+  lib 與展示場照 tdp E8 不套；`checklist/` 是從規範拆出來的條目，`docs/coverage.md` 用它的編號。
 - 繁中是原文，英文（檔名沒有 `-zh_TW` 的）是翻譯；兩邊說的不一樣，也是盲點。
-- **什麼是規定**：寫明「由 app 決定」的部分、標成「例」的例子、「為什麼」、標成「實作參考（不是規定）」的段落以外，
-  其他敘述都是規定。
+- **什麼是規定**：標成「例」的例子、「為什麼」、標成「實作參考（不是規定）」的段落以外，其他敘述都是規定。寫「app 可以
+  自行決定」的是明文放行（tdp P5）：範圍內交給 app，旁邊寫的規定照守；沒有明文放行的地方一律照做。
+- **怎麼引用**：規則寫 `tdp K4`，components 寫節編號 `tdp popup.8`（寫在每一節的標題前面），整個元件寫 `tdp form`。
 
 ### 不讀什麼
 
 - **不看五個 app 的程式**（`~/Documents/sideproj/` 底下的 kbu、filu、sshu、webu、locku）。唯一的例外：規範裡
-  「實作參考（不是規定）」段落點名的檔案，可以讀那幾個檔（例：rules E5 點名 filu 的 `internal/ui/width.go`），同一個 app 的其他檔不看。
+  「實作參考（不是規定）」段落點名的檔案，可以讀那幾個檔（例：tdp E5 點名 filu 的 `internal/ui/width.go`），同一個 app 的其他檔不看。
   純技術上的問題（例：PTY 怎麼接、怎麼問終端機游標位置）真的需要參考 app 的寫法，先問 user。
 - **不看 terminu 的 `.local/`、`.checkpoints/`、`vtp/`。** 那裡有五個 app 的畫法調查、討論紀錄與舊版規範，看了就會照它們
   補上規範的空白。唯一要碰的是你自己的盲點紀錄（見下面）。
@@ -75,7 +76,7 @@ terminu design（tdp）的 Go 實作：一個像 bubbletea 那樣讓 app 直接�
 ```
 ### G<n> <一句話標題>
 - 狀態：待定
-- 規範：<檔案> 的 <段落或規則編號>（tdp v0.7.4）
+- 規範：<規則編號或節編號，例 K4、popup.7>（tdp v0.10.0）
 - 卡在：lib 需要知道什麼才能做下去
 - 可能：A …；B …（各附一句後果）
 - 暫時：跳過／暫時照 A 做（程式裡標 `TODO(tdp G<n>)`）
@@ -90,7 +91,7 @@ terminu design（tdp）的 Go 實作：一個像 bubbletea 那樣讓 app 直接�
 2. terminu 的 session 跟 user 一條一條定案、補進規範、發新版 tdp。
 3. 新版發布後：
    - 紀錄裡的狀態改成「已補（tdp vX.Y.Z）」，搬到「已定」。不用改規範就定案的（例：G22），狀態寫「已定（不改規範）」。
-   - 用 `git -C ~/Documents/sideproj/terminu diff <舊 tag> <新 tag> -- principle components` 看完整的改動，不只看 CHANGELOG。
+   - 用 `git -C ~/Documents/sideproj/terminu diff <舊 tag> <新 tag> -- principle components checklist` 看完整的改動，不只看 CHANGELOG。
    - 對照 `docs/coverage.md` 每一條是否受影響，改 lib 與展示場。
    - README 與 CHANGELOG 寫的 tdp 版本跟著改。
 
@@ -111,20 +112,21 @@ user 在這個 session 手動測展示場、說哪裡怪或想要什麼樣子時
   - 為什麼：家族過去走樣的，多半是元件之間的事（淡化、hint、key reference 的鍵）；而且 Principle P1 只有在 menu、`?`
     與實際的按鍵出自同一筆登記時，才保證得了。
 - **零件也能單獨用。** 有些畫面 lib 管不到（例：全螢幕的鎖定畫面、好幾個 PTY），app 自己畫，但 confirm、toast、input 照樣用 lib 的。
-- **lib 只管固定區。** 規範寫「由 app 決定」的（Space menu 放什麼、panel 上的熱鍵、`Enter` 在這裡做什麼、畫面怎麼排、
-  內容的顏色），lib 要讓 app 決定，不寫死。規範列了幾種方案的，每一種 lib 都提供，讓 app 挑。
+- **放行的事 lib 不替 app 決定。** 規範寫「app 可以自行決定」的（Space menu 放什麼、panel 上的熱鍵、`Enter` 在這裡做什麼、
+  畫面怎麼排、內容的顏色），lib 要讓 app 決定，不寫死。規範列了幾種方案的，每一種 lib 都提供，讓 app 挑。
 - **API 要容得下五個 app，不只展示場。** 它們的性質如下（只用來想 API，不要去看它們的程式）：
   - locku：帶 PIN 鎖的螢幕保護程式 —— 全螢幕的動畫畫布、PIN 輸入、一列一個值的設定畫面。
   - webu：把網頁當文件讀的瀏覽器 —— app 自己排版的頁面內容、DevTools 的 tab、選取模式。
   - sshu：ssh 與 sftp 前端 —— 好幾個 PTY session、host 清單與篩選、帳密表單、遠端檔案清單。
   - filu：檔案管理員 —— 檔案清單與標記、預覽、shell PTY。
   - kbu：Kubernetes dashboard —— 很多資源清單與 tab、YAML 檢視、串流的 log、exec PTY、namespace 多選。
+  - 後來的 kamonu（畫家族 mark 的編輯器，有 app 自己的 popup）、ccdrawu（Claude Code 的狀態列）、demou（家族的教學）也用這個 lib。
 
 ## 技術
 
 - **畫面輸出用 bubbletea v1 的 renderer**：它整列重寫改變的列，icon 佔兩格也對得上（C1 驗出 v2 的 renderer 做不到，見 G22）。
-  先把 `proto/c1/tmux-check.sh` 改成 v1 重跑一次，確認在 icon 佔兩格的 tmux 裡框線對齊、更新後不壞。
-- **排版、截斷、疊 popup 都用 lib 自己的顯示寬度函式（rules E5）**，lip gloss 只拿來上色；不用 bubbletea-overlay，也不用
+  `proto/c1` 在 2026-10-12 改成 v1 重驗過：icon 佔兩格與一格的 tmux 裡框線都對齊、更新後不壞（紀錄的 C1）。
+- **排版、截斷、疊 popup 都用 lib 自己的顯示寬度函式（tdp E5）**，lip gloss 只拿來上色；不用 bubbletea-overlay，也不用
   lip gloss 的 `Style` 排版（`Width`、`Border`、`Padding`）、`JoinHorizontal`／`JoinVertical`、`Place`。C1 的「e5」做法就是這個。
 - **之後升 v2**：等 bubbletea v2 的 renderer 與 lipgloss v2 的排版能指定寬度函式（或正確處理 icon 佔兩格）時再評估。
   輸出那一層盡量寫成換得掉的，到時改動才集中。
@@ -137,9 +139,10 @@ user 在這個 session 手動測展示場、說哪裡怪或想要什麼樣子時
 ## 展示場
 
 放在 `examples/showcase`，app 名叫 `showcase`（環境變數 `SHOWCASE__…`）。資料是假的，但排得像一個真的 app。
+另外有 `examples/minimal`：README 的快速開始，最短的一個 app。
 
-**要展示「所有的組合」**（user 定）：panel、input、dialog 全部展示出來，用不同的畫面（screen chip）呈現。起點是
-`Panels`、`Inputs`、`Dialogs` 三個畫面；一個畫面放不下時可以再加，每個畫面的主題要一句話說得出來。「所有的組合」是：
+**要展示「所有的組合」**（user 定）：panel、input、dialog 全部展示出來，用不同的畫面（screen chip）呈現。現在有
+`Panels`、`Inputs`、`Dialogs`、`Terminal`、`Kinds` 五個畫面（起點是前三個，放不下時再加），每個畫面的主題要一句話說得出來。「所有的組合」是：
 
 1. 每一個元件都出現。
 2. 規範列了幾種方案的，每一種方案都出現。
@@ -154,25 +157,27 @@ user 在這個 session 手動測展示場、說哪裡怪或想要什麼樣子時
 
 ## 怎樣算「規範確認」
 
-三件事都做到，才算規範確認，五個 app 才開始改用 lib：
+三件事都做到，才算規範確認，五個 app 才開始改用 lib（2026-10-13 已確認：user 在 tdp v0.5.9 走過展示場）：
 
 1. `docs/coverage.md` 每一條都有位置，在展示場都按得到（或寫明怎麼驗）。
 2. 紀錄裡的 C 都驗完了；G 都已定案、補進 tdp 並發版，lib 也跟上了。
 3. user 親自走過展示場，確認沒問題。
 
-## lib 與展示場適用哪些規定（rules E8）
+## lib 與展示場適用哪些規定（tdp E8）
 
-原本的盲點 G1，已補進 tdp v0.4.0 的 **rules E8**：一張表寫 lib、展示場、用 lib 的 app 各負責哪些規定。照 E8 做。要點：
-lib 做到畫面的規定與 E5；展示場不發布，照 E1、E2 與 L4 的畫面測試做；**lib 不偏離 tdp**，做不到或不好用的一律記成盲點，
-規範改了 lib 才跟著改。
+原本的盲點 G1，已補進 tdp v0.4.0 的 **E8**：一張表寫 lib、展示場、用 lib 的 app 各負責哪些規定。照 E8 做。要點：
+lib 做到畫面的規定與 E5；展示場不發布，照 E1、E2 與 L4 的畫面測試做；**lib 不自己另做**：做不到或不好用的一律回報成 tdp 的
+缺漏（記成盲點），規範改了 lib 才跟著改。
 
-## repo 一開始要做的
+## repo 的基本檔案與發版
 
-1. `git init`、`go.mod`（`github.com/vulcanshen/terminu-go`）、`LICENSE`（GPL-3.0 全文）。
+1. `go.mod`（`github.com/vulcanshen/terminu-go`）、`LICENSE`（GPL-3.0 全文）。
 2. `README.md` 與 `README-zh_TW.md`，兩份內容對齊：一句話定位、它能做什麼、怎麼裝（`go get`）、快速開始、實作哪一版 tdp、
-   License。只寫使用 lib 的開發者需要知道的；運作方式與設計理由放 `docs/dev-remarks.md`（章節照 rules E7）。
+   License。只寫使用 lib 的開發者需要知道的；運作方式與設計理由放 `docs/dev-remarks.md`（tdp 不管開發者文件，這份是這個
+   repo 自己的備忘）。
 3. `CHANGELOG.md`：每一版寫它對應的 tdp 版本。
-4. 建 GitHub repo、push、打 tag 都先問 user。
+4. push、打 tag 先問 user；terminu 的 session 定的版號算 user 同意，直接打 tag、push（user 2026-10-20）。發版後通知所有開著的
+   成員 session（webu 除外，user 自己更新），由成員自己判斷要不要跟進（user 2026-10-24、10-25）。
 
 ## 跟 user 合作的方式
 
@@ -180,4 +185,4 @@ lib 做到畫面的規定與 E5；展示場不發布，照 E1、E2 與 L4 的畫
 - 先講操作（使用者會按什麼、看到什麼），再寫程式。
 - 提案前先查規範怎麼說。
 - user 看不懂時，用一個具體的例子重講。
-- 只改這個 repo 與自己的盲點紀錄；不改 terminu 的規範，也不改五個 app。
+- 只改這個 repo 與自己的盲點紀錄；不改 terminu 的規範，也不改家族成員的 app。
