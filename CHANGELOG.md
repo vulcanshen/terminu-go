@@ -2,11 +2,18 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.10.1
+## v0.5.2 — tdp v0.10.2
 
 - `PopupActions.ErrorSubject`: the name the error popup of a failing button puts after ": " in its title
   (`SAVE FAILED: kamonu`), the buttons keeping their own text. Until now only `ButtonSubject` put a name there, and it
   put the name on the button too (`Save kamonu`). Unset, nothing changes (kamonu)
+- Loading and errors are the same in every kind of panel (tdp panel.15): a PTY panel not started yet is empty now, so
+  its `LoadingText` or `Fail` shows in the middle; before, only one started and silent was (`Terminal.Empty`). A Start
+  that failed still shows its error. A panel with no `Body` is empty too. An app's own body gets them by having
+  `Empty() bool`, as the lib's bodies do
+- Toast rows start with a capital letter, a name keeping its case (tdp toast.2): the words are the app's, and the lib
+  draws and logs them as they are; it cannot tell a name from a word, so it neither changes nor checks them
+- Comments and `docs/coverage.md` cite panel.15 for loading and errors, toast.2 for the App Log's capitals
 
 ## v0.5.1 — tdp v0.10.1
 

@@ -6,8 +6,12 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// Body is what is inside a panel's frame. The lib has List, Values and Text;
-// an app that draws its own content implements Body itself.
+// Body is what is inside a panel's frame. The lib has List, Values, Pager,
+// FilePreview and Terminal; an app that draws its own content implements Body
+// itself. A body with an Empty() bool method that reports true has the
+// panel's LoadingText or Fail in its middle instead, whatever the kind of
+// panel (tdp panel.15); the lib's all have it, and a panel with no Body is
+// empty too.
 type Body interface {
 	// Draw returns h lines of exactly w cells: the inside of the frame.
 	Draw(w, h int, focused bool) []string
@@ -99,7 +103,7 @@ func (k ModeKey) takes(key string) bool {
 	return false
 }
 
-// Failure is what a panel shows when its content could not be had (tdp panel.5):
+// Failure is what a panel shows when its content could not be had (tdp panel.15):
 // a fact in Red and a hint naming a key.
 type Failure struct {
 	Fact, Hint string
@@ -134,7 +138,7 @@ type Panel struct {
 	// (tdp T2).
 	Stream bool
 	// Loading puts the loading icon after the capsule chain; LoadingText is
-	// what an empty panel says meanwhile ("loading pods…").
+	// what an empty panel says meanwhile ("loading pods…", tdp panel.15).
 	Loading     bool
 	LoadingText string
 	// Fail, when set and the panel has nothing to show, is shown in its middle.
@@ -297,7 +301,11 @@ func (p *Panel) draw(n, w, h int, focused, pointed bool) []string {
 	default:
 		body = p.Body.Draw(inner, ih, focused)
 	}
-	if empty, ok := p.Body.(interface{ Empty() bool }); ok && empty.Empty() {
+	empty := p.Body == nil // every kind of panel (tdp panel.15)
+	if e, ok := p.Body.(interface{ Empty() bool }); ok {
+		empty = e.Empty()
+	}
+	if empty {
 		switch {
 		case p.Loading && p.LoadingText != "":
 			body = emptyState(inner, ih, loadingFrame()+" "+p.LoadingText, Fg(Overlay0), "", Style{})

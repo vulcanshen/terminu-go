@@ -638,9 +638,10 @@ func (t *Terminal) Draw(w, h int, focused bool) []string {
 // every key; outside it the panel's own keys apply.
 func (t *Terminal) Key(string, tea.KeyMsg) (bool, tea.Cmd) { return false, nil }
 
-// Empty reports a program started that has printed nothing yet: the panel's
-// LoadingText shows in its middle meanwhile (tdp panel.5).
-func (t *Terminal) Empty() bool { return t.started && !t.spoke }
+// Empty reports nothing on the screen yet: the program not started, or
+// started and silent so far. The panel's LoadingText or Fail shows in its
+// middle meanwhile (tdp panel.15). A Start that failed has its error there.
+func (t *Terminal) Empty() bool { return !t.spoke && (t.started || !t.exited) }
 
 // HasItem: a terminal has no items.
 func (t *Terminal) HasItem() bool { return false }

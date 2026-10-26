@@ -39,7 +39,8 @@ type appLog struct {
 // Warning WARN, Error ERR), at the App's time. Every toast and error popup is
 // logged by itself; the app logs the actions it does and their results and
 // what it does in the background (moving its files, defaults it made at the
-// start, the details of what it could not reach). It may be called from any
+// start, the details of what it could not reach), each starting with a
+// capital letter as a toast does (tdp toast.2). It may be called from any
 // goroutine; the screen shows it with the next frame.
 func (a *App) Log(kind ToastKind, text string) {
 	at := a.now()

@@ -697,7 +697,9 @@ func (a *App) relayout() {
 // second one replaces the first and starts its time again. Each string of
 // text is a row of its own, folded when too long: the app's own text has no
 // line break in it, so a \n on the screen is from outside, drawn by its
-// name (components, control characters).
+// name (components, control characters). Each row starts with a capital
+// letter, a name or a path keeping its own case (kbu.yaml saved): the lib
+// draws the words as they are, not telling a name from a word (tdp toast.2).
 func (a *App) Toast(kind ToastKind, text ...string) tea.Cmd {
 	a.Log(kind, strings.Join(text, " ")) // every toast, the same words (tdp note, App Log)
 	a.toastSeq++

@@ -45,6 +45,21 @@ func TestAppLogOnBang(t *testing.T) {
 	}
 }
 
+// TestToastKeepsCase: the words are the app's: a row that starts with a name
+// keeps its case, in the toast and in the App Log (tdp toast.2).
+func TestToastKeepsCase(t *testing.T) {
+	ta, _ := logApp(t)
+	ta.Toast(Success, "kbu.yaml saved")
+	ta.settle()
+	if !strings.Contains(ta.screenText(), "kbu.yaml saved") {
+		t.Errorf("the toast changed the name:\n%s", ta.screenText())
+	}
+	ta.press("Esc", "!")
+	if !strings.Contains(ta.screenText(), "OK   kbu.yaml saved") {
+		t.Errorf("the App Log changed the name:\n%s", ta.screenText())
+	}
+}
+
 // TestAppLogEntries: each entry is its time HH:MM:SS in Overlay0, its level
 // four cells wide in its colour, what happened; every toast and error popup
 // goes in, the app logs its own; newest at the bottom, the log open at its

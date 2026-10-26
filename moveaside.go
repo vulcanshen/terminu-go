@@ -24,7 +24,7 @@ import (
 // A cache that cannot be read is not asked about: throw it away and build it
 // again. Something outside the app that cannot be reached (a cluster, the
 // network) is not the app's own: the app goes on and says so where it shows
-// it (tdp panel.5). Data kept one record per file uses
+// it (tdp panel.15). Data kept one record per file uses
 // MoveAsideRecord.
 func (a *App) MoveAside(path string, err error, fresh func() tea.Cmd) tea.Cmd {
 	return a.moveAside(path, err, fresh, "start fresh")

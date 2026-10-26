@@ -2139,6 +2139,36 @@ func TestPanelError(t *testing.T) {
 	}
 }
 
+// TestPanel15EveryKind: loading and errors are the same in every kind of
+// panel (tdp panel.15): an empty one, whatever its body, has its LoadingText
+// or its Fail in the middle; a PTY not started yet is empty, one whose Start
+// failed shows the error instead.
+func TestPanel15EveryKind(t *testing.T) {
+	for _, c := range []struct {
+		name string
+		body Body
+	}{{"values", &Values{}}, {"pager", &Pager{}}, {"preview", &FilePreview{}}, {"pty", &Terminal{}}, {"none", nil}} {
+		ta := newTestApp(t)
+		ta.pods.Body = c.body
+		ta.pods.Loading, ta.pods.LoadingText = true, "connecting to web-01…"
+		if !strings.Contains(ta.screenText(), "connecting to web-01…") {
+			t.Errorf("%s: no LoadingText:\n%s", c.name, ta.screenText())
+		}
+		ta.pods.Loading, ta.pods.Fail = false, &Failure{Fact: "Connection refused", Hint: "Press [R] to retry"}
+		if text := ta.screenText(); !strings.Contains(text, "Connection refused") || !strings.Contains(text, "Press [R] to retry") {
+			t.Errorf("%s: no Fail:\n%s", c.name, text)
+		}
+	}
+	term := &Terminal{Command: []string{"/nonexistent/terminu-test"}}
+	term.Start()
+	ta := newTestApp(t)
+	ta.pods.Body = term
+	ta.pods.Loading, ta.pods.LoadingText = true, "connecting to web-01…"
+	if text := ta.screenText(); strings.Contains(text, "connecting to web-01…") || !strings.Contains(text, "nonexistent") {
+		t.Errorf("a Start that failed: its error, not LoadingText:\n%s", text)
+	}
+}
+
 // covCValues is an app of one settings panel: Name (an input popup), Layout
 // (a radio), Show (checkboxes), Remote (disabled).
 type covCValues struct {

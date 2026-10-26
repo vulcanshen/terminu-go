@@ -1,7 +1,7 @@
 # terminu-go 開發者備忘
 
 terminu-go 是 terminu design principle（tdp）的 Go 實作：給 app 呼叫的 lib，加上展示場 `examples/showcase`。遵循 terminu design
-principle，目前對應 tdp v0.10.1。這個 repo 的任務與規範的讀法見 [`CLAUDE.md`](../CLAUDE.md)。
+principle，目前對應 tdp v0.10.2。這個 repo 的任務與規範的讀法見 [`CLAUDE.md`](../CLAUDE.md)。
 
 ## 運作方式
 
@@ -143,6 +143,11 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   body（`itemContent` 一個停點）。動作區、`Tab`、按鈕上的鍵、放棄的 confirm、`q`、跑得久的按鈕、錯誤列走表單同一份程式，所以兩邊
   不會各長各的；body 只回答 `Changed`、`Check`，`Focus` 讓它知道要不要畫自己的 cursor。內容上的鍵照舊先給 body，`Tab`、
   `Shift-Tab`、`Esc`、`q` 不給：它們在表單上是固定的。
+- **loading 與錯誤畫在 panel 上，不在 body 裡**（tdp panel.15）：`Panel.Loading`、`LoadingText`、`Fail` 對每一種 panel 都一樣，
+  body 只回答 `Empty()`。PTY 還沒 Start 也算空的；Start 失敗時錯誤寫在它的畫面上，不算空的，不然 app 忘了關 `Loading`
+  就蓋掉錯誤。
+- **toast 與 App Log 的字照原樣**（tdp toast.2）：開頭大寫是 app 的字。lib 分不出一列的開頭是名稱（`kbu.yaml saved`）還是一般的字，
+  替 app 改大寫會改壞名稱，tdptest 檢查也會誤報，所以兩邊都不做；lib 自己給的字都大寫開頭。
 
 ## 已否決，不要重提
 

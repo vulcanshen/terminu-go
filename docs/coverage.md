@@ -1,6 +1,6 @@
-# tdp v0.10.1 coverage
+# tdp v0.10.2 coverage
 
-tdp v0.10.1 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
+tdp v0.10.2 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
 （[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -275,7 +275,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | screen.4 | 不是 surface；label 有熱鍵就標；一組 `label: 值`、冒號後空一格，組與組之間兩格、不加分隔符號（展示場：app 畫的）；一般 Overlay0、你在哪 Lavender、進行中 Green、錯誤警告數 Red / Peach；寬度固定、截斷不折行 | statusbar：`[N]arrow: off  icon: 1  powerline: 1  errors: 3  warnings: 2`（有熱鍵、值 Lavender）、`[S]tart task` 進行中 `copying: 4%` Green | `TestStatusbar` |
 | screen.5 | 放不下時只畫 focus 的 panel 佔滿寬、`Tab` 照換；門檻 app 定、不高於 80；窄寬只在最低尺寸以上才有 | `[N]arrow layout`；或縮到 59 欄以下 | `TestScreenNarrow` |
 | screen.6 | 放大一個 panel 是 app 的功能；預設跟窄寬一樣只畫 focus 的那一個、`Tab`、數字鍵照換、換到的也是放大的（lib：`App.ForceNarrow` 就是這個預設） | `[N]arrow layout` | `TestScreenNarrow` |
-| screen.8 | 置中一句事實 + 一句點名按鍵的提示，都 Overlay0，提示的鍵加方括號；panel 的 loading 與錯誤也用這個樣子；太長在空白處折行、每列置中、左右離框一格，不截斷 | P `[1] PODS` 的 `Empty`（把視窗縮窄） | `TestEmptyState`、`TestValuesEmptyState`（一列一個值的 panel：`Values.EmptyFact`、`EmptyHint`） |
+| screen.8 | 置中一句事實 + 一句點名按鍵的提示，都 Overlay0，提示的鍵加方括號；panel 的 loading 與錯誤也用這個樣子（panel.15）；太長在空白處折行、每列置中、左右離框一格，不截斷 | P `[1] PODS` 的 `Empty`（把視窗縮窄） | `TestEmptyState`、`TestValuesEmptyState`（一列一個值的 panel：`Values.EmptyFact`、`EmptyHint`） |
 
 ## layout/panel
 
@@ -318,9 +318,10 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | panel.11 | 有標記欄時，標記畫在多縮的那兩格裡：標記離框一格、空一格，字離框三格；分組標題那一列不留標記欄 | 展示場的分組清單沒有標記（看得到的是 P `[1] PODS` 的一般清單） | `TestPanelListGroupsMarks` |
 | panel.11 | cursor 跳過分組標題：`j\|k` 越過它、`gg\|G` 到第一個與最後一個項目、`N of M` 只算項目；捲到一組的第一個項目時，這組的標題也留在畫面裡 | K `[1] KINDS`（把終端機拉矮再捲） | `TestPanelListGroupsCursor` |
 | panel.11 | 沒有項目的組不畫標題（panel filter 篩掉的組、app 給的空組） | K `[1] KINDS` 按 `/` 打 `sec` | `TestPanelListGroupsFilter` |
-| panel.5 | loading：icon 在整串膠囊後、用框線色（focus Blue、失焦 Surface2）；沒內容時中間寫一句（`󰪞 loading pods…`）；重新載入舊內容留著 | `Loading`（空的時候與有內容時各一次） | `TestPanelLoading`、`TestPanelLoadingIconAfterChain`（顏色） |
-| panel.5 | PTY 的 panel：子程序開了還沒輸出時算空的，`LoadingText` 畫在中間（lib：`Terminal.Empty`） | T `[1] SHELL` 的 `Slow start` | `TestTerminalEmptyUntilItSpeaks` |
-| panel.5 | 錯誤：置中兩句，事實 Red、提示 Overlay0；舊內容在就留著、錯誤用 toast 報 | `Fail`（空的時候與有內容時各一次） | `TestPanelError` |
+| panel.15 | loading：icon 在整串膠囊後、用框線色（focus Blue、失焦 Surface2）；沒內容時中間寫一句（`󰪞 loading pods…`）；重新載入舊內容留著（panel-75、panel-76） | `Loading`（空的時候與有內容時各一次） | `TestPanelLoading`、`TestPanelLoadingIconAfterChain`（顏色） |
+| panel.15 | PTY 的 panel：還沒 Start、或開了還沒輸出時算空的，`LoadingText` 畫在中間；Start 失敗時畫它的錯誤（lib：`Terminal.Empty`） | T `[1] SHELL` 的 `Slow start` | `TestTerminalEmptyUntilItSpeaks`、`TestPanel15EveryKind` |
+| panel.15 | 錯誤：置中兩句，事實 Red、提示 Overlay0；舊內容在就留著、錯誤用 toast 報（panel-77～80） | `Fail`（空的時候與有內容時各一次） | `TestPanelError` |
+| panel.15 | 每一種 panel 都一樣：一般清單、一列一個值、明細、預覽、log、PTY 的格子。lib：body 有 `Empty()` 回 true 時畫（`List`、`Values`、`Pager`、`FilePreview`、`Terminal` 都有；沒有 `Body` 的 panel 也算空的），app 自己的 body 加上 `Empty()` 就有 | P 三個 panel 各自的 `Empty`、`Loading`、`Fail`；T `[1] SHELL` 的 `Slow start` | `TestPanel15EveryKind` |
 | panel.12 | 照表單：項目逐一移動（有 tab 時 `h\|l` 給 tab）；`Enter` 開 input popup，radio、checkbox 原地選；確定後 focus 留在同一列 | P `[3] SETTINGS`；I `[1] INPUTS` | `TestValuePanelMoves`、`TestValuePanelEnter` |
 | panel.12 | 沒有送出：確定的那一刻就生效；沒有動作區、沒有「改過了要先問」 | 同上 | `TestValuePanelAppliesNow` |
 | panel.13 | 另一個 panel 的 cursor 一移動，明細立刻換成那一筆，label 寫那一筆的名字時一起換；不用 `Enter`，cursor 移動時 focus 不動；app 也可以讓清單上的 `Enter` 把 focus 送到明細（K3） | K `[1] KINDS` 上 `j\|k`，看 `[2]`；`Enter` 進 `[2]` | `TestPanelDetailsFollowCursor`、`TestValuesOnMove`、`TestFilePreviewPanel`、`TestFilePreviewPanelHidesSecrets`（預覽當明細：`FilePreview`） |
@@ -426,7 +427,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | note.2 | viewer（YAML、App Log、檔案內容）左邊有行號：每行第一列、靠右、後空一格、折下來的列空白；Overlay0，選取模式裡游標那行 Text；至少三位：行數固定的取 max(3, 位數)、打開後不變，串流的超過 999 行才跳寬；複製不含行號；`N of M` 跟行號同一套數字 | D「Note viewer」；P `[2] LOG` 按 `Enter`；I `[2] FILES` 的 `[V]iew` | `TestViewerLineNumbers`、`TestViewerLineNumbersStream`、`TestViewerCopyNoNumbers`、`TestViewerFoldedScroll` |
 | note.2 | 有 tab 的 viewer：行號欄照看過的頁裡最寬的，只變寬、不變窄（串流的頁也一樣） | D「Popup with tabs」、DevTools 切 tab | `TestViewerTabGutterOnlyGrows` |
 | note.2 | 照終端機的樣子：Tab 畫成 `input_tab_width` 格空白、不對齊 tab 停點；`\n` 是換行（app 交來的一行裡夾著也拆）；換行前的 `\r`（CRLF）不畫；顏色碼照著上色；一行裡的 `\r` 只留最後的狀態；其他控制字元與不是顏色碼的序列畫成名字、Red；複製照原樣；file-picker 預覽的文字檔一樣（檔案自己的顏色碼也照著上色） | I `[2] FILES` 的 `main.go` 按 `[V]iew`（有 Tab）；`[/] Find` 預覽同一個檔 | `TestViewerTabs`、`TestViewerControlChars`、`TestViewerEscapeSequencesShown`（不是樣式的 escape sequence 照字畫、ESC 寫名字）、`TestReadingContent`、`TestFilePreviewEscapes` |
-| note.7 | 每個 app 都有；`!` 在 panel 上打開，是 viewer、最新的在最下面、打開時在最後、開著時新的一筆照樣進來；每一筆 `HH:MM:SS`（Overlay0）、等級（`INFO` Text、`OK` Green、`WARN` Peach、`ERR` Red，四格靠左）、發生的事（跟 toast 一樣大寫開頭：lib 自己記的 `Moved … to …`、展示場的 `Started; …`）；每一個 toast 與 error popup 自動記，app 用 `App.Log` 記動作與背景的事（任何 goroutine 都能叫） | 任一 panel 按 `!`；展示場啟動時記兩筆 | `TestAppLogEntries`、`TestMoveAside`（大寫開頭） |
+| note.7 | 每個 app 都有；`!` 在 panel 上打開，是 viewer、最新的在最下面、打開時在最後、開著時新的一筆照樣進來；每一筆 `HH:MM:SS`（Overlay0）、等級（`INFO` Text、`OK` Green、`WARN` Peach、`ERR` Red，四格靠左）、發生的事（照 toast.2 的開頭大寫：lib 自己記的 `Moved … to …`、展示場的 `Started; …`）；每一個 toast 與 error popup 自動記，app 用 `App.Log` 記動作與背景的事（任何 goroutine 都能叫） | 任一 panel 按 `!`；展示場啟動時記兩筆 | `TestAppLogEntries`、`TestMoveAside`（大寫開頭） |
 | note.7 | 只放在記憶體，筆數有上限（1000），滿了丟最舊的 | lib | `TestAppLogInMemory` |
 | note.2 | 有固定格式的照 file-picker 預覽上色（chroma catppuccin-mocha、只上前景色）；語言由 app 給（`Viewer.Lang`），檔案內容照檔名；沒有固定格式或判斷不出來的是純文字 Text（建議；app 自己給的顏色保留，例：log 的 ERROR、WARN 行）；行號 Overlay0；選取範圍 Yellow 底 Base 字、範圍裡不顯示語法顏色 | D「Note viewer」（YAML）；I `[2] FILES` 的 `[V]iew`；P `[2] LOG` 按 `Enter`（ERROR 紅、WARN 橘保留） | `TestViewerSyntaxColours` |
 | note.3 | 折行的 viewer 以畫出來的一列為單位捲（`j\|k` 一列、`u\|d` 照列算）；`N-M of T` 的 N、M 是最上面、最下面那一列所屬的行；選取模式照舊以行為單位 | D「Note viewer」把視窗縮窄 | `TestViewerScrollsRows` |
@@ -462,6 +463,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | toast.2 | Success U+F05E0 `SUCCESS` Green 字；Info U+F024 `INFO` Text；Warning U+F078F `WARNING` Peach；Error U+F0238 `ERROR` Red | P 的 `Toast success`、`Toast info`、`Toast warning`、`Toast error` | `TestToastKinds` |
 | toast.2 | 做完的事用 Success 還是 Info，app 可以自行決定（toast-16；lib：`Toast` 的種類；表單動作的 `FormResult.Info`）；失敗一律 Error | lib | `TestFormActionRun` |
 | toast.2 | Success、Info 2200ms，Warning、Error 4400ms；第二個來直接取代、重新計時 | 連按兩次 `Toast …` | `TestToastDuration`、`TestToastReplace` |
+| toast.2 | 每一列的第一個字母大寫，其他照原樣；一列從名稱或路徑開始時，名稱照原樣（toast-20）。字是 app 給的：lib 照原樣畫、照原樣記進 App Log，不改大小寫，tdptest 也不檢查（分不出名稱與一般的字）；lib 自己的字都大寫開頭（`Copied`、`Moved … to …`） | 展示場的每一個 toast | `TestToastKeepsCase` |
 | toast.3 | `Esc` 立刻收、比其他 popup 先收；其他鍵穿過；PTY 裡只能等時間到；hint `Esc:close` | toast 開著時按 `j`；T 的 terminal popup 裡按 `Alt-b` | `TestToastEscFirst`、`TestToastKeysPassThrough` |
 
 ## input/README（所有 input 共用）
