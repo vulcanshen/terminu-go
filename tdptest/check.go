@@ -42,6 +42,13 @@ type App struct {
 // (tdp L1). Every frame is checked for tdp L4 on the way. With go test
 // -short it launches on the least size and 80×24 only, icons one cell.
 //
+// First it reads the app's repository, the go.mod at or above the test's
+// directory, against tdp project (in a subtest "repo"): the templates of
+// project.2, as the tdp this lib implements has them, but for what an app may
+// change in each; the files of project.3; the Makefile of project.5; the
+// CHANGELOG of project.6. A failure names the file, shows the difference and
+// says what to copy again. The lib's own module is not checked (tdp E8).
+//
 // Each launch is a first one, in a sandbox of its own: a new directory
 // under /tmp (short, so a path on the screen is as long on every machine)
 // as HOME, the XDG directories and Windows' profile directories in it, the
@@ -53,6 +60,7 @@ func Check(t *testing.T, app App) {
 	if app.Name == "" || app.New == nil {
 		t.Fatal("tdptest: Check needs the app's Name and New")
 	}
+	t.Run("repo", func(t *testing.T) { checkRepo(t, repoRoot(), app.Name) })
 	mw, mh := testhook.MinSize(launch(t, app))
 	sizes, each := scanSizes(mw, mh), EachIconWidth
 	if testing.Short() {

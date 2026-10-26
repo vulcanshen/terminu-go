@@ -156,6 +156,9 @@ func TestFirstLaunch(t *testing.T) {
   失敗；資料刻意放了這種名字時設 `AllowLineBreaks`。
   `Env` 拿得到沙盒的 `HOME`，環境變數可以指到 `Seed` 放進去的檔。
   `go test -short` 時只在最低尺寸與 80×24 啟動，icon 只用一格。
+  它先在子測試 `repo` 裡讀 app 的 repo（測試目錄往上找到的 `go.mod`），照 tdp project 檢查：範本（`family.mk`、`release.yml`、
+  `.goreleaser.yaml`、`install.sh`、`uninstall.sh`、`version.go`、`.gitignore`）要跟這一版實作的 tdp 一樣，只差每一份允許 app 改的地方；
+  每個 app 都有的檔案；Makefile 的排法；CHANGELOG 的開頭與標題。失敗時寫出哪個檔、差在哪裡、要重新複製哪一份範本。
 - **`Tricky`、`Sizes` 與 `Mashes`** 是弄壞過畫面的值：控制字元、escape sequence、寬字與組合字、很長的值；奇怪的終端機尺寸；
   比動畫還快的連按（`Mash`）。
 

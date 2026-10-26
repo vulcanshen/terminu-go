@@ -541,6 +541,30 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | reorder.3 | 拿著一項（Drag mode）：`j\|k` 跟下一項、上一項交換，cursor 跟著，到頭尾繞回；`Enter` 放下、cursor 留在那一項；`Esc` 放回拿起前的位置；其他鍵不作用（`D` 不是放下）；hint `Enter:drop Esc:cancel`；`?` 是 Drag mode 的鍵 | 同上 | `TestReorderDrag`、`TestReorderDragWraps`、`TestReorderDragModeKeys` |
 | reorder.1 | 表單與 panel 上照目前的順序用 `, ` 接，太長加 `…` | I `[1] INPUTS` 的 `Segments` | `TestValueDisplay` |
 
+## project（tdptest 替 app 查，lib 與展示場不套：E8）
+
+`tdptest.Check` 先在子測試 `repo` 裡讀 app 的 repo（測試目錄往上找到的 `go.mod`）。lib 帶著 tdp 這一版的範本（`tdptest/_project`）。
+
+| 出處 | 規定 | 怎麼驗 | 測試 |
+|---|---|---|---|
+| project.2 | `family.mk` 照範本原樣，一個字都不差（project-1） | `Check` 讀 app 的 repo | `TestRepoFamilyMk`、`TestRepoAsTdpHasIt` |
+| project.2 | `.github/workflows/release.yml` 只差出 Windows 版時 matrix 的 `windows-latest`（project-2、project-8） | 同上 | `TestRepoChangedTemplates`、`TestRepoWindows` |
+| project.2 | `.goreleaser.yaml` 只差 `<app>`、標著 `app:` 的註解底下、出 Windows 版時打開標著 `Windows` 的註解（project-3、project-9）；`app:` 底下到哪裡為止照 G102 暫定：到下一個 `app:` 或縮排比它少的那一列 | 同上 | `TestRepoWhatAnAppMayChange`、`TestRepoChangedTemplates`、`TestRepoWindows` |
+| project.2 | `install.sh` 只差 `<app>`、`WINDOWS`、標著 `app's own` 的段落（project-4、project-10） | 同上 | `TestRepoWhatAnAppMayChange`、`TestRepoChangedTemplates`、`TestRepoWindows` |
+| project.2 | `uninstall.sh` 只差 `<app>`、標著 `app's own` 的段落；註解裡的 `<APP>` 寫成大寫的名字也算（project-5） | 同上 | `TestRepoWhatAnAppMayChange`、`TestRepoChangedTemplates` |
+| project.2 | `internal/version/version.go` 只差 `<app>`（project-6） | 同上 | `TestRepoChangedTemplates` |
+| project.2 | `.gitignore` 範本在前、只差 `<app>`，app 自己的行接在最後（project-7） | 同上 | `TestRepoWhatAnAppMayChange`、`TestRepoChangedTemplates` |
+| project.2 | 照 tdp 做的 app：範本裡的 `vulcanshen` 換成自己的帳號（帳號從 `go.mod` 的 module 讀） | 同上 | `TestRepoAsTdpHasIt` |
+| project.3 | `cmd/<app>/main.go`、`go.mod` 的 module 是 `github.com/<帳號>/<app>`、`go.sum`、`LICENSE`、`docs/icon.svg`（project-12、13、15、16、18）；`install.sh` 的 `WINDOWS="yes"` 時另有 `install.ps1`、`uninstall.ps1`（project-19） | 同上 | `TestRepoFiles`、`TestRepoWindows` |
+| project.5 | Makefile：開頭三列照範本、`include family.mk` 之前只有變數、`BINARY := <app>`、`##@ <app> 自己的` 是最後一段、target 不跟 family.mk 的重名（project-23～27） | 同上 | `TestRepoMakefile` |
+| project.6 | CHANGELOG 的開頭照範本、`## Unreleased` 單獨一列、寫了 tdp 的標題是 `## vX.Y.Z — tdp vA.B.C`（project-28、29、30）；沒寫 tdp 的舊標題不查（project-31） | 同上 | `TestRepoChangelog` |
+| E8 | lib 自己的 module 不查 | lib | `TestRepoLibModule` |
+| — | `Check` 自己跑，app 不改測試；失敗寫出檔名、diff、要重新複製的範本與 lib 的複本在哪 | lib | `TestCheckReadsTheRepo`、`TestRepoRoot` |
+| — | lib 帶的範本是 tdp 這一版的 `project/` 原樣，tdp 的版本跟 CHANGELOG 寫的一樣 | lib | `TestTemplatesAreTdps`、`TestTdpVersionIsTheChangelogs` |
+
+不查（要判斷，或要跑、要看 git）：project-11（端到端測試這類目錄 app 可以自行決定）、14、20～22、30 的 commit、31 的改寫、32～36；README 的段落、
+`tdp` 引用的寫法、splash 對 `docs/icon.svg`。
+
 ## 熱鍵標記（M5）在展示場用到的地方
 
 | 情境 | 展示場的登記 |

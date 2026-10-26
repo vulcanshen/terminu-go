@@ -175,6 +175,11 @@ func TestFirstLaunch(t *testing.T) {
   line break was drawn by its name in Red (a `\n` in a toast of your own); set `AllowLineBreaks` when your data has
   such names on purpose. `Env` gets the sandbox's `HOME`, so a variable can point to a file `Seed` put
   there. With `go test -short` it launches on the least size and 80×24 only, icons one cell wide.
+  First, in a subtest `repo`, it reads the app's repository — the `go.mod` at or above the test's directory — against
+  tdp project: the templates (`family.mk`, `release.yml`, `.goreleaser.yaml`, `install.sh`, `uninstall.sh`,
+  `version.go`, `.gitignore`) as the tdp this version implements has them, but for what each lets an app change; the
+  files every app has; the Makefile's layout; the CHANGELOG's start and headings. A failure names the file, shows the
+  difference and says which template to copy again.
 - **`Tricky`, `Sizes` and `Mashes`** are values that have broken screens: control characters, escape sequences, wide
   and joined characters, very long values; odd terminal sizes; keys pressed faster than the animations (`Mash`).
 

@@ -122,6 +122,11 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
 - **tdptest 走 lib 內部的 hook，不開公開 API**（2026-10-20，harness 的請求）：driver 要知道 popup 還在不在播、有幾層、有沒有 toast、
   剪貼簿裡等著什麼，也要把 App 放上測試的時鐘。這些放在 `internal/testhook`（只有這個 module 裡的套件 import 得到），terminu 在
   `init` 填進去（`clock.go`）；app 看得到的只有 `App.Tick`。
+- **repo 的檢查在 `Check` 裡自己跑**（2026-10-26，harness 的請求）：app 不改測試，升 tgo 以後 `make check` 就查得到範本走樣
+  （hostu 少了 family.mk 的 `dev`，沒有一關抓到）。tgo 一版只對到一版 tdp，所以 lib 帶著那一版的 `project/` 範本
+  （`tdptest/_project`：`_` 開頭的目錄 go 不當成 package，裡面的 `version.go` 才不會被編譯）；`TestTemplatesAreTdps` 與
+  `TestTdpVersionIsTheChangelogs` 守住它跟 CHANGELOG 寫的 tdp 一致，跟新的 tdp 時兩個要一起換。範本標得不清楚的地方從寬
+  （註解裡的 `<APP>`、`app:` 底下到哪裡為止：G102），寧可漏抓也不誤判。要判斷的（README 的段落、引用的寫法）不查。
 - **測試的時鐘，不是真的時間**：真的跑 32ms 一格的動畫，掃一次展示場要幾分鐘，toast 何時消失也跟機器快慢有關；harness 也要能停在
   開場動畫中間（F2）、自己推時間。時鐘從真的時間起算、對齊 loading icon 的一整圈（720ms），app 用真的時間算出來的期限（PIN 的暫停）
   差不多對得上，loading icon 每次都從同一格開始。
@@ -169,9 +174,9 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
 - **家族共用的設定 key**（Rules E3）：`hide_secrets_in_preview`、`input_tab_width` 是使用者的設定，lib 不讀設定檔；app 從自己的設定檔讀，
   設到 `App.HideSecretsInPreview`、`App.InputTabWidth`。
 - **PTY 只在 unix**：`terminal_other.go` 開不了 PTY，只在畫面上寫出原因。
-- **tdptest 還沒做的**（跟 harness 談定的第二版）：檔案檢查（`CheckRepo`：project 範本、README 的 12 段（第 10 段只要連到 CHANGELOG）、`tdp K4`
+- **tdptest 還沒做的**（跟 harness 談定的第二版）：檔案檢查裡要判斷的（README 的 12 段（第 10 段只要連到 CHANGELOG）、`tdp K4`
   的引用、splash 對 `docs/icon.svg`；tdp v0.10.0 起 dev-remarks 與 `docs/<app>-terminu-fix.md` 不再是規定，不查）、`coverage.md` 標上 checklist 的條目編號、自動打開每個動作的 popup、把設定檔改壞再開、檢查 app 沒寫到
-  沙盒以外。
+  沙盒以外。範本、檔案、Makefile、CHANGELOG 的檢查已經在 `Check` 裡（見「設計決定」）。
 
 ## 做不到的規定
 
