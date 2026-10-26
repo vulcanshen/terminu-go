@@ -1,6 +1,6 @@
-# tdp v0.10.2 coverage
+# tdp v0.10.3 coverage
 
-tdp v0.10.2 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
+tdp v0.10.3 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
 （[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -549,9 +549,9 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 |---|---|---|---|
 | project.2 | `family.mk` 照範本原樣，一個字都不差（project-1） | `Check` 讀 app 的 repo | `TestRepoFamilyMk`、`TestRepoAsTdpHasIt` |
 | project.2 | `.github/workflows/release.yml` 只差出 Windows 版時 matrix 的 `windows-latest`（project-2、project-8） | 同上 | `TestRepoChangedTemplates`、`TestRepoWindows` |
-| project.2 | `.goreleaser.yaml` 只差 `<app>`、標著 `app:` 的註解底下、出 Windows 版時打開標著 `Windows` 的註解（project-3、project-9）；`app:` 底下到哪裡為止照 G102 暫定：到下一個 `app:` 或縮排比它少的那一列 | 同上 | `TestRepoWhatAnAppMayChange`、`TestRepoChangedTemplates`、`TestRepoWindows` |
+| project.2 | `.goreleaser.yaml` 只差 `<app>`、標著 `app:` 的註解底下、出 Windows 版時打開標著 `Windows` 的註解（project-3、project-9）；標記管到哪裡：`# app:` 註解連同底下幾列照原樣，只放行緊接在它底下那一個鍵的值（清單或整塊都算，鍵名照原樣），註解講的鍵範本裡還沒有（`dependencies`）時加在註解那裡，其他的鍵（`test:`）照原樣；打開 `Windows` 只拿掉行首的 `# `，行尾的 `# Windows` 留著 | 同上 | `TestRepoWhatAnAppMayChange`、`TestRepoMarks`、`TestRepoChangedTemplates`、`TestRepoWindows` |
 | project.2 | `install.sh` 只差 `<app>`、`WINDOWS`、標著 `app's own` 的段落（project-4、project-10） | 同上 | `TestRepoWhatAnAppMayChange`、`TestRepoChangedTemplates`、`TestRepoWindows` |
-| project.2 | `uninstall.sh` 只差 `<app>`、標著 `app's own` 的段落；註解裡的 `<APP>` 寫成大寫的名字也算（project-5） | 同上 | `TestRepoWhatAnAppMayChange`、`TestRepoChangedTemplates` |
+| project.2 | `uninstall.sh` 只差 `<app>`、標著 `app's own` 的段落；註解裡的 `<APP>` 不是 `<app>`，照原樣（project-5） | 同上 | `TestRepoWhatAnAppMayChange`、`TestRepoMarks`、`TestRepoChangedTemplates` |
 | project.2 | `internal/version/version.go` 只差 `<app>`（project-6） | 同上 | `TestRepoChangedTemplates` |
 | project.2 | `.gitignore` 範本在前、只差 `<app>`，app 自己的行接在最後（project-7） | 同上 | `TestRepoWhatAnAppMayChange`、`TestRepoChangedTemplates` |
 | project.2 | 照 tdp 做的 app：範本裡的 `vulcanshen` 換成自己的帳號（帳號從 `go.mod` 的 module 讀） | 同上 | `TestRepoAsTdpHasIt` |

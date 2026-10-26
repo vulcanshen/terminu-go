@@ -116,8 +116,10 @@ func TestRepoAsTdpHasIt(t *testing.T) {
 }
 
 // TestRepoWhatAnAppMayChange: what the last column of tdp project.2 lets an
-// app change passes: the app's own blocks, what comes under app:, the app's
-// own lines after the template's in .gitignore (project-3, 4, 5, 7).
+// app change passes: the app's own blocks; the value of the key right below
+// each app:, a list at the key's own indent too, and dependencies added at
+// its comment; the app's own lines after the template's in .gitignore
+// (project-3, 4, 5, 7).
 func TestRepoWhatAnAppMayChange(t *testing.T) {
 	dir := goodRepo(t, "vulcanshen")
 	edit(t, dir, "install.sh", "# --- app's own: checks before the download (none by default) ---\n",
@@ -127,11 +129,54 @@ func TestRepoWhatAnAppMayChange(t *testing.T) {
 		"# --- app's own: anything left for the user to do (none by default) ---\necho \"~/.ssh/config is yours, kept\"\n")
 	edit(t, dir, ".goreleaser.yaml", "    ignore: []\n", "    ignore:\n      - goos: linux\n        goarch: arm64\n")
 	edit(t, dir, ".goreleaser.yaml", "\n    description: \"hostu: what it is (terminu family)\"", "\n    description: \"hostu: ssh hosts at hand (terminu family)\"")
+	edit(t, dir, ".goreleaser.yaml", "      Run `hostu` to start.\n\n      A Nerd Font terminal profile and a truecolor (24-bit) terminal are\n      required. macOS and Linux (WSL too).\n",
+		"      Run `hostu` to start. The hosts come from ~/.ssh/config.\n\n      A Nerd Font terminal profile and a truecolor (24-bit) terminal are\n      required. macOS and Linux (WSL too), with ssh on the PATH.\n")
 	edit(t, dir, ".goreleaser.yaml", "    test: |\n", "    dependencies:\n      - name: openssh\n    test: |\n")
 	edit(t, dir, ".gitignore", ".claude/worktrees/\n", ".claude/worktrees/\n/hosts.local\n")
-	edit(t, dir, "uninstall.sh", "(tdp E2): <APP>__CONFIG", "(tdp E2): HOSTU__CONFIG")
 	if errs := repoErrs(t, dir); len(errs) > 0 {
 		t.Errorf("%q", errs)
+	}
+	dir = goodRepo(t, "vulcanshen")
+	edit(t, dir, ".goreleaser.yaml", "    ignore: []\n", "    ignore:\n    - goos: linux\n      goarch: arm64\n")
+	if errs := repoErrs(t, dir); len(errs) > 0 {
+		t.Errorf("a list at the key's indent: %q", errs)
+	}
+}
+
+// TestRepoMarks: how far a mark reaches (tdp project.2): an app: comment
+// stays whole and covers the key right below it alone, its name kept; a key
+// the comment does not name is not the app's; the Windows lines lose only
+// their leading "# ", the mark kept; uninstall.sh's <APP> stays.
+func TestRepoMarks(t *testing.T) {
+	for _, c := range []struct {
+		windows   bool
+		file      string
+		old, new  string
+		whatFails string
+	}{
+		{false, ".goreleaser.yaml", "ending in (terminu family).", "ending in (u-family).", "an app: comment changed"},
+		{false, ".goreleaser.yaml", "    # or none.\n", "", "a line of an app: comment dropped"},
+		{false, ".goreleaser.yaml", "    # app: the os/arch pairs this app cannot build, each as\n    #   - goos: linux\n    #     goarch: arm64\n    # or none.\n    ignore: []\n", "", "an app: comment and its key dropped"},
+		{false, ".goreleaser.yaml", "    ignore: []\n", "", "the key below app: dropped"},
+		{false, ".goreleaser.yaml", "    ignore: []\n", "    ignores: []\n", "the key below app: renamed"},
+		{false, ".goreleaser.yaml", "    ignore: []\n", "    ignore: []\n    mod_timestamp: \"0\"\n", "a key added after the one below app:"},
+		{false, ".goreleaser.yaml", "    ignore: []\n\narchives:", "    ignore: []\narchives:", "the blank line after the key below app: dropped"},
+		{false, ".goreleaser.yaml", `system "#{bin}/hostu", "version"`, `system "#{bin}/hostu", "--version"`, "test: under app: dependencies changed"},
+		{false, ".goreleaser.yaml", "    test: |\n", "    conflicts:\n      - hosts\n    test: |\n", "a key app: dependencies does not name added"},
+		{false, ".goreleaser.yaml", "    test: |\n      system \"#{bin}/hostu\", \"version\"\n\n", "", "test: dropped, the file ending in comments"},
+		{false, "uninstall.sh", "(tdp E2): <APP>__CONFIG", "(tdp E2): HOSTU__CONFIG", "<APP> written as the name"},
+		{true, ".goreleaser.yaml", "      - windows   # Windows\n", "      - windows\n", "a Windows mark dropped"},
+		{true, ".goreleaser.yaml", "scoops:   # Windows\n", "scoops:\n", "the scoops Windows mark dropped"},
+		{true, ".goreleaser.yaml", "    format_overrides:   # Windows\n      - goos: windows\n", "    format_overrides:   # Windows\n    - goos: windows\n", "more than the leading # taken off"},
+	} {
+		dir := goodRepo(t, "vulcanshen")
+		if c.windows {
+			openWindowsIn(t, dir)
+		}
+		edit(t, dir, c.file, c.old, c.new)
+		if errs := repoErrs(t, dir); len(errs) != 1 || !strings.Contains(errs[0], c.file+" is not tdp") {
+			t.Errorf("%s: %q", c.whatFails, errs)
+		}
 	}
 }
 
@@ -179,8 +224,9 @@ func TestRepoChangedTemplates(t *testing.T) {
 }
 
 // openWindowsIn makes dir's app one with a Windows build: install.sh says so,
-// .goreleaser.yaml's Windows lines are uncommented, the matrix has
-// windows-latest, the PowerShell scripts are there (project-8, 9, 10, 19).
+// .goreleaser.yaml's Windows lines are uncommented, their marks kept, the
+// matrix has windows-latest, the PowerShell scripts are there (project-8, 9,
+// 10, 19).
 func openWindowsIn(t *testing.T, dir string, which ...string) {
 	t.Helper()
 	all := len(which) == 0
@@ -201,13 +247,13 @@ func openWindowsIn(t *testing.T, dir string, which ...string) {
 			t.Fatal(err)
 		}
 		s := string(b)
-		s = strings.Replace(s, "      # - windows   # Windows", "      - windows", 1)
+		s = strings.Replace(s, "      # - windows   # Windows", "      - windows   # Windows", 1)
 		s = strings.Replace(s, "    # format_overrides:   # Windows\n    #   - goos: windows\n    #     formats:\n    #       - zip\n",
 			"    format_overrides:   # Windows\n      - goos: windows\n        formats:\n          - zip\n", 1)
 		head, tail, _ := strings.Cut(s, "# scoops:   # Windows\n")
 		tail = regexp.MustCompile(`(?m)^# ?`).ReplaceAllString(tail, "")
 		tail = strings.Replace(tail, `"hostu: what it is (terminu family)"`, `"hostu: ssh hosts at hand (terminu family)"`, 1)
-		if err := os.WriteFile(filepath.Join(dir, ".goreleaser.yaml"), []byte(head+"scoops:\n"+tail), 0o644); err != nil {
+		if err := os.WriteFile(filepath.Join(dir, ".goreleaser.yaml"), []byte(head+"scoops:   # Windows\n"+tail), 0o644); err != nil {
 			t.Fatal(err)
 		}
 	}

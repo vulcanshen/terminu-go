@@ -1,7 +1,7 @@
 # terminu-go 開發者備忘
 
 terminu-go 是 terminu design principle（tdp）的 Go 實作：給 app 呼叫的 lib，加上展示場 `examples/showcase`。遵循 terminu design
-principle，目前對應 tdp v0.10.2。這個 repo 的任務與規範的讀法見 [`CLAUDE.md`](../CLAUDE.md)。
+principle，目前對應 tdp v0.10.3。這個 repo 的任務與規範的讀法見 [`CLAUDE.md`](../CLAUDE.md)。
 
 ## 運作方式
 
@@ -125,8 +125,9 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
 - **repo 的檢查在 `Check` 裡自己跑**（2026-10-26，harness 的請求）：app 不改測試，升 tgo 以後 `make check` 就查得到範本走樣
   （hostu 少了 family.mk 的 `dev`，沒有一關抓到）。tgo 一版只對到一版 tdp，所以 lib 帶著那一版的 `project/` 範本
   （`tdptest/_project`：`_` 開頭的目錄 go 不當成 package，裡面的 `version.go` 才不會被編譯）；`TestTemplatesAreTdps` 與
-  `TestTdpVersionIsTheChangelogs` 守住它跟 CHANGELOG 寫的 tdp 一致，跟新的 tdp 時兩個要一起換。範本標得不清楚的地方從寬
-  （註解裡的 `<APP>`、`app:` 底下到哪裡為止：G102），寧可漏抓也不誤判。要判斷的（README 的段落、引用的寫法）不查。
+  `TestTdpVersionIsTheChangelogs` 守住它跟 CHANGELOG 寫的 tdp 一致，跟新的 tdp 時兩個要一起換。標記管到哪裡照 tdp v0.10.3 的
+  project.2（G102 補進去的）：`app:` 只放行底下那一個鍵的值，註解、鍵名與 `# Windows` 照原樣，`<APP>` 也照原樣。要判斷的
+  （README 的段落、引用的寫法）不查。
 - **測試的時鐘，不是真的時間**：真的跑 32ms 一格的動畫，掃一次展示場要幾分鐘，toast 何時消失也跟機器快慢有關；harness 也要能停在
   開場動畫中間（F2）、自己推時間。時鐘從真的時間起算、對齊 loading icon 的一整圈（720ms），app 用真的時間算出來的期限（PIN 的暫停）
   差不多對得上，loading icon 每次都從同一格開始。

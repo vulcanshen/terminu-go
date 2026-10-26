@@ -13,7 +13,7 @@ import (
 
 // tdpVersion is the tdp this lib implements; _project holds its project/
 // templates as they are (tdp project.2).
-const tdpVersion = "v0.10.2"
+const tdpVersion = "v0.10.3"
 
 //go:embed _project
 var templates embed.FS
@@ -169,12 +169,12 @@ func (r *repo) templates() {
 				return app, tdp
 			}},
 		{src: "goreleaser.yaml", dst: ".goreleaser.yaml", item: "project-3, project-9", named: true,
-			may: "only <app>, what comes under each comment marked app: and, for an app with a Windows build (WINDOWS=\"yes\" in install.sh), the lines marked Windows uncommented may differ",
+			may: "only <app>, the value of the key right below each comment marked app: (or the key the comment names, added there when the template has none) and, for an app with a Windows build (WINDOWS=\"yes\" in install.sh), the leading \"# \" of the lines marked Windows and of the commented lines of their blocks may differ; the comments and the Windows marks stay as they are",
 			fix: func(app, tdp []line) ([]line, []line) {
 				if !known {
 					windows = sameWindows(app)
 				}
-				return appRegions(unmarkWindows(app)), appRegions(unmarkWindows(openWindows(tdp, windows)))
+				return appRegions(app), appRegions(openWindows(tdp, windows))
 			}},
 		{src: "install.sh", dst: "install.sh", item: "project-4, project-10", named: true,
 			may: `only <app>, WINDOWS ("yes" for an app with a Windows build) and the blocks marked app's own may differ`,
@@ -187,7 +187,7 @@ func (r *repo) templates() {
 				return ownBlocks(app), ownBlocks(tdp)
 			}},
 		{src: "uninstall.sh", dst: "uninstall.sh", item: "project-5", named: true,
-			may: "only <app> and the blocks marked app's own may differ",
+			may: "only <app> and the blocks marked app's own may differ; the <APP> in a comment stays as it is",
 			fix: func(app, tdp []line) ([]line, []line) { return ownBlocks(app), ownBlocks(tdp) }},
 		{src: "version.go", dst: "internal/version/version.go", item: "project-6", named: true, may: "only <app> may differ"},
 		{src: "gitignore", dst: ".gitignore", item: "project-7", named: true,
@@ -239,14 +239,11 @@ func (r *repo) template(tm template) {
 }
 
 // unname writes the app's name as <app> and its account as vulcanshen, as in
-// the templates; the name in upper case may stand for <APP> (uninstall.sh's
-// <APP>__CONFIG).
+// the templates. The <APP> in uninstall.sh's comment is not <app>: it stays
+// as it is (tdp project.2).
 func (r *repo) unname(s string) string {
 	if r.account != "vulcanshen" {
 		s = regexp.MustCompile(`\b`+regexp.QuoteMeta(r.account)+`\b`).ReplaceAllLiteralString(s, "vulcanshen")
-	}
-	if up := strings.ToUpper(r.name); up != r.name {
-		s = regexp.MustCompile(`\b`+regexp.QuoteMeta(up)+`__`).ReplaceAllLiteralString(s, "<APP>__")
 	}
 	return regexp.MustCompile(`\b`+regexp.QuoteMeta(r.name)+`\b`).ReplaceAllLiteralString(s, "<app>")
 }
@@ -303,31 +300,63 @@ func ownBlocks(ls []line) []line {
 	return out
 }
 
-// TODO(tdp G102): where what comes under a comment marked "app:" ends is not
-// marked in project/goreleaser.yaml. For now it is everything up to the next
-// such comment or a line less indented than the comment.
+var (
+	// appMark is a comment marked "app:" (.goreleaser.yaml); one that names
+	// its key first ("app: dependencies, …") is for a key the template may
+	// not have yet.
+	appMark = regexp.MustCompile(`^# app: (?:([a-z_]+),)?`)
+	yamlKey = regexp.MustCompile(`^(\s*)([A-Za-z_][A-Za-z0-9_]*):`)
+)
 
-// appRegions leaves out what comes under each comment marked "app:"
-// (.goreleaser.yaml), the comment itself kept.
+// appRegions leaves out what each comment marked "app:" lets the app write
+// (.goreleaser.yaml, tdp project.2): the value of the key right below the
+// comment, a list or a whole block included, the key itself kept; or, for a
+// comment naming a key, that key, which the app adds there when the template
+// has none. The comment, all its lines, and any other key stay.
 func appRegions(ls []line) []line {
 	var out []line
 	for i := 0; i < len(ls); i++ {
 		out = append(out, ls[i])
-		t := strings.TrimSpace(ls[i].text)
-		if !strings.HasPrefix(t, "# app:") {
+		m := appMark.FindStringSubmatch(strings.TrimSpace(ls[i].text))
+		if m == nil {
 			continue
 		}
-		in := indent(ls[i].text)
-		for i+1 < len(ls) {
-			n := ls[i+1].text
-			nt := strings.TrimSpace(n)
-			if strings.HasPrefix(nt, "# app:") || nt != "" && indent(n) < in {
-				break
-			}
+		for i+1 < len(ls) && strings.HasPrefix(strings.TrimSpace(ls[i+1].text), "#") {
 			i++
+			out = append(out, ls[i])
 		}
+		if i+1 == len(ls) {
+			break
+		}
+		k := yamlKey.FindStringSubmatch(ls[i+1].text)
+		if k == nil || m[1] != "" && k[2] != m[1] {
+			continue // not the app's: test: under "app: dependencies, …"
+		}
+		i++
+		if m[1] == "" {
+			out = append(out, line{k[1] + k[2] + ":", ls[i].n})
+		}
+		i = valueEnd(ls, i, len(k[1]))
 	}
 	return out
+}
+
+// valueEnd is the last line of the value of the key at ls[i], indented in:
+// the lines below indented more, a list at the key's own indent, and the
+// blank lines between them.
+func valueEnd(ls []line, i, in int) int {
+	end := i
+	for j := i + 1; j < len(ls); j++ {
+		t := strings.TrimSpace(ls[j].text)
+		switch {
+		case t == "":
+		case indent(ls[j].text) > in || indent(ls[j].text) == in && strings.HasPrefix(t, "- "):
+			end = j
+		default:
+			return end
+		}
+	}
+	return end
 }
 
 func indent(s string) int { return len(s) - len(strings.TrimLeft(s, " ")) }
@@ -335,7 +364,8 @@ func indent(s string) int { return len(s) - len(strings.TrimLeft(s, " ")) }
 var windowsMark = regexp.MustCompile(`\s+# Windows$`)
 
 // openWindows uncomments the template's lines marked Windows and the
-// commented lines right under each, for an app with a Windows build.
+// commented lines of the block right under each, for an app with a Windows
+// build: only the leading "# " goes, the mark stays (tdp project.2).
 func openWindows(ls []line, windows bool) []line {
 	if !windows {
 		return ls
@@ -363,16 +393,6 @@ func uncomment(s string, in int) string {
 		return ""
 	}
 	return s[:in] + rest
-}
-
-// unmarkWindows drops the "# Windows" marks: an app may keep them or not on
-// the lines it uncommented.
-func unmarkWindows(ls []line) []line {
-	out := append([]line(nil), ls...)
-	for i := range out {
-		out[i].text = windowsMark.ReplaceAllString(out[i].text, "")
-	}
-	return out
 }
 
 // sameWindows, with no install.sh to say, takes .goreleaser.yaml's Windows

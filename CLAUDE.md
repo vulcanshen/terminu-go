@@ -7,7 +7,7 @@ terminu design（tdp）的 Go 實作：一個像 bubbletea 那樣讓 app 直接�
 - 建在 bubbletea **v1**（`github.com/charmbracelet/bubbletea` v1.3.10）與 lipgloss v1（v1.1.0）上，跟五個 app 相同。
   原本定 v2，2026-10-08 改回 v1（紀錄的 C1、G22）：v2 的 renderer 與 lipgloss v2 的合成都處理不了 icon 佔兩格，要用 v2 就得
   自己重寫輸出層。user：v2 還不成熟，不該為了它打破既有狀態、重新造輪；等 v2 成熟再升。
-- 規範：`~/Documents/sideproj/terminu`，目前實作的版本是 **tdp v0.10.2**
+- 規範：`~/Documents/sideproj/terminu`，目前實作的版本是 **tdp v0.10.3**
 
 上面這些與下面「lib 的範圍」都已經跟 user 定案，不要重提。
 
@@ -26,8 +26,8 @@ terminu design（tdp）的 Go 實作：一個像 bubbletea 那樣讓 app 直接�
 
 ### 讀什麼
 
-- 讀 terminu **最新 tag** 的內容（現在是 v0.10.2）。main 上還沒發版的改動不算；不確定時用
-  `git -C ~/Documents/sideproj/terminu diff v0.10.2 -- principle components` 看有沒有差。
+- 讀 terminu **最新 tag** 的內容（現在是 v0.10.3）。main 上還沒發版的改動不算；不確定時用
+  `git -C ~/Documents/sideproj/terminu diff v0.10.3 -- principle components` 看有沒有差。
 - **v0.5.0 換了外觀**（配色不變）：框線、膠囊、menu 區塊標題、cursor 尾端的箭頭、標題大寫、固定的開關動畫。規範的圖現在用真的
   Nerd Font 字形。畫框、膠囊、cursor 的程式集中在少數幾個地方，不要散在各元件裡寫死 —— 外觀之後可能還會調。
 - 規定只認這些檔的文字：`principle/README-zh_TW.md`、`principle/rules-zh_TW.md`、`components/` 底下全部。
@@ -76,7 +76,7 @@ terminu design（tdp）的 Go 實作：一個像 bubbletea 那樣讓 app 直接�
 ```
 ### G<n> <一句話標題>
 - 狀態：待定
-- 規範：<規則編號或節編號，例 K4、popup.7>（tdp v0.10.2）
+- 規範：<規則編號或節編號，例 K4、popup.7>（tdp v0.10.3）
 - 卡在：lib 需要知道什麼才能做下去
 - 可能：A …；B …（各附一句後果）
 - 暫時：跳過／暫時照 A 做（程式裡標 `TODO(tdp G<n>)`）

@@ -2,19 +2,24 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v0.10.2
+## v0.5.3 — tdp v0.10.3
 
 - tdptest: `Check` reads the app's repository too, in a subtest `repo`, with no change to the app's tests: the
-  `go.mod` at or above the test's directory is the repository. The templates of tdp project.2 must be as tdp v0.10.2
-  has them, but for what each one's last column lets an app change (`<app>`, the blocks marked app's own, what comes
-  under `app:`, `WINDOWS` with the Windows lines and the test matrix, the app's own lines after `.gitignore`'s, its own
-  account in place of vulcanshen); the lib carries a copy of them in `tdptest/_project`. It also checks the files of
-  project.3 (`cmd/<app>/main.go`, go.mod's module, `go.sum`, `LICENSE`, `docs/icon.svg`, and `install.ps1`,
-  `uninstall.ps1` with a Windows build), the Makefile of project.5 and the CHANGELOG of project.6. A failure names the
-  file, shows the difference and says which template to copy again and where the lib's copy is. The lib's own module
-  is not checked (tdp E8) (harness: hostu's `family.mk` lacked `dev` and nothing caught it)
+  `go.mod` at or above the test's directory is the repository. The templates of tdp project.2 must be as tdp v0.10.3
+  has them, but for what each one's last column lets an app change (`<app>`, the blocks marked app's own, the value of
+  the key below each `app:` comment, `WINDOWS` with the Windows lines and the test matrix, the app's own lines after
+  `.gitignore`'s, its own account in place of vulcanshen); the lib carries a copy of them in `tdptest/_project`. It
+  also checks the files of project.3 (`cmd/<app>/main.go`, go.mod's module, `go.sum`, `LICENSE`, `docs/icon.svg`, and
+  `install.ps1`, `uninstall.ps1` with a Windows build), the Makefile of project.5 and the CHANGELOG of project.6. A
+  failure names the file, shows the difference and says which template to copy again and where the lib's copy is. The
+  lib's own module is not checked (tdp E8) (harness: hostu's `family.mk` lacked `dev` and nothing caught it)
+- How far a mark reaches, as tdp v0.10.3 writes it (project.2, from G102): a `# app:` comment in `.goreleaser.yaml`
+  stays whole, its other lines too, and covers the value of the key right below it, a list or a whole block included,
+  the key's name kept; `dependencies` is added where its comment is, and `test:` stays as it is. The Windows lines
+  lose only their leading `# `; the trailing `# Windows` stays. The `<APP>` in `uninstall.sh`'s comment stays as it is
 - After upgrading, `make check` fails where an app's files have drifted from the templates: copy them again from tdp
-  v0.10.2's `project/`
+  v0.10.3's `project/`, changing only what the templates let an app change
+- tdp v0.10.3 changed only the text of project.2: the lib draws nothing differently
 
 ## v0.5.2 — tdp v0.10.2
 
