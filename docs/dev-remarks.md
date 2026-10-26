@@ -164,8 +164,8 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
 - **家族共用的設定 key**（Rules E3）：`hide_secrets_in_preview`、`input_tab_width` 是使用者的設定，lib 不讀設定檔；app 從自己的設定檔讀，
   設到 `App.HideSecretsInPreview`、`App.InputTabWidth`。
 - **PTY 只在 unix**：`terminal_other.go` 開不了 PTY，只在畫面上寫出原因。
-- **tdptest 還沒做的**（跟 harness 談定的第二版）：檔案檢查（`CheckRepo`：project 範本、README 與 dev-remarks 的段落、`tdp K4` 的引用、
-  splash 對 `docs/icon.svg`）、`coverage.md` 標上 checklist 的條目編號、自動打開每個動作的 popup、把設定檔改壞再開、檢查 app 沒寫到
+- **tdptest 還沒做的**（跟 harness 談定的第二版）：檔案檢查（`CheckRepo`：project 範本、README 的 12 段（第 10 段只要連到 CHANGELOG）、`tdp K4`
+  的引用、splash 對 `docs/icon.svg`；tdp v0.10.0 起 dev-remarks 與 `docs/<app>-terminu-fix.md` 不再是規定，不查）、`coverage.md` 標上 checklist 的條目編號、自動打開每個動作的 popup、把設定檔改壞再開、檢查 app 沒寫到
   沙盒以外。
 
 ## 做不到的規定
