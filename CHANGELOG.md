@@ -2,6 +2,23 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v0.6.4 — tdp v0.11.4
+
+- `App.Elevate` runs a command with raised privileges (tdp terminal.7, from hostu): the app gives only the command.
+  It runs at once when sudo needs no password (`sudo -n`). Otherwise the lib asks for it in a password popup,
+  `PASSWORD`, the unlock look, and hands it to sudo on its standard input and nowhere else: no file, no App Log, nothing
+  on the screen, nothing sent anywhere, and nothing gives it to the app. A wrong password keeps the popup open, the dots
+  cleared and `Wrong password` on its error row; the command failing closes it and `Done` gets an `*ElevateError` for
+  the app's error popup; `Esc` cancels, and the command does not run. Telling the two apart reads nothing sudo prints
+  in the user's language, and holds when sudo keeps no password (`timestamp_timeout=0`). `Tool: Doas` asks in a
+  terminal popup, as before. While the password is checked the popup shows the loading icon and takes only `Esc`
+- A list that cannot be marked may draw one flag a row in its mark column (tdp panel.7, from locku LK22):
+  `List.Flags` keeps the column, `Row.Flag` is the row's glyph and colour, and every row without one is blank there, so
+  the text does not move when the flag does. In a list in groups the flag goes where a tick does (tdp panel.11); a row
+  held in a Drag mode shows the swap glyph and its flag again once put down (tdp panel.8). A list that can be marked
+  keeps the column for the tick: `AddScreen` panics on a list with both `Marks` and `Flags`
+- The showcase flags the kind `[K]INDS` opens on, `[f] Default` moving the flag
+
 ## v0.6.3 — tdp v0.11.3
 
 - Going into the details with `Enter` on a list, or with its row in the menu, moves the focus (tdp K3) and does not

@@ -21,7 +21,7 @@ func (ta *testApp) deliver(cmd tea.Cmd) {
 		for _, c := range msg {
 			ta.deliver(c)
 		}
-	case formRan:
+	case formRan, elevateRan:
 		ta.Update(msg)
 		ta.settle()
 	}

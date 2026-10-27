@@ -231,7 +231,8 @@ func (a *App) tinyScreen(w, h int) []string {
 func New(name string) *App { return &App{Name: name} }
 
 // AddScreen adds a screen. It panics when a panel registers a key that is
-// not the app's to take (tdp K1, K12): that is a mistake in the program.
+// not the app's to take (tdp K1, K12), or has a list with both Marks and
+// Flags (tdp panel.7): that is a mistake in the program.
 func (a *App) AddScreen(s *Screen) *Screen {
 	for i, p := range s.Panels {
 		p.app = a
@@ -242,6 +243,9 @@ func (a *App) AddScreen(s *Screen) *Screen {
 			if err := checkToDetails(s, p, act); err != nil {
 				panic(fmt.Sprintf("terminu: panel [%d] %s, action %q: %v", i+1, p.Label, act.Label, err))
 			}
+		}
+		if l, ok := p.Body.(*List); ok && l.Marks && l.Flags {
+			panic(fmt.Sprintf("terminu: panel [%d] %s: a list that can be marked keeps its mark column for the tick, not for flags (tdp panel.7)", i+1, p.Label))
 		}
 	}
 	a.screens = append(a.screens, s)
@@ -350,6 +354,8 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmd = a.handleKey(msg)
 	case formRan:
 		cmd = msg.done(a)
+	case elevateRan:
+		cmd = msg.step(a)
 	case pauseTick:
 		cmd = msg.li.countDown(a)
 	case readDone:

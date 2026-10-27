@@ -9,13 +9,31 @@ import (
 
 // kindsScreen is [K]INDS: a list in groups and a details panel that follows
 // its cursor (tdp panel.11). [1] KINDS is the
-// resource kinds in groups; [2] is the kind under its cursor, named after it.
+// resource kinds in groups, a Green flag before the one the app opens on
+// (tdp panel.7); [2] is the kind under its cursor, named after it.
 // Enter on a namespaced kind goes into its details (tdp K3).
 type kindsScreen struct {
 	screen  *terminu.Screen
 	list    *terminu.List
 	details *terminu.Panel
 	kind    *kind
+	first   string // the kind it opens on: flagged
+}
+
+// glyphFlag is the flag before the kind it opens on: the app's choice, as
+// locku's active profile.
+const glyphFlag = "\U000025CF" // ●
+
+// setRows lists the kinds, the one it opens on flagged.
+func (ks *kindsScreen) setRows() {
+	rows := make([]terminu.Row, len(kinds))
+	for i, k := range kinds {
+		rows[i] = terminu.Row{ID: k.name, Cells: []string{k.name}, Group: k.group}
+		if k.name == ks.first {
+			rows[i].Flag = terminu.Span{Text: glyphFlag, Style: terminu.Fg(terminu.Green)}
+		}
+	}
+	ks.list.SetRows(rows)
 }
 
 type kind struct {
@@ -44,13 +62,9 @@ var kinds = []kind{
 }
 
 func newKindsScreen(a *terminu.App) *kindsScreen {
-	ks := &kindsScreen{kind: &kinds[0]}
-	ks.list = &terminu.List{Filterable: true, EmptyFact: "No kinds match."}
-	rows := make([]terminu.Row, len(kinds))
-	for i, k := range kinds {
-		rows[i] = terminu.Row{ID: k.name, Cells: []string{k.name}, Group: k.group}
-	}
-	ks.list.SetRows(rows)
+	ks := &kindsScreen{kind: &kinds[0], first: kinds[0].name}
+	ks.list = &terminu.List{Filterable: true, Flags: true, EmptyFact: "No kinds match."}
+	ks.setRows()
 	// The details follow the cursor at once, with no Enter; the focus stays
 	// (tdp panel.13).
 	ks.list.OnMove = func(r terminu.Row) tea.Cmd {
@@ -91,6 +105,15 @@ func newKindsScreen(a *terminu.App) *kindsScreen {
 					return a.Toast(terminu.Info, ks.kind.name+" is cluster-wide: read-only here")
 				}
 				return nil
+			}},
+		// The flag goes to the kind under the cursor; the rows do not move
+		// (tdp panel.7).
+		{Key: "f", Label: "Default", Desc: "open on this kind", Scope: terminu.ItemScope,
+			Hidden: func() bool { return ks.kind.name == ks.first },
+			Do: func() tea.Cmd {
+				ks.first = ks.kind.name
+				ks.setRows()
+				return a.Toast(terminu.Success, "Opens on "+ks.first)
 			}},
 	}}
 	ks.screen = &terminu.Screen{Name: "Kinds", Key: "K", Desc: "a list in groups and details that follow its cursor",

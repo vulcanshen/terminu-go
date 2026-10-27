@@ -198,6 +198,11 @@ type lineInput struct {
 	done         func(string, bool) tea.Cmd
 	allow        func(rune) bool // the characters a number takes
 	knownW       int
+	// verify, when set, takes the value Enter takes in place of writing it
+	// back: it runs off the update loop, busy meanwhile (an Elevate's
+	// password).
+	verify func(string) tea.Cmd
+	busy   bool
 }
 
 // Input is an input popup to open on its own (App.Open) or from a form's
@@ -415,7 +420,7 @@ func (li *lineInput) draw(w, h int, layer Color) []string {
 		value = typingAngle(layer) + li.ed.view(cw-angleWidth(), valueStyle, cursor, true, nil, suggest)
 	}
 	body := li.rows(inner, " "+value+" ", h-4)
-	box := popupBox{color: layer, glyph: li.glyph, title: popupTitle(li.title, li.subject), hint: li.hint()}
+	box := popupBox{color: layer, glyph: li.glyph, title: popupTitle(li.title, li.subject), hint: li.hint(), loading: li.busy}
 	if li.unlock {
 		// No padding below the error row: two blank rows, the typing row in
 		// the middle, a blank row, the error row; 7 rows with the frame
@@ -544,8 +549,8 @@ func (li *lineInput) unlockDots(w int, style, cursor Style) string {
 }
 
 func (li *lineInput) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
-	if key != "Esc" && a.now().Before(li.pause) {
-		return true, nil // paused: every key but Esc swallowed
+	if key != "Esc" && (a.now().Before(li.pause) || li.busy) {
+		return true, nil // paused or busy: every key but Esc swallowed
 	}
 	switch key {
 	case "Enter":
@@ -703,6 +708,10 @@ func (li *lineInput) countDown(a *App) tea.Cmd {
 
 // write writes a value Enter took back: Commit first, then Done.
 func (li *lineInput) write(a *App, v string, clear bool) tea.Cmd {
+	if li.verify != nil {
+		li.busy = true
+		return li.verify(v)
+	}
 	if err := li.commit(v, clear); err != nil {
 		return a.commitFailed(li.title, li.subject, err)
 	}
@@ -717,6 +726,10 @@ func (li *lineInput) write(a *App, v string, clear bool) tea.Cmd {
 }
 
 func (li *lineInput) surface() string { return li.title }
+
+// isLoading reports a value being verified: the loading icon goes after the
+// title (tdp popup.4).
+func (li *lineInput) isLoading() bool { return li.busy }
 
 func (li *lineInput) cancel() tea.Cmd { return run(li.onCancel) }
 

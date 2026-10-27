@@ -1,6 +1,6 @@
-# tdp v0.11.3 coverage
+# tdp v0.11.4 coverage
 
-tdp v0.11.3 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
+tdp v0.11.4 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
 （[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -303,9 +303,10 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | note.8 | 標題 glyph U+F018A、`DIFF — <anchor> ↔ <另一個>`、`UNIFIED`／`SPLIT` 兩個 tab；只顯示有差異的段落、前後 3 行、段落之間 Overlay0 的線；UNIFIED 行號兩欄、`-` Red、`+` Green；SPLIT 左 anchor 右另一個、各自行號、對應不到留空列、不折行截 `…`；記住選的 tab（`Compare.Split`，app 存進狀態）；不到 96 欄一律 UNIFIED、`SPLIT` 停用（note-80～85） | 同上，按 `h|l`；開著時把終端機縮到 96 以下再拉回來 | `TestCompareMode`、`TestCompareHunks`、`TestCompareSplit`、`TestCompareResize`（開著時縮放：重排、留住捲動位置）、`TestDiffLines` |
 | panel.5 | 表頭 Blue 不加粗、大寫、固定不捲；每欄是數字或文字：數字靠右照數值排、文字靠左照文字排；欄間兩格；排序欄位加 U+F160（升）/ U+F161（降）；多欄排序在箭頭前加順位 `(2)` | P `[1] PODS` 的 `Sort by`（Name 升冪、Age 降冪、兩欄） | `TestListHeader`、`TestListSortGlyphs`、`TestListSortNumbers` |
 | panel.5 | 捲動位置：放不下時 `N of M`（框線色），全放得下不寫；沒有 cursor 的寫 `N-M of T` | P `[1] PODS`（40 列）、`[2] LOG` | `TestPanelScrollPosition` |
-| panel.5 | 標記欄：每列最前一格，標記的畫 Green U+F0132，沒標記的空白，欄寬一直保留 | P `[1] PODS` 的 `[m]ark` | `TestListMarkColumn` |
+| panel.7 | 標記欄：每列最前一格，標記的畫 Green U+F0132，沒標記的空白，欄寬一直保留 | P `[1] PODS` 的 `[m]ark` | `TestListMarkColumn` |
+| panel.7 | 標記欄一列只放一個記號：不能標記的清單，app 可以把一種旗標畫在標記欄（glyph 與顏色是 app 的；cursor 上跟勾一樣在 cursor 底上），每一列都保留標記欄，沒有旗標的留空白，旗標換到別列時字不位移；可以標記的清單標記欄只放勾：同時開 `Marks` 與 `Flags`，`AddScreen` 就 panic（lib：`List.Flags`、`Row.Flag`；panel-137、138） | K `[1] KINDS` 最前面 `pods` 的 Green `●`，在別的種類上按 `[f] Default` | `TestPanelFlags`、`TestPanelFlagsNotWithMarks` |
 | panel.5 | lib：app 照 ID 設標記（`List.SetMarked`），篩選中沒顯示的列也勾得到 | P `[1] PODS` 的 `[m]ark` | `TestListMarkAndSelectByID` |
-| panel.5 | Drag mode 拿著的那一列（進 Drag 的鍵由 app 決定）：照 cursor 畫，Subtext1 換成 Yellow 底、Base 粗體，箭頭也是 Yellow；標記欄畫 U+F04E2，放下後回到原本的標記；有 Drag 的 panel 每一列都保留標記欄；按鍵同 reorder 拿著時（`j\|k` 搬、到頭尾繞回，`Enter` 放下，`Esc` 放回）。lib：`List.Draggable`、`Hold`、`MoveHeld`、`Drop`，Drag mode 與它的鍵由 app 登記 | P `[1] PODS` 的 `[D]rag`（先 `m` 標記一列再拿起它） | `TestPanelDragHeldRow` |
+| panel.8 | Drag mode 拿著的那一列（進 Drag 的鍵由 app 決定）：照 cursor 畫，Subtext1 換成 Yellow 底、Base 粗體，箭頭也是 Yellow；標記欄畫 U+F04E2，放下後回到原本的標記（旗標也一樣）；有 Drag 的 panel 每一列都保留標記欄；按鍵同 reorder 拿著時（`j\|k` 搬、到頭尾繞回，`Enter` 放下，`Esc` 放回）。lib：`List.Draggable`、`Hold`、`MoveHeld`、`Drop`，Drag mode 與它的鍵由 app 登記 | P `[1] PODS` 的 `[D]rag`（先 `m` 標記一列再拿起它） | `TestPanelDragHeldRow`、`TestPanelFlagsDrag`（旗標） |
 | panel.5 | 欄放不下時，框邊落在的那一欄照它的截法截（從尾端或從中間，加 `…`），後面的欄不畫；不在框邊硬切 | P `[1] PODS` 縮到很窄 | `TestListColumnsGiveWay` |
 | panel.5 | 截斷從尾端加 `…`；路徑、檔名可以從前面截；兩端都有意義的從中間截（`demo-app…66-gm72n`），每一欄從哪裡截，app 可以自行決定（panel-74；lib：`Column.Path`、`Column.Middle`） | P `[1] PODS` 的長名字（從中間截）；I `[2] FILES` 的路徑 | `TestListTruncate`、`TestTruncateMiddle` |
 | panel.5 | 欄的寬度：可以截短的欄（名稱、網址、一行文字）分剩下的寬度、照各自的截法截，其他短欄照最寬的值不縮；放不下先把可以截短的縮到最少寬度（app 定，預設 12），還放不下才照 app 標的順序整欄收（表頭一起），名稱欄不收；變大時欄照順序回來、可以截短的長回去（lib：`Column.Shrink`、`MinWidth`、`Drop`） | P `[1] PODS` 把視窗縮窄：名稱先縮到 12 格，再 `AGE`、`RESTARTS`、`READY` 依序收掉 | `TestListColumnsGiveWay` |
@@ -315,7 +316,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | panel.5 | 清單的順序要固定：同一份資料每次排出來都一樣；沒有順序的資料先排（lib：`List.SortBy` 照名稱、數字照數值，排不出先後的照 `Row.ID`） | P `[1] PODS`、I `[2] FILES` 一打開就照名稱排 | `TestListFixedOrder` |
 | panel.5 | 空的照空狀態 | `Empty` | `TestEmptyState` |
 | panel.11 | 分組標題 Blue、大寫、不加粗、沒有 glyph、離框一格；項目多縮兩格；組與組之間不空列、不畫分隔線；失焦跟著淡化 | K `[1] KINDS` | `TestPanelListGroups`、`TestPanelDetailsFollowCursor`（失焦） |
-| panel.11 | 有標記欄時，標記畫在多縮的那兩格裡：標記離框一格、空一格，字離框三格；分組標題那一列不留標記欄 | 展示場的分組清單沒有標記（看得到的是 P `[1] PODS` 的一般清單） | `TestPanelListGroupsMarks` |
+| panel.11 | 有標記欄時，記號（勾或旗標）畫在多縮的那兩格裡：記號離框一格、空一格，字離框三格；分組標題那一列不留標記欄（panel-86、87） | K `[1] KINDS` 的旗標；勾：展示場的分組清單不能標記，測試驗 | `TestPanelListGroupsMarks`、`TestPanelListGroupsFlags` |
 | panel.11 | cursor 跳過分組標題：`j\|k` 越過它、`gg\|G` 到第一個與最後一個項目、`N of M` 只算項目；捲到一組的第一個項目時，這組的標題也留在畫面裡 | K `[1] KINDS`（把終端機拉矮再捲） | `TestPanelListGroupsCursor` |
 | panel.11 | 沒有項目的組不畫標題（panel filter 篩掉的組、app 給的空組） | K `[1] KINDS` 按 `/` 打 `sec` | `TestPanelListGroupsFilter` |
 | panel.15 | loading：icon 在整串膠囊後、用框線色（focus Blue、失焦 Surface2）；沒內容時中間寫一句（`󰪞 loading pods…`）；重新載入舊內容留著（panel-75、panel-76） | `Loading`（空的時候與有內容時各一次） | `TestPanelLoading`、`TestPanelLoadingIconAfterChain`（顏色） |
@@ -453,6 +454,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | terminal.6 | 互動 terminal 上 `Alt-v` 進入（家族的 `v` 加 `Alt`，不是 app 挑的，常駐揭露）；畫面凍住、子程序後來的輸出先不畫，游標可以往上走進歷史；按鍵、顏色、捲動位置、複製後的 Success toast 照 note 的選取模式；離開回到即時畫面，之後按鍵照常送給子程序 | T `[1] SHELL` 按 `Alt-v`、`v`、移動、`y` | `TestTerminalSelectMode` |
 | terminal.4 | app 開一個程式做一件事的 PTY（沒標 `Interactive`）兩種模式都沒有，`PgUp`、`Alt-v` 都給程式；子程序佔滿整個畫面（alternate screen）時 `PgUp` 給它、hint 不寫 `PgUp:history`，選取的是凍住的那個畫面；使用者把所有鍵給子程序時（lib：`Terminal.AllKeys`）選取模式讓出去、`PgUp\|PgDn` 送進去，解開的鍵照常揭露 | D「Form: New host」的 `Copy key`（ssh-copy-id，不是互動的）；T `[1] SHELL` 裡開 `less`；T `[1] SHELL` 按 `Alt-l` | `TestTerminalNotInteractive`、`TestTerminalFullScreen`、`TestTerminalAllKeys` |
 | terminal.3 | 按鍵都給子程序；hint 出口鍵第一、最後才捨；`Alt-Esc:exit`（結束）／`Alt-Esc:leave`（留著），不寫 `close`；後面跟保留鍵；`Alt-Esc` 先 confirm | 同上 | `TestK10ExitKeyShown`、`TestK10AltEscConfirms`、`TestEncodeKey` |
+| terminal.7 | 要提權時（lib：`App.Elevate`，app 只給要跑的指令與工具）：先試不用密碼的（`sudo -n -v` 只問要不要密碼、不跑指令，所以指令不會跑兩次）；要密碼時開 password popup（解鎖方案，標題 `PASSWORD`），驗的時候標題後面 loading、除了 `Esc` 都吞掉；密碼交給 `sudo -S`：先 `-v` 驗，sudo 再問一次就是錯的（數 lib 自己給的 `-p` 提示，不看 sudo 印的字），當場停掉它，popup 不關、點清掉、錯誤列 `Wrong password`；驗過後 sudo 記著就 `sudo -n` 跑，不記（`timestamp_timeout=0`）就再交一次，這時失敗一定是指令的，popup 關、`Done` 拿到 `*ElevateError` 給 app 開 error popup（F5）；`Esc` 取消，指令不跑；密碼不寫檔、不進 App Log、不上畫面、不送出去，API 沒有拿得到它的地方；doas 照舊在 terminal popup 裡自己問；Windows 由 app 自己來（terminal-24） | 測試驗（假的 sudo、doas；展示場不跑 sudo，會真的提權） | `TestElevateNoPassword`、`TestElevatePassword`、`TestElevateKeptForNoTime`、`TestElevateCommandFails`、`TestElevateCancel`、`TestElevateDoas`、`TestToolOutput` |
 
 ## dialog/toast
 

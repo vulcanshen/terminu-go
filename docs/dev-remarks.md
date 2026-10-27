@@ -1,7 +1,7 @@
 # terminu-go 開發者備忘
 
 terminu-go 是 terminu design principle（tdp）的 Go 實作：給 app 呼叫的 lib，加上展示場 `examples/showcase`。遵循 terminu design
-principle，目前對應 tdp v0.11.3。這個 repo 的任務與規範的讀法見 [`CLAUDE.md`](../CLAUDE.md)。
+principle，目前對應 tdp v0.11.4。這個 repo 的任務與規範的讀法見 [`CLAUDE.md`](../CLAUDE.md)。
 
 ## 運作方式
 
@@ -161,6 +161,23 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   就蓋掉錯誤。
 - **toast 與 App Log 的字照原樣**（tdp toast.2）：開頭大寫是 app 的字。lib 分不出一列的開頭是名稱（`kbu.yaml saved`）還是一般的字，
   替 app 改大寫會改壞名稱，tdptest 檢查也會誤報，所以兩邊都不做；lib 自己給的字都大寫開頭。
+- **提權時密碼由 lib 問、只交給 sudo**（tdp terminal.7，v0.11.4，hostu 回報）：`App.Elevate` 只收指令與工具，問密碼的 popup
+  是 lib 自己建的 `lineInput`，沒有 `Done` 拿得到值，所以 app 碰不到密碼。跟 sudo 講話的方式（`elevate.go`）：
+  - **先問要不要密碼，不跑指令**：`sudo -n -v`。直接 `sudo -n <指令>` 失敗時分不出是要密碼還是指令失敗，再跑一次就跑了兩次。
+    sudoers 只對某個指令 `NOPASSWD`、其他要密碼的機器上，`-v` 會說要密碼，這時多問一次密碼，但指令照樣只跑一次。
+  - **密碼錯不看 sudo 印的字**：交密碼時用 `-S -p <lib 每次隨機產生的提示>`，數這個提示出現幾次；出現第二次就是 sudo 在問下一次，
+    密碼錯了。當場停掉 sudo（停不掉就關掉它的標準輸入），不讓它讀到空的輸入：讀到空的輸入在 `pam_faillock` 的機器上會多算一次失敗。
+  - **先驗再跑**：`sudo -S -v` 只驗密碼、不跑指令，結束碼 0 就是對的，所以之後的失敗一定是指令的（error popup），不會被當成密碼錯。
+    驗過後再 `sudo -n -v`：sudo 記著（一般的 `timestamp_timeout`）就 `sudo -n <指令>`、標準輸入是空的；不記（`timestamp_timeout=0`）
+    就 `sudo -S <指令>` 再交一次密碼，交完就關掉標準輸入，sudo 只讀到換行為止，指令讀不到密碼。
+  - 驗密碼要等（錯的時候 sudo 會停兩三秒），所以在背景跑，popup 標題後面 loading（tdp popup.4），除了 `Esc` 都吞掉，跟 locku
+    的暫停一樣。驗的時候按 `Esc` 會停掉 sudo，指令不跑；密碼驗過、指令已經在跑時按 `Esc`，popup 關掉，但指令跑完還是會叫 `Done`，
+    因為停不掉以 root 跑的指令，也不能讓 app 以為沒寫。
+  - doas 不能從標準輸入讀密碼，照舊在 terminal popup 裡跑、讓它自己問；`doas -n` 失敗時分不出原因，跟 hostu 原本的做法一樣直接開
+    terminal popup。Windows 不走 `Elevate`。
+- **旗標畫在標記欄**（tdp panel.7，v0.11.4，locku LK22）：`List.Flags` 保留標記欄，`Row.Flag` 是一列的 glyph 與顏色。
+  可以標記的清單同時開 `Flags` 是寫錯程式，跟登記了不能用的鍵一樣在 `AddScreen` panic，不放進 tdptest `Check`：
+  `Check` 要等 app 寫了測試、跑起來才報，`AddScreen` 一開 app 就報。
 
 ## 已否決，不要重提
 
@@ -247,8 +264,8 @@ tdp v0.6.0）。v0.x 之間 API 還可能變。每一版對應的 tdp 版本寫�
 踩過的坑與定下來的做法：
 
 - **tag 一推出去就被 proxy.golang.org 永久快取**：不搬、不刪、不重打。發錯了就發下一版。
-- **tdp 發版、lib 卻不用改時不單獨發**（只動了文件裡寫的 tdp 版本）：commit 留在本機，跟下一個有改 lib 的版本一起發。
-  CHANGELOG 那一節維持 `Unreleased`，發版時把版本拉到最新的 tdp。例：tdp v0.6.4 的跟進是跟著 v0.1.4 一起出去的。
+- **每一版 tdp 都發一版 terminu-go，lib 不用改也發**（user 2026-10-26，經 terminu）：harness 從 terminu-go 的 CHANGELOG 看
+  app 對應哪一版 tdp。CHANGELOG 的標題寫 `## vA.B.C — tdp vX.Y.Z`。（以前是 lib 不用改就不單獨發，跟下一版一起出去。）
 - **README 與 CHANGELOG 寫的 tdp 版本，要先在 terminu 的 GitHub 上有那個 tag**，別人才查得到。tdp 還只在本機時先別發。
 - **用 lib 的 app 不用 `replace`**：go.mod require 發布的版本；本機用 gitignore 掉的 `go.work`（`go work init . ../terminu-go`）
   接上這個 repo 的工作目錄。app 發版前用 `GOWORK=off go build ./... && GOWORK=off go test ./...`，確認只靠發布的版本也過。

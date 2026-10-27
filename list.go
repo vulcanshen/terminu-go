@@ -69,6 +69,10 @@ type Row struct {
 	// appear, sorted within; the rows are drawn two cells further in, under
 	// a title the cursor skips. A group with no row shown has no title.
 	Group string
+	// Flag is drawn in the mark column of a list with Flags: one sign, its
+	// glyph and colour the app's (locku's Green ● before the active
+	// profile); none leaves the column blank (tdp panel.7).
+	Flag Span
 }
 
 // SortKey is one column the list is sorted by.
@@ -87,6 +91,11 @@ type List struct {
 	// Draggable keeps that column too, for the swap glyph of the row held in
 	// a Drag mode (tdp panel): Hold, MoveHeld, Drop.
 	Draggable bool
+	// Flags keeps that column in a list that cannot be marked for the rows'
+	// flags (Row.Flag), one a row (tdp panel.7). A list that can be marked
+	// keeps it for the tick: Marks and Flags together is a mistake, and
+	// AddScreen panics.
+	Flags bool
 	// Anchor is the ID of a row a mode keeps picked while the cursor moves
 	// on (a Compare mode's first pick, tdp K11): drawn whole in Yellow,
 	// the mode's, with Base text, not bold and no arrow, as a selected range
@@ -446,7 +455,7 @@ func (l *List) Draw(w, h int, focused bool) []string {
 	}
 	arrow := Width(glyphHard)
 	markW := 0
-	if l.Marks || l.Draggable {
+	if l.Marks || l.Draggable || l.Flags {
 		markW = IconWidth() + 1
 	}
 	indent := ""
@@ -495,12 +504,21 @@ func (l *List) Draw(w, h int, focused bool) []string {
 		}
 		vi := lines[li].item
 		r := l.view[vi]
-		mark := ""
+		// mark is the row's sign on a cursor block; shown, the one drawn
+		// elsewhere: the tick in Green, a flag in its colour.
+		mark, shown := "", ""
 		if markW > 0 {
-			if l.marked[l.rowID(r)] {
+			mark = Repeat(" ", markW)
+			shown = mark
+			switch {
+			case l.marked[l.rowID(r)]:
 				mark = glyphMarked + " "
-			} else {
-				mark = Repeat(" ", markW)
+				shown = Fg(Green).Render(glyphMarked) + " "
+			case l.Flags && !l.Marks && l.rows[r].Flag.Text != "":
+				f := l.rows[r].Flag
+				flag := Truncate(Escape(f.Text), markW-1)
+				mark = Pad(flag, markW)
+				shown = Pad(f.Style.Render(flag), markW)
 			}
 		}
 		text := l.rowText(r, widths)
@@ -526,10 +544,7 @@ func (l *List) Draw(w, h int, focused bool) []string {
 			out = append(out, onBlock(Pad(" "+indent+mark+text, w-arrow), Style{Fg: Base, Bg: Yellow})+Repeat(" ", arrow))
 			continue
 		}
-		if mark != "" && l.marked[l.rowID(r)] {
-			mark = Fg(Green).Render(glyphMarked) + " "
-		}
-		out = append(out, " "+indent+mark+Pad(text, textW-markW)+Repeat(" ", arrow))
+		out = append(out, " "+indent+shown+Pad(text, textW-markW)+Repeat(" ", arrow))
 	}
 	l.scroll = ""
 	if len(lines) > rows {

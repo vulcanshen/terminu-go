@@ -13,7 +13,7 @@ import (
 
 // tdpVersion is the tdp this lib implements; _project holds its project/
 // templates as they are (tdp project.2).
-const tdpVersion = "v0.11.3"
+const tdpVersion = "v0.11.4"
 
 //go:embed _project
 var templates embed.FS

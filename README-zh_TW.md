@@ -107,6 +107,14 @@ app 讀不了自己的設定、狀態或資料（格式錯、檔案壞掉、沒�
 `app.MoveAsideRecord(path, err, reread)`：`Enter` 只把那一筆移開，再跑 `reread` 讀其他的。改版後不再用的檔交給使用者處理：
 每次啟動叫 `app.NoLongerUsed(paths...)`，還在的那幾個會在 App Log 各記一筆。
 
+## 要提權時
+
+要以管理員身分做事（例：把暫存檔複製到 `/etc/hosts`）時，叫 `app.Elevate(terminu.Elevate{Command: ..., Done: ...})`，只給要跑的
+指令。不用密碼時直接跑；要密碼時 lib 開 `PASSWORD` 的 password popup，把密碼交給 sudo，打錯了留在 popup 裡重打。app 拿不到密碼：
+它不會被存下來、記進 App Log、出現在畫面上或送出去。`Done` 拿到指令怎麼結束的：失敗時是 `*terminu.ElevateError`
+（指令印出來的每一列），交給 error popup；使用者取消時跑 `OnCancel`。沒有 sudo 只有 doas 時設 `Tool: terminu.Doas`，doas
+在 terminal popup 裡自己問密碼。Windows 不用這個，照舊用 gsudo 或 Windows 的 sudo（系統跳 UAC）。
+
 ## 設定
 
 使用者的設定裡，有兩個是 terminu 家族每個 app 共用的（tdp E3）。函式庫不讀設定檔：由 app 從自己的設定檔讀出來交給它。
@@ -178,7 +186,7 @@ return app.Tick(300*time.Millisecond, func(time.Time) tea.Msg { return searchNow
 
 ## 實作哪一版 terminu design
 
-terminu-go 實作 **tdp v0.11.3**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
+terminu-go 實作 **tdp v0.11.4**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
 
 ## 相關連結
 

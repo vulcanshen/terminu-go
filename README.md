@@ -120,6 +120,16 @@ that can't be read: `Enter` only moves that one aside and runs `reread`, which r
 no longer uses are left to the user: call `app.NoLongerUsed(paths...)` at every start, and the App Log names each one
 still there.
 
+## Raising privileges
+
+To do something as the administrator (copying a temporary file over `/etc/hosts`, say), call
+`app.Elevate(terminu.Elevate{Command: ..., Done: ...})` with only the command to run. It runs at once when no password
+is needed; otherwise the lib asks in a `PASSWORD` password popup and hands the password to sudo, a wrong one asked for
+again in the same popup. The app never gets the password: it is not stored, logged in the App Log, shown or sent
+anywhere. `Done` gets how the command ended: an `*terminu.ElevateError` when it failed (each line it printed), for an
+error popup; `OnCancel` runs when the user cancels. With doas and no sudo, set `Tool: terminu.Doas`: doas asks for the
+password itself in a terminal popup. Not for Windows: use gsudo or the sudo Windows has there, the system asking with UAC.
+
 ## Settings
 
 Two of the user's settings are shared by every terminu app (tdp E3). The library does not read config files: the
@@ -200,7 +210,7 @@ in whenever it is due.
 
 ## Which terminu design
 
-terminu-go implements **tdp v0.11.3**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
+terminu-go implements **tdp v0.11.4**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
 
 ## Links
 
