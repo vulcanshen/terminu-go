@@ -260,7 +260,10 @@ proto/c1/tmux-check.sh 2 2 replay 80 24 j j p    # 同一串按鍵之後的畫�
 
 4. 在 repo 外面建一個乾淨的 module，確認 proxy 抓得到、build 得過：
    `GOWORK=off go get github.com/vulcanshen/terminu-go@vA.B.C && GOWORK=off go build ./...`。
-5. 通知用 lib 的 app（kamonu、ccdrawu）：這版改了什麼、要不要改呼叫的程式、怎麼升級。
+5. 這一版要 app 改程式或行為時，通知所有開著的成員 session（webu 除外，user 自己更新）：這版改了什麼、要不要改呼叫的程式、
+   怎麼升級，由成員自己判斷要不要跟進。只改文件的版（例：tdp v1.0.1）發了不寄，成員什麼都不用做，等下次有要改的版再一次
+   升到最新（user 2026-10-27，經 terminu；取代「每次發版都通知所有成員」）。app 什麼時候發版，看它自己有沒有東西要給使用者，
+   發版前先升到最新的 terminu-go；tdp、terminu-go 換版本本身不會讓 app 發版。
 
 踩過的坑與定下來的做法：
 
