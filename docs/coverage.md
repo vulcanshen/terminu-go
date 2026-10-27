@@ -1,6 +1,6 @@
-# tdp v1.0.1 coverage
+# tdp v1.0.2 coverage
 
-tdp v1.0.1 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
+tdp v1.0.2 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
 （[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -547,6 +547,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 ## project（tdptest 替 app 查，lib 與展示場不套：E8）
 
 `tdptest.Check` 先在子測試 `repo` 裡讀 app 的 repo（測試目錄往上找到的 `go.mod`）。lib 帶著 tdp 這一版的範本（`tdptest/_project`）。
+project 只綁家族成員（project.1）：module 不在 `github.com/vulcanshen` 底下的 app 是照 tdp 做的，整段不查。
 
 | 出處 | 規定 | 怎麼驗 | 測試 |
 |---|---|---|---|
@@ -557,8 +558,8 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | project.2 | `uninstall.sh` 只差 `<app>`、標著 `app's own` 的段落；註解裡的 `<APP>` 不是 `<app>`，照原樣（project-5） | 同上 | `TestRepoWhatAnAppMayChange`、`TestRepoMarks`、`TestRepoChangedTemplates` |
 | project.2 | `internal/version/version.go` 只差 `<app>`（project-6） | 同上 | `TestRepoChangedTemplates` |
 | project.2 | `.gitignore` 範本在前、只差 `<app>`，app 自己的行接在最後（project-7） | 同上 | `TestRepoWhatAnAppMayChange`、`TestRepoChangedTemplates` |
-| project.2 | 照 tdp 做的 app：範本裡的 `vulcanshen` 換成自己的帳號（帳號從 `go.mod` 的 module 讀） | 同上 | `TestRepoAsTdpHasIt` |
-| project.3 | `cmd/<app>/main.go`、`go.mod` 的 module 是 `github.com/<帳號>/<app>`、`go.sum`、`LICENSE`、`docs/icon.svg`（project-12、13、15、16、18）；`install.sh` 的 `WINDOWS="yes"` 時另有 `install.ps1`、`uninstall.ps1`（project-19） | 同上 | `TestRepoFiles`、`TestRepoWindows` |
+| project.1 | 只綁家族成員：`go.mod` 的 module 不在 `github.com/vulcanshen` 底下的 app（照 tdp 做的）repo 怎麼放自己決定，範本、檔案、Makefile、CHANGELOG、module 都不查 | 同上 | `TestRepoNotFamily` |
+| project.3 | `cmd/<app>/main.go`、`go.mod` 的 module 是 `github.com/vulcanshen/<app>`、`go.sum`、`LICENSE`、`docs/icon.svg`（project-12、13、15、16、18）；`install.sh` 的 `WINDOWS="yes"` 時另有 `install.ps1`、`uninstall.ps1`（project-19） | 同上 | `TestRepoFiles`、`TestRepoWindows` |
 | project.5 | Makefile：開頭三列照範本、`include family.mk` 之前只有變數、`BINARY := <app>`、`##@ <app> 自己的` 是最後一段、target 不跟 family.mk 的重名（project-23～27） | 同上 | `TestRepoMakefile` |
 | project.6 | CHANGELOG 的開頭照範本、`## Unreleased` 單獨一列、寫了 tdp 的標題是 `## vX.Y.Z — tdp vA.B.C`（project-28、29、30）；沒寫 tdp 的舊標題不查（project-31） | 同上 | `TestRepoChangelog` |
 | E8 | lib 自己的 module 不查 | lib | `TestRepoLibModule` |

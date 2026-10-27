@@ -105,13 +105,35 @@ func repoErrs(t *testing.T, dir string) []string {
 }
 
 // TestRepoAsTdpHasIt: a repository with every template as tdp has it, the
-// app's name and account in them, passes; so does one made after tdp with an
-// account of its own in place of vulcanshen (tdp project.2).
+// app's name in them, passes.
 func TestRepoAsTdpHasIt(t *testing.T) {
-	for _, account := range []string{"vulcanshen", "someone"} {
-		if errs := repoErrs(t, goodRepo(t, account)); len(errs) > 0 {
-			t.Errorf("%s: %q", account, errs)
+	if errs := repoErrs(t, goodRepo(t, "vulcanshen")); len(errs) > 0 {
+		t.Errorf("%q", errs)
+	}
+}
+
+// TestRepoNotFamily: tdp project binds the family members alone (project.1):
+// an app made after tdp, its module not under github.com/vulcanshen, is not
+// checked, its templates changed, its files and Makefile gone, its module
+// anywhere.
+func TestRepoNotFamily(t *testing.T) {
+	for _, module := range []string{"github.com/someone/hostu", "example.com/hostu", "hostu"} {
+		dir := goodRepo(t, "someone")
+		edit(t, dir, "go.mod", "module github.com/someone/hostu", "module "+module)
+		edit(t, dir, "family.mk", "LDFLAGS := -s -w", "LDFLAGS := -s")
+		for _, f := range []string{"cmd/hostu/main.go", "LICENSE", "Makefile", "CHANGELOG.md"} {
+			if err := os.Remove(filepath.Join(dir, filepath.FromSlash(f))); err != nil {
+				t.Fatal(err)
+			}
 		}
+		if errs := repoErrs(t, dir); len(errs) > 0 {
+			t.Errorf("%s: %q", module, errs)
+		}
+	}
+	dir := goodRepo(t, "vulcanshen")
+	edit(t, dir, "family.mk", "LDFLAGS := -s -w", "LDFLAGS := -s")
+	if errs := repoErrs(t, dir); len(errs) == 0 {
+		t.Errorf("a family member's changed family.mk passes")
 	}
 }
 
@@ -302,7 +324,7 @@ func TestRepoWindows(t *testing.T) {
 }
 
 // TestRepoFiles: the files every app has (tdp project.3): the main package,
-// go.mod's module github.com/<account>/<app>, go.sum, LICENSE, docs/icon.svg.
+// go.mod's module github.com/vulcanshen/<app>, go.sum, LICENSE, docs/icon.svg.
 func TestRepoFiles(t *testing.T) {
 	dir := goodRepo(t, "vulcanshen")
 	for _, f := range []string{"cmd/hostu/main.go", "go.sum", "LICENSE", "docs/icon.svg"} {
@@ -318,9 +340,13 @@ func TestRepoFiles(t *testing.T) {
 		}
 	}
 	dir = goodRepo(t, "vulcanshen")
-	edit(t, dir, "go.mod", "module github.com/vulcanshen/hostu", "module example.com/hostu")
-	if errs := repoErrs(t, dir); len(errs) != 1 || !strings.Contains(errs[0], "project-13") {
-		t.Errorf("another module: %q", errs)
+	edit(t, dir, "go.mod", "module github.com/vulcanshen/hostu", "module github.com/vulcanshen/hostu/v2")
+	if err := os.Remove(filepath.Join(dir, "LICENSE")); err != nil {
+		t.Fatal(err)
+	}
+	// Still a family member's: the rest is checked too.
+	if errs := repoErrs(t, dir); len(errs) != 2 || !strings.Contains(errs[0], "project-13") || !strings.Contains(errs[1], "project-16") {
+		t.Errorf("another module, no LICENSE: %q", errs)
 	}
 }
 

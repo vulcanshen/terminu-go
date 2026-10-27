@@ -46,7 +46,8 @@ type App struct {
 // directory, against tdp project (in a subtest "repo"): the templates of
 // project.2, as the tdp this lib implements has them, but for what an app may
 // change in each; the files of project.3; the Makefile of project.5; the
-// CHANGELOG of project.6. A failure names the file, shows the difference and
+// CHANGELOG of project.6; an app made after tdp, its module not under
+// github.com/vulcanshen, is not checked (project.1). A failure names the file, shows the difference and
 // says what to copy again. The lib's own module is not checked (tdp E8).
 //
 // Each launch is a first one, in a sandbox of its own: a new directory

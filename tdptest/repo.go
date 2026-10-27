@@ -13,7 +13,7 @@ import (
 
 // tdpVersion is the tdp this lib implements; _project holds its project/
 // templates as they are (tdp project.2).
-const tdpVersion = "v1.0.1"
+const tdpVersion = "v1.0.2"
 
 //go:embed _project
 var templates embed.FS
@@ -44,15 +44,16 @@ func repoRoot() string {
 // checkRepo checks the app's repository at root against tdp project: the
 // templates of project.2 as tdp has them, but for what an app may change in
 // each, and the files, Makefile and CHANGELOG checked by reading them alone.
+// tdp project binds the family members alone (project.1): an app made after
+// tdp, its module not under vulcanshen, keeps its repository as it likes.
 func checkRepo(t testing.TB, root, name string) {
 	t.Helper()
 	if root == "" {
 		t.Errorf("tdptest: no go.mod at or above the test's directory: the repository is not checked (tdp project)")
 		return
 	}
-	r := &repo{t: t, root: root, name: name, account: "vulcanshen"}
-	module := r.module()
-	if module == libModule {
+	r := &repo{t: t, root: root, name: name}
+	if !r.family() {
 		return
 	}
 	r.files()
@@ -65,9 +66,6 @@ func checkRepo(t testing.TB, root, name string) {
 type repo struct {
 	t          testing.TB
 	root, name string
-	// account owns the repository, vulcanshen in the family; an app made
-	// after tdp has its own in place of vulcanshen (tdp project.2).
-	account string
 }
 
 func (r *repo) read(rel string) (string, bool) {
@@ -83,30 +81,29 @@ func (r *repo) has(rel string) bool {
 	return err == nil
 }
 
-// module reads go.mod's module path; it is github.com/<account>/<app>
-// (tdp project.3, project-13).
-func (r *repo) module() string {
+// family reads go.mod's module path and says whether the repository is a
+// family member's, the module under github.com/vulcanshen; a member's is
+// github.com/vulcanshen/<app> (tdp project.3, project-13). The lib's own
+// module is not an app's (tdp E8).
+func (r *repo) family() bool {
 	s, ok := r.read("go.mod")
 	if !ok {
 		r.t.Errorf("tdptest: there is no go.mod (tdp project.3, project-15)")
-		return ""
+		return false
 	}
 	m := regexp.MustCompile(`(?m)^module\s+(\S+)`).FindStringSubmatch(s)
 	if m == nil {
 		r.t.Errorf("tdptest: go.mod names no module (tdp project.3, project-13)")
-		return ""
+		return false
 	}
-	if m[1] == libModule {
-		return m[1]
+	if m[1] == libModule || !strings.HasPrefix(m[1], "github.com/vulcanshen/") {
+		return false
 	}
-	own := regexp.MustCompile(`^github\.com/([^/]+)/` + regexp.QuoteMeta(r.name) + `$`).FindStringSubmatch(m[1])
-	if own == nil {
-		r.t.Errorf("tdptest: go.mod's module is %s, not github.com/<account>/%s: go install github.com/<account>/%s/cmd/%s@latest has to work (tdp project.3, project-13)",
+	if m[1] != "github.com/vulcanshen/"+r.name {
+		r.t.Errorf("tdptest: go.mod's module is %s, not github.com/vulcanshen/%s: go install github.com/vulcanshen/%s/cmd/%s@latest has to work (tdp project.3, project-13)",
 			m[1], r.name, r.name, r.name)
-		return m[1]
 	}
-	r.account = own[1]
-	return m[1]
+	return true
 }
 
 // files are the ones tdp project.3 puts in every app.
@@ -143,8 +140,7 @@ func lines(s string) []line {
 type template struct {
 	src, dst, item string
 	may            string // what may differ, for the message
-	// named: the app's name and account are written as <app> and
-	// vulcanshen before comparing.
+	// named: the app's name is written as <app> before comparing.
 	named bool
 	// fix makes the app's lines and the template's comparable: what the app
 	// may change is made the same on both sides.
@@ -238,13 +234,9 @@ func (r *repo) template(tm template) {
 	}
 }
 
-// unname writes the app's name as <app> and its account as vulcanshen, as in
-// the templates. The <APP> in uninstall.sh's comment is not <app>: it stays
-// as it is (tdp project.2).
+// unname writes the app's name as <app>, as in the templates. The <APP> in
+// uninstall.sh's comment is not <app>: it stays as it is (tdp project.2).
 func (r *repo) unname(s string) string {
-	if r.account != "vulcanshen" {
-		s = regexp.MustCompile(`\b`+regexp.QuoteMeta(r.account)+`\b`).ReplaceAllLiteralString(s, "vulcanshen")
-	}
 	return regexp.MustCompile(`\b`+regexp.QuoteMeta(r.name)+`\b`).ReplaceAllLiteralString(s, "<app>")
 }
 

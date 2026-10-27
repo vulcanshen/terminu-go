@@ -2,6 +2,12 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.0.2 — tdp v1.0.2
+
+- tdp project binds the family members alone (project.1): `tdptest.Check` no longer checks the repository of an app
+  whose `go.mod` module is not under `github.com/vulcanshen` (an app made after tdp): not its templates, files,
+  Makefile, CHANGELOG or module path. A family member is checked as before
+
 ## v1.0.1 — tdp v1.0.1
 
 - tdp v1.0.1 changes only what a family member's README says in its terminu family section (E7): links to tdp,

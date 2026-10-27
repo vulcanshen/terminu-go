@@ -190,7 +190,8 @@ func TestFirstLaunch(t *testing.T) {
   tdp project: the templates (`family.mk`, `release.yml`, `.goreleaser.yaml`, `install.sh`, `uninstall.sh`,
   `version.go`, `.gitignore`) as the tdp this version implements has them, but for what each lets an app change; the
   files every app has; the Makefile's layout; the CHANGELOG's start and headings. A failure names the file, shows the
-  difference and says which template to copy again.
+  difference and says which template to copy again. tdp project binds the family members alone: the repository of an
+  app whose `go.mod` module is not under `github.com/vulcanshen` is not checked.
 - **`Tricky`, `Sizes` and `Mashes`** are values that have broken screens: control characters, escape sequences, wide
   and joined characters, very long values; odd terminal sizes; keys pressed faster than the animations (`Mash`).
 
@@ -210,7 +211,7 @@ in whenever it is due.
 
 ## Which terminu design
 
-terminu-go implements **tdp v1.0.1**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
+terminu-go implements **tdp v1.0.2**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
 
 ## Links
 
