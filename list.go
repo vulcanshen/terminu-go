@@ -821,6 +821,10 @@ func (l *List) MoveKeys() []KeyRow {
 }
 
 // Actions are the list's own panel operations: the filter.
+//
+// TODO(tdp G103): the filter is an operation the lib runs, so only the lib
+// can log it (tdp note.7), but tdp does not say what goes in the App Log for
+// it, or when; for now nothing does.
 func (l *List) Actions() []Action {
 	if !l.Filterable {
 		return nil

@@ -1,6 +1,6 @@
-# tdp v0.10.3 coverage
+# tdp v0.11.0 coverage
 
-tdp v0.10.3 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
+tdp v0.11.0 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
 （[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -122,7 +122,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | M2 | Space menu 三區：`item operation` → `panel operation` → 一列 `Global operation`（沒熱鍵），順序固定、標題英文原字（畫成大寫，components.4） | 任一 panel 按 `Space` | `TestM2SectionsOrder`、`TestM2HeadingStrings` |
 | M2 | global 那一列不加標題、跟上面用分隔線隔開；沒有對象就沒有那一區；item 與 panel 一律加標題（只剩一區也加） | P `[1] PODS` 的 `Empty` 之後按 `Space`（沒有 item 區） | `TestM2NoTargetNoSection`、`TestM2HeadingAlways` |
 | M3 | 每個 item / panel operation 都在 Space menu；每個 global operation 都在 global operation popup；popup 的操作在 hint 與 `?` | lib：只有登記過的動作才有熱鍵 | `TestM3EveryHotkeyInMenu`、`TestValuesEnterInMenuAndKeys`（一列一個值的 `Enter` 也在 Space menu 與 `?`） |
-| M3 | 只有打字列的 popup（text、password、number）：hint 列出全部操作、80 欄放得下 | I 的 `Name`、`Password`、`PIN`、`Port` | `TestM3TypingPopupHintFits80` |
+| M3 | 只有打字列的 popup（text、password、number）：hint 列出全部操作、60 欄放得下（L1） | I 的 `Name`、`Password`、`PIN`、`Port`（終端機 60 欄） | `TestM3TypingPopupHintFits60` |
 | M4 | global operation popup：從 Space menu 的 global 列 `Enter`，疊在 Space menu 上；一種 menu；全部全域動作；離開在這裡 | 任一 panel：`Space` → `Global operation` | `TestM4GlobalPopup` |
 | M4 | `Esc` 回到 Space menu；執行了照 T1；目前畫面的切換列停用 | 在 `[P]ANELS` 上看 `[P]anels` 那一列 | `TestM4EscBackToSpaceMenu`、`TestM4CurrentScreenDisabled` |
 | M4 | global 熱鍵在 panel 上直接按（沒有 popup 時）；跟 panel 熱鍵撞鍵時 panel 的優先、那個 panel 的 key reference 不列被蓋掉的 global 鍵；數字的 global 熱鍵只在 popup 裡；模式裡不作用 | P `[1] PODS` 的 `[D]rag` 蓋掉 global 的 `[D]ialogs` | `TestM4GlobalHotkeyOnPanel`、`TestM4PanelKeyWins` |
@@ -146,8 +146,8 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 
 | 出處 | 規定 | 展示場 | 測試 |
 |---|---|---|---|
-| L1 | 80 × 40 能完成所有核心任務；放不下所有 panel 時照 screen 的窄寬 | 終端機開 80 × 40 走一遍；`Narrow layout` | `TestL1Core80x40`、`TestScreenNarrow`、`TestOnResize`（lib：`App.OnResize`，app 照寬度重排） |
-| L1 | 最低尺寸預設 80×40、app 可以調低不能高於（lib：`App.MinWidth`、`MinHeight`）；比它小時只在正中央畫名稱（Blue 粗體）與 `needs a terminal of at least W×H`（Overlay0），放不下先拿掉提示、名稱畫得下多少畫多少，到 1×1 不當掉；按鍵都不作用、不送進 PTY，只有連按兩次 `Ctrl-C` 立刻離開；狀態保留，拉大回到原本的畫面 | 展示場的最低尺寸是 60×20：把視窗縮到比它小 | `TestL1LeastSize`；展示場的 `TestFirstLaunch`（只縮寬、只縮高、80×5、兩列、一列、1×1，開著 popup 縮小再放回） |
+| L1 | 60 × 32 能完成所有核心任務、所有 panel 並排；放不下所有 panel 時照 screen 的窄寬 | 終端機開 60 × 32 走一遍；`Narrow layout`；tdptest 的 `Check` 在 60 × 32 跑一輪 | `TestL1Core60x32`、`TestScreenNarrow`、`TestOnResize`（lib：`App.OnResize`，app 照寬度重排） |
+| L1 | 最低尺寸預設 60×32、app 可以調低不能高於（lib：`App.MinWidth`、`MinHeight`，高過的當成 60×32；tdptest 的 `Check` 報出來）；比它小時只在正中央畫三列：名稱（Blue 粗體）、`needs a terminal of at least W×H`、`Press [Ctrl-C] twice to quit`（都是 Overlay0）（screen.7），放不下先拿掉提示、再拿掉怎麼離開那一列，一列比畫面寬也算放不下（28～33 欄只剩名稱與怎麼離開），名稱畫得下多少畫多少，到 1×1 不當掉；按鍵都不作用、不送進 PTY，只有連按兩次 `Ctrl-C` 立刻離開；狀態保留，拉大回到原本的畫面 | 展示場的最低尺寸是 60×20：把視窗縮到比它小 | `TestL1LeastSize`、`TestCheckLimits`；展示場的 `TestFirstLaunch`（只縮寬、只縮高、30 欄、兩列、80×5、一列、1×1，開著 popup 縮小再放回） |
 | L2 | 標題、statusbar、chip 等動態文字固定寬度；一列裡最後一個動態欄位可以不補空白 | statusbar 的錯誤與警告數（`%-3d`，固定寬）、最後的 `copying: 4%`（不補）；panel 標題換 tab | `TestL2FixedWidthChrome` |
 | L3 | footer、statusbar、tab 列列數鎖死；放不下截斷或從尾端捨，不折行 | 縮到 30 欄 | `TestL3ChromeRowsFixed` |
 | L4 | 每一列剛好等於終端機寬度 | 每個畫面、每種 popup，多種尺寸（含 5 列以下與 1×1：popup 被截掉、不 panic），icon 一格與兩格；app 的文字裡有 Tab 時一樣 | `TestL4EveryRowFullWidth`、`TestE3TabsDrawnAsSpaces`；展示場的 `TestFirstLaunch` 與 tdptest 的 `TestTrickyValuesEverywhere`、`TestSizesAndMashes`（每處理一個 message 量一次） |
@@ -273,7 +273,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | screen.3 | 每個畫面一個膠囊、串的顏色 Blue（選中填 Blue 字 Base 粗體、沒選中底 Mantle 字 Blue）；放不下先縮 `[P] [I] [D] [T]` 再收掉沒選中的 | 每個畫面；縮窄 | `TestScreenChips`、`TestScreenChipsShrink` |
 | screen.3 | 右邊放 statusbar；下面全寬粗線 `━` Overlay0；長工作時從左填 Green 進度條、狀態文字 Green；terminal popup 開著時 chip 列與分隔線留著 | `Start task`；開 terminal popup 時再看一次 | `TestChipRowProgress` |
 | screen.4 | 不是 surface；label 有熱鍵就標；一組 `label: 值`、冒號後空一格，組與組之間兩格、不加分隔符號（展示場：app 畫的）；一般 Overlay0、你在哪 Lavender、進行中 Green、錯誤警告數 Red / Peach；寬度固定、截斷不折行 | statusbar：`[N]arrow: off  icon: 1  powerline: 1  errors: 3  warnings: 2`（有熱鍵、值 Lavender）、`[S]tart task` 進行中 `copying: 4%` Green | `TestStatusbar` |
-| screen.5 | 放不下時只畫 focus 的 panel 佔滿寬、`Tab` 照換；門檻 app 定、不高於 80；窄寬只在最低尺寸以上才有 | `[N]arrow layout`；或縮到 59 欄以下 | `TestScreenNarrow` |
+| screen.5 | 放不下時只畫 focus 的 panel 佔滿寬、`Tab` 照換；門檻 app 定、不高於 60（lib：`Screen.NarrowBelow`，高過的當成 60；tdptest 的 `Check` 報出來）；窄寬只在最低尺寸以上才有 | `[N]arrow layout`；或縮到 59 欄以下 | `TestScreenNarrow`、`TestCheckLimits` |
 | screen.6 | 放大一個 panel 是 app 的功能；預設跟窄寬一樣只畫 focus 的那一個、`Tab`、數字鍵照換、換到的也是放大的（lib：`App.ForceNarrow` 就是這個預設） | `[N]arrow layout` | `TestScreenNarrow` |
 | screen.8 | 置中一句事實 + 一句點名按鍵的提示，都 Overlay0，提示的鍵加方括號；panel 的 loading 與錯誤也用這個樣子（panel.15）；太長在空白處折行、每列置中、左右離框一格，不截斷 | P `[1] PODS` 的 `Empty`（把視窗縮窄） | `TestEmptyState`、`TestValuesEmptyState`（一列一個值的 panel：`Values.EmptyFact`、`EmptyHint`） |
 
@@ -341,7 +341,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | popup.1 | 標題：glyph + 文字做成膠囊，放在 `┏━` 後；兩端圓角 U+E0B6 / U+E0B4；填層色，字 Base 粗體、大寫（名稱與路徑照原樣）；寫對哪一個做時，名稱接在 `: ` 後、照原樣（viewer 的 ` — `、file-picker 的 ` · ` 照它們自己的）；太長從尾端截加 `…` | 每種 popup；D「Popup: long title」；D「Confirm」`DELETE: web-a8k2`、「Form: long」`EDIT: prod-db-01`；I `Name` 按 `Enter` 的 `RENAME: assets` | `TestPopupTitleCapsule`、`TestPopupTitleTruncate`、`TestPopupTitleSubject`、`TestTruncateKeepsStyle`（截掉時 `…` 跟著被截那段的樣式）、`TestPopupSubjectErrorMenu`（`App.MenuAbout`：`OPEN WITH: notes.md`） |
 | popup.1 | 標題後接 tab 照膠囊串畫（跟圓角的標題之間隔一段線） | D「Popup with tabs」 | `TestPopupTitleTabs` |
 | popup.1 | 標題 glyph：menu U+F0C9、key reference U+F059、confirm U+F0ECC、toast 依種類、terminal U+F018D、input／表單／note／app 自己的 popup app 可以自行決定 | 每種 popup | `TestPopupTitleGlyph` |
-| popup.1 | hint 放 `┗━ ` 後；順序 `Enter` → 自己的鍵 → `Tab:…` → `Esc`（terminal 出口鍵第一）；不寫移動鍵（換塊的照寫，表單的 `Tab:actions`）；框到最寬還放不下才從尾端整組捨（terminal 太窄時），但最後的 `Esc` 一定留著，從它前面那一組開始捨；只有打字列的列全部、80 欄放得下 | 每種 popup；把 terminal 縮到很窄 | `TestPopupHintOrder`、`TestPopupHintDrop` |
+| popup.1 | hint 放 `┗━ ` 後；順序 `Enter` → 自己的鍵 → `Tab:…` → `Esc`（terminal 出口鍵第一）；不寫移動鍵（換塊的照寫，表單的 `Tab:actions`）；框到最寬還放不下才從尾端整組捨（terminal 太窄時），但最後的 `Esc` 一定留著，從它前面那一組開始捨；只有打字列的列全部、60 欄放得下 | 每種 popup；把 terminal 縮到很窄 | `TestPopupHintOrder`、`TestPopupHintDrop`、`TestM3TypingPopupHintFits60` |
 | popup.1 | 框上的字與角之間隔一段線：`┏━TITLE`、`┗━ Enter:run`、`4 of 12 ━┛` | 每種 popup | `TestPopupFrameTextSpacing` |
 | popup.1 | 內容上下各留一列、左右離框一格（terminal 上下左右都不留） | D「Menu: long」 | `TestPopupMargins` |
 | popup.1 | 清單的 cursor 從框貼到框、字照樣離框一格；表單的 focus 色塊從值到框；右邊的留白是 U+E0B0、色塊的顏色，跟箭頭一樣寬；只有整列的 cursor 有箭頭 | Space menu；D「Form: New host」 | `TestPopupCursorCoversPadding`、`TestCursorArrow` |
@@ -428,6 +428,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | note.2 | 有 tab 的 viewer：行號欄照看過的頁裡最寬的，只變寬、不變窄（串流的頁也一樣） | D「Popup with tabs」、DevTools 切 tab | `TestViewerTabGutterOnlyGrows` |
 | note.2 | 照終端機的樣子：Tab 畫成 `input_tab_width` 格空白、不對齊 tab 停點；`\n` 是換行（app 交來的一行裡夾著也拆）；換行前的 `\r`（CRLF）不畫；顏色碼照著上色；一行裡的 `\r` 只留最後的狀態；其他控制字元與不是顏色碼的序列畫成名字、Red；複製照原樣；file-picker 預覽的文字檔一樣（檔案自己的顏色碼也照著上色） | I `[2] FILES` 的 `main.go` 按 `[V]iew`（有 Tab）；`[/] Find` 預覽同一個檔 | `TestViewerTabs`、`TestViewerControlChars`、`TestViewerEscapeSequencesShown`（不是樣式的 escape sequence 照字畫、ESC 寫名字）、`TestReadingContent`、`TestFilePreviewEscapes` |
 | note.7 | 每個 app 都有；`!` 在 panel 上打開，是 viewer、最新的在最下面、打開時在最後、開著時新的一筆照樣進來；每一筆 `HH:MM:SS`（Overlay0）、等級（`INFO` Text、`OK` Green、`WARN` Peach、`ERR` Red，四格靠左）、發生的事（照 toast.2 的開頭大寫：lib 自己記的 `Moved … to …`、展示場的 `Started; …`）；每一個 toast 與 error popup 自動記，app 用 `App.Log` 記動作與背景的事（任何 goroutine 都能叫） | 任一 panel 按 `!`；展示場啟動時記兩筆 | `TestAppLogEntries`、`TestMoveAside`（大寫開頭） |
+| note.7 | 記的動作是 P3 的 item、panel、global operation，從 menu、letter hotkey 或 `Enter` 執行，只看不改的也記；移動 cursor、換 focus、Space menu、`?`、`!` 不記；popup 裡的操作只記它所屬那個動作的結果。lib 執行的切換畫面（畫面的鍵、global operation popup）lib 自己記 `Switched to <畫面名>`（note.7 的例子）；app 自己的 operation 由 app 用 `App.Log` 記，字是 app 的；lib 的 list 篩選（`/`）tdp 沒寫記什麼，還不記（G103） | 按 `O`、從 global operation popup 切回 `Panels`，按 `!` | `TestAppLogScreenSwitch` |
 | note.7 | 只放在記憶體，筆數有上限（1000），滿了丟最舊的 | lib | `TestAppLogInMemory` |
 | note.2 | 有固定格式的照 file-picker 預覽上色（chroma catppuccin-mocha、只上前景色）；語言由 app 給（`Viewer.Lang`），檔案內容照檔名；沒有固定格式或判斷不出來的是純文字 Text（建議；app 自己給的顏色保留，例：log 的 ERROR、WARN 行）；行號 Overlay0；選取範圍 Yellow 底 Base 字、範圍裡不顯示語法顏色 | D「Note viewer」（YAML）；I `[2] FILES` 的 `[V]iew`；P `[2] LOG` 按 `Enter`（ERROR 紅、WARN 橘保留） | `TestViewerSyntaxColours` |
 | note.3 | 折行的 viewer 以畫出來的一列為單位捲（`j\|k` 一列、`u\|d` 照列算）；`N-M of T` 的 N、M 是最上面、最下面那一列所屬的行；選取模式照舊以行為單位 | D「Note viewer」把視窗縮窄 | `TestViewerScrollsRows` |

@@ -60,6 +60,28 @@ func TestToastKeepsCase(t *testing.T) {
 	}
 }
 
+// TestAppLogScreenSwitch: a switch of screens the user runs, by the screen's
+// key or from the global operation popup, goes in by itself; what is not an
+// operation does not: moving the cursor or the focus, the Space menu, ?, !.
+// A switch the app makes (ShowScreen) is the app's to log (tdp note.7,
+// note-77).
+func TestAppLogScreenSwitch(t *testing.T) {
+	ta, _ := logApp(t)
+	ta.press("j", "k", "Tab", "1", "Space", "Esc", "?", "Esc", "!", "Esc")
+	ta.settle()
+	ta.press("O")
+	ta.press("Space", "G", "Enter", "P")
+	ta.settle()
+	ta.ShowScreen(ta.screens[1])
+	var got []string
+	for _, e := range ta.logs.entries {
+		got = append(got, e.text)
+	}
+	if want := []string{"Switched to Other", "Switched to Panels"}; fmt.Sprint(got) != fmt.Sprint(want) || ta.cur != 1 {
+		t.Errorf("logged %q, want %q; on screen %d", got, want, ta.cur)
+	}
+}
+
 // TestAppLogEntries: each entry is its time HH:MM:SS in Overlay0, its level
 // four cells wide in its colour, what happened; every toast and error popup
 // goes in, the app logs its own; newest at the bottom, the log open at its

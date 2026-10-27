@@ -151,7 +151,8 @@ func TestFirstLaunch(t *testing.T) {
 - **`EachIconWidth`** 把一個測試跑三次：icon 與 powerline 符號都佔一格、icon 佔兩格、兩種都佔兩格。
 - **`Check`** 在好幾種終端機尺寸、每一種 icon 寬度下，像第一次那樣啟動 app，每次都在新的沙盒裡（`HOME` 與 XDG 目錄放在 `/tmp`
   底下，app 自己的環境變數清掉）；在每個畫面、每個 panel 打開 `Space` menu、global operation popup、App Log 與 `?`，再用 `Esc` 一層層關掉；
-  最後把終端機縮到比 app 的最低尺寸小，再放回來。畫面上出現被畫成字的顏色碼（留在格子或值裡、沒改成 `Styled` 的）也會失敗；
+  最後把終端機縮到比 app 的最低尺寸小，再放回來。`MinWidth`、`MinHeight` 高過 60×32，或 `NarrowBelow` 高過 60，也會失敗（tdp L1）。
+  畫面上出現被畫成字的顏色碼（留在格子或值裡、沒改成 `Styled` 的）也會失敗；
   `Tricky` 標明 Seed 放進去的是刁鑽值時不算。任何用 `Driver` 的測試，畫面上出現紅色的換行名字（自己的 toast 裡寫了 `\n`）都會
   失敗；資料刻意放了這種名字時設 `AllowLineBreaks`。
   `Env` 拿得到沙盒的 `HOME`，環境變數可以指到 `Seed` 放進去的檔。
@@ -177,7 +178,7 @@ return app.Tick(300*time.Millisecond, func(time.Time) tea.Msg { return searchNow
 
 ## 實作哪一版 terminu design
 
-terminu-go 實作 **tdp v0.10.3**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
+terminu-go 實作 **tdp v0.11.0**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
 
 ## 相關連結
 

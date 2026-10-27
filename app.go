@@ -29,7 +29,8 @@ type Screen struct {
 	// app's (tdp L1).
 	Layout func(w, h int) []Rect
 	// NarrowBelow is the width under which only the focused panel is drawn,
-	// across the whole width (tdp screen.5); at most 80.
+	// across the whole width (tdp screen.5); at most 60, where every panel
+	// is side by side (tdp L1).
 	NarrowBelow int
 
 	focus int
@@ -133,11 +134,12 @@ type App struct {
 	// Splash is the family's easter egg, opened with V on a panel (Rules S).
 	// Every app has one: Run refuses an app without it.
 	Splash Splash
-	// MinWidth and MinHeight are the app's least size (tdp L1): 80 × 40 when
-	// unset, the most they may be. On a smaller terminal only the app's name
-	// and "needs a terminal of at least W×H" are drawn, in the middle; every
-	// key is ignored, the PTY's too, but Ctrl-C pressed twice, which leaves.
-	// What the app was showing comes back as the terminal grows.
+	// MinWidth and MinHeight are the app's least size (tdp L1): 60 × 32 when
+	// unset, the most they may be. On a smaller terminal only the app's name,
+	// "needs a terminal of at least W×H" and "Press [Ctrl-C] twice to quit"
+	// are drawn, in the middle; every key is ignored, the PTY's too, but
+	// Ctrl-C pressed twice, which leaves. What the app was showing comes back
+	// as the terminal grows.
 	MinWidth, MinHeight int
 	// CoreKeys are core keys of the app's own (tdp K1): each means the same
 	// on every panel and popup, but on a typing row, in a PTY and in a mode;
@@ -177,14 +179,14 @@ type App struct {
 	terminals []*Terminal    // the terminal popups opened, for a test to stop
 }
 
-// minSize is the least size: the app's, 80 × 40 at most (tdp L1).
+// minSize is the least size: the app's, 60 × 32 at most (tdp L1).
 func (a *App) minSize() (w, h int) {
-	w, h = 80, 40
+	w, h = 60, 32
 	if a.MinWidth > 0 {
-		w = min(a.MinWidth, 80)
+		w = min(a.MinWidth, 60)
 	}
 	if a.MinHeight > 0 {
-		h = min(a.MinHeight, 40)
+		h = min(a.MinHeight, 32)
 	}
 	return w, h
 }
@@ -195,17 +197,27 @@ func (a *App) tooSmall() bool {
 	return a.w < mw || a.h < mh
 }
 
-// tinyScreen is all that is drawn under the least size: the app's name in
-// Blue bold and, under it, what size it needs in Overlay0, in the middle;
-// with one row, or no room for the second, the name alone (tdp
+// tinyScreen is all that is drawn under the least size, in the middle: the
+// app's name in Blue bold, what size it needs and how to leave, both in
+// Overlay0. Short of rows the size goes first, then how to leave; a row
+// wider than the screen does not fit either; the name always stays (tdp
 // screen.7).
 func (a *App) tinyScreen(w, h int) []string {
 	mw, mh := a.minSize()
 	need := "needs a terminal of at least " + itoa(mw) + "×" + itoa(mh)
+	const quit = "Press [Ctrl-C] twice to quit"
 	// As much of the name as fits, nothing put in its place.
 	rows := []string{Fg(Blue).Bolded().Render(clip(a.Name, w))}
-	if h >= 2 && Width(need) <= w {
+	room := h - 1
+	toQuit := room >= 1 && Width(quit) <= w
+	if toQuit {
+		room--
+	}
+	if room >= 1 && Width(need) <= w {
 		rows = append(rows, Fg(Overlay0).Render(need))
+	}
+	if toQuit {
+		rows = append(rows, Fg(Overlay0).Render(quit))
 	}
 	out := blankLines(w, h)
 	top := (h - len(rows)) / 2
@@ -972,7 +984,11 @@ func (a *App) globalActions() []Action {
 			}
 			out = append(out, Action{Key: s.Key, Label: s.Name, Desc: desc, Scope: GlobalScope,
 				Disabled: func() bool { return a.cur == i },
-				Do:       func() tea.Cmd { return a.switchScreen(i) }})
+				Do: func() tea.Cmd {
+					cmd := a.switchScreen(i)
+					a.Log(Info, "Switched to "+s.Name) // the lib runs it, so the lib logs it (tdp note.7)
+					return cmd
+				}})
 		}
 	}
 	out = append(out, a.Global...)
@@ -1571,7 +1587,7 @@ func (a *App) narrow(s *Screen) bool {
 	if a.ForceNarrow {
 		return true
 	}
-	return s.NarrowBelow > 0 && a.w < min(s.NarrowBelow, 80)
+	return s.NarrowBelow > 0 && a.w < min(s.NarrowBelow, 60)
 }
 
 // panelArea draws the current screen's panels in w × h.

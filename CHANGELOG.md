@@ -2,7 +2,23 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## v0.5.3 — tdp v0.10.3
+## v0.6.0 — tdp v0.11.0
+
+- The standard size is 60 × 32 (tdp L1): `MinWidth` and `MinHeight` are 60 × 32 when unset and never more; a higher
+  one counts as 60 × 32. A screen's `NarrowBelow` counts as 60 at most, so at 60 columns every panel is side by side
+  (tdp screen.5). An app with a full layout wider than 60 columns lays it out again
+- Under the least size a third row says how to quit, `Press [Ctrl-C] twice to quit`, in Overlay0 under the size it
+  needs. Short of rows the size goes first, then this row; a row wider than the screen does not fit either (at 28 to
+  33 columns only the name and how to quit are left); the name always stays (tdp screen.7)
+- The App Log: a switch of screens the user runs, by the screen's key or from the global operation popup, goes in by
+  itself as `Switched to <screen>` (tdp note.7's words). The app logs every operation of its own the user runs, one
+  that only looks too (opening a viewer); moving the cursor or the focus, the Space menu, `?` and `!` are not logged.
+  The list's own filter (`/`) is not logged yet: what to write for it is not in tdp (G103)
+- tdptest: `Check` fails a `MinWidth`, `MinHeight` above 60 × 32 and a `NarrowBelow` above 60, naming the setting; it
+  launches on 60 × 32 in place of 80 × 40, where every frame is checked as before; under the least size it checks the
+  three rows, their order and which go first, also at 30 columns and two rows. `Sizes` has 59 × 32, 60 × 31 and
+  60 × 32 in place of 79 × 40 and 80 × 39
+- The lib's text, password and number popups show their whole hint at 60 columns (tdp M3, popup.1)
 
 - tdptest: `Check` reads the app's repository too, in a subtest `repo`, with no change to the app's tests: the
   `go.mod` at or above the test's directory is the repository. The templates of tdp project.2 must be as tdp v0.10.3

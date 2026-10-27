@@ -69,7 +69,7 @@ func newShowcase() *showcase {
 	s := &showcase{started: time.Now()}
 	a := terminu.New("showcase")
 	a.Quit = &terminu.Ask{Title: "Quit", Question: "Quit showcase?", Verb: "quit"}
-	// Its layouts still work in 60 × 20, below the default 80 × 40 (tdp L1).
+	// Its layouts still work 20 rows high, under the default 60 × 32 (tdp L1).
 	a.MinWidth, a.MinHeight = 60, 20
 	a.QuitDesc = "leave the showcase"
 	a.Status = s.status

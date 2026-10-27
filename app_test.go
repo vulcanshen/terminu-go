@@ -704,39 +704,42 @@ func TestQuitFlowOfTheApp(t *testing.T) {
 	}
 }
 
-// TestL1LeastSize: under the app's least size, 80 × 40 unless it says less,
-// only its name and what it needs are drawn, in the middle; no key acts but
-// Ctrl-C twice; what it was showing comes back as it grows (tdp L1,
-// tdp screen; tdp E5 down to 1×1).
+// TestL1LeastSize: under the app's least size, 60 × 32 unless it says less,
+// only its name, what it needs and how to quit are drawn, in the middle; no
+// key acts but Ctrl-C twice; what it was showing comes back as it grows (tdp
+// L1, tdp screen.7; tdp E5 down to 1×1).
 func TestL1LeastSize(t *testing.T) {
 	ta := newTestApp(t)
 	ta.MinWidth, ta.MinHeight = 0, 0
-	ta.resize(80, 40)
+	ta.resize(60, 32)
 	if strings.Contains(ta.screenText(), "needs a terminal") {
-		t.Error("80 × 40 is enough by default")
+		t.Error("60 × 32 is enough by default")
 	}
 	ta.press("Space")
 	ta.settle()
 	menu := ta.topView()
-	ta.resize(79, 40)
+	ta.resize(59, 32)
 	frame := ta.Frame()
 	plain := StripStyles(strings.Join(frame, "\n"))
-	if !strings.Contains(plain, "needs a terminal of at least 80×40") || strings.Contains(plain, "PODS") {
-		t.Fatalf("under 80 wide, the name and the size only:\n%s", plain)
+	if !strings.Contains(plain, "needs a terminal of at least 60×32") || strings.Contains(plain, "PODS") {
+		t.Fatalf("under 60 wide, the name, the size and how to quit only:\n%s", plain)
 	}
 	for i, l := range frame {
-		if Width(l) != 79 {
+		if Width(l) != 59 {
 			t.Errorf("row %d is %d wide", i, Width(l))
 		}
 		if p := StripStyles(l); strings.TrimSpace(p) == "test" {
-			if i != 19 || !strings.Contains(l, Fg(Blue).Bolded().Render("test")) {
+			if i != 14 || !strings.Contains(l, Fg(Blue).Bolded().Render("test")) {
 				t.Errorf("the name in the middle, Blue bold: row %d %q", i, l)
 			}
 			if left, right := len(p)-len(strings.TrimLeft(p, " ")), len(p)-len(strings.TrimRight(p, " ")); left-right > 1 || right-left > 1 {
 				t.Errorf("not centred: %q", p)
 			}
-			if !strings.Contains(frame[i+1], Fg(Overlay0).Render("needs a terminal of at least 80×40")) {
+			if !strings.Contains(frame[i+1], Fg(Overlay0).Render("needs a terminal of at least 60×32")) {
 				t.Errorf("the size under it in Overlay0: %q", frame[i+1])
+			}
+			if !strings.Contains(frame[i+2], Fg(Overlay0).Render("Press [Ctrl-C] twice to quit")) {
+				t.Errorf("how to quit under that in Overlay0: %q", frame[i+2])
 			}
 		}
 	}
@@ -754,39 +757,50 @@ func TestL1LeastSize(t *testing.T) {
 		t.Error("Ctrl-C twice leaves at once")
 	}
 	// Grown again, all as it was.
-	ta.resize(80, 40)
+	ta.resize(60, 32)
 	if ta.topView() != menu || !strings.Contains(ta.screenText(), "PODS") {
 		t.Error("what it showed comes back")
 	}
-	// Small sizes: the hint goes first, the name stays; down to 1×1.
+	// Small sizes: the size goes first, then how to quit, a row wider than
+	// the screen not fitting either (the size is 34 wide, how to quit 28);
+	// the name stays; down to 1×1.
 	for _, c := range []struct {
-		w, h int
-		want string
-	}{{80, 5, "needs a terminal"}, {80, 1, "test"}, {20, 10, "test"}, {3, 3, "tes"}, {1, 1, "t"}} {
+		w, h       int
+		name       string
+		need, quit bool
+	}{
+		{80, 5, "test", true, true}, {80, 3, "test", true, true}, {80, 2, "test", false, true}, {80, 1, "test", false, false},
+		{34, 10, "test", true, true}, {33, 10, "test", false, true}, {28, 10, "test", false, true}, {27, 10, "test", false, false},
+		{3, 3, "tes", false, false}, {1, 1, "t", false, false},
+	} {
 		ta.resize(c.w, c.h)
 		frame := ta.Frame()
 		text := StripStyles(strings.Join(frame, "\n"))
-		if len(frame) != c.h || !strings.Contains(text, c.want) {
+		if len(frame) != c.h || !strings.Contains(text, c.name) {
 			t.Errorf("%d×%d: %q", c.w, c.h, text)
 		}
-		if (c.h == 1 || c.w < 34) && strings.Contains(text, "needs") {
-			t.Errorf("%d×%d: no room for the hint: %q", c.w, c.h, text)
+		if strings.Contains(text, "needs a terminal") != c.need || strings.Contains(text, "Press [Ctrl-C] twice to quit") != c.quit {
+			t.Errorf("%d×%d: the size %v, how to quit %v: %q", c.w, c.h, c.need, c.quit, text)
+		}
+		rest := strings.NewReplacer(c.name, "", "needs a terminal of at least 60×32", "", "Press [Ctrl-C] twice to quit", "").Replace(text)
+		if strings.TrimSpace(rest) != "" {
+			t.Errorf("%d×%d: a row that does not fit is not drawn at all: %q", c.w, c.h, text)
 		}
 	}
 	// The app may say less, never more.
-	ta.MinWidth, ta.MinHeight = 60, 20
-	ta.resize(59, 30)
-	if !strings.Contains(ta.screenText(), "needs a terminal of at least 60×20") {
+	ta.MinWidth, ta.MinHeight = 40, 20
+	ta.resize(39, 30)
+	if !strings.Contains(ta.screenText(), "needs a terminal of at least 40×20") {
 		t.Errorf("its own least size: %q", ta.screenText())
 	}
-	ta.resize(60, 20)
+	ta.resize(40, 20)
 	if strings.Contains(ta.screenText(), "needs a terminal") {
-		t.Error("60 × 20 is enough for it")
+		t.Error("40 × 20 is enough for it")
 	}
-	ta.MinWidth, ta.MinHeight = 100, 50
-	ta.resize(80, 40)
+	ta.MinWidth, ta.MinHeight = 80, 40
+	ta.resize(60, 32)
 	if strings.Contains(ta.screenText(), "needs a terminal") {
-		t.Error("never more than 80 × 40")
+		t.Error("never more than 60 × 32")
 	}
 }
 

@@ -61,7 +61,9 @@ func Check(t *testing.T, app App) {
 		t.Fatal("tdptest: Check needs the app's Name and New")
 	}
 	t.Run("repo", func(t *testing.T) { checkRepo(t, repoRoot(), app.Name) })
-	mw, mh := testhook.MinSize(launch(t, app))
+	first := launch(t, app)
+	limits(t, first)
+	mw, mh := testhook.MinSize(first)
 	sizes, each := scanSizes(mw, mh), EachIconWidth
 	if testing.Short() {
 		sizes = [][2]int{{mw, mh}}
@@ -91,12 +93,28 @@ func Check(t *testing.T, app App) {
 	})
 }
 
-// scanSizes are the sizes Check launches on: the least, common ones, a big
-// one, and under the least (only narrower, only lower, 80×5, two rows, one,
-// 1×1; tdp L1, E5).
+// limits checks the sizes the app sets against the most tdp allows: the
+// least size 60×32 (tdp L1), the narrow width 60, where every panel is side
+// by side (tdp screen.5). The lib takes no more, so a higher one in the app
+// says what it is not.
+func limits(t testing.TB, a *terminu.App) {
+	t.Helper()
+	if a.MinWidth > 60 || a.MinHeight > 32 {
+		t.Errorf("tdptest: the least size is %d×%d (MinWidth, MinHeight), above 60×32: it may be lower, never higher (tdp L1)", a.MinWidth, a.MinHeight)
+	}
+	for _, s := range testhook.Screens(a).([]*terminu.Screen) {
+		if s.NarrowBelow > 60 {
+			t.Errorf("tdptest: screen %s narrows below %d columns (NarrowBelow), above 60: at 60 columns every panel is side by side (tdp screen.5, L1)", s.Name, s.NarrowBelow)
+		}
+	}
+}
+
+// scanSizes are the sizes Check launches on: the least, the standard 60×32
+// (tdp L1), common ones, a big one, and under the least (only narrower,
+// only lower, 80×5, two rows, one, 1×1; tdp L1, E5).
 func scanSizes(mw, mh int) [][2]int {
 	var out [][2]int
-	for _, s := range [][2]int{{mw, mh}, {80, 40}, {120, 40}, {80, 24}, {300, 50}, {mw - 1, mh}, {mw, mh - 1}, {80, 5}, {80, 2}, {80, 1}, {1, 1}} {
+	for _, s := range [][2]int{{mw, mh}, {60, 32}, {120, 40}, {80, 24}, {300, 50}, {mw - 1, mh}, {mw, mh - 1}, {80, 5}, {80, 2}, {80, 1}, {1, 1}} {
 		if s[0] >= 1 && s[1] >= 1 && !contains(out, s) {
 			out = append(out, s)
 		}
@@ -254,8 +272,10 @@ func shrink(t *testing.T, d *Driver, mw, mh int) {
 	}
 	w, h := d.w, d.h
 	before := strings.Join(d.Screen(), "\n")
-	for _, s := range [][2]int{{mw - 1, mh}, {mw, mh - 1}, {1, 1}} {
-		if s[0] < 1 || s[1] < 1 {
+	// Only narrower, only lower, narrower than the size it needs, two rows,
+	// one cell.
+	for _, s := range [][2]int{{mw - 1, mh}, {mw, mh - 1}, {30, mh}, {mw, 2}, {1, 1}} {
+		if s[0] < 1 || s[1] < 1 || s[0] >= mw && s[1] >= mh {
 			continue
 		}
 		d.Resize(s[0], s[1])
@@ -267,23 +287,14 @@ func shrink(t *testing.T, d *Driver, mw, mh int) {
 	}
 }
 
-// checkTiny checks a terminal under the least size: only the app's name
-// and the size it needs, in the middle; no key acts, q and one Ctrl-C do
-// not leave (tdp L1).
+// checkTiny checks a terminal under the least size: what is drawn
+// (tinyProblems); no key acts, q and one Ctrl-C do not leave (tdp L1).
 func checkTiny(t *testing.T, d *Driver, mw, mh int) {
 	t.Helper()
-	need := fmt.Sprintf("needs a terminal of at least %d×%d", mw, mh)
-	text := strings.Join(d.Screen(), "\n")
-	name := d.app.Name
-	shown := terminu.StripStyles(terminu.Cut(name, 0, min(d.w, terminu.Width(name)))) // as much as fits
-	if !strings.Contains(text, shown) {
-		t.Errorf("tdptest: under the least size the name %q is not on the screen (tdp L1)%s", shown, d.where())
-	}
-	if fits := d.h >= 2 && terminu.Width(need) <= d.w; fits != strings.Contains(text, need) {
-		t.Errorf("tdptest: under the least size %q should be on the screen: %v (tdp L1)%s", need, fits, d.where())
-	}
-	if rest := strings.TrimSpace(strings.NewReplacer(shown, "", need, "").Replace(text)); rest != "" {
-		t.Errorf("tdptest: under the least size more than the name and the size are drawn: %q (tdp L1)%s", rest, d.where())
+	lines := d.Screen()
+	text := strings.Join(lines, "\n")
+	for _, p := range tinyProblems(lines, d.app.Name, d.w, d.h, mw, mh) {
+		t.Errorf("tdptest: under the least size %s (tdp L1)%s", p, d.where())
 	}
 	quit := d.Quit()
 	d.Press("j", "q", "Ctrl-C", "Space", "Enter", "Esc")
@@ -294,4 +305,58 @@ func checkTiny(t *testing.T, d *Driver, mw, mh int) {
 	if strings.Join(d.Screen(), "\n") != text {
 		t.Errorf("tdptest: under the least size a key changed the screen (tdp L1)%s", d.where())
 	}
+}
+
+// tinyQuit is the row under the least size saying how to quit (tdp L1).
+const tinyQuit = "Press [Ctrl-C] twice to quit"
+
+// tinyProblems are what is wrong with lines, a w×h screen under the least
+// size mw×mh of the app called name: only its name (as much as fits), the
+// size it needs and how to quit, top down; short of rows the size goes
+// first, then how to quit, a row wider than the screen not fitting either
+// (tdp L1).
+func tinyProblems(lines []string, name string, w, h, mw, mh int) []string {
+	var out []string
+	need := fmt.Sprintf("needs a terminal of at least %d×%d", mw, mh)
+	text := strings.Join(lines, "\n")
+	shown := terminu.StripStyles(terminu.Cut(name, 0, min(w, terminu.Width(name)))) // as much as fits
+	if !strings.Contains(text, shown) {
+		out = append(out, fmt.Sprintf("the name %q is not on the screen", shown))
+	}
+	room := h - 1
+	toQuit := room >= 1 && terminu.Width(tinyQuit) <= w
+	if toQuit {
+		room--
+	}
+	sized := room >= 1 && terminu.Width(need) <= w
+	at := func(s string) int {
+		for i, l := range lines {
+			if strings.Contains(l, s) {
+				return i
+			}
+		}
+		return -1
+	}
+	rows := []int{at(shown)}
+	for _, r := range []struct {
+		text string
+		on   bool
+	}{{need, sized}, {tinyQuit, toQuit}} {
+		if r.on != strings.Contains(text, r.text) {
+			out = append(out, fmt.Sprintf("%q should be on the screen: %v; short of room the size goes first, then how to quit", r.text, r.on))
+		}
+		if r.on {
+			rows = append(rows, at(r.text))
+		}
+	}
+	for i := 1; i < len(rows); i++ {
+		if rows[i] <= rows[i-1] {
+			out = append(out, fmt.Sprintf("the rows are not the name, the size, how to quit, top down: rows %v", rows))
+			break
+		}
+	}
+	if rest := strings.TrimSpace(strings.NewReplacer(shown, "", need, "", tinyQuit, "").Replace(text)); rest != "" {
+		out = append(out, fmt.Sprintf("more than the name, the size and how to quit are drawn: %q", rest))
+	}
+	return out
 }

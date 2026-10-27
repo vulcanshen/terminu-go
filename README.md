@@ -170,7 +170,8 @@ func TestFirstLaunch(t *testing.T) {
 - **`Check`** launches the app as for the first time on terminals of many sizes and every icon width, each in a new
   sandbox (`HOME` and the XDG directories under `/tmp`, the app's own variables cleared), and opens the `Space` menu,
   the global operation popup, the App Log and `?` on every screen and panel, closing each with `Esc`; then it shrinks the terminal
-  under the app's least size and back. A colour code drawn as text — one left in a cell or a value instead of
+  under the app's least size and back. A `MinWidth`, `MinHeight` above 60×32 or a `NarrowBelow` above 60 fails it
+  (tdp L1). A colour code drawn as text — one left in a cell or a value instead of
   `Styled` — fails it, unless `Tricky` says the seeded data has tricky values. Any test on a `Driver` fails when a
   line break was drawn by its name in Red (a `\n` in a toast of your own); set `AllowLineBreaks` when your data has
   such names on purpose. `Env` gets the sandbox's `HOME`, so a variable can point to a file `Seed` put
@@ -199,7 +200,7 @@ in whenever it is due.
 
 ## Which terminu design
 
-terminu-go implements **tdp v0.10.3**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
+terminu-go implements **tdp v0.11.0**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
 
 ## Links
 

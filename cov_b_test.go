@@ -285,9 +285,11 @@ func TestM3EveryHotkeyInMenu(t *testing.T) {
 	}
 }
 
-func TestM3TypingPopupHintFits80(t *testing.T) {
+// TestM3TypingPopupHintFits60: a popup with only a typing row shows its
+// whole hint at 60 columns (tdp M3, popup.1, L1).
+func TestM3TypingPopupHintFits60(t *testing.T) {
 	ta := newTestApp(t)
-	ta.resize(80, 40)
+	ta.resize(60, 32)
 	full := "Enter:save Tab:edit Backspace:clear Esc:cancel"
 	masked := "Enter:save Backspace:clear Esc:cancel"
 	for name, c := range map[string]struct {
@@ -303,7 +305,7 @@ func TestM3TypingPopupHintFits80(t *testing.T) {
 		ta.settle()
 		l := ta.top()
 		if bottom := ta.covBPopupRow(l.y + l.h - 1); !strings.Contains(bottom, "┗━ "+c.hint+" ━") {
-			t.Errorf("%s: the whole hint at 80 columns: %q", name, bottom)
+			t.Errorf("%s: the whole hint at 60 columns: %q", name, bottom)
 		}
 		ta.press("Esc")
 	}
@@ -728,13 +730,15 @@ func TestM9ActiveHintBright(t *testing.T) {
 
 // --- L ----------------------------------------------------------------------
 
-func TestL1Core80x40(t *testing.T) {
+// TestL1Core60x32: at the standard 60 × 32 every panel is side by side, the
+// footer whole, every popup on the screen and uncut (tdp L1).
+func TestL1Core60x32(t *testing.T) {
 	ta := newTestApp(t)
-	ta.resize(80, 40)
+	ta.resize(60, 32)
 	text := ta.screenText()
 	for _, want := range []string{"[1] PODS", "[2] LOG", "[3] SETTINGS", "Space:menu ?:help !:log Tab|1–3:panels q:quit"} {
 		if !strings.Contains(text, want) {
-			t.Errorf("at 80 × 40 %q is not whole", want)
+			t.Errorf("at 60 × 32 %q is not whole", want)
 		}
 	}
 	for _, keys := range [][]string{{"Space"}, {"Space", "G", "Enter"}, {"?"}, {"x"}, {"q"}} {
@@ -743,12 +747,12 @@ func TestL1Core80x40(t *testing.T) {
 		if l == nil {
 			t.Fatalf("%v opened nothing", keys)
 		}
-		if l.x < 0 || l.x+l.w > 80 || l.y < 1 || l.y+l.h > 39 {
+		if l.x < 0 || l.x+l.w > 60 || l.y < 1 || l.y+l.h > 31 {
 			t.Errorf("%v: %dx%d at %d,%d is not on the screen with the top row and footer", keys, l.w, l.h, l.x, l.y)
 		}
 		for y := l.y; y < l.y+l.h; y++ {
 			if row := ta.covBPopupRow(y); strings.Contains(row, "…") {
-				t.Errorf("%v: cut at 80 × 40: %q", keys, row)
+				t.Errorf("%v: cut at 60 × 32: %q", keys, row)
 			}
 		}
 		ta.covBCloseAll()
@@ -757,8 +761,8 @@ func TestL1Core80x40(t *testing.T) {
 
 func TestScreenNarrow(t *testing.T) {
 	ta := newTestApp(t)
-	ta.Screen().NarrowBelow = 70
-	ta.resize(60, 30)
+	ta.Screen().NarrowBelow = 50
+	ta.resize(40, 30)
 	text := ta.screenText()
 	if !strings.Contains(text, "[1] PODS") || strings.Contains(text, "[2] LOG") {
 		t.Errorf("narrow: only the focused panel:\n%s", text)
@@ -771,9 +775,9 @@ func TestScreenNarrow(t *testing.T) {
 		t.Errorf("Tab shows the next panel, one at a time:\n%s", text)
 	}
 	ta.Screen().NarrowBelow = 100
-	ta.resize(90, 30)
+	ta.resize(60, 30)
 	if text := ta.screenText(); !strings.Contains(text, "[1] PODS") || !strings.Contains(text, "[3] SETTINGS") {
-		t.Error("the threshold is never above 80: at 90 every panel is drawn")
+		t.Error("the threshold is never above 60: at 60 every panel is drawn")
 	}
 }
 
