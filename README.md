@@ -210,7 +210,7 @@ in whenever it is due.
 
 ## Which terminu design
 
-terminu-go implements **tdp v0.11.4**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
+terminu-go implements **tdp v0.11.5**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
 
 ## Links
 

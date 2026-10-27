@@ -1,6 +1,6 @@
-# tdp v0.11.4 coverage
+# tdp v0.11.5 coverage
 
-tdp v0.11.4 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
+tdp v0.11.5 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
 （[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -304,7 +304,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | panel.5 | 表頭 Blue 不加粗、大寫、固定不捲；每欄是數字或文字：數字靠右照數值排、文字靠左照文字排；欄間兩格；排序欄位加 U+F160（升）/ U+F161（降）；多欄排序在箭頭前加順位 `(2)` | P `[1] PODS` 的 `Sort by`（Name 升冪、Age 降冪、兩欄） | `TestListHeader`、`TestListSortGlyphs`、`TestListSortNumbers` |
 | panel.5 | 捲動位置：放不下時 `N of M`（框線色），全放得下不寫；沒有 cursor 的寫 `N-M of T` | P `[1] PODS`（40 列）、`[2] LOG` | `TestPanelScrollPosition` |
 | panel.7 | 標記欄：每列最前一格，標記的畫 Green U+F0132，沒標記的空白，欄寬一直保留 | P `[1] PODS` 的 `[m]ark` | `TestListMarkColumn` |
-| panel.7 | 標記欄一列只放一個記號：不能標記的清單，app 可以把一種旗標畫在標記欄（glyph 與顏色是 app 的；cursor 上跟勾一樣在 cursor 底上），每一列都保留標記欄，沒有旗標的留空白，旗標換到別列時字不位移；可以標記的清單標記欄只放勾：同時開 `Marks` 與 `Flags`，`AddScreen` 就 panic（lib：`List.Flags`、`Row.Flag`；panel-137、138） | K `[1] KINDS` 最前面 `pods` 的 Green `●`，在別的種類上按 `[f] Default` | `TestPanelFlags`、`TestPanelFlagsNotWithMarks` |
+| panel.7 | 標記欄一列只放一個記號：不能標記的清單，app 可以把一種旗標畫在標記欄（glyph 與顏色是 app 的；cursor 上跟勾一樣在 cursor 底上），每一列都保留標記欄，沒有旗標的留空白，旗標換到別列時字不位移；可以標記的清單標記欄只放勾：同時開 `Marks` 與 `Flags`，`AddScreen` 就 panic（lib：`List.Flags`、`Row.Flag`；panel-154、155） | K `[1] KINDS` 最前面 `pods` 的 Green `●`，在別的種類上按 `[f] Default` | `TestPanelFlags`、`TestPanelFlagsNotWithMarks` |
 | panel.5 | lib：app 照 ID 設標記（`List.SetMarked`），篩選中沒顯示的列也勾得到 | P `[1] PODS` 的 `[m]ark` | `TestListMarkAndSelectByID` |
 | panel.8 | Drag mode 拿著的那一列（進 Drag 的鍵由 app 決定）：照 cursor 畫，Subtext1 換成 Yellow 底、Base 粗體，箭頭也是 Yellow；標記欄畫 U+F04E2，放下後回到原本的標記（旗標也一樣）；有 Drag 的 panel 每一列都保留標記欄；按鍵同 reorder 拿著時（`j\|k` 搬、到頭尾繞回，`Enter` 放下，`Esc` 放回）。lib：`List.Draggable`、`Hold`、`MoveHeld`、`Drop`，Drag mode 與它的鍵由 app 登記 | P `[1] PODS` 的 `[D]rag`（先 `m` 標記一列再拿起它） | `TestPanelDragHeldRow`、`TestPanelFlagsDrag`（旗標） |
 | panel.5 | 欄放不下時，框邊落在的那一欄照它的截法截（從尾端或從中間，加 `…`），後面的欄不畫；不在框邊硬切 | P `[1] PODS` 縮到很窄 | `TestListColumnsGiveWay` |

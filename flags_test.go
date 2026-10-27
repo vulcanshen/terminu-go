@@ -23,7 +23,7 @@ func flagRows(flag string) []Row {
 // its mark column, the app's glyph in the app's colour; every row keeps the
 // column, blank with no flag, so the text starts in the same cell and does
 // not move when the flag goes to another row; on the cursor it is on the
-// block as a tick is (tdp panel.7, panel-137, L2).
+// block as a tick is (tdp panel.7, panel-154, L2).
 func TestPanelFlags(t *testing.T) {
 	withWidths(t, 1, 1)
 	l := &List{Flags: true}
@@ -50,7 +50,7 @@ func TestPanelFlags(t *testing.T) {
 
 // TestPanelFlagsNotWithMarks: a list that can be marked keeps its mark
 // column for the tick: a flag is not drawn there, and Marks with Flags is a
-// mistake AddScreen refuses (tdp panel.7, panel-138).
+// mistake AddScreen refuses (tdp panel.7, panel-155).
 func TestPanelFlagsNotWithMarks(t *testing.T) {
 	withWidths(t, 1, 1)
 	l := &List{Marks: true, Flags: true}

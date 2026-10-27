@@ -2,6 +2,11 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v0.6.5 — tdp v0.11.5
+
+- tdp v0.11.5 numbers the two flag items of the checklist panel-154 and panel-155: v0.11.4 had given them numbers
+  already taken. The coverage and the tests name the new ones; the lib does not change
+
 ## v0.6.4 — tdp v0.11.4
 
 - `App.Elevate` runs a command with raised privileges (tdp terminal.7, from hostu): the app gives only the command.
