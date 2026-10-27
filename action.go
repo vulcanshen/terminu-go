@@ -70,7 +70,8 @@ type Action struct {
 	// ToDetails, on a panel's "Enter" action only, says whether Enter on the
 	// item under the cursor also sends the focus to the panel's Details: the
 	// one place Enter changes panels, whether and on which items being the
-	// app's call (tdp K3).
+	// app's call (tdp K3). Going in moves the focus, so it does not go in the
+	// App Log (tdp note.7).
 	ToDetails func() bool
 	// Do runs it.
 	Do func() tea.Cmd

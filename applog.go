@@ -42,7 +42,8 @@ type appLog struct {
 // Pods"). The app logs the operations of its own the user runs and their
 // results: every item, panel and global operation (tdp P3), from a menu, a
 // hotkey or Enter, one that only looks too (opening a viewer); not moving the
-// cursor or the focus, nor the panel filter or compare mode, nor one cancelled
+// cursor or the focus, Enter into a list's details included (tdp K3), nor the
+// panel filter or compare mode, nor one cancelled
 // with Esc at its confirm, form or input popup (it was not done), and what is
 // done in a popup only as the result of the operation it belongs to (tdp
 // note.7). It also logs what it does in the

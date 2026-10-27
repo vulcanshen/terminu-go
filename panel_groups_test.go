@@ -175,7 +175,8 @@ func TestValuesOnMove(t *testing.T) {
 
 // TestK3EnterToDetails: Enter on a list may send the focus to its details
 // panel, on the items the app says (tdp K3,
-// panel.13).
+// panel.13); going in, by Enter or by its row in the menu, moves the focus
+// and does not go in the App Log (tdp note.7, DM42).
 func TestK3EnterToDetails(t *testing.T) {
 	ta := &testApp{App: anySize(New("test"))}
 	kinds := groupList()
@@ -195,6 +196,13 @@ func TestK3EnterToDetails(t *testing.T) {
 	ta.press("1", "G", "Enter")
 	if ta.Screen().Focused() != list || ran != 2 {
 		t.Errorf("Enter on ingresses, which the app keeps: focus on %q, Do ran %d times", ta.Screen().Focused().Label, ran)
+	}
+	ta.press("gg", "Space", "Enter")
+	if ta.Screen().Focused() != details || ran != 3 {
+		t.Errorf("Edit from the menu on pods: focus on %q, Do ran %d times", ta.Screen().Focused().Label, ran)
+	}
+	if len(ta.logs.entries) != 0 {
+		t.Errorf("going into the details was logged: %v", ta.logs.entries)
 	}
 }
 

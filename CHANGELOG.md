@@ -2,6 +2,12 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v0.6.3 — tdp v0.11.3
+
+- Going into the details with `Enter` on a list, or with its row in the menu, moves the focus (tdp K3) and does not
+  go in the App Log (tdp note.7, from DM42): the details already follow the cursor. The lib logged nothing for it
+  already; only the comments, docs and tests change
+
 ## v0.6.2 — tdp v0.11.2
 
 - Two more things do not go in the App Log (tdp note.7): a panel's compare mode (KB34), and an operation cancelled

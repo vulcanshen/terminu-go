@@ -1,7 +1,7 @@
 # terminu-go 開發者備忘
 
 terminu-go 是 terminu design principle（tdp）的 Go 實作：給 app 呼叫的 lib，加上展示場 `examples/showcase`。遵循 terminu design
-principle，目前對應 tdp v0.11.2。這個 repo 的任務與規範的讀法見 [`CLAUDE.md`](../CLAUDE.md)。
+principle，目前對應 tdp v0.11.3。這個 repo 的任務與規範的讀法見 [`CLAUDE.md`](../CLAUDE.md)。
 
 ## 運作方式
 
@@ -124,7 +124,8 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   自己記 `Switched to <畫面名>`（note.7 的例子）；app 用 `ShowScreen`、`Focus` 切過去的是 app 那個動作的結果，由 app 記。lib
   的 list 篩選（`/`）也是 lib 執行的，照 note.7 不記：篩選只是換看得到的範圍（tdp v0.11.1，G103）。比較模式（`CompareAction`）
   也照 note.7 不記，裡面跳的 toast 照樣記（tdp v0.11.2，KB34）；在 confirm、表單、input popup 上按 `Esc` 取消的動作沒做，lib
-  不記，也不跑 `Do`、`Submit`、`Done`（SS46）。
+  不記，也不跑 `Do`、`Submit`、`Done`（SS46）。清單上 `Enter`（或 menu 上那一列）進明細只是換 focus（K3），lib 不記（tdp v0.11.3，
+  DM42）。
 - **tdptest 走 lib 內部的 hook，不開公開 API**（2026-10-20，harness 的請求）：driver 要知道 popup 還在不在播、有幾層、有沒有 toast、
   剪貼簿裡等著什麼，也要把 App 放上測試的時鐘。這些放在 `internal/testhook`（只有這個 module 裡的套件 import 得到），terminu 在
   `init` 填進去（`clock.go`）；app 看得到的只有 `App.Tick`。
