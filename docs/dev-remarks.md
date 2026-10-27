@@ -1,7 +1,7 @@
 # terminu-go 開發者備忘
 
 terminu-go 是 terminu design principle（tdp）的 Go 實作：給 app 呼叫的 lib，加上展示場 `examples/showcase`。遵循 terminu design
-principle，目前對應 tdp v0.11.5。這個 repo 的任務與規範的讀法見 [`CLAUDE.md`](../CLAUDE.md)。
+principle，目前對應 tdp v1.0.0。這個 repo 的任務與規範的讀法見 [`CLAUDE.md`](../CLAUDE.md)。
 
 ## 運作方式
 
@@ -241,10 +241,11 @@ proto/c1/tmux-check.sh 2 2 replay 80 24 j j p    # 同一串按鍵之後的畫�
 
 ## 發布
 
-公開在 [github.com/vulcanshen/terminu-go](https://github.com/vulcanshen/terminu-go)，版本是 v0.x 的 tag（v0.1.0 起，對應
-tdp v0.6.0）。v0.x 之間 API 還可能變。每一版對應的 tdp 版本寫在 [CHANGELOG](../CHANGELOG.md)。
+公開在 [github.com/vulcanshen/terminu-go](https://github.com/vulcanshen/terminu-go)，版本是 tag。v1.0.0 是 stable 版，跟 tdp v1.0.0
+一起發（user 2026-10-27）；之前是 v0.x（v0.1.0 起，對應 tdp v0.6.0）。module 路徑維持 `github.com/vulcanshen/terminu-go`；
+之後 API 有不相容的改動要升 major，Go 的 module 路徑從 v2 起要加 `/v2`。每一版對應的 tdp 版本寫在 [CHANGELOG](../CHANGELOG.md)。
 
-**push 與打 tag 都先問 user**，每一次都問。
+**push 與打 tag 先問 user**；terminu 的 session 定的版號算 user 同意，直接打 tag、push（user 2026-10-20）。
 
 發一版的步驟：
 

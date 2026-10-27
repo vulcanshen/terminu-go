@@ -2,6 +2,12 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.0.0 — tdp v1.0.0
+
+- The stable release, with tdp v1.0.0 (the user, 2026-10-27): neither the lib nor tdp's rules change since v0.6.5 and
+  tdp v0.11.5. From here a change that breaks the API needs a new major version. The module path stays
+  `github.com/vulcanshen/terminu-go`
+
 ## v0.6.5 — tdp v0.11.5
 
 - tdp v0.11.5 numbers the two flag items of the checklist panel-154 and panel-155: v0.11.4 had given them numbers
