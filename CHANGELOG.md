@@ -2,6 +2,12 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.0.1 — tdp v1.0.1
+
+- tdp v1.0.1 changes only what a family member's README says in its terminu family section (E7): links to tdp,
+  terminu-go and terminu-harness, and no list of the other members. The lib does not change, and its README lists no
+  family members
+
 ## v1.0.0 — tdp v1.0.0
 
 - The stable release, with tdp v1.0.0 (the user, 2026-10-27): neither the lib nor tdp's rules change since v0.6.5 and
