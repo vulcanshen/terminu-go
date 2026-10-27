@@ -2,6 +2,12 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v0.6.1 — tdp v0.11.1
+
+- The panel filter does not go in the App Log (tdp note.7, from G103): filtering only changes what is in view, like
+  moving the cursor. The lib's list filter (`/`) logged nothing already; only the comments and docs change. An app
+  that logs its own filter takes that out
+
 ## v0.6.0 — tdp v0.11.0
 
 - The standard size is 60 × 32 (tdp L1): `MinWidth` and `MinHeight` are 60 × 32 when unset and never more; a higher

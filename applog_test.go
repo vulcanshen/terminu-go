@@ -62,12 +62,14 @@ func TestToastKeepsCase(t *testing.T) {
 
 // TestAppLogScreenSwitch: a switch of screens the user runs, by the screen's
 // key or from the global operation popup, goes in by itself; what is not an
-// operation does not: moving the cursor or the focus, the Space menu, ?, !.
+// operation does not: moving the cursor or the focus, the Space menu, ?, !,
+// the panel filter.
 // A switch the app makes (ShowScreen) is the app's to log (tdp note.7,
 // note-77).
 func TestAppLogScreenSwitch(t *testing.T) {
 	ta, _ := logApp(t)
 	ta.press("j", "k", "Tab", "1", "Space", "Esc", "?", "Esc", "!", "Esc")
+	ta.press("/", "p", "o", "Enter", "/", "Esc")
 	ta.settle()
 	ta.press("O")
 	ta.press("Space", "G", "Enter", "P")
