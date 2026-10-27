@@ -2,6 +2,13 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v0.6.2 — tdp v0.11.2
+
+- Two more things do not go in the App Log (tdp note.7): a panel's compare mode (KB34), and an operation cancelled
+  with `Esc` at the confirm before it, at its form or at the input popup that takes its value, as it was not done
+  (SS46). The lib logged neither already; only the comments, docs and tests change. The toasts in the compare mode
+  still go in, as every toast does. An app that logs its own compare or a cancel takes that out
+
 ## v0.6.1 — tdp v0.11.1
 
 - The panel filter does not go in the App Log (tdp note.7, from G103): filtering only changes what is in view, like

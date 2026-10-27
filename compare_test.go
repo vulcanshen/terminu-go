@@ -44,7 +44,8 @@ func compareApp(t *testing.T) (*testApp, *bool) {
 // TestCompareMode: the compare key enters the mode, its row the anchor;
 // the compare keys are off on the anchor and on a row that cannot be
 // compared; Enter compares; the same text is an Info toast; Esc leaves, the
-// anchor gone (tdp panel.9).
+// anchor gone (tdp panel.9). The mode goes unrecorded in the App Log, its
+// toasts in as every toast (tdp note.7, KB34).
 func TestCompareMode(t *testing.T) {
 	ta, _ := compareApp(t)
 	ta.press("C")
@@ -98,6 +99,13 @@ func TestCompareMode(t *testing.T) {
 	ta.press("Esc")
 	if ta.pods.InMode() != nil || ta.list.Anchor != "" {
 		t.Error("Esc did not leave the mode, or the anchor stayed")
+	}
+	var logged []string
+	for _, e := range ta.logs.entries {
+		logged = append(logged, e.text)
+	}
+	if want := []string{"Press [Esc] to leave Compare first", "No differences between pod-00 and pod-35"}; fmt.Sprint(logged) != fmt.Sprint(want) {
+		t.Errorf("logged %q, want %q", logged, want)
 	}
 }
 

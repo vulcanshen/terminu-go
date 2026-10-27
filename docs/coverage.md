@@ -1,6 +1,6 @@
-# tdp v0.11.1 coverage
+# tdp v0.11.2 coverage
 
-tdp v0.11.1 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
+tdp v0.11.2 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
 （[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -428,7 +428,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | note.2 | 有 tab 的 viewer：行號欄照看過的頁裡最寬的，只變寬、不變窄（串流的頁也一樣） | D「Popup with tabs」、DevTools 切 tab | `TestViewerTabGutterOnlyGrows` |
 | note.2 | 照終端機的樣子：Tab 畫成 `input_tab_width` 格空白、不對齊 tab 停點；`\n` 是換行（app 交來的一行裡夾著也拆）；換行前的 `\r`（CRLF）不畫；顏色碼照著上色；一行裡的 `\r` 只留最後的狀態；其他控制字元與不是顏色碼的序列畫成名字、Red；複製照原樣；file-picker 預覽的文字檔一樣（檔案自己的顏色碼也照著上色） | I `[2] FILES` 的 `main.go` 按 `[V]iew`（有 Tab）；`[/] Find` 預覽同一個檔 | `TestViewerTabs`、`TestViewerControlChars`、`TestViewerEscapeSequencesShown`（不是樣式的 escape sequence 照字畫、ESC 寫名字）、`TestReadingContent`、`TestFilePreviewEscapes` |
 | note.7 | 每個 app 都有；`!` 在 panel 上打開，是 viewer、最新的在最下面、打開時在最後、開著時新的一筆照樣進來；每一筆 `HH:MM:SS`（Overlay0）、等級（`INFO` Text、`OK` Green、`WARN` Peach、`ERR` Red，四格靠左）、發生的事（照 toast.2 的開頭大寫：lib 自己記的 `Moved … to …`、展示場的 `Started; …`）；每一個 toast 與 error popup 自動記，app 用 `App.Log` 記動作與背景的事（任何 goroutine 都能叫） | 任一 panel 按 `!`；展示場啟動時記兩筆 | `TestAppLogEntries`、`TestMoveAside`（大寫開頭） |
-| note.7 | 記的動作是 P3 的 item、panel、global operation，從 menu、letter hotkey 或 `Enter` 執行，只看不改的也記；移動 cursor、換 focus、Space menu、`?`、`!`、panel filter（lib 的 list 篩選 `/`）不記；popup 裡的操作只記它所屬那個動作的結果。lib 執行的切換畫面（畫面的鍵、global operation popup）lib 自己記 `Switched to <畫面名>`（note.7 的例子）；app 自己的 operation 由 app 用 `App.Log` 記，字是 app 的 | 在 P `[1] PODS` 按 `/` 篩選、按 `O`、從 global operation popup 切回 `Panels`，按 `!` | `TestAppLogScreenSwitch` |
+| note.7 | 記的動作是 P3 的 item、panel、global operation，從 menu、letter hotkey 或 `Enter` 執行，只看不改的也記；移動 cursor、換 focus、Space menu、`?`、`!`、panel filter（lib 的 list 篩選 `/`）、比較模式（lib 的 `CompareAction`，note.8；裡面跳的 toast 照樣記）不記；在動作前面的 confirm、填值的表單或 input popup 上按 `Esc` 取消的，動作沒做，不記：lib 不記，`Do`、`Submit`、`Done` 也不跑；popup 裡的操作只記它所屬那個動作的結果。lib 執行的切換畫面（畫面的鍵、global operation popup）lib 自己記 `Switched to <畫面名>`（note.7 的例子）；app 自己的 operation 由 app 用 `App.Log` 記，字是 app 的 | 在 P `[1] PODS` 按 `/` 篩選、按 `C` 比較再 `Esc` 離開、跑 `[x] Delete` 再 `Esc`，D「Form: New host」改過再 `Esc`、`Enter` 放棄；按 `O`、從 global operation popup 切回 `Panels`，按 `!` | `TestAppLogScreenSwitch`、`TestAppLogCancelled`、`TestCompareMode`（比較模式不記、toast 照記） |
 | note.7 | 只放在記憶體，筆數有上限（1000），滿了丟最舊的 | lib | `TestAppLogInMemory` |
 | note.2 | 有固定格式的照 file-picker 預覽上色（chroma catppuccin-mocha、只上前景色）；語言由 app 給（`Viewer.Lang`），檔案內容照檔名；沒有固定格式或判斷不出來的是純文字 Text（建議；app 自己給的顏色保留，例：log 的 ERROR、WARN 行）；行號 Overlay0；選取範圍 Yellow 底 Base 字、範圍裡不顯示語法顏色 | D「Note viewer」（YAML）；I `[2] FILES` 的 `[V]iew`；P `[2] LOG` 按 `Enter`（ERROR 紅、WARN 橘保留） | `TestViewerSyntaxColours` |
 | note.3 | 折行的 viewer 以畫出來的一列為單位捲（`j\|k` 一列、`u\|d` 照列算）；`N-M of T` 的 N、M 是最上面、最下面那一列所屬的行；選取模式照舊以行為單位 | D「Note viewer」把視窗縮窄 | `TestViewerScrollsRows` |

@@ -42,8 +42,10 @@ type appLog struct {
 // Pods"). The app logs the operations of its own the user runs and their
 // results: every item, panel and global operation (tdp P3), from a menu, a
 // hotkey or Enter, one that only looks too (opening a viewer); not moving the
-// cursor or the focus, nor the panel filter, and what is done in a popup only
-// as the result of the operation it belongs to (tdp note.7). It also logs what it does in the
+// cursor or the focus, nor the panel filter or compare mode, nor one cancelled
+// with Esc at its confirm, form or input popup (it was not done), and what is
+// done in a popup only as the result of the operation it belongs to (tdp
+// note.7). It also logs what it does in the
 // background (moving its files, defaults it made at the start, the details
 // of what it could not reach). Each entry starts with a capital letter as a
 // toast does (tdp toast.2). It may be called from any goroutine; the screen

@@ -63,7 +63,8 @@ type comparing struct {
 // on a row c cannot compare (tdp M6); the same text on both sides is an
 // Info toast, not a popup. Esc leaves it, the anchor gone; Tab and the
 // digits wait; an anchor no longer in the list ends it with a Warning toast.
-// The rows need their IDs.
+// The rows need their IDs. The mode does not go in the App Log; its toasts
+// do, as every toast (tdp note.7).
 func (a *App) CompareAction(p *Panel, l *List, c Compare) Action {
 	if c.Split == nil {
 		c.Split = new(bool)

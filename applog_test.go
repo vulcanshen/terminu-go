@@ -84,6 +84,26 @@ func TestAppLogScreenSwitch(t *testing.T) {
 	}
 }
 
+// TestAppLogCancelled: an operation cancelled with Esc at the confirm before
+// it, at its form, or at the input popup that takes its value was not done
+// and goes unrecorded (tdp note.7, SS46).
+func TestAppLogCancelled(t *testing.T) {
+	ta, _ := logApp(t)
+	ta.press("x", "Esc") // Delete asks first
+	r := &formResult{}
+	ta.Form(testForm(r))
+	ta.settle()
+	ta.press("Enter", "w", "e", "b", "Enter", "Esc", "Enter") // changed, then discarded
+	ta.settle()
+	ta.Text(TextInput{Title: "Rename", Prompt: "New name", Verb: "rename", Done: func(string) tea.Cmd { ta.ran = append(ta.ran, "rename"); return nil }})
+	ta.settle()
+	ta.press("a", "Esc")
+	ta.settle()
+	if len(ta.logs.entries) != 0 || len(ta.ran) != 0 || r.submitted != 0 || ta.top() != nil {
+		t.Errorf("logged %v, ran %q, submitted %d, a popup still open %v", ta.logs.entries, ta.ran, r.submitted, ta.top() != nil)
+	}
+}
+
 // TestAppLogEntries: each entry is its time HH:MM:SS in Overlay0, its level
 // four cells wide in its colour, what happened; every toast and error popup
 // goes in, the app logs its own; newest at the bottom, the log open at its
