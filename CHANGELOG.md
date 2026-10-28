@@ -2,6 +2,17 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.1.0-beta.1 — tdp v1.1.0-beta.1
+
+- tdp v1.1.0-beta.1 keeps Claude Code's files out of an app's git (project.3, project-37). tdptest's templates have
+  the new `gitignore`, and `Check` fails when git tracks a `CLAUDE.md`, or anything under `.claude/` but harness's
+  `.claude/rules/terminu.md`. Outside a git work tree it is not checked
+- A CHANGELOG heading may name pre-release versions (`## v0.7.0-beta.1 — tdp v1.1.0-beta.1`); tdptest took `vX.Y.Z`
+  alone
+- The lib's repository no longer tracks its `CLAUDE.md`, and its documents and tests no longer hold paths of one
+  machine or point to notes kept off GitHub. `TestTemplatesAreTdps` finds tdp at `TERMINU_GO__TDP_REPO`, else at
+  `../terminu` beside the repository
+
 ## v1.0.2 — tdp v1.0.2
 
 - tdp project binds the family members alone (project.1): `tdptest.Check` no longer checks the repository of an app

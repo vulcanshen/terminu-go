@@ -1,7 +1,7 @@
 # terminu-go 開發者備忘
 
 terminu-go 是 terminu design principle（tdp）的 Go 實作：給 app 呼叫的 lib，加上展示場 `examples/showcase`。遵循 terminu design
-principle，目前對應 tdp v1.0.2。這個 repo 的任務與規範的讀法見 [`CLAUDE.md`](../CLAUDE.md)。
+principle，目前對應 tdp v1.1.0-beta.1。lib 只照 tdp 最新 tag 的文字做；規範沒寫或照做不好用的地方回報給 tdp，不在 lib 裡自己決定。
 
 ## 運作方式
 
@@ -211,10 +211,8 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
 ## 設計文件導讀
 
 - [`coverage.md`](coverage.md)：tdp 逐條的清單 —— 規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱。也是展示場「所有的組合」的定義。
-- [`walkthrough.md`](walkthrough.md)：手動走一遍展示場的起點 —— 怎麼開、每個畫面看什麼、紀錄的 C2–C4 怎麼驗。
-- 規範盲點紀錄：`~/Documents/sideproj/terminu/.local/family-fix/terminu-go/README.md`（C 待驗證、G 盲點）。程式裡的 `TODO(tdp G<n>)`
-  對到那裡的編號。
-- [`../CLAUDE.md`](../CLAUDE.md)：這個 repo 的任務、規範讀哪些、盲點怎麼記。
+- [`walkthrough.md`](walkthrough.md)：手動走一遍展示場的起點 —— 怎麼開、每個畫面看什麼、C2–C4 怎麼驗。C 與 G 的編號是什麼，
+  見 [`coverage.md`](coverage.md) 開頭。
 
 ## 建置與開發
 
@@ -224,6 +222,9 @@ go vet ./...
 gofmt -l .
 make showcase    # 用目前的程式碼建展示場（/tmp/showcase）並打開
 ```
+
+tdptest 的 `TestTemplatesAreTdps` 拿 `_project` 跟 tdp 的 `project/` 逐字比對，要有一份 tdp 的 clone：`TERMINU_GO__TDP_REPO` 指到它；
+沒設時看這個 repo 旁邊的 `terminu`（`../terminu`）。兩處都沒有就略過。
 
 Go 原始碼裡的 Nerd Font glyph 一律寫成 `\U0000E0B0` 這種 8 位數的 code point（tdp E4）。用工具寫檔時，`\uE0B0` 這種 4 位數的寫法
 會被當成 JSON 的跳脫字元、變成字面的 PUA 字元。

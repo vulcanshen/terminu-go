@@ -1,14 +1,14 @@
-# tdp v1.0.2 coverage
+# tdp v1.1.0-beta.1 coverage
 
-tdp v1.0.2 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義
-（[`CLAUDE.md`](../CLAUDE.md) 的「展示場」）。看不到畫面的規定寫怎麼驗。
+tdp v1.1.0-beta.1 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
+每個元件、規範列的每一種方案、寫到的每一種狀態與疊法，在展示場都按得到。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
 - 出處寫法：`K4` 是 `principle/rules-zh_TW.md` 的規則；`P3` 是 `principle/README-zh_TW.md`；components 寫 tdp 的節編號（寫在每一節的
   標題前面）：`popup.1` 是 `components/layout/popup-zh_TW.md` 的第 1 節，`components.4` 是 `components/README-zh_TW.md` 的第 4 節；
   整個元件寫檔名（`form`、`finder`…）。括號裡的 `K5-6`、`popup-71` 是 checklist 的條目編號。
-- `G<n>` 是規範盲點紀錄裡還沒定案的編號（`~/Documents/sideproj/terminu/.local/family-fix/terminu-go/README.md`），定案前照紀錄的
-  「暫時」做。G1–G22 已經補進 tdp v0.4.0、G23–G29 補進 v0.5.1、G30–G46 補進 v0.5.2（G43 不改規範）、G47 補進 v0.5.3、G48–G66 補進 v0.5.4、G67–G77 補進 v0.5.5、G78–G82 補進 v0.5.6、G83 補進 v0.5.7、G84 補進 v0.5.8、G85 補進 v0.5.9、G86 補進 v0.6.1，這裡直接寫規範的條文。G87（有表頭的清單分組時表頭縮不縮）已定、不改規範：分組只用在單欄、沒有表頭的清單。v0.6.0 只刪了 S5 講畫 mark 的工具的一句，這份清單不受影響。G93 補進 v0.7.1，G94 補進 v0.7.2，G95 補進 v0.7.3。
+- `G<n>` 是照規範做時找到的盲點（規範沒寫、寫得模糊、前後矛盾，或照做出來不好用）的編號，`C<n>` 是要在真的終端機上看過才
+  知道的事（例：C2 的 `Esc` 與 `Alt-Esc`，怎麼看見 [`walkthrough.md`](walkthrough.md)）；兩種都回報給 tdp 定案。G1–G22 已經補進 tdp v0.4.0、G23–G29 補進 v0.5.1、G30–G46 補進 v0.5.2（G43 不改規範）、G47 補進 v0.5.3、G48–G66 補進 v0.5.4、G67–G77 補進 v0.5.5、G78–G82 補進 v0.5.6、G83 補進 v0.5.7、G84 補進 v0.5.8、G85 補進 v0.5.9、G86 補進 v0.6.1，這裡直接寫規範的條文。G87（有表頭的清單分組時表頭縮不縮）已定、不改規範：分組只用在單欄、沒有表頭的清單。v0.6.0 只刪了 S5 講畫 mark 的工具的一句，這份清單不受影響。G93 補進 v0.7.1，G94 補進 v0.7.2，G95 補進 v0.7.3。
 - 「lib」表示由 lib 的登記或 API 保證，不需要展示場的某一個畫面；測試照樣要有。
 
 ## 展示場
@@ -560,8 +560,9 @@ project 只綁家族成員（project.1）：module 不在 `github.com/vulcanshen
 | project.2 | `.gitignore` 範本在前、只差 `<app>`，app 自己的行接在最後（project-7） | 同上 | `TestRepoWhatAnAppMayChange`、`TestRepoChangedTemplates` |
 | project.1 | 只綁家族成員：`go.mod` 的 module 不在 `github.com/vulcanshen` 底下的 app（照 tdp 做的）repo 怎麼放自己決定，範本、檔案、Makefile、CHANGELOG、module 都不查 | 同上 | `TestRepoNotFamily` |
 | project.3 | `cmd/<app>/main.go`、`go.mod` 的 module 是 `github.com/vulcanshen/<app>`、`go.sum`、`LICENSE`、`docs/icon.svg`（project-12、13、15、16、18）；`install.sh` 的 `WINDOWS="yes"` 時另有 `install.ps1`、`uninstall.ps1`（project-19） | 同上 | `TestRepoFiles`、`TestRepoWindows` |
+| project.3 | git 沒有追蹤任何 `CLAUDE.md`，`.claude/` 底下只追蹤 harness 的 `.claude/rules/terminu.md`（project-37）；範本的 `.gitignore` 擋住其他的；不在 git 的工作目錄裡（或沒有 git）時不查 | `Check` 在 app 的 repo 跑 `git ls-files` | `TestRepoClaudeFiles` |
 | project.5 | Makefile：開頭三列照範本、`include family.mk` 之前只有變數、`BINARY := <app>`、`##@ <app> 自己的` 是最後一段、target 不跟 family.mk 的重名（project-23～27） | 同上 | `TestRepoMakefile` |
-| project.6 | CHANGELOG 的開頭照範本、`## Unreleased` 單獨一列、寫了 tdp 的標題是 `## vX.Y.Z — tdp vA.B.C`（project-28、29、30）；沒寫 tdp 的舊標題不查（project-31） | 同上 | `TestRepoChangelog` |
+| project.6 | CHANGELOG 的開頭照範本、`## Unreleased` 單獨一列、寫了 tdp 的標題是 `## vX.Y.Z — tdp vA.B.C`，兩個版本都可以帶 pre-release（例 `v1.1.0-beta.1`）（project-28、29、30）；沒寫 tdp 的舊標題不查（project-31） | 同上 | `TestRepoChangelog` |
 | E8 | lib 自己的 module 不查 | lib | `TestRepoLibModule` |
 | — | `Check` 自己跑，app 不改測試；失敗寫出檔名、diff、要重新複製的範本與 lib 的複本在哪 | lib | `TestCheckReadsTheRepo`、`TestRepoRoot` |
 | — | lib 帶的範本是 tdp 這一版的 `project/` 原樣，tdp 的版本跟 CHANGELOG 寫的一樣 | lib | `TestTemplatesAreTdps`、`TestTdpVersionIsTheChangelogs` |

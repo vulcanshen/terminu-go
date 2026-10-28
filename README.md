@@ -189,7 +189,8 @@ func TestFirstLaunch(t *testing.T) {
   First, in a subtest `repo`, it reads the app's repository — the `go.mod` at or above the test's directory — against
   tdp project: the templates (`family.mk`, `release.yml`, `.goreleaser.yaml`, `install.sh`, `uninstall.sh`,
   `version.go`, `.gitignore`) as the tdp this version implements has them, but for what each lets an app change; the
-  files every app has; the Makefile's layout; the CHANGELOG's start and headings. A failure names the file, shows the
+  files every app has; the Makefile's layout; the CHANGELOG's start and headings; that git tracks no `CLAUDE.md`, and
+  under `.claude/` only harness's `.claude/rules/terminu.md`. A failure names the file, shows the
   difference and says which template to copy again. tdp project binds the family members alone: the repository of an
   app whose `go.mod` module is not under `github.com/vulcanshen` is not checked.
 - **`Tricky`, `Sizes` and `Mashes`** are values that have broken screens: control characters, escape sequences, wide
@@ -211,7 +212,7 @@ in whenever it is due.
 
 ## Which terminu design
 
-terminu-go implements **tdp v1.0.2**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
+terminu-go implements **tdp v1.1.0-beta.1**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
 
 ## Links
 

@@ -1993,7 +1993,7 @@ func TestListMarkAndSelectByID(t *testing.T) {
 // and the header; the cursor and the scroll position leave it out
 // (tdp panel.10).
 func TestListLocationRow(t *testing.T) {
-	l := &List{Columns: []Column{{Title: "Name"}}, Filterable: true, Location: "~/Documents/sideproj/terminu/components/layout"}
+	l := &List{Columns: []Column{{Title: "Name"}}, Filterable: true, Location: "~/projects/terminu/components/layout"}
 	var rows []Row
 	for i := range 20 {
 		rows = append(rows, Row{ID: fmt.Sprint(i), Cells: []string{fmt.Sprintf("file-%02d.md", i)}})

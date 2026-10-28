@@ -154,7 +154,7 @@ func TestRepoWhatAnAppMayChange(t *testing.T) {
 	edit(t, dir, ".goreleaser.yaml", "      Run `hostu` to start.\n\n      A Nerd Font terminal profile and a truecolor (24-bit) terminal are\n      required. macOS and Linux (WSL too).\n",
 		"      Run `hostu` to start. The hosts come from ~/.ssh/config.\n\n      A Nerd Font terminal profile and a truecolor (24-bit) terminal are\n      required. macOS and Linux (WSL too), with ssh on the PATH.\n")
 	edit(t, dir, ".goreleaser.yaml", "    test: |\n", "    dependencies:\n      - name: openssh\n    test: |\n")
-	edit(t, dir, ".gitignore", ".claude/worktrees/\n", ".claude/worktrees/\n/hosts.local\n")
+	edit(t, dir, ".gitignore", "!/.claude/rules/terminu.md\n", "!/.claude/rules/terminu.md\n/hosts.local\n")
 	if errs := repoErrs(t, dir); len(errs) > 0 {
 		t.Errorf("%q", errs)
 	}
@@ -385,8 +385,8 @@ func TestRepoMakefile(t *testing.T) {
 }
 
 // TestRepoChangelog: tdp project.6: the first lines, ## Unreleased alone, a
-// heading naming a tdp written ## vX.Y.Z — tdp vA.B.C; an older heading
-// without the tdp passes (project-28 to 30).
+// heading naming a tdp written ## vX.Y.Z — tdp vA.B.C, pre-release versions
+// too; an older heading without the tdp passes (project-28 to 30).
 func TestRepoChangelog(t *testing.T) {
 	for _, c := range []struct{ old, new, item string }{
 		{"# Changelog\n", "# Change log\n", "project-28"},
@@ -401,6 +401,57 @@ func TestRepoChangelog(t *testing.T) {
 		if len(errs) != 1 || !strings.Contains(errs[0], c.item) || !strings.Contains(errs[0], "CHANGELOG.md line") {
 			t.Errorf("%q to %q: want %s, got %q", c.old, c.new, c.item, errs)
 		}
+	}
+	dir := goodRepo(t, "vulcanshen")
+	edit(t, dir, "CHANGELOG.md", "## v0.2.0 — tdp v0.10.2", "## v0.3.0-beta.1 — tdp v1.1.0-beta.1")
+	if errs := repoErrs(t, dir); len(errs) > 0 {
+		t.Errorf("pre-release versions: %q", errs)
+	}
+}
+
+// TestRepoClaudeFiles: git tracks no CLAUDE.md, and under .claude/ only
+// harness's .claude/rules/terminu.md (tdp project.3, project-37); the
+// template's .gitignore keeps the others out. Outside a git work tree it is
+// not checked.
+func TestRepoClaudeFiles(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("no git")
+	}
+	dir := goodRepo(t, "vulcanshen")
+	git := func(args ...string) {
+		t.Helper()
+		if out, err := exec.Command("git", append([]string{"-C", dir}, args...)...).CombinedOutput(); err != nil {
+			t.Fatalf("git %q: %v\n%s", args, err, out)
+		}
+	}
+	files := []string{"CLAUDE.md", "docs/CLAUDE.md", ".claude/settings.local.json", ".claude/rules/other.md", ".claude/rules/terminu.md"}
+	for _, f := range files {
+		p := filepath.Join(dir, filepath.FromSlash(f))
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte("the maintainer's\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if errs := repoErrs(t, dir); len(errs) > 0 {
+		t.Errorf("not a git work tree: %q", errs)
+	}
+	git("init", "-q")
+	git("add", "-A")
+	if errs := repoErrs(t, dir); len(errs) > 0 {
+		t.Errorf("all added under the template's .gitignore: %q", errs)
+	}
+	git(append([]string{"add", "-f", "--"}, files...)...)
+	errs := repoErrs(t, dir)
+	all := strings.Join(errs, "\n")
+	for _, f := range files[:4] {
+		if !strings.Contains(all, "git tracks "+f+": ") {
+			t.Errorf("no %s in:\n%s", f, all)
+		}
+	}
+	if len(errs) != 4 || strings.Contains(all, "git tracks .claude/rules/terminu.md") || strings.Count(all, "project-37") != 4 {
+		t.Errorf("all forced in: %q", errs)
 	}
 }
 
@@ -444,13 +495,18 @@ func mustEval(t *testing.T, p string) string {
 }
 
 // TestTemplatesAreTdps: _project is tdp's project/ templates at the version
-// the lib implements, byte for byte (tdp project.2), when the spec's
-// repository is on this machine.
+// the lib implements, byte for byte (tdp project.2), when a clone of tdp is
+// on this machine: TERMINU_GO__TDP_REPO (tdp E2), else a terminu beside this
+// repository.
 func TestTemplatesAreTdps(t *testing.T) {
-	home, _ := os.UserHomeDir()
-	spec := filepath.Join(home, "Documents", "sideproj", "terminu")
-	if _, err := os.Stat(filepath.Join(spec, ".git")); err != nil {
-		t.Skip("no tdp repository here")
+	spec := os.Getenv("TERMINU_GO__TDP_REPO")
+	if spec == "" {
+		spec = filepath.Join("..", "..", "terminu")
+		if _, err := os.Stat(filepath.Join(spec, ".git")); err != nil {
+			t.Skip("no clone of tdp beside this repository; TERMINU_GO__TDP_REPO names one elsewhere")
+		}
+	} else if _, err := os.Stat(filepath.Join(spec, ".git")); err != nil {
+		t.Fatalf("TERMINU_GO__TDP_REPO is %s, not a clone of tdp: %v", spec, err)
 	}
 	entries, err := templates.ReadDir("_project")
 	if err != nil {
@@ -486,7 +542,7 @@ func TestTdpVersionIsTheChangelogs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	m := regexp.MustCompile(`(?m)^## .* — tdp (v\d+\.\d+\.\d+)$`).FindStringSubmatch(string(b))
+	m := regexp.MustCompile(`(?m)^## .* — tdp (` + version + `)$`).FindStringSubmatch(string(b))
 	if m == nil || m[1] != tdpVersion {
 		t.Errorf("CHANGELOG's top names %v, tdpVersion is %s", m, tdpVersion)
 	}

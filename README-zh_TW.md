@@ -167,7 +167,8 @@ func TestFirstLaunch(t *testing.T) {
   `go test -short` 時只在最低尺寸與 80×24 啟動，icon 只用一格。
   它先在子測試 `repo` 裡讀 app 的 repo（測試目錄往上找到的 `go.mod`），照 tdp project 檢查：範本（`family.mk`、`release.yml`、
   `.goreleaser.yaml`、`install.sh`、`uninstall.sh`、`version.go`、`.gitignore`）要跟這一版實作的 tdp 一樣，只差每一份允許 app 改的地方；
-  每個 app 都有的檔案；Makefile 的排法；CHANGELOG 的開頭與標題。失敗時寫出哪個檔、差在哪裡、要重新複製哪一份範本。
+  每個 app 都有的檔案；Makefile 的排法；CHANGELOG 的開頭與標題；git 沒有追蹤 `CLAUDE.md`，`.claude/` 底下只追蹤 harness 的
+  `.claude/rules/terminu.md`。失敗時寫出哪個檔、差在哪裡、要重新複製哪一份範本。
   tdp project 只綁家族成員：`go.mod` 的 module 不在 `github.com/vulcanshen` 底下的 app，repo 不查。
 - **`Tricky`、`Sizes` 與 `Mashes`** 是弄壞過畫面的值：控制字元、escape sequence、寬字與組合字、很長的值；奇怪的終端機尺寸；
   比動畫還快的連按（`Mash`）。
@@ -187,7 +188,7 @@ return app.Tick(300*time.Millisecond, func(time.Time) tea.Msg { return searchNow
 
 ## 實作哪一版 terminu design
 
-terminu-go 實作 **tdp v1.0.2**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
+terminu-go 實作 **tdp v1.1.0-beta.1**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
 
 ## 相關連結
 

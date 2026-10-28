@@ -45,7 +45,8 @@ type App struct {
 // First it reads the app's repository, the go.mod at or above the test's
 // directory, against tdp project (in a subtest "repo"): the templates of
 // project.2, as the tdp this lib implements has them, but for what an app may
-// change in each; the files of project.3; the Makefile of project.5; the
+// change in each; the files of project.3, and that git tracks no Claude Code
+// file but harness's; the Makefile of project.5; the
 // CHANGELOG of project.6; an app made after tdp, its module not under
 // github.com/vulcanshen, is not checked (project.1). A failure names the file, shows the difference and
 // says what to copy again. The lib's own module is not checked (tdp E8).

@@ -302,7 +302,7 @@ func TestInputLongValue(t *testing.T) {
 	ta.resize(30, 20)
 	ta.Text(TextInput{Title: "Path"})
 	ta.settle()
-	path := "/Users/vulcan/Documents/sideproj/terminu/components/layout"
+	path := "~/projects/terminu/components/layout"
 	covFType(ta, path)
 	v := covFValue(ta)
 	if Width(v) != 24-angleWidth() || !strings.HasPrefix(v, "…") || !strings.HasSuffix(v, "layout ") {
@@ -310,7 +310,7 @@ func TestInputLongValue(t *testing.T) {
 	}
 	covFPress(ta, "Home")
 	v = covFValue(ta)
-	if !strings.HasPrefix(v, "/Users") || !strings.HasSuffix(v, "…") {
+	if !strings.HasPrefix(v, "~/projects") || !strings.HasSuffix(v, "…") {
 		t.Errorf("after Home the end is cut: %q", v)
 	}
 	// It scrolls only as far as it must: moving right from the start does
@@ -318,7 +318,7 @@ func TestInputLongValue(t *testing.T) {
 	for range 10 {
 		covFPress(ta, "→")
 	}
-	if v = covFValue(ta); !strings.HasPrefix(v, "/Users") {
+	if v = covFValue(ta); !strings.HasPrefix(v, "~/projects") {
 		t.Errorf("ten to the right scrolled: %q", v)
 	}
 	// Nor when the cursor steps back from the end: it is still in sight.

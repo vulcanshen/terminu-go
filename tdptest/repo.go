@@ -4,6 +4,7 @@ import (
 	"embed"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -13,7 +14,7 @@ import (
 
 // tdpVersion is the tdp this lib implements; _project holds its project/
 // templates as they are (tdp project.2).
-const tdpVersion = "v1.0.2"
+const tdpVersion = "v1.1.0-beta.1"
 
 //go:embed _project
 var templates embed.FS
@@ -57,6 +58,7 @@ func checkRepo(t testing.TB, root, name string) {
 		return
 	}
 	r.files()
+	r.claudeFiles()
 	r.templates()
 	r.makefile()
 	r.changelog()
@@ -116,6 +118,24 @@ func (r *repo) files() {
 	} {
 		if !r.has(f.path) {
 			r.t.Errorf("tdptest: there is no %s (tdp project.3, %s)", f.path, f.item)
+		}
+	}
+}
+
+// claudeFiles checks that git tracks no CLAUDE.md and, under .claude/, only
+// harness's .claude/rules/terminu.md (tdp project.3, project-37). Outside a
+// git work tree, or without git, it is not checked.
+func (r *repo) claudeFiles() {
+	out, err := exec.Command("git", "-C", r.root, "ls-files", "-z").Output()
+	if err != nil {
+		return
+	}
+	for _, f := range strings.Split(string(out), "\x00") {
+		if f == ".claude/rules/terminu.md" {
+			continue
+		}
+		if f == "CLAUDE.md" || strings.HasSuffix(f, "/CLAUDE.md") || strings.HasPrefix(f, ".claude/") {
+			r.t.Errorf("tdptest: git tracks %s: Claude Code's files stay out of git, but harness's .claude/rules/terminu.md; git rm --cached %s keeps the file and stops tracking it (tdp project.3, project-37)", f, f)
 		}
 	}
 }
@@ -492,7 +512,10 @@ func targets(ls []string) map[string]bool {
 	return out
 }
 
-var heading = regexp.MustCompile(`^## v\d+\.\d+\.\d+ — tdp v\d+\.\d+\.\d+$`)
+// version is a tag's version, a pre-release one too (v1.1.0-beta.1).
+const version = `v\d+\.\d+\.\d+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?`
+
+var heading = regexp.MustCompile(`^## ` + version + ` — tdp ` + version + `$`)
 
 // changelog checks CHANGELOG.md against tdp project.6: its first lines, and
 // each heading naming a tdp written as a tag, " — tdp ", the version.
