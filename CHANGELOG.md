@@ -2,6 +2,25 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.1.0 — tdp v1.1.0
+
+Everything since v1.0.2, the betas v1.1.0-beta.1 to beta.3 included:
+
+- Claude Code's files stay out of an app's git (tdp project.3, project-37): `tdptest.Check` fails when git tracks a
+  `CLAUDE.md`, or anything under `.claude/` but harness's `.claude/rules/terminu.md`. Outside a git work tree it is
+  not checked. The `gitignore` template keeps them out
+- An app can release betas, `vX.Y.Z-beta.N`: the `goreleaser.yaml` template makes a tag with a pre-release part a GitHub
+  pre-release, kept off the Homebrew tap and the scoop bucket, and the `release.yml` template writes the release notes
+  outside the checkout, so the binaries are not stamped `+dirty`. A CHANGELOG heading may name pre-release versions
+  (`## v0.2.0-beta.1 — tdp v1.1.0-beta.2`); tdptest took `vX.Y.Z` alone
+- From v2 on an app's module ends in its major version (project.3, project-13): tdptest takes
+  `github.com/vulcanshen/<app>/vN` when the latest release its CHANGELOG names, a beta too, is vN.x.y with N ≥ 2, and
+  fails a module without it, with another N, or with `/v0` or `/v1`. The `goreleaser.yaml` template takes the module
+  path from go.mod in its ldflags, and the `version.go` template says so in its comment
+- The lib's repository no longer tracks its `CLAUDE.md`, and its documents, tests and comments no longer hold paths of
+  one machine or point to notes kept off GitHub. `TestTemplatesAreTdps` finds tdp at `TERMINU_GO__TDP_REPO`, else at
+  `../terminu` beside the repository
+
 ## v1.1.0-beta.3 — tdp v1.1.0-beta.3
 
 - From v2 on an app's module ends in its major version (project.3, project-13): tdptest takes
