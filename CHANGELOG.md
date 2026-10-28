@@ -2,8 +2,12 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
-## Unreleased — tdp v1.1.0-beta.1
+## v1.1.0-beta.2 — tdp v1.1.0-beta.2
 
+- tdp v1.1.0-beta.2 lets an app release betas: tdptest's templates have the new `goreleaser.yaml` (a tag with a
+  pre-release part makes a GitHub pre-release, kept off the tap and the bucket) and `release.yml` (the release notes
+  written outside the checkout, so the binaries are not stamped `+dirty`). A beta's CHANGELOG heading,
+  `## v0.2.0-beta.1 — tdp v1.1.0-beta.2`, passes since v1.1.0-beta.1
 - The documents and the showcase comments say in their own words what the C and G numbers they name were about,
   and no longer send the reader to notes kept off GitHub
 
