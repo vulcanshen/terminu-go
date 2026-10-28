@@ -98,7 +98,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | K10 | `Alt-Esc` 離開或結束時一律先 confirm（`Enter` 離開、`Esc` 回 PTY）；PTY 裡面的動作不用問 | T `[1] SHELL`、terminal popup | `TestK10AltEscConfirms` |
 | K10 | 其他 Alt 出口鍵要不要 confirm、保留哪些鍵、出口後 focus 落點：app 決定（lib 提供選項；落點：`Terminal.OnLeave`，出口鍵被接受、focus 出來之後跑） | T `[2] SESSIONS` 的 `[Alt-t]erm` 隱藏 terminal popup；T `[1] SHELL` 按 `Alt-Esc`、`Enter` 離開後 focus 到 `[2] SESSIONS` 的 `panel` 列 | `TestK10ReservedKeysShown`、`TestTerminalKeyTakesSeveral`（`TerminalKey.Keys`：一組鍵寫一次）、`TestTerminalOnLeave` |
 | K10 | 子程序還沒準備好時可以不轉送一般鍵，但 `Ctrl-C` 照轉、出口鍵照有效照揭露 | T `[1] SHELL` 的 `Slow start`（模擬連線中） | `TestK10NotReadyForwardsCtrlC`、`TestTerminalFirstOutput`（lib：`Terminal.OnFirstOutput`、`Spoke`，app 拿來結束 NotReady 與 loading） |
-| K10 | `Alt-Esc` 與兩次 `Esc` 的 byte 一樣（實作參考：bubbletea v1.3.10 實測會黏）：C2 驗 | 見紀錄 C2 | — |
+| K10 | `Alt-Esc` 與兩次 `Esc` 的 byte 一樣（實作參考：bubbletea v1.3.10 實測會黏）：C2 驗 | 在真的終端機上按：[`walkthrough.md`](walkthrough.md) 的「C2」 | — |
 | K11 | 模式裡 `!` 不作用（`TestAppLogOnBang`）；`Space` 開模式的 Space menu（見 menu.4）；`?` 開模式的 key reference；`Esc` 離開、回到進入前的狀態；`q`、`Ctrl-C` 照 K9 | P `[1] PODS` 的 `[D]rag` | `TestK11ModeCoreKeys` |
 | K11 | 模式裡只有模式自己的鍵與上表的 core key 作用：panel 熱鍵與 global 熱鍵都不作用，按了不出聲 | Drag 裡按 `m`（panel 熱鍵）、`I`（global 熱鍵） | `TestK11HotkeysSilentInMode` |
 | K11 | 模式可以暫停 `Tab` 與數字鍵，按了要有回應（toast）；toast 在時第一個 `Esc` 先收 toast | Drag 裡按 `Tab`、`2` | `TestK11TabPausedToast`、`TestK11DigitsPausedToast` |
@@ -223,13 +223,13 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | E3 | 讀不了時，資料是一筆一個檔：讀不了的那一筆按 `Enter` 只改名成 `.bak`、不另外建，其他照常讀；問句 `Move it to <檔名>.bak and go on without it?`（lib：`App.MoveAsideRecord`，app 的 `reread` 只是重讀） | D「Move aside: a record it can’t read」 | `TestMoveAsideRecord` |
 | E3 | 不再用的檔：app 改版後不再用的設定、狀態、資料檔不刪、不跳 toast；檔案還在時每次啟動在 App Log 記一筆 INFO，寫出路徑（`No longer used: <路徑>; delete it if you don't need it`）（lib：`App.NoLongerUsed`） | 展示場啟動時：`/tmp/terminu-showcase/layout.yaml`（假裝舊版用過），按 `!` 看 | `TestNoLongerUsed` |
 | E4 | 需要 Nerd Font 與 truecolor（lib 的 README 寫明）；PUA glyph 在程式碼裡寫成 code point | 看 README；掃原始碼找不到 PUA 字元 | `TestE4NoLiteralPUA` |
-| E5 | 量的是游標實際前進幾格；所有量寬度的地方走同一個函式（含疊 popup）；畫到終端機用 bubbletea v1 的 renderer（紀錄 C1） | `SHOWCASE__ICON_WIDTH=2`；`proto/c1/tmux-check.sh` 的作法 | `TestL4EveryRowFullWidth`（icon 兩格）、`TestE5OutputDropsEraseRight`（renderer 補的「清到行尾」拿掉，紀錄 C1）、`TestVTWideCharacters`（PTY 裡的字也照同一個寬度放） |
+| E5 | 量的是游標實際前進幾格；所有量寬度的地方走同一個函式（含疊 popup）；畫到終端機用 bubbletea v1 的 renderer：它整列重寫改變的列，icon 佔兩格也對得上（C1：`proto/c1` 在 icon 佔兩格的 tmux 裡逐字比對過） | `SHOWCASE__ICON_WIDTH=2`；`proto/c1/tmux-check.sh` 的作法 | `TestL4EveryRowFullWidth`（icon 兩格）、`TestE5OutputDropsEraseRight`（renderer 量錯寬度、在列尾補的「清到行尾」拿掉）、`TestVTWideCharacters`（PTY 裡的字也照同一個寬度放） |
 | E5 | icon 與 powerline 符號（U+E0A0–U+E0D7）各量各的；啟動時 CPR 探測（unix）；順序 `<APP>__ICON_WIDTH` → `TERMINU__ICON_WIDTH` → `LC_TERMINU_ICON_WIDTH`（隔著 ssh 帶過來的）→ 探測，powerline 照 `<APP>__POWERLINE_WIDTH` → `TERMINU__POWERLINE_WIDTH` → `LC_TERMINU_POWERLINE_WIDTH` → 探測；Windows 預設一格 | 在 icon 佔兩格的 tmux 裡啟動看 statusbar（寫出兩種寬度） | `TestE5WidthOrder`、`TestE5ProbeCPR` |
 | E5 | 有 PTY 的 app 開子程序時設 `TERMINU__ICON_WIDTH`、`TERMINU__POWERLINE_WIDTH`（自己的格數） | T `[1] SHELL` 裡 `echo $TERMINU__ICON_WIDTH $TERMINU__POWERLINE_WIDTH` | `TestE5ChildEnv` |
 | E5 | 疊 popup 不當掉：比畫面寬、高、兩邊都大都切，不 panic | 縮小終端機再開 popup | `TestE5CompositeOversized` |
 | E6 | lib：git tag，沒有 binary；展示場不發布；L4 的畫面測試兩邊都要；E6 指向的 project（v0.7.0：app 的 repo 怎麼排、怎麼發布）lib 與展示場不套，照 E8 的表 | — | `TestL4EveryRowFullWidth` |
 | E7 | lib 的 README 自己的結構（安裝 `go get`、快速開始是程式碼、寫明展示場怎麼跑；設定段寫出 E3 的共用設定 key 怎麼交給 lib）。開發者文件不在 tdp 的範圍裡（P5）：`docs/dev-remarks.md` 是這個 repo 自己留的 | 對照這個 repo 的 README | — |
-| E8 | 分工表；lib 不自己另做：做不到或不好用的回報成 tdp 的缺漏，規範改了 lib 才跟著改 | 做不到的都在紀錄裡（G） | —、`TestCanvas`（lib：`App.Canvas`，lib 管不到的畫面照樣用 confirm、toast、input） |
+| E8 | 分工表；lib 不自己另做：做不到或不好用的回報成 tdp 的缺漏，規範改了 lib 才跟著改 | 做不到的回報成盲點（G），定案後補進 tdp | —、`TestCanvas`（lib：`App.Canvas`，lib 管不到的畫面照樣用 confirm、toast、input） |
 
 ## color
 

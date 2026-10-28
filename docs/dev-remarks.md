@@ -12,7 +12,7 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   `Width`、`Padding`、`Border`、`Align`，`JoinHorizontal`／`JoinVertical`、`Place`，以及 bubbletea-overlay 都不用 —— 它們用自己的
   寬度，icon 一律算一格。
 - **畫到終端機**：用 bubbletea v1 的 renderer。它把改變的列從第 0 欄整列重寫，終端機自己決定每個字落在哪一格，所以 icon 佔兩格
-  也對得上（`proto/c1` 在 icon 兩格的 tmux 裡逐字比對過，見盲點紀錄 C1 的「v1 重驗」）。
+  也對得上（C1：`proto/c1` 改用 v1 之後，在 icon 佔兩格與一格的 tmux 裡逐字比對過，框線都對齊、更新後不壞）。
   - 例外是 renderer 在列尾補的「清到行尾」：它用 `ansi.StringWidth`（icon 算一格）量每一列，比終端機寬短的列後面補 `ESC [ K`。
     icon 兩格時，含 icon 的列量起來一定比較短，整列寫滿之後還會送一次 `ESC [ K`，照 xterm 規矩的終端機（Ghostty 也是）會把最後一格
     （右框）擦掉；tmux 不會。lib 畫的每一列都剛好是終端機寬（L4），這個清除永遠是多餘的，所以 `App.Run` 交給 bubbletea 的輸出
@@ -75,11 +75,11 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
 - **一行文字的欄**（`Column.Line`）：格子的字（含 `Styled` 每一段的字）先把 Tab 換成 `input_tab_width` 格空白再 `Escape`，
   其他控制字元照樣畫名字；app 給的 span 不改，換在複製的那份上。
 
-`proto/c1` 是驗證盲點紀錄 C1 的拋棄式原型，不是 lib 的一部分；lib 寫好後刪掉（go.mod 裡的 lipgloss 只有它在用）。
+`proto/c1` 是驗證 C1（icon 佔兩格時，畫到終端機的列還對不對得上）的拋棄式原型，不是 lib 的一部分；lib 寫好後刪掉（go.mod 裡的 lipgloss 只有它在用）。
 
 ## 設計決定
 
-- **bubbletea v1，不是 v2**（盲點紀錄 C1、G22）：bubbletea v2 的 renderer 把 `View` 拆成自己的格子、只補改變的格子，lipgloss v2 的
+- **bubbletea v1，不是 v2**（C1 驗出來，tdp 不用改就定案）：bubbletea v2 的 renderer 把 `View` 拆成自己的格子、只補改變的格子，lipgloss v2 的
   排版與 `Compositor`／`Canvas` 也是；兩者的寬度都換不了，icon 佔兩格時框線歪掉、更新後消失。要用 v2 就得自己重寫輸出層。
   user：v2 還不成熟，不為它打破既有狀態、重新造輪；等 v2 的 renderer 與排版能指定寬度函式（或正確處理 icon 佔兩格）時再升。
   輸出那一層盡量寫成換得掉的。

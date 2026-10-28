@@ -39,7 +39,7 @@ var sessions = []session{
 const panelRow = "panel"
 
 // busy is the showcase standing still for a while, so that keys pile up
-// behind it (record C2: two Escs while the app is busy).
+// behind it: two Escs pressed while the app is busy (C2 of the walkthrough).
 type busy struct{}
 
 func newTerminalScreen(s *showcase) *terminalScreen {

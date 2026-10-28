@@ -2,6 +2,11 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## Unreleased — tdp v1.1.0-beta.1
+
+- The documents and the showcase comments say in their own words what the C and G numbers they name were about,
+  and no longer send the reader to notes kept off GitHub
+
 ## v1.1.0-beta.1 — tdp v1.1.0-beta.1
 
 - tdp v1.1.0-beta.1 keeps Claude Code's files out of an app's git (project.3, project-37). tdptest's templates have
