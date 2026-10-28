@@ -323,6 +323,44 @@ func TestRepoWindows(t *testing.T) {
 	}
 }
 
+// TestRepoModuleMajor: from v2 on the module ends in /vN, the major version
+// of the latest release the CHANGELOG names, a beta's too; v0 and v1 have
+// no /vN (tdp project.3, project-13).
+func TestRepoModuleMajor(t *testing.T) {
+	for _, c := range []struct {
+		release, module string
+		ok              bool
+	}{
+		{"v0.2.0", "github.com/vulcanshen/hostu", true},
+		{"v0.2.0", "github.com/vulcanshen/hostu/v2", false},
+		{"v1.3.0", "github.com/vulcanshen/hostu", true},
+		{"v1.3.0", "github.com/vulcanshen/hostu/v1", false},
+		{"v2.0.0", "github.com/vulcanshen/hostu/v2", true},
+		{"v2.0.0", "github.com/vulcanshen/hostu", false},
+		{"v4.1.0", "github.com/vulcanshen/hostu/v4", true},
+		{"v4.1.0", "github.com/vulcanshen/hostu", false},
+		{"v4.1.0", "github.com/vulcanshen/hostu/v3", false},
+		{"v4.1.0", "github.com/vulcanshen/hostu/v5", false},
+		{"v12.0.1", "github.com/vulcanshen/hostu/v12", true},
+		{"v5.0.0-beta.1", "github.com/vulcanshen/hostu/v5", true},
+		{"v5.0.0-beta.1", "github.com/vulcanshen/hostu/v4", false},
+	} {
+		dir := goodRepo(t, "vulcanshen")
+		edit(t, dir, "CHANGELOG.md", "## v0.2.0 — tdp v0.10.2", "## "+c.release+" — tdp v1.1.0-beta.3")
+		edit(t, dir, "go.mod", "module github.com/vulcanshen/hostu\n", "module "+c.module+"\n")
+		errs := repoErrs(t, dir)
+		if c.ok && len(errs) > 0 || !c.ok && (len(errs) != 1 || !strings.Contains(errs[0], "project-13") || !strings.Contains(errs[0], "latest release CHANGELOG.md names is "+c.release)) {
+			t.Errorf("%s, %s: %q", c.release, c.module, errs)
+		}
+	}
+	dir := goodRepo(t, "vulcanshen")
+	edit(t, dir, "CHANGELOG.md", "## v0.2.0 — tdp v0.10.2\n\n- The host list\n\n## v0.1.0\n\n- First release, before tdp wrote the version in the heading\n", "")
+	edit(t, dir, "go.mod", "module github.com/vulcanshen/hostu\n", "module github.com/vulcanshen/hostu/v2\n")
+	if errs := repoErrs(t, dir); len(errs) != 1 || !strings.Contains(errs[0], "names no release yet") {
+		t.Errorf("no release yet, /v2: %q", errs)
+	}
+}
+
 // TestRepoFiles: the files every app has (tdp project.3): the main package,
 // go.mod's module github.com/vulcanshen/<app>, go.sum, LICENSE, docs/icon.svg.
 func TestRepoFiles(t *testing.T) {

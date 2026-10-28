@@ -8,13 +8,14 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 )
 
 // tdpVersion is the tdp this lib implements; _project holds its project/
 // templates as they are (tdp project.2).
-const tdpVersion = "v1.1.0-beta.2"
+const tdpVersion = "v1.1.0-beta.3"
 
 //go:embed _project
 var templates embed.FS
@@ -85,8 +86,9 @@ func (r *repo) has(rel string) bool {
 
 // family reads go.mod's module path and says whether the repository is a
 // family member's, the module under github.com/vulcanshen; a member's is
-// github.com/vulcanshen/<app> (tdp project.3, project-13). The lib's own
-// module is not an app's (tdp E8).
+// github.com/vulcanshen/<app>, from v2 on ending in /vN, the major version
+// of the latest release its CHANGELOG names (tdp project.3, project-13).
+// The lib's own module is not an app's (tdp E8).
 func (r *repo) family() bool {
 	s, ok := r.read("go.mod")
 	if !ok {
@@ -101,11 +103,32 @@ func (r *repo) family() bool {
 	if m[1] == libModule || !strings.HasPrefix(m[1], "github.com/vulcanshen/") {
 		return false
 	}
-	if m[1] != "github.com/vulcanshen/"+r.name {
-		r.t.Errorf("tdptest: go.mod's module is %s, not github.com/vulcanshen/%s: go install github.com/vulcanshen/%s/cmd/%s@latest has to work (tdp project.3, project-13)",
-			m[1], r.name, r.name, r.name)
+	want := "github.com/vulcanshen/" + r.name
+	major, latest := r.release()
+	if major >= 2 {
+		want += "/v" + strconv.Itoa(major)
+	}
+	if m[1] != want {
+		why := "CHANGELOG.md names no release yet"
+		if latest != "" {
+			why = "the latest release CHANGELOG.md names is " + latest
+		}
+		r.t.Errorf("tdptest: go.mod's module is %s, not %s: %s, and from v2 on the module ends in the major version, /vN, so go install %s/cmd/%s@latest gets the latest release (tdp project.3, project-13)",
+			m[1], want, why, want, r.name)
 	}
 	return true
+}
+
+// release is the latest release CHANGELOG.md names, its first heading with
+// a version, and that version's major; "" and 0 when it names none.
+func (r *repo) release() (int, string) {
+	s, _ := r.read("CHANGELOG.md")
+	m := regexp.MustCompile(`(?m)^## (v(\d+)\.\d+\.\d+\S*)`).FindStringSubmatch(s)
+	if m == nil {
+		return 0, ""
+	}
+	n, _ := strconv.Atoi(m[2])
+	return n, m[1]
 }
 
 // files are the ones tdp project.3 puts in every app.

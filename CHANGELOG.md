@@ -2,6 +2,13 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.1.0-beta.3 — tdp v1.1.0-beta.3
+
+- From v2 on an app's module ends in its major version (project.3, project-13): tdptest takes
+  `github.com/vulcanshen/<app>/vN` when the latest release its CHANGELOG names, a beta too, is vN.x.y with N ≥ 2, and
+  fails a module without it, with another N, or with `/v0` or `/v1`
+- tdptest's templates have the new `goreleaser.yaml`, whose ldflags take the module path from go.mod
+
 ## v1.1.0-beta.2 — tdp v1.1.0-beta.2
 
 - tdp v1.1.0-beta.2 lets an app release betas: tdptest's templates have the new `goreleaser.yaml` (a tag with a

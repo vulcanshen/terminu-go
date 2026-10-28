@@ -1,6 +1,6 @@
-# tdp v1.1.0-beta.2 coverage
+# tdp v1.1.0-beta.3 coverage
 
-tdp v1.1.0-beta.2 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
+tdp v1.1.0-beta.3 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
 每個元件、規範列的每一種方案、寫到的每一種狀態與疊法，在展示場都按得到。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -559,7 +559,7 @@ project 只綁家族成員（project.1）：module 不在 `github.com/vulcanshen
 | project.2 | `internal/version/version.go` 只差 `<app>`（project-6） | 同上 | `TestRepoChangedTemplates` |
 | project.2 | `.gitignore` 範本在前、只差 `<app>`，app 自己的行接在最後（project-7） | 同上 | `TestRepoWhatAnAppMayChange`、`TestRepoChangedTemplates` |
 | project.1 | 只綁家族成員：`go.mod` 的 module 不在 `github.com/vulcanshen` 底下的 app（照 tdp 做的）repo 怎麼放自己決定，範本、檔案、Makefile、CHANGELOG、module 都不查 | 同上 | `TestRepoNotFamily` |
-| project.3 | `cmd/<app>/main.go`、`go.mod` 的 module 是 `github.com/vulcanshen/<app>`、`go.sum`、`LICENSE`、`docs/icon.svg`（project-12、13、15、16、18）；`install.sh` 的 `WINDOWS="yes"` 時另有 `install.ps1`、`uninstall.ps1`（project-19） | 同上 | `TestRepoFiles`、`TestRepoWindows` |
+| project.3 | `cmd/<app>/main.go`、`go.mod` 的 module 是 `github.com/vulcanshen/<app>`（CHANGELOG 最新的 release 是 v2 以上時結尾帶 `/vN`，beta 也算；v0、v1 不帶）、`go.sum`、`LICENSE`、`docs/icon.svg`（project-12、13、15、16、18）；`install.sh` 的 `WINDOWS="yes"` 時另有 `install.ps1`、`uninstall.ps1`（project-19） | 同上 | `TestRepoFiles`、`TestRepoModuleMajor`、`TestRepoWindows` |
 | project.3 | git 沒有追蹤任何 `CLAUDE.md`，`.claude/` 底下只追蹤 harness 的 `.claude/rules/terminu.md`（project-37）；範本的 `.gitignore` 擋住其他的；不在 git 的工作目錄裡（或沒有 git）時不查 | `Check` 在 app 的 repo 跑 `git ls-files` | `TestRepoClaudeFiles` |
 | project.5 | Makefile：開頭三列照範本、`include family.mk` 之前只有變數、`BINARY := <app>`、`##@ <app> 自己的` 是最後一段、target 不跟 family.mk 的重名（project-23～27） | 同上 | `TestRepoMakefile` |
 | project.6 | CHANGELOG 的開頭照範本、`## Unreleased` 單獨一列、寫了 tdp 的標題是 `## vX.Y.Z — tdp vA.B.C`，兩個版本都可以帶 pre-release（例 `v1.1.0-beta.1`）（project-28、29、30）；沒寫 tdp 的舊標題不查（project-31） | 同上 | `TestRepoChangelog` |
