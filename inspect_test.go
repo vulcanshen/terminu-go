@@ -21,8 +21,9 @@ func inspected(ta *testApp) []string {
 }
 
 // TestToastInspect: the inspect toast is there while the cursor is on an
-// item that has one, titled INSPECT with no hint, and every key goes through
-// it, Esc too (tdp toast.4, toast-21 to toast-23).
+// item that has one, titled INSPECT with no hint, every key going through
+// it, Esc too; none while a popup is open, and none in the App Log (tdp
+// toast.4, toast-21 to toast-23, toast-26, toast-27).
 func TestToastInspect(t *testing.T) {
 	ta := newTestApp(t)
 	ta.pods.Inspect = func() []string {
@@ -43,7 +44,7 @@ func TestToastInspect(t *testing.T) {
 		t.Errorf("titled INSPECT, with no hint:\n%s", strings.Join(plain, "\n"))
 	}
 	if testhook.Toast(ta.App) || len(ta.logs.entries) != logged {
-		t.Error("Esc does not take it, and the App Log does not keep it")
+		t.Error("Esc does not take it, and the App Log does not keep it (toast-27)")
 	}
 	ta.press("j")
 	if ta.toast != nil {
@@ -74,7 +75,7 @@ func TestToastInspect(t *testing.T) {
 		t.Error("Esc leaves the mode, and the toast goes with it, pod-01 having none")
 	}
 
-	// None while a popup is open, until tdp says (TODO(tdp toast.4) in inspectText).
+	// None while a popup is open, back once it closes (toast-26).
 	ta.press("k", "Space")
 	if ta.toast != nil {
 		t.Error("it is there under the Space menu")

@@ -743,11 +743,8 @@ func (a *App) placeToast() {
 // cursor, after every message (tdp toast.4): it comes when the cursor lands
 // on an item that has one, is that item's at once when the cursor moves to
 // another, and goes when the cursor leaves. An ordinary toast replaces it,
-// and once that one is gone it is back.
-//
-// TODO(tdp toast.4): tdp has every toast in the App Log and leaves moving the
-// cursor out of it; until it says which the inspect toast goes with, the App
-// Log does not keep it.
+// and once that one is gone it is back. The App Log does not keep it: it
+// comes and goes with the cursor (tdp toast.4, note.7).
 func (a *App) syncInspect() tea.Cmd {
 	t := a.toast
 	if t != nil && !t.closing && !t.view.(*toastView).inspect {
@@ -776,11 +773,8 @@ func (a *App) syncInspect() tea.Cmd {
 
 // inspectText is the inspect toast of the item under the focused panel's
 // cursor: its mode's, the innermost layer with an Inspect first, or the
-// panel's.
-//
-// TODO(tdp toast.4): tdp does not say whether it stays while a popup is open
-// over the panel; until it does there is none then, the cursor being the
-// popup's, and none covering the bottom rows and the hint of a tall popup.
+// panel's. There is none while a popup is open over the panel, the focus
+// being on the popup (tdp toast.4).
 func (a *App) inspectText() []string {
 	s := a.Screen()
 	if a.Canvas != nil || s == nil || a.top() != nil {

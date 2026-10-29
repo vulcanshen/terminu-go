@@ -2,6 +2,12 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.1.4 — tdp v1.1.3
+
+- tdp now says what the lib already did with the inspect toast (tdp toast.4, note.7): it is not shown while a popup is
+  open over the panel and is back once the popup closes, and the App Log does not keep it. The notes waiting for tdp
+  are gone; nothing changes for an app
+
 ## v1.1.3 — tdp v1.1.2
 
 - The inspect toast (tdp toast.4, from webu): `Panel.Inspect` and `Mode.Inspect` say what the item under the cursor
