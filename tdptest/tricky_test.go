@@ -49,7 +49,7 @@ func everywhere(v string) (*terminu.App, []func(a *terminu.App) tea.Cmd) {
 			return a.Viewer(&terminu.Viewer{Title: "Log", Subject: v, Lines: []string{v, v + v, ""}, Tabs: []string{v, "Two"}})
 		},
 		func(a *terminu.App) tea.Cmd {
-			return a.Viewer(&terminu.Viewer{Title: "Wide", Subject: v, Lines: []string{v, v + v}, NoWrap: true})
+			return a.Viewer(&terminu.Viewer{Title: "Wide", Subject: v, Lines: []string{v, v + v}})
 		},
 		func(a *terminu.App) tea.Cmd {
 			return a.Find(&terminu.Finder{Title: "Search", Subject: v, Items: []terminu.FinderItem{{ID: "1", Text: v}, {ID: "2", Text: "b " + v}},

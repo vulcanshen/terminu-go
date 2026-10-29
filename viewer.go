@@ -39,9 +39,8 @@ type Viewer struct {
 	// (tdp note). Unset, it is v, Visual, y copying to the
 	// terminal's clipboard with a Success toast.
 	Select *Selection
-	// NoWrap keeps a line too long on its row, cut with "…" at the end, for
-	// content that lines up (columns side by side, a table); lines fold by
-	// default (tdp note).
+	// Deprecated: a viewer always wraps and never cuts a line with "…"
+	// (tdp note.2); NoWrap does nothing.
 	NoWrap bool
 	// NoNumbers leaves out the line numbers, for a table the app lays out
 	// itself, where they mean nothing (tdp note).
@@ -67,9 +66,6 @@ type Viewer struct {
 	// text is Lines as read (readingRows), textOf the Lines it was made of.
 	text, textOf                   []string
 	top, sub, visible, textW, numW int
-	// left is how many cells a NoWrap viewer is scrolled to the right, to
-	// keep the selection's cursor in sight.
-	left int
 	// colours caches the lines as drawn for the lines and Lang they are of.
 	colours viewerColours
 	// The selection mode (tdp note): the first press of its
@@ -138,10 +134,6 @@ func (v *Viewer) find(a *App, q string) tea.Cmd {
 
 // stepHit goes by hits, wrapping at the ends, and scrolls only when the hit
 // is out of sight (tdp note.3).
-//
-// TODO(tdp note.3): tdp does not say whether a NoWrap viewer scrolls across
-// to a hit past the cut, as it does only for the selection mode's cursor;
-// until it does the line comes into sight, the hit after its "…".
 func (v *Viewer) stepHit(by int) {
 	if n := len(v.Hits); n > 0 {
 		v.Current = ((v.Current+by)%n + n) % n
@@ -324,11 +316,9 @@ func (v *Viewer) textWidth(inner int) int {
 }
 
 // wrap is where line i's rows start, in cells: a line too long for a row
-// folds onto the rows under it at a space, as components' wrapping says.
+// folds onto the rows under it at a space, as components' wrapping says; a
+// viewer always wraps (tdp note.2).
 func (v *Viewer) wrap(i int) []int {
-	if v.NoWrap {
-		return []int{0} // one row, cut
-	}
 	line := v.plain[i]
 	cells, space := make([]int, len(line)), make([]bool, len(line))
 	for k, c := range line {
@@ -360,58 +350,19 @@ func (v *Viewer) maxTop() (line, sub int) {
 	return 0, 0
 }
 
-// followAcross scrolls a NoWrap viewer to the left or the right as little as
-// keeps the selection's cursor in sight, as vim's nowrap does: every line
-// goes along, the part cut on either side marked with "…". Out of the mode
-// it is back at the start (tdp K11: back to before).
-func (v *Viewer) followAcross() {
-	if !v.NoWrap || !v.inMode || v.line >= len(v.plain) {
-		v.left = 0
-		return
-	}
-	chars := v.plain[v.line]
-	cx, cw := 0, 1
-	for k, c := range chars {
-		w := Width(drawn(c, v.tabW))
-		if k == v.col {
-			cw = w
-			break
+// rowsOf is line i, styled, cut into the rows it folds onto, each textW
+// cells.
+func (v *Viewer) rowsOf(i int, styled string) []string {
+	starts := v.wrap(i)
+	rows := make([]string, len(starts))
+	for r, from := range starts {
+		to := from + v.textW // the last row: the cursor's cell on an empty line too
+		if r+1 < len(starts) {
+			to = starts[r+1]
 		}
-		cx += w
+		rows[r] = Fit(Cut(styled, from, to), v.textW)
 	}
-	full := 0
-	for _, c := range chars {
-		full += Width(drawn(c, v.tabW))
-	}
-	if from := v.left + btoi(v.left > 0); cx < from {
-		v.left = max(cx-1, 0) // "…" in the cell before it
-		if cx == 0 {
-			v.left = 0
-		}
-	}
-	more := btoi(full > cx+cw) // "…" after it when the line goes on
-	if cx+cw > v.left+v.textW-more {
-		v.left = cx + cw - v.textW + more
-	}
-	v.left = max(v.left, 0)
-}
-
-// nowrapRow is a styled line of a NoWrap viewer in w cells, from the cell
-// it is scrolled to: what is cut on either side is a "…".
-func (v *Viewer) nowrapRow(styled string, w int) string {
-	if v.left == 0 {
-		return Fit(styled, w)
-	}
-	from, to := v.left+1, v.left+w
-	tail := Width(styled) > to
-	if tail {
-		to--
-	}
-	s := "…" + Cut(styled, from, to)
-	if tail {
-		s += "…"
-	}
-	return Pad(s, w)
+	return rows
 }
 
 // clampTop keeps the first row in sight between the first row and maxTop.
@@ -481,7 +432,6 @@ func (vv *viewerView) draw(w, h int, layer Color) []string {
 		v.line = min(max(v.line, 0), max(len(v.text)-1, 0))
 		v.follow(v.line) // the view follows the cursor
 	}
-	v.followAcross()
 	v.clampTop()
 	// Each line's first row has its number, right-aligned, a space after it;
 	// the rows it folds onto leave the column blank. Numbers in Overlay0, the
@@ -489,14 +439,12 @@ func (vv *viewerView) draw(w, h int, layer Color) []string {
 	body := make([]string, 0, v.visible)
 	last, whole := v.top-1, true // the line of the last row in sight, and whether all of it is
 	for i := v.top; i < len(v.text) && len(body) < v.visible; i++ {
-		styled := vv.lineView(i, layer)
-		starts := v.wrap(i)
+		rows := v.rowsOf(i, vv.lineView(i, layer))
 		first := 0
 		if i == v.top {
 			first = v.sub // the rows of the top line scrolled past
 		}
-		for r := first; r < len(starts); r++ {
-			from := starts[r]
+		for r := first; r < len(rows); r++ {
 			if len(body) == v.visible {
 				whole = false
 				break
@@ -512,17 +460,7 @@ func (vv *viewerView) draw(w, h int, layer Color) []string {
 			if v.NoNumbers {
 				num = ""
 			}
-			if v.NoWrap {
-				// Too long, cut with "…" at the end; scrolled to the right,
-				// "…" at the start too (tdp note).
-				body = append(body, " "+num+v.nowrapRow(styled, v.textW)+" ")
-				continue
-			}
-			to := from + v.textW // the last row: the cursor's cell on an empty line too
-			if r+1 < len(starts) {
-				to = starts[r+1]
-			}
-			body = append(body, " "+num+Fit(Cut(styled, from, to), v.textW)+" ")
+			body = append(body, " "+num+rows[r]+" ")
 		}
 		last = i
 	}

@@ -2,6 +2,19 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.1.6 — tdp v1.1.5
+
+- A viewer always wraps and never cuts a line with `…` (tdp note.2), so nothing in it is out of sight sideways and
+  the selection cursor no longer scrolls across. `Viewer.NoWrap` is deprecated and does nothing; it stays so code
+  that sets it still builds
+- A terminal's selection mode holds the screen as a viewer does: a line wider than the panel, as one is when the
+  panel gets narrower while selecting, folds onto the next row. The history mode is unchanged: it draws the
+  terminal's own cells, cut at the width as a terminal cuts them, never with `…`
+- The comparison's SPLIT wraps each side within its half (tdp note.8). The two lines across from each other take as
+  many rows as the longer, the shorter side filled with blank rows, so they start on the same row; the rows a line
+  folds onto leave its number's column blank
+- The showcase's Info viewer wraps; the search no longer has a case past a cut line
+
 ## v1.1.5 — tdp v1.1.4
 
 - The viewer's search is the lib's (tdp note.3). `Viewer.Search` gives its words: the input popup's title, glyph and

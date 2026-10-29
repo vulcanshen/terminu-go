@@ -138,7 +138,7 @@ func (a *App) compareWith(cm *comparing) tea.Cmd {
 		if v.top < len(lineOp) {
 			keep = lineOp[v.top]
 		}
-		v.Tab, v.NoWrap = tab, tab == 1
+		v.Tab = tab
 		if tab == 1 {
 			v.Lines, lineOp = diffSplit(ops, x, y, w)
 		} else {
@@ -334,16 +334,40 @@ func diffUnified(ops []diffOp, x, y []string, w int) (out []string, at []int) {
 }
 
 // diffSplit is SPLIT: the anchor's lines on the left, the other's on the
-// right, each half with its numbers, a line too long cut with "…"; a line
-// with nothing across from it faces an empty half; at is as diffUnified's.
+// right, each half with its numbers. A line too long folds within its half
+// as a viewer's does (tdp note.2), and the two across from each other take
+// as many rows as the longer, the shorter filled with blank rows, so they
+// start on the same row (tdp note.8). A line with nothing across from it
+// faces an empty half; at is the op each row shows, as diffUnified's.
 func diffSplit(ops []diffOp, x, y []string, w int) (out []string, at []int) {
 	nw := numWidthOf(x, y)
 	half := max((w-2)/2, nw+2)
-	side := func(i int, lines []string, st Style) string {
+	// side is line i's rows in its half, its number on the first.
+	side := func(i int, lines []string, st Style) []string {
 		if i < 0 {
-			return Repeat(" ", half)
+			return nil
 		}
-		return Pad(Fg(Overlay0).Render(PadLeft(itoa(i+1), nw))+" "+st.Render(Truncate(lines[i], half-nw-1)), half)
+		var rows []string
+		for r, part := range foldText(strings.TrimSuffix(lines[i], "\r"), half-nw-1) {
+			lead := Repeat(" ", nw+1)
+			if r == 0 {
+				lead = Fg(Overlay0).Render(PadLeft(itoa(i+1), nw)) + " "
+			}
+			rows = append(rows, Pad(lead+st.Render(part), half))
+		}
+		return rows
+	}
+	pair := func(op int, l, r []string) {
+		for k := range max(len(l), len(r)) {
+			left, right := Repeat(" ", half), Repeat(" ", half)
+			if k < len(l) {
+				left = l[k]
+			}
+			if k < len(r) {
+				right = r[k]
+			}
+			out, at = append(out, left+"  "+right), append(at, op)
+		}
 	}
 	for hi, h := range hunks(ops) {
 		if hi > 0 {
@@ -352,17 +376,16 @@ func diffSplit(ops []diffOp, x, y []string, w int) (out []string, at []int) {
 		var dels, adds []int // ops
 		flush := func() {
 			for k := range max(len(dels), len(adds)) {
-				l, r := -1, -1
+				l, r, op := -1, -1, 0
 				if k < len(dels) {
-					l = ops[dels[k]].a
-					at = append(at, dels[k])
+					l, op = ops[dels[k]].a, dels[k]
 				} else {
-					at = append(at, adds[k])
+					op = adds[k]
 				}
 				if k < len(adds) {
 					r = ops[adds[k]].b
 				}
-				out = append(out, side(l, x, Fg(Red))+"  "+side(r, y, Fg(Green)))
+				pair(op, side(l, x, Fg(Red)), side(r, y, Fg(Green)))
 			}
 			dels, adds = nil, nil
 		}
@@ -378,11 +401,44 @@ func diffSplit(ops []diffOp, x, y []string, w int) (out []string, at []int) {
 				adds = append(adds, j)
 			default:
 				flush()
-				at = append(at, j)
-				out = append(out, side(o.a, x, Style{})+"  "+side(o.b, y, Style{}))
+				pair(j, side(o.a, x, Style{}), side(o.b, y, Style{}))
 			}
 		}
 		flush()
 	}
 	return out, at
+}
+
+// foldText is a line as a viewer draws it (tabs as spaces, a control
+// character by name) cut into the rows it folds onto at w cells, as the
+// viewer folds it (tdp note.2): one row at least.
+func foldText(s string, w int) []string {
+	s = readingLine(s, tabCells)
+	chars := graphemes(stripSGR(s))
+	cells, space := make([]int, len(chars)), make([]bool, len(chars))
+	for k, c := range chars {
+		cells[k], space[k] = Width(c), c == " "
+	}
+	starts := foldAt(cells, space, w)
+	rows := make([]string, len(starts))
+	if !strings.Contains(s, "\x1b") { // plain: by its characters
+		starts = append(starts, len(chars))
+		for r := range rows {
+			rows[r] = strings.Join(chars[starts[r]:starts[r+1]], "")
+		}
+		return rows
+	}
+	from := 0 // in cells
+	for r := range starts {
+		to := Width(s)
+		if r+1 < len(starts) {
+			to = 0
+			for _, c := range cells[:starts[r+1]] {
+				to += c
+			}
+		}
+		rows[r] = Cut(s, from, to)
+		from = to
+	}
+	return rows
 }

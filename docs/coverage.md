@@ -1,6 +1,6 @@
-# tdp v1.1.4 coverage
+# tdp v1.1.5 coverage
 
-tdp v1.1.4 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
+tdp v1.1.5 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
 每個元件、規範列的每一種方案、寫到的每一種狀態與疊法，在展示場都按得到。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -304,7 +304,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | menu.4 | 模式裡（panel、popup 裡、PTY 上）`Space` 開模式的 Space menu：標題是模式所在的地方（panel 的 `[N] label` 或 popup 的標題）；`ITEM OPERATION` 對 cursor 那一項能做的事、能執行、現在不能做的停用；`<模式名> MODE` 模式的鍵，移動鍵只顯示（鍵 Blue、說明 Overlay0、cursor 跳過），`[Esc] Leave` 能執行；panel、item、global 的動作不列；menu 裡 `Esc` 只關 menu；PTY 上的模式不再把 `Space` 送給子程序（lib：`ModeKey.Item`、`Label`、`MenuDesc`；menu-23～27、K5-3、reorder-19） | P `[1] PODS` 按 `C` 或 `[D]rag` 再按 `Space`；D「Note viewer」按 `v` 再按 `Space`；I 的 `Segments` 按 `D` 再按 `Space`；terminal 的 History 裡按 `Space` | `TestModeSpaceMenu`、`TestModeSpaceMenuInPopups`、`TestK11ModeCoreKeys` |
 | panel.1、popup.1 | `h|l` 會切 tab 的地方 lib 自動寫 `h|l:tab`：兩個以上 tab 的 panel 放在 `Enter` 後面，有兩個以上 tab 的 viewer（比較的 `UNIFIED`／`SPLIT`、有好幾頁的）放最前面；只有一個 tab、模式裡、選取模式裡、`SPLIT` 停用時不寫；放不下照舊從尾端整組捨（panel-17、19，popup-10、11，filu 回報的） | P `[1] PODS`（`PODS`／`EVENTS`）；D「Popup with tabs」 | `TestHintTab`、`TestPanelHint`、`TestPanelHintDrop` |
 | panel.9 | 比較鍵進入 K11 的模式，那一列成為 anchor（`List.Anchor`）；只比文字（`Compare.Can`，不能比的沒有比較的動作）；`j|k`、`u|d`、`gg|G` 移動；比較鍵或 `Enter` 打開比較，cursor 在 anchor 或不能比的列上時停用；兩邊一樣時 Info toast；`Esc` 離開、拿掉 anchor；`Tab` 與數字鍵暫停；anchor 不在了時離開、Warning toast（lib：`App.CompareAction`；panel-138～145） | P `[1] PODS` 按 `C`、移開再按 `Enter` | `TestCompareMode`、`TestCompareAnchorGone`、`TestModeKeyDisabled` |
-| note.8 | 標題 glyph U+F018A、`DIFF — <anchor> ↔ <另一個>`、`UNIFIED`／`SPLIT` 兩個 tab；只顯示有差異的段落、前後 3 行、段落之間 Overlay0 的線；UNIFIED 行號兩欄、`-` Red、`+` Green；SPLIT 左 anchor 右另一個、各自行號、對應不到留空列、不折行截 `…`；記住選的 tab（`Compare.Split`，app 存進狀態）；不到 96 欄一律 UNIFIED、`SPLIT` 停用（note-80～85） | 同上，按 `h|l`；開著時把終端機縮到 96 以下再拉回來 | `TestCompareMode`、`TestCompareHunks`、`TestCompareSplit`、`TestCompareResize`（開著時縮放：重排、留住捲動位置）、`TestDiffLines` |
+| note.8 | 標題 glyph U+F018A、`DIFF — <anchor> ↔ <另一個>`、`UNIFIED`／`SPLIT` 兩個 tab；只顯示有差異的段落、前後 3 行、段落之間 Overlay0 的線；UNIFIED 行號兩欄、`-` Red、`+` Green；SPLIT 左 anchor 右另一個、各自行號、對應不到留空列，兩邊各自在半邊裡折行（折下來的列行號欄空白），左右對應的兩行照長的那邊佔一樣多列、短的補空白列，所以從同一列開始（note-83）；記住選的 tab（`Compare.Split`，app 存進狀態）；不到 96 欄一律 UNIFIED、`SPLIT` 停用（note-80～85） | 同上，按 `h|l`；開著時把終端機縮到 96 以下再拉回來 | `TestCompareMode`、`TestCompareHunks`、`TestCompareSplit`、`TestCompareResize`（開著時縮放：重排、留住捲動位置）、`TestDiffLines` |
 | panel.5 | 表頭 Blue 不加粗、大寫、固定不捲；每欄是數字或文字：數字靠右照數值排、文字靠左照文字排；欄間兩格；排序欄位加 U+F160（升）/ U+F161（降）；多欄排序在箭頭前加順位 `(2)` | P `[1] PODS` 的 `Sort by`（Name 升冪、Age 降冪、兩欄） | `TestListHeader`、`TestListSortGlyphs`、`TestListSortNumbers` |
 | panel.5 | 捲動位置：放不下時 `N of M`（框線色），全放得下不寫；沒有 cursor 的寫 `N-M of T` | P `[1] PODS`（40 列）、`[2] LOG` | `TestPanelScrollPosition` |
 | panel.7 | 標記欄：每列最前一格，標記的畫 Green U+F0132，沒標記的空白，欄寬一直保留 | P `[1] PODS` 的 `[m]ark` | `TestListMarkColumn` |
@@ -428,7 +428,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | 出處 | 規定 | 展示場 | 測試 |
 |---|---|---|---|
 | note.2 | 留白一律有；標題 glyph（app 選）+ 顯示的東西（標題膠囊，`YAML — pod/nginx`）；捲動位置 `N-M of T`（viewer 的選取模式裡 `N of M`）；寬度：確定的照內容、viewer 用上限 | D「Note viewer」 | `TestNoteLayout` |
-| note.2 | viewer 預設折行；要對齊的內容 app 可以讓它不折行：比框寬的截掉、行尾加 `…`（lib：`Viewer.NoWrap`）；選取模式的游標走進截掉的部分時，整個畫面跟著左右捲到看得見（像 vim 的 nowrap），左邊捲掉的開頭也加 `…`，截掉的照樣選得到、複製得到，離開選取模式回到最左邊（terminal 的選取模式同一套）；畫不畫行號由 app 決定（`Viewer.NoNumbers`），不畫時字離框一格 | D「Viewer: a table」（按 `v` 再 `$`） | `TestViewerNoWrapNoNumbers`、`TestViewerNoWrapFollowsCursor` |
+| note.2 | viewer 一律折行，不會用 `…` 截掉一行，所以沒有左右看不到的東西：選取模式的游標走到長行的結尾也不左右捲（note-4；`Viewer.NoWrap` 已經沒有作用）；terminal 的選取模式同一套：選取時 panel 縮窄，比它寬的行折到下一列；畫不畫行號由 app 決定（`Viewer.NoNumbers`），不畫時字離框一格 | D「Viewer: a table」把視窗縮窄，按 `v` `j` `v` `$` | `TestViewerAlwaysWraps`、`TestTerminalSelectWraps` |
 | note.2 | viewer 的搜尋：命中的字全部加底線、保留原本的顏色；目前那一筆畫成 cursor 色塊；不另外加顏色（Yellow 只給選取）。lib：`Viewer.Search` 找到的，或 app 自己找的交給 `Viewer.Hits`、`Current`（`FindText` 找不分大小寫的） | D「Note viewer」按 `/` 打 `nginx`，再 `n`、`N` | `TestViewerSearchHits` |
 | note.2 | viewer（YAML、App Log、檔案內容）左邊有行號：每行第一列、靠右、後空一格、折下來的列空白；Overlay0，選取模式裡游標那行 Text；至少三位：行數固定的取 max(3, 位數)、打開後不變，串流的超過 999 行才跳寬；複製不含行號；`N of M` 跟行號同一套數字 | D「Note viewer」；P `[2] LOG` 按 `Enter`；I `[2] FILES` 的 `[V]iew` | `TestViewerLineNumbers`、`TestViewerLineNumbersStream`、`TestViewerCopyNoNumbers`、`TestViewerFoldedScroll` |
 | note.2 | 有 tab 的 viewer：行號欄照看過的頁裡最寬的，只變寬、不變窄（串流的頁也一樣） | D「Popup with tabs」、DevTools 切 tab | `TestViewerTabGutterOnlyGrows` |
@@ -439,7 +439,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | note.2 | 有固定格式的照 file-picker 預覽上色（chroma catppuccin-mocha、只上前景色）；語言由 app 給（`Viewer.Lang`），檔案內容照檔名；沒有固定格式或判斷不出來的是純文字 Text（建議；app 自己給的顏色保留，例：log 的 ERROR、WARN 行）；行號 Overlay0；選取範圍 Yellow 底 Base 字、範圍裡不顯示語法顏色 | D「Note viewer」（YAML）；I `[2] FILES` 的 `[V]iew`；P `[2] LOG` 按 `Enter`（ERROR 紅、WARN 橘保留） | `TestViewerSyntaxColours` |
 | note.3 | 折行的 viewer 以畫出來的一列為單位捲（`j\|k` 一列、`u\|d` 照列算）；`N-M of T` 的 N、M 是最上面、最下面那一列所屬的行；選取模式照舊以行為單位 | D「Note viewer」把視窗縮窄 | `TestViewerScrollsRows` |
 | note.3 | 捲動 `j\|k` `u\|d` `gg\|G`；只用 `Esc` 關（`Enter`、`Space` 不關）；error popup（不管怎麼打開的）與表單的打字說明 `Enter` 也能關；hint 熱鍵在前、`Esc:close` 最後 | 同上；D「Error popup」 | `TestNoteKeys` |
-| note.3 | viewer 的搜尋（有 `/` 時）：`/` 開 input popup 問要找的字（標題、glyph、說明是 app 的）；`n\|N` 跳到下一筆、上一筆，到頭尾繞回，看不見時才捲到看得見；一筆都沒有時 Info toast `No line has <字>`；hint 寫 `/:search`，`n\|N` 是移動，只在 `?`（有命中時）；viewer 關掉，命中的字跟著不見（lib：`Viewer.Search`；note-86）。tdp 還沒寫的，暫時這樣做（程式裡標 `TODO(tdp note.3)`）：不折行的 viewer，命中的字在截掉的部分時只上下捲 | D「Note viewer」按 `/` 打 `nginx`，按 `n` 走過最後一筆、`N` 走過第一筆；再搜 `zzz` | `TestViewerSearch` |
+| note.3 | viewer 的搜尋（有 `/` 時）：`/` 開 input popup 問要找的字（標題、glyph、說明是 app 的）；`n\|N` 跳到下一筆、上一筆，到頭尾繞回，看不見時才捲到看得見；一筆都沒有時 Info toast `No line has <字>`；hint 寫 `/:search`，`n\|N` 是移動，只在 `?`（有命中時）；viewer 關掉，命中的字跟著不見（lib：`Viewer.Search`；note-86）。viewer 一律折行（note.2），命中的字不會在左右看不到的地方 | D「Note viewer」按 `/` 打 `nginx`，按 `n` 走過最後一筆、`N` 走過第一筆；再搜 `zzz` | `TestViewerSearch` |
 | note.4 | 每個 viewer 都有（lib：沒給 `Viewer.Select` 時是 `v`、`Visual`）；`y` 複製之後跳 Success toast；沒給 `Copy` 時 lib 複製到終端機的剪貼簿（OSC 52，跟著下一個畫面送出）並跳 `Copied` | D「Note viewer」按 `v` `v` `l` `y`；D「Popup with tabs」的 `Copy` 是 app 自己的 | `TestViewerSelectsByDefault`、`TestClipboardGoesWithTheNextFrame` |
 | note.4 | 只有 viewer 有；平常沒有游標（`j\|k` 捲、有 tab 時 `h\|l` 切 tab）；第一次 `v` 進模式（框與模式名 Yellow），游標在畫面第一行行首、還沒選，hint `v:select Esc:cancel`；`h\|j\|k\|l` `w\|b\|e` `0\|$` `u\|d` `gg\|G` 移游標、畫面跟著捲；第二次 `v` 從游標開始選（以字為單位、含游標那個字），hint `y:copy Esc:cancel`，再按 `v` 不作用；`y` 複製、整個離開；`Esc` 在哪一步都整個離開、不複製；游標層色底 Base 字，範圍 Yellow 底 Base 字、空行畫一格；捲動位置 `N of M`（游標的行） | D「Note viewer」按 `v` | `TestNoteHotkeysAndMode`、`TestViewerSelectScrollPosition` |
 | note.5 | 標題 U+F059 + `<surface> keys`（`[2] HOSTS KEYS`、`SPACE MENU KEYS`）；每列一個鍵：縮兩格、鍵補到最寬、空兩格、說明（截斷不折行）；從 menu 來的列 `label — 說明`、label 去掉標記、大小寫照原樣；標題裡的名稱照原樣（`FIRST PAGE — Pride and Prejudice KEYS`） | 每個 surface 按 `?` | `TestKeyReferenceLayout`、`TestKeyReferenceTitleKeepsName` |

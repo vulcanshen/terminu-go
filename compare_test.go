@@ -144,7 +144,7 @@ func TestCompareSplit(t *testing.T) {
 	ta, split := compareApp(t)
 	ta.press("C", "j", "Enter", "l")
 	v := ta.topView().(*viewerView).v
-	if v.Tab != 1 || !*split || !v.NoWrap {
+	if v.Tab != 1 || !*split {
 		t.Fatalf("l did not switch to SPLIT: tab %d, split %v", v.Tab, *split)
 	}
 	if !slicesContain(v.Lines, Fg(Red).Render("age: 0")) || !slicesContain(v.Lines, Fg(Green).Render("age: 1")) {
@@ -154,8 +154,19 @@ func TestCompareSplit(t *testing.T) {
 	if !strings.HasPrefix(row, " 1 age: 0") || !strings.Contains(row, " 1 age: 1") {
 		t.Errorf("each half numbered: %q", row)
 	}
-	if got, _ := diffSplit([]diffOp{{'-', 0, -1}}, []string{strings.Repeat("x", 40)}, nil, 30); !strings.Contains(StripStyles(got[0]), "…") || Width(got[0]) > 30 {
-		t.Errorf("a long line is cut: %q", got)
+	// A line too long folds within its half, the short one across from it
+	// filled with blank rows, both starting on the same row (note-83).
+	got, at := diffSplit([]diffOp{{'-', 0, -1}, {'+', -1, 0}}, []string{strings.Repeat("x", 30)}, []string{"short"}, 30)
+	plain := StripStyles(strings.Join(got, "\n"))
+	if len(got) != 3 || fmt.Sprint(at) != "[0 0 0]" || strings.Count(plain, "x") != 30 || strings.Contains(plain, "…") {
+		t.Fatalf("the long line folds into three rows: %q, ops %v", got, at)
+	}
+	for i, row := range got {
+		right := StripStyles(row)[16:]
+		// The rows a line folds onto leave its number's column blank.
+		if Width(row) != 30 || i == 0 && !strings.HasPrefix(right, "1 short") || i > 0 && (strings.TrimSpace(right) != "" || !strings.HasPrefix(StripStyles(row), "  x")) {
+			t.Errorf("row %d: %q", i, StripStyles(row))
+		}
 	}
 	ta.press("Esc", "Enter")
 	if v := ta.topView().(*viewerView).v; v.Tab != 1 {
@@ -240,7 +251,7 @@ func TestCompareResize(t *testing.T) {
 		t.Fatalf("not scrolled: %d %q", v.top, StripStyles(v.Lines[v.top]))
 	}
 	ta.resize(90, 16)
-	if v.Tab != 0 || v.NoWrap || !strings.Contains(StripStyles(v.Lines[v.top]), want) {
+	if v.Tab != 0 || !strings.Contains(StripStyles(v.Lines[v.top]), want) {
 		t.Errorf("under 96: tab %d, on top %q, want %q", v.Tab, StripStyles(v.Lines[v.top]), want)
 	}
 	if !strings.Contains(ta.screenText(), want) {

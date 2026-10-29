@@ -323,7 +323,8 @@ func (t *Terminal) lines(w, h int, cursor bool) []string {
 
 // held is the screen held still for the selection, in w × h: the history
 // and the screen as they were, scrolled to follow the cursor, the cursor and
-// the selection drawn as a viewer's (tdp note).
+// the selection drawn as a viewer's, a line wider than the panel folding
+// (tdp note.2).
 func (t *Terminal) held(w, h int) []string {
 	v := t.sel
 	v.sync()
@@ -331,12 +332,19 @@ func (t *Terminal) held(w, h int) []string {
 	v.readLines()
 	v.line = min(max(v.line, 0), max(len(v.text)-1, 0))
 	v.follow(v.line)
-	v.followAcross()
 	v.clampTop()
 	vv := &viewerView{v: v}
 	out := make([]string, 0, h)
 	for i := v.top; i < len(v.text) && len(out) < h; i++ {
-		out = append(out, v.nowrapRow(vv.lineView(i, t.cursorColour), w))
+		rows := v.rowsOf(i, vv.lineView(i, t.cursorColour))
+		if i == v.top {
+			rows = rows[min(v.sub, len(rows)-1):]
+		}
+		for _, r := range rows {
+			if len(out) < h {
+				out = append(out, r)
+			}
+		}
 	}
 	return Pad2(out, w, h)
 }
@@ -366,7 +374,7 @@ func (t *Terminal) selectMode(a *App, layer Color) {
 			return a.Toast(Success, "Copied")
 		}
 	}
-	t.sel = &Viewer{Lines: lines, NoWrap: true, NoNumbers: true, tabW: a.inputTabWidth(),
+	t.sel = &Viewer{Lines: lines, NoNumbers: true, tabW: a.inputTabWidth(),
 		Select: &Selection{Key: "v", Name: visualMode, Copy: copyText}}
 	t.sel.sync()
 	t.sel.inMode, t.sel.line, t.sel.col, t.sel.top = true, first, 0, first

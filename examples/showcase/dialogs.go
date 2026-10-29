@@ -144,7 +144,7 @@ func (ds *dialogsScreen) scenarios() []scenario {
 		{"Form: with actions", "form", "more buttons: [Test] and [Scan] keep the form open, [Save As] submits too, [Connect] takes long; Host bad-… fails", ds.actionsForm},
 		{"Note viewer", "note", "its own keys [/] [n] [N] [y]; [v] then [v] again selects text", ds.yaml},
 		{"Popup with tabs", "note", "tabs after the title; [h]|[l] switch", ds.devtools},
-		{"Viewer: a table", "note", "lines kept on their rows and cut, no line numbers", ds.table},
+		{"Viewer: a table", "note", "a table the app lays out, no line numbers; a long line folds", ds.table},
 		{"Loading popup", "note", "lines arriving: the loading icon turns", ds.loadingPopup},
 		{"Popup: long title", "note", "a title too long is cut with …", func() tea.Cmd {
 			return a.Viewer(&terminu.Viewer{Title: "File", Glyph: glyphYaml,
@@ -590,10 +590,10 @@ func (ds *dialogsScreen) devtools() tea.Cmd {
 	return ds.s.app.Viewer(v)
 }
 
-// table is a viewer of a table the app lays out: lines kept on their rows,
-// cut at the end, and no line numbers (tdp note).
+// table is a viewer of a table the app lays out, with no line numbers; a
+// line too long for the frame folds, as in every viewer (tdp note.2).
 func (ds *dialogsScreen) table() tea.Cmd {
-	return ds.s.app.Viewer(&terminu.Viewer{Title: "Info", Subject: "assets/photo-large.png", Glyph: glyphList, NoWrap: true, NoNumbers: true,
+	return ds.s.app.Viewer(&terminu.Viewer{Title: "Info", Subject: "assets/photo-large.png", Glyph: glyphList, NoNumbers: true,
 		Lines: []string{
 			"TYPE      image",
 			"SIZE      1.2 MB",

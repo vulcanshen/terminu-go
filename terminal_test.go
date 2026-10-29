@@ -221,6 +221,34 @@ func TestTerminalSelectMode(t *testing.T) {
 	}
 }
 
+// TestTerminalSelectWraps: the screen held for the selection is drawn as a
+// viewer's: a line wider than the panel, as one is when the panel gets
+// narrower while selecting, folds onto the next row and is never cut with
+// … (tdp note.2).
+func TestTerminalSelectWraps(t *testing.T) {
+	ta, term, _ := ptyApp(t)
+	ta.Frame() // sized
+	full := ""
+	for i := 0; len(full) < term.w; i++ {
+		full += string(rune('a' + i%26))
+	}
+	term.mu.Lock()
+	term.vt().write([]byte(full + "end\r\n"))
+	term.mu.Unlock()
+	ta.press("Alt-v")
+	ta.resize(ta.w-10, ta.h)
+	var rows []string
+	for _, l := range strings.Split(ta.screenText(), "\n") {
+		if strings.ContainsAny(l, "abcdefghijklmnopqrstuvwxyz…") {
+			rows = append(rows, l)
+		}
+	}
+	tail := full[term.w:] // what is past the narrower panel
+	if len(rows) < 2 || strings.Contains(strings.Join(rows, "\n"), "…") || !strings.Contains(rows[1], tail) {
+		t.Errorf("the line wider than the panel folds, the %q past it on the next row: %q", tail, rows)
+	}
+}
+
 // TestTerminalExitKey: the exit key is the app's, Alt-Esc unless it says;
 // the hint shows it as it is now; another asks first only when the app says
 // (tdp K10; from sshu).

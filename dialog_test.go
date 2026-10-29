@@ -78,76 +78,39 @@ func TestViewerSelectsByDefault(t *testing.T) {
 	}
 }
 
-// TestViewerNoWrapNoNumbers: an app may keep a viewer's long lines on one row,
-// cut with … at the end, and leave out its line numbers (tdp note).
-func TestViewerNoWrapNoNumbers(t *testing.T) {
-	ta := newTestApp(t)
-	ta.resize(60, 20)
-	long := strings.Repeat("column  ", 20)
-	ta.Viewer(&Viewer{Title: "Info", Lines: []string{"NAME    SIZE", long, "end"}, NoWrap: true, NoNumbers: true})
-	ta.settle()
-	lines, _ := covFDraw(ta)
-	text := covFText(lines)
-	if !strings.HasPrefix(text[2], "┃ NAME    SIZE") {
-		t.Errorf("no line numbers, the text one cell in: %q", text[2])
-	}
-	if !strings.HasSuffix(strings.TrimRight(strings.TrimSuffix(text[3], "┃"), " "), "…") || !strings.HasPrefix(text[4], "┃ end") {
-		t.Errorf("the long line cut on its row, the next line under it: %q / %q", text[3], text[4])
-	}
-	// Three lines that fit: no scroll keys in its key reference (tdp M6).
-	ta.press("?")
-	if keys := covAKeys(covARef(t, ta)); keys["j|k"] {
-		t.Error("lines that fit list j|k")
-	}
-}
-
-// TestViewerNoWrapFollowsCursor: in a NoWrap viewer the selection's cursor
-// past the cut scrolls every line across to keep it in sight, as vim's
-// nowrap does, "…" where each is cut on either side; what is cut is still
-// selected and copied (tdp note).
-func TestViewerNoWrapFollowsCursor(t *testing.T) {
+// TestViewerAlwaysWraps: a viewer folds a line too long for its row and
+// never cuts one with …, NoWrap set or not, so nothing in it is out of sight
+// sideways: not at the selection's cursor at the end of a long line either;
+// an app may leave out its line numbers (tdp note.2, note-4).
+func TestViewerAlwaysWraps(t *testing.T) {
 	ta := newTestApp(t)
 	ta.resize(40, 20)
 	digits := strings.Repeat("0123456789", 6) // 60 characters
 	var got string
-	ta.Viewer(&Viewer{Title: "Table", NoWrap: true, NoNumbers: true, Lines: []string{digits, "short"},
+	ta.Viewer(&Viewer{Title: "Info", Lines: []string{"NAME    SIZE", digits, "end"}, NoWrap: true, NoNumbers: true,
 		Select: &Selection{Key: "v", Name: "Visual", Copy: func(s string) tea.Cmd { got = s; return nil }}})
 	ta.settle()
-	ta.press("v", "v", "$")
 	lines, _ := covFDraw(ta)
 	text := covFText(lines)
-	row := strings.TrimSuffix(strings.TrimPrefix(text[2], "┃ "), " ┃")
-	if !strings.HasPrefix(row, "…") || !strings.HasSuffix(row, "789") || Width(row) != ta.top().w-4 {
-		t.Errorf("scrolled to the cursor at the end, … at the start: %q", row)
+	row := func(i int) string { return strings.TrimSpace(strings.Trim(text[i], "┃")) }
+	if !strings.HasPrefix(text[2], "┃ NAME    SIZE") {
+		t.Errorf("no line numbers, the text one cell in: %q", text[2])
 	}
-	if short := strings.TrimSuffix(strings.TrimPrefix(text[3], "┃ "), " ┃"); strings.Contains(short, "short") {
-		t.Errorf("every line goes along: %q", short)
+	if row(3)+row(4) != digits || row(5) != "end" || strings.Contains(strings.Join(text, "\n"), "…") {
+		t.Errorf("the long line folds onto the next row, the next line under it: %q", text[2:6])
 	}
-	ta.press("y")
-	if got != digits {
-		t.Errorf("all of it copied, the part cut too: %q", got)
-	}
-	// Back to the left: the cursor right after the "…" (scrolled the least).
-	ta.press("v", "$")
-	covFDraw(ta)
-	for range 33 {
-		ta.press("h")
-	}
+	ta.press("v", "j", "v", "$")
 	lines, _ = covFDraw(ta)
-	if row := covFText(lines)[2]; !strings.HasPrefix(row, "┃ …6789") {
-		t.Errorf("the cursor (on 6) right after the …: %q", row)
+	if text = covFText(lines); row(3)+row(4) != digits || strings.Contains(strings.Join(text, "\n"), "…") {
+		t.Errorf("the cursor at the end of the long line scrolled sideways: %q", text[2:6])
 	}
-	ta.press("0")
-	lines, _ = covFDraw(ta)
-	if row := covFText(lines)[2]; !strings.HasPrefix(row, "┃ 0123") || !strings.HasSuffix(strings.TrimSuffix(row, " ┃"), "…") {
-		t.Errorf("back at the start, … at the end: %q", row)
+	if ta.press("y"); got != digits {
+		t.Errorf("all of it copied: %q", got)
 	}
-	ta.press("$")
-	covFDraw(ta)
-	ta.press("Esc")
-	lines, _ = covFDraw(ta)
-	if row := covFText(lines)[2]; !strings.HasPrefix(row, "┃ 0123") {
-		t.Errorf("out of the mode, back to the start: %q", row)
+	// Four rows that fit: no scroll keys in its key reference (tdp M6).
+	ta.press("?")
+	if keys := covAKeys(covARef(t, ta)); keys["j|k"] {
+		t.Error("lines that fit list j|k")
 	}
 }
 
