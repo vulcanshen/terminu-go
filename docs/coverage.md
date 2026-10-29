@@ -1,6 +1,6 @@
-# tdp v1.1.0 coverage
+# tdp v1.1.1 coverage
 
-tdp v1.1.0 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
+tdp v1.1.1 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
 每個元件、規範列的每一種方案、寫到的每一種狀態與疊法，在展示場都按得到。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -205,7 +205,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | S1 | 在 panel 上按 `V` 開 splash；某 panel 可把 `V` 給自己用，至少一個 panel 仍是 splash | P `[1] PODS` 按 `V`；I `[2] FILES` 的 `V` 給 `[V]iew` | `TestS1SplashOnV`、`TestS1EveryAppHasSplash` |
 | S2 | 不出現在 Space menu、global operation popup、key reference、footer、hint、README | lib：splash 沒有登記項 | `TestS2SplashNotDisclosed` |
 | S3 | 任意鍵只關掉 splash（含 `q`、`Ctrl-C`、`Esc`、`Space`、`?`） | splash 上按 `Ctrl-C` | `TestS3AnyKeyClosesOnly` |
-| S4 | 啟動不播；popup 開著、輸入態、PTY 裡按 `V` 不叫出 | 開著 popup、在 filter 打字、在 Shell 裡按 `V` | `TestS4SplashOnlyOnPanel` |
+| S4 | 啟動不播；popup 開著、輸入態、PTY 裡、模式裡按 `V` 不叫出，`V` 是模式自己的鍵時照那個鍵（S4-3） | 開著 popup、在 filter 打字、在 Shell 裡、`[1] PODS` 的 `[D]rag` 裡按 `V` | `TestS4SplashOnlyOnPanel` |
 | S5 | 畫 icon 一格對一格：25 × 19 格加上下各一列底共 21 列，一格一個 `nf-fa-square` 佔兩欄（icon 佔一格時補空白），底 Surface0、U 框 `#205090`、字 `#f2b753`；下面空一列接六列字（名稱 Blue 粗體、版本 Blue、介紹 Text、`developed by` Overlay0、信箱金色、`Press any key to close` Overlay0），在 mark 的寬度裡置中、每列不超過 50 欄（超過時建立 splash 回錯誤）；整塊上下左右置中；E8：展示場畫 tdp 的 `principle/icon.svg`（複本在 `examples/showcase/icon.svg`） | P `[1] PODS` 按 `V` | `TestS5SplashMatchesIcon`、`TestS5SplashRefusesBadIcon`、`TestS5SplashRefusesWideText` |
 | S5 | 放不下整塊（不到 50 欄或 30 列）時不畫 mark、只畫字，置中、照樣分兩批；太窄照 components 的「折行」；一個字比終端機寬就照格子切開、每段置中；還是太矮從下面往上截（提示 → 作者兩列 → 介紹，連同上面的空白列），名稱與版本一定出現，只有 1 列時只畫名稱 | 把視窗縮到 49 欄或 29 列以下按 `V` | `TestS5SplashTooSmall`、`TestS5SplashOneRow` |
 | S5 | 揭露動畫：tick 10ms、段間停 250ms；底一個 tick 一列由上往下 → 金色的字照 svg 裡註解的順序一個字一段（一個註解開始一個字，第一個是 `<!-- U -->`）、一個 tick 2 格打散 → U 框由下往上一列一列、同一列從中間往兩端，一個 tick 一對（中線那格自己一個 tick） → mark 畫完 400ms 後名稱、版本、介紹，再 500ms 後作者兩列與提示；照打開後經過的時間走，晚到的 tick 不累積延遲 | 同上 | `TestS5SplashReveal`、`TestS5SplashKeepsTime` |

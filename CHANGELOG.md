@@ -2,6 +2,13 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.1.2 — tdp v1.1.1
+
+- Inside a panel's mode `V` no longer summons the splash (tdp S4, K11, from webu): only the mode's own keys and the
+  core keys work there, and a mode that has `V` among its keys gets it. Out of the mode `V` on the panel summons the
+  splash again. The lib's other modes were already so: a viewer's selection mode and a reorder's Drag are in a popup,
+  and a PTY's History and selection modes hand every other key to the program
+
 ## v1.1.1 — tdp v1.1.0
 
 - `Panel.EnterLayer`: a panel's own mode can have layers, as the viewer's selection mode has (tdp K11, panel.1, from

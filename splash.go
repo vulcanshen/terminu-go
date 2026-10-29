@@ -300,13 +300,6 @@ func (p *Panel) takesV() bool {
 			}
 		}
 	}
-	if p.mode != nil {
-		for _, k := range p.mode.Keys {
-			if k.takes("V") {
-				return true
-			}
-		}
-	}
 	return false
 }
 

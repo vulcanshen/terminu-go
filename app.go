@@ -1426,9 +1426,6 @@ func (a *App) modeKey(p *Panel, key string, msg tea.KeyMsg) tea.Cmd {
 		}
 		return nil
 	}
-	if key == "V" && a.Splash != nil && !p.takesV() {
-		return a.openSplash()
-	}
 	for _, k := range p.mode.Keys {
 		if k.takes(key) && k.Do != nil {
 			if k.off() {

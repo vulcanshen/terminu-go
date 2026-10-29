@@ -122,8 +122,19 @@ func TestS4SplashOnlyOnPanel(t *testing.T) {
 		t.Errorf("V on a typing row is a letter: splash %v, filter %q", ta.splashOn, ta.list.filter.value())
 	}
 	ta.press("Esc", "Esc", "D", "V")
+	if ta.splashOn || ta.pods.InMode() == nil {
+		t.Errorf("V in a mode does nothing (tdp S4, K11): splash %v, in the mode %v", ta.splashOn, ta.pods.InMode() != nil)
+	}
+	ta.press("Esc")
+	viewed := 0
+	ta.pods.EnterMode(&Mode{Name: "Look", Keys: []ModeKey{{Key: "V", Desc: "view", Do: func(string) tea.Cmd { viewed++; return nil }}}})
+	ta.press("V")
+	if ta.splashOn || viewed != 1 {
+		t.Errorf("V a mode's own key is that key: splash %v, ran %d", ta.splashOn, viewed)
+	}
+	ta.press("Esc", "V")
 	if !ta.splashOn {
-		t.Error("V in a mode, still on the panel")
+		t.Error("out of the mode V on the panel summons it")
 	}
 }
 
