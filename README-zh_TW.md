@@ -95,9 +95,9 @@ go run github.com/vulcanshen/terminu-go/examples/showcase@latest
 
 ## App Log
 
-在任何 panel 上按 `!` 打開 App Log：app 做過的事與出問題的事，最新的在最下面，只放在記憶體裡。每一個 toast 與 error popup
-都會自己記進去；其他的用 `app.Log(kind, text)` 記（動作的結果、app 在背景做的事），任何 goroutine 都能叫；寫法跟 toast
-一樣，大寫開頭。有沒看過的錯誤或警告時，footer 的 `!:log` 會寫出有幾個。
+在任何 panel 上按 `!` 打開 App Log：app 做過的事與出問題的事，最新的在最下面，只放在記憶體裡。每一個 toast（inspect toast
+除外，它只跟著游標）與 error popup 都會自己記進去；其他的用 `app.Log(kind, text)` 記（動作的結果、app 在背景做的事），
+任何 goroutine 都能叫；寫法跟 toast 一樣，大寫開頭。有沒看過的錯誤或警告時，footer 的 `!:log` 會寫出有幾個。
 
 ## 讀不了自己的檔時
 
@@ -188,7 +188,7 @@ return app.Tick(300*time.Millisecond, func(time.Time) tea.Msg { return searchNow
 
 ## 實作哪一版 terminu design
 
-terminu-go 實作 **tdp v1.1.1**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
+terminu-go 實作 **tdp v1.1.2**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
 
 ## 相關連結
 

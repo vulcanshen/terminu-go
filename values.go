@@ -94,6 +94,7 @@ type Values struct {
 	top     int
 	visible int
 	scroll  string
+	cover   int // rows at the bottom under the inspect toast (Uncover)
 }
 
 type valueItem struct {
@@ -161,6 +162,11 @@ func (v *Values) labelWidth() int {
 	}
 	return w
 }
+
+// Uncover keeps the cursor's item above the rows at the bottom of the fields
+// that the inspect toast covers (tdp toast.4); the lib calls it before each
+// Draw.
+func (v *Values) Uncover(rows int) { v.cover = rows }
 
 // Draw draws the fields: labels in upper case in Blue, two cells, the values.
 func (v *Values) Draw(w, h int, focused bool) []string {
@@ -230,7 +236,7 @@ func (v *Values) Draw(w, h int, focused bool) []string {
 	if v.cursor < len(itemRow) {
 		focusRow = itemRow[v.cursor] - headerRows
 	}
-	v.top = scrollWindow(v.top, focusRow, max(room, 1), len(body))
+	v.top = scrollWindow(v.top, focusRow, max(room-v.cover, 1), len(body)) // above the inspect toast (tdp toast.4)
 	out := append([]string(nil), rows[:headerRows]...)
 	for i := v.top; i < v.top+room; i++ {
 		if i < len(body) {

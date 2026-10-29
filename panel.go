@@ -11,7 +11,10 @@ import (
 // itself. A body with an Empty() bool method that reports true has the
 // panel's LoadingText or Fail in its middle instead, whatever the kind of
 // panel (tdp panel.15); the lib's all have it, and a panel with no Body is
-// empty too.
+// empty too. A body with an Uncover(rows int) method is told before each Draw
+// how many rows at the bottom of its inside the inspect toast covers, 0 for
+// none (tdp toast.4): it scrolls so that the item under its cursor shows above
+// them, as List and Values do.
 type Body interface {
 	// Draw returns h lines of exactly w cells: the inside of the frame.
 	Draw(w, h int, focused bool) []string
@@ -55,6 +58,10 @@ type Mode struct {
 	Pause bool
 	// OnExit runs when Esc leaves the mode, to go back to the state before it.
 	OnExit func() tea.Cmd
+	// Inspect is the inspect toast of the item under the cursor in the mode,
+	// as Panel.Inspect: while the panel is in the mode it is asked instead of
+	// the panel's, an inner layer's before an outer one's.
+	Inspect func() []string
 }
 
 // ModeKey is one of a mode's keys.
@@ -153,6 +160,14 @@ type Panel struct {
 	// OtherKeys are sections of its ? about another surface that has no key
 	// reference of its own (tdp M6: a PTY, a grid), after the panel's own.
 	OtherKeys []KeySection
+	// Inspect, when set, is what the item under the panel's cursor has to show
+	// in an inspect toast (tdp toast.4), nil for an item with nothing: each
+	// string a row of its own, as Toast's. The lib asks it after every message
+	// while the panel has the focus and shows the toast, with no timer and no
+	// key of its own, every key going through it; it goes when the cursor
+	// leaves the item, and an ordinary toast replaces it until that one is
+	// gone. Which items have one and what it says are the app's.
+	Inspect func() []string
 
 	mode  *Mode
 	under []*Mode // the layers mode is in, outermost first

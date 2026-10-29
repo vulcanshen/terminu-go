@@ -367,7 +367,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmd = a.OnMsg(msg)
 		}
 	}
-	cmd = tea.Batch(cmd, a.moved(), a.fetch(), a.checkCompares(), a.sendTimers(), a.syncLabels())
+	cmd = tea.Batch(cmd, a.moved(), a.fetch(), a.checkCompares(), a.syncInspect(), a.sendTimers(), a.syncLabels())
 	if !a.spin && a.loading() {
 		a.spin = true
 		cmd = tea.Batch(cmd, a.after(spinTime, spinMsg{}))
@@ -737,6 +737,86 @@ func (a *App) placeToast() {
 	l := a.toast
 	l.w, l.h = l.view.measure(a.w, a.h)
 	l.x, l.y = (a.w-l.w)/2, a.h-2-l.h
+}
+
+// syncInspect shows the inspect toast of the item under the focused panel's
+// cursor, after every message (tdp toast.4): it comes when the cursor lands
+// on an item that has one, is that item's at once when the cursor moves to
+// another, and goes when the cursor leaves. An ordinary toast replaces it,
+// and once that one is gone it is back.
+//
+// TODO(tdp toast.4): tdp has every toast in the App Log and leaves moving the
+// cursor out of it; until it says which the inspect toast goes with, the App
+// Log does not keep it.
+func (a *App) syncInspect() tea.Cmd {
+	t := a.toast
+	if t != nil && !t.closing && !t.view.(*toastView).inspect {
+		return nil
+	}
+	text := a.inspectText()
+	if len(text) == 0 {
+		if t != nil && !t.closing {
+			t.closing = true
+			return a.animate()
+		}
+		return nil
+	}
+	if t != nil && !t.closing && slices.Equal(t.view.(*toastView).text, text) {
+		return nil
+	}
+	v := &toastView{kind: Info, text: text, most: a.ToastLines, inspect: true}
+	if t == nil {
+		a.toast = &layer{view: v, frame: 1, toast: true}
+	} else {
+		t.view, t.closing = v, false
+	}
+	a.placeToast()
+	return a.animate()
+}
+
+// inspectText is the inspect toast of the item under the focused panel's
+// cursor: its mode's, the innermost layer with an Inspect first, or the
+// panel's.
+//
+// TODO(tdp toast.4): tdp does not say whether it stays while a popup is open
+// over the panel; until it does there is none then, the cursor being the
+// popup's, and none covering the bottom rows and the hint of a tall popup.
+func (a *App) inspectText() []string {
+	s := a.Screen()
+	if a.Canvas != nil || s == nil || a.top() != nil {
+		return nil
+	}
+	p := s.Focused()
+	if p == nil {
+		return nil
+	}
+	if p.mode != nil {
+		layers := append(slices.Clone(p.under), p.mode)
+		for i := len(layers) - 1; i >= 0; i-- {
+			if layers[i].Inspect != nil {
+				return layers[i].Inspect()
+			}
+		}
+	}
+	if p.Inspect != nil {
+		return p.Inspect()
+	}
+	return nil
+}
+
+// uncover tells a panel's body, drawn at r in the panel area that starts on
+// row top, how many rows at the bottom of its inside the inspect toast covers
+// (tdp toast.4): the focused panel's alone, the toast being about its cursor.
+func (a *App) uncover(p *Panel, r Rect, top int, focused bool) {
+	b, ok := p.Body.(interface{ Uncover(rows int) })
+	if !ok {
+		return
+	}
+	rows := 0
+	if t := a.toast; focused && t != nil && !t.closing && t.view.(*toastView).inspect && t.x < r.X+r.W-1 && t.x+t.w > r.X+1 {
+		rows = min(max(top+r.Y+r.H-1-t.y, 0), max(r.H-2, 0))
+	}
+	b.Uncover(rows)
 }
 
 // Confirm asks ask; accept runs when the user answers Enter. The popup under
@@ -1188,8 +1268,9 @@ func (a *App) handleKey(msg tea.KeyMsg) tea.Cmd {
 	if key == "Ctrl-C" && a.quitting {
 		return tea.Quit
 	}
-	// Esc takes the toast first (tdp K4, F3).
-	if key == "Esc" && a.toast != nil && !a.toast.closing {
+	// Esc takes the toast first (tdp K4, F3), but for the inspect toast, which
+	// takes no key (tdp toast.4).
+	if key == "Esc" && a.toast != nil && !a.toast.closing && !a.toast.view.(*toastView).inspect {
 		a.toast.closing = true
 		if a.toast.frame > openFrames {
 			a.toast.frame = openFrames
@@ -1541,7 +1622,7 @@ func (a *App) base() []string {
 		lines = append(lines, Fit(spansText(a.Status(w)), w))
 	}
 	areaH := h - len(lines) - 1
-	lines = append(lines, a.panelArea(w, areaH)...)
+	lines = append(lines, a.panelArea(w, len(lines), areaH)...)
 	footer := a.footer(w)
 	if a.terminalOpen() {
 		// A terminal popup reaches the last row: no footer, its ends blank
@@ -1597,14 +1678,16 @@ func (a *App) narrow(s *Screen) bool {
 	return s.NarrowBelow > 0 && a.w < min(s.NarrowBelow, 60)
 }
 
-// panelArea draws the current screen's panels in w × h.
-func (a *App) panelArea(w, h int) []string {
+// panelArea draws the current screen's panels in w × h, from row top of the
+// screen.
+func (a *App) panelArea(w, top, h int) []string {
 	area := blankLines(w, h)
 	s := a.Screen()
 	if s == nil || len(s.Panels) == 0 || h <= 0 {
 		return area
 	}
 	if a.narrow(s) {
+		a.uncover(s.Focused(), Rect{W: w, H: h}, top, true)
 		return Pad2(s.Focused().draw(s.at()+1, w, h, true, false), w, h)
 	}
 	var rects []Rect
@@ -1631,6 +1714,7 @@ func (a *App) panelArea(w, h int) []string {
 			fp.hide = a.HideSecretsInPreview // the app's setting, as a file-picker's preview has it
 		}
 		p.setLabel(a.labelOf(p))
+		a.uncover(p, r, top, i == s.at())
 		Composite(area, p.draw(i+1, r.W, r.H, i == s.at(), p == pointed), r.X, r.Y, w)
 	}
 	return area

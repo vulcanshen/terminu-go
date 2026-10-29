@@ -31,7 +31,8 @@ var (
 	// Layers is how many popups are open, the toast and the closing ones
 	// not counted.
 	Layers func(app any) int
-	// Toast reports a toast on the screen, not closing.
+	// Toast reports a toast on the screen that Esc takes, not closing: not
+	// the inspect toast (tdp toast.4).
 	Toast func(app any) bool
 	// Typing reports keys going to a typing row, a mode or a PTY: ? and q
 	// are not the core keys there (tdp K8).

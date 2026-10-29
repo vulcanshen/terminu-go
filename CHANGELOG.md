@@ -2,6 +2,18 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.1.3 — tdp v1.1.2
+
+- The inspect toast (tdp toast.4, from webu): `Panel.Inspect` and `Mode.Inspect` say what the item under the cursor
+  has to show, nil for an item with nothing. After every message the lib asks the focused panel, in a mode its
+  innermost layer that has one first, and shows a toast titled `INSPECT` with no hint and no timer: it comes when the
+  cursor lands on such an item, is the next item's at once, and goes when the cursor leaves. Every key goes through it,
+  `Esc` too; an ordinary toast takes its place, and once that one is gone it is back
+- A body is told before each draw how many of its bottom rows the inspect toast covers, with `Uncover(rows int)`, and
+  scrolls the item under its cursor above them: `List` and `Values` do it, a body of the app's own implements it
+- For now the inspect toast is not there while a popup is open, and the App Log does not keep it; both are put to tdp
+- The showcase's `[1] PODS` says why a pod is not running in an inspect toast
+
 ## v1.1.2 — tdp v1.1.1
 
 - Inside a panel's mode `V` no longer summons the splash (tdp S4, K11, from webu): only the mode's own keys and the

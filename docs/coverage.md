@@ -1,6 +1,6 @@
-# tdp v1.1.1 coverage
+# tdp v1.1.2 coverage
 
-tdp v1.1.1 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
+tdp v1.1.2 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
 每個元件、規範列的每一種方案、寫到的每一種狀態與疊法，在展示場都按得到。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -75,7 +75,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | K3 | 其他部分做最直觀的事（月份 → 日曆、R → 選值清單） | I 的 `Meeting`、`Background`（color） | `TestDatetimeEnterMonth`、`TestColorPickerEnterChannel` |
 | K3 | 表單的 `Enter` 對 focus 的項目；送出只有按鈕，檢查全部，不合格不送、focus 跳到第一個 | D「Form: New host」 | `TestFormSubmitChecks` |
 | K3 | menu、confirm：`Enter` 執行 cursor 那一列 / 接受 | Space menu；D「Confirm」 | `TestMenuEnterRuns`、`TestConfirmEnterAccepts` |
-| K4 | `Esc` 關最上層 popup（含 toast）；沒有 popup 時退出模式或往上一層（清 filter）；一次一層；永不離開 app | P：開 filter、進 Drag、疊兩層 popup 後連按 `Esc` | `TestK4EscOneLayer`、`TestK4EscNeverQuits`；展示場的 `TestFirstLaunch`（tdptest.Check：每個畫面、每個 panel 的 Space menu、global operation popup、`?` 一層層關） |
+| K4 | `Esc` 關最上層 popup（含 toast，inspect toast 不收鍵、不算）；沒有 popup 時退出模式或往上一層（清 filter）；一次一層；永不離開 app | P：開 filter、進 Drag、疊兩層 popup 後連按 `Esc` | `TestK4EscOneLayer`、`TestK4EscNeverQuits`、`TestToastInspect`；展示場的 `TestFirstLaunch`（tdptest.Check：每個畫面、每個 panel 的 Space menu、global operation popup、`?` 一層層關） |
 | K4 | 多層 popup 只關最上層，底下原樣 | D「Stack: Space menu → Global operation → Quit」 | `TestK4EscOnlyTop` |
 | K5 | panel 上 `Space` 開 / 關 Space menu；`Esc` 也能關 | 任一 panel | `TestK5SpaceToggles` |
 | K5 | 其他 popup 上 `Space` 不作用；唯一例外 checkbox 的選項（checkbox popup 的清單、表單上畫出來的 checkbox） | D「Confirm」上按 `Space`；I 的 `Namespaces`；D「Form: open at Port」的 `Agent` | `TestK5SpaceNoopOnPopups`、`TestCheckboxPopupSpace`、`TestFormCheckboxSpace` |
@@ -164,7 +164,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | F1 | 依階段換類別、同一時間一類；`Tab` 切、`Esc` 關整個；預覽不拿 focus；只有有 focus 的那邊亮 | I `[/] Find` | `TestFinderPhases` |
 | F1 | 清單加搜尋就是 finder（select、checkbox popup、file-picker） | I 的 `Profile`、`Namespaces`、`Identity file` | 見 finder |
 | F1 | 沒有搜尋的清單是 menu，只有 reorder 例外：它搬動項目、確定後寫回整個順序，是 input | I 的 `Segments` | 見 reorder |
-| F1 | toast 不是一層（不淡化、不算層數），但 `Esc` 先收它 | D「Toast over a popup」 | `TestToastNotALayer` |
+| F1 | toast 不是一層（不淡化、不算層數），但 `Esc` 先收它；inspect toast 連 `Esc` 都不收 | D「Toast over a popup」；P `[1] PODS` 的 inspect toast | `TestToastNotALayer`、`TestToastInspect` |
 | F1 | 多步驟流程每一步是自己的 popup | D「Menu: Sort by」（欄位 → 方向） | `TestMultiStepStacks` |
 | F1 | 第八類 app 自己的 popup 只給七類裝不下的內容（例：kamonu 畫格子的 popup），七類裝得下的照那一類做（F1-18）：用哪一類是 app 的事 | app 的事 | — |
 | F1 | app 自己的 popup 有要送出的值時照表單（F1-19）。lib：`Popup.Actions`（`PopupActions`）：動作區在內容下面（分隔線、按鈕靠右、主要的送出在右下角），`Tab`、`Shift-Tab` 在內容與動作區之間、回到離開時的地方，按鈕上的鍵是 lib 的；按鈕照表單的 `FormButton`（另一種送出、`Run`、`Open`、跑得久的 loading）；body 的 `Check` 不過就不送出，寫在錯誤列；hint 是 body 的鍵加 `Tab:actions Esc:cancel`，按鈕上 `Enter:save Tab:<Content> Esc:cancel`；body 的 `Focus` 知道 focus 在不在內容上；按鈕失敗的 error popup 標題帶名字用 `ErrorSubject`（`SAVE FAILED: kamonu`，按鈕上的字不變；沒設時用按鈕自己的 subject，跟表單一樣） | D「Popup: the app’s own」：`Tab` 到 Save、`x` 清空再按 Save 看錯誤列 | `TestAppPopupActions`、`TestAppPopupActionsCheck`、`TestAppPopupActionsRunning`、`TestAppPopupActionsErrorSubject` |
@@ -173,7 +173,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | F2 | 開關都有動畫，全家族同一種：中間拉一條線、再上下展開，收起倒著播；每格 32ms、各 9 格；打開的動畫播完前不收鍵 | 每種 popup | `TestF2AnimationFrames`、`TestF2NoKeysWhileOpening`；app 丟掉 lib 給的 command 時照樣播、toast 照時間消失（lib 自己送出計時）：tdptest 的 `TestToastCommandDropped`、`TestOpeningKeepsItsTime`、`TestDoSendsLibTimers`、`TestStartSendsLibTimers`；`TestInitSendsLibTimers` |
 | F2 | 好幾層一起收起時（一個動作關掉整疊、T1 清掉兩層以上的 source）每一層同時收、各自照自己的大小與層色，總共還是 9 格 | D：Space menu → Global → `?` 再跑會關掉整疊的動作 | `TestF2LayersCloseTogether` |
 | F3 | `Esc` 立刻開始關閉任何 popup（含 toast）；關閉照常有動畫；在關的 popup 不再理會 `Esc` 與其他鍵 | 連按兩下 `Esc` 關兩層 | `TestF3EscImmediate`、`TestF3ClosingIgnoresKeys` |
-| F3 | 例外：PTY（toast 只能等時間到）、textarea 寫入狀態、改過的表單、textarea、reorder 與照表單的 app 自己的 popup 先 confirm | T；I 的 `Comment`；D「Form: New host」改過再 `Esc`；I 的 `Segments` 搬過再 `Esc`；D「Popup: the app’s own」畫一格再 `Esc` | `TestF3Exceptions`、`TestReorderEsc`、`TestAppPopupActionsKeys` |
+| F3 | 例外：PTY（toast 只能等時間到）、inspect toast 不收 `Esc`（照底下的意思做）、textarea 寫入狀態、改過的表單、textarea、reorder 與照表單的 app 自己的 popup 先 confirm | T；I 的 `Comment`；D「Form: New host」改過再 `Esc`；I 的 `Segments` 搬過再 `Esc`；D「Popup: the app’s own」畫一格再 `Esc` | `TestF3Exceptions`、`TestReorderEsc`、`TestAppPopupActionsKeys`、`TestToastInspect` |
 | F3 | 內容改過的 app 自己的 popup（有要送出的值）按 `Esc` 先開放棄的 confirm（F3-8）。lib：body 的 `Changed()` 說改過了；`Esc` 不交給 body；`PopupActions.Name` 是 confirm 裡的名字（沒給時用 `Subject`） | D「Popup: the app’s own」畫一格再 `Esc`（`Discard changes to icon?`） | `TestAppPopupActionsKeys` |
 | F4 | 從 A 開 B，A 留著；取消 B 回 A；多層一樣 | D 的疊法情境 | `TestF4KeepSource`、`TestInputSteps`（多步驟的 input：`Stay`，`Esc` 退一步、值都在） |
 | F5 | 錯誤立刻出現（toast 或 popup）、`Esc` 可關、不阻塞 app；錯誤也記進 App Log，toast 收掉之後照樣查得到（lib：每個 toast 與 error popup 自動記） | P `[1] PODS` 的 `Fail`；D「Error popup」後按 `!` | `TestF5ErrorNonBlocking`、`TestAppLogEntries` |
@@ -341,7 +341,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | popup.1 | 粗線 `┏━┓`、層色；被蓋在底下照樣是粗線 | 每種 popup | `TestPopupFrame` |
 | popup.1 | 標題：glyph + 文字做成膠囊，放在 `┏━` 後；兩端圓角 U+E0B6 / U+E0B4；填層色，字 Base 粗體、大寫（名稱與路徑照原樣）；寫對哪一個做時，名稱接在 `: ` 後、照原樣（viewer 的 ` — `、file-picker 的 ` · ` 照它們自己的）；太長從尾端截加 `…` | 每種 popup；D「Popup: long title」；D「Confirm」`DELETE: web-a8k2`、「Form: long」`EDIT: prod-db-01`；I `Name` 按 `Enter` 的 `RENAME: assets` | `TestPopupTitleCapsule`、`TestPopupTitleTruncate`、`TestPopupTitleSubject`、`TestTruncateKeepsStyle`（截掉時 `…` 跟著被截那段的樣式）、`TestPopupSubjectErrorMenu`（`App.MenuAbout`：`OPEN WITH: notes.md`） |
 | popup.1 | 標題後接 tab 照膠囊串畫（跟圓角的標題之間隔一段線） | D「Popup with tabs」 | `TestPopupTitleTabs` |
-| popup.1 | 標題 glyph：menu U+F0C9、key reference U+F059、confirm U+F0ECC、toast 依種類、terminal U+F018D、input／表單／note／app 自己的 popup app 可以自行決定 | 每種 popup | `TestPopupTitleGlyph` |
+| popup.1 | 標題 glyph：menu U+F0C9、key reference U+F059、confirm U+F0ECC、toast 依種類（inspect toast 有自己的 U+F0208）、terminal U+F018D、input／表單／note／app 自己的 popup app 可以自行決定 | 每種 popup | `TestPopupTitleGlyph` |
 | popup.1 | hint 放 `┗━ ` 後；順序 `Enter` → 自己的鍵 → `Tab:…` → `Esc`（terminal 出口鍵第一）；不寫移動鍵（換塊的照寫，表單的 `Tab:actions`）；框到最寬還放不下才從尾端整組捨（terminal 太窄時），但最後的 `Esc` 一定留著，從它前面那一組開始捨；只有打字列的列全部、60 欄放得下 | 每種 popup；把 terminal 縮到很窄 | `TestPopupHintOrder`、`TestPopupHintDrop`、`TestM3TypingPopupHintFits60` |
 | popup.1 | 框上的字與角之間隔一段線：`┏━TITLE`、`┗━ Enter:run`、`4 of 12 ━┛` | 每種 popup | `TestPopupFrameTextSpacing` |
 | popup.1 | 內容上下各留一列、左右離框一格（terminal 上下左右都不留） | D「Menu: long」 | `TestPopupMargins` |
@@ -468,6 +468,13 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | toast.2 | Success、Info 2200ms，Warning、Error 4400ms；第二個來直接取代、重新計時 | 連按兩次 `Toast …` | `TestToastDuration`、`TestToastReplace` |
 | toast.2 | 每一列的第一個字母大寫，其他照原樣；一列從名稱或路徑開始時，名稱照原樣（toast-20）。字是 app 給的：lib 照原樣畫、照原樣記進 App Log，不改大小寫，tdptest 也不檢查（分不出名稱與一般的字）；lib 自己的字都大寫開頭（`Copied`、`Moved … to …`） | 展示場的每一個 toast | `TestToastKeepsCase` |
 | toast.3 | `Esc` 立刻收、比其他 popup 先收；其他鍵穿過；PTY 裡只能等時間到；hint `Esc:close` | toast 開著時按 `j`；T 的 terminal popup 裡按 `Alt-b` | `TestToastEscFirst`、`TestToastKeysPassThrough` |
+| toast.4 | inspect toast 說游標那一項是什麼，哪些項目有、寫什麼，app 可以自行決定（lib：`Panel.Inspect`，模式裡是 `Mode.Inspect`，最內層有的那一層先問；lib 每個訊息之後問 focus 的 panel） | P `[1] PODS`：CrashLoopBackOff 與 Pending 的 pod 說原因（例：`coredns-7w9z`、`api-gateway-…`），Running 的沒有 | `TestToastInspect` |
+| toast.4 | 游標停到有的項目上就出現、離開就消失，移到另一個有的直接換成那一項的；沒有計時（toast-21） | P `[1] PODS` 在 pod 之間移動，停著等一下 | `TestToastInspect`；tdptest 的 `TestInspectToastStays` |
+| toast.4 | 所有鍵都穿過它，`Esc` 也是：`Esc` 照底下的意思做（例：離開模式），toast 跟著游標消失（toast-22） | 它在的時候按 `j`、`Esc` | `TestToastInspect`；tdptest 的 `TestInspectToastStays`（`Esc` 不收它，關 popup 不用等它） |
+| toast.4 | 跟一般 toast 一樣的位置、框、寬度、文字，標題 U+F0208 `INSPECT`、文字 Text、下框沒有 hint（toast-23） | 看它的標題與下框 | `TestToastInspect` |
+| toast.4 | 一般 toast 直接取代它；那個走了（時間到或 `Esc`）以後，游標還在那一項上，它直接回來（toast-24） | 它在的時候跑 `Toast info` | `TestToastInspectReplaced`；tdptest 的 `TestInspectToastStays` |
+| toast.4 | 它會蓋到游標那一項時，畫面捲動，讓那一項露在它上面（toast-25；lib：每次畫之前用 `Uncover(rows)` 告訴 focus 的 panel 的 body 下面幾列被蓋住，`List` 與 `Values` 自己捲，app 自己的 body 實作 `Uncover` 自己捲） | P `[1] PODS` 按 `G` 再按四下 `k` 到 `traefik-4b` | `TestToastInspectUncovers` |
+| toast.4 | tdp 還沒寫的，暫時這樣做（程式裡標 `TODO(tdp toast.4)`）：popup 開著時不出現，popup 關了、游標還在那一項上就回來；不記進 App Log | 它在的時候按 `Space`、`!` | `TestToastInspect` |
 
 ## input/README（所有 input 共用）
 
@@ -613,6 +620,7 @@ project 只綁家族成員（project.1）：module 不在 `github.com/vulcanshen
 | U+F018D | `nf-md-console` | popup.1、terminal | T 的 terminal popup |
 | U+F05E0 | `nf-md-check_circle` | toast（Success） | P 的 `Toast success` |
 | U+F024 | `nf-fa-flag` | toast（Info） | P 的 `Toast info` |
+| U+F0208 | `nf-md-eye` | toast.4（inspect toast） | P `[1] PODS` 的 `coredns-7w9z` |
 | U+F078F | `nf-md-alarm_light` | toast（Warning） | P 的 `Toast warning` |
 | U+F0238 | `nf-md-fire` | toast（Error）、note.6 | P 的 `Toast error`；D「Error popup」 |
 | U+F0A9E–U+F0AA5 | `nf-md-circle_slice_1` – `_8` | popup.4 | D「Loading popup」；P `Loading` |

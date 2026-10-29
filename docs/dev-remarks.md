@@ -1,7 +1,7 @@
 # terminu-go 開發者備忘
 
 terminu-go 是 terminu design principle（tdp）的 Go 實作：給 app 呼叫的 lib，加上展示場 `examples/showcase`。遵循 terminu design
-principle，目前對應 tdp v1.1.1。lib 只照 tdp 最新 tag 的文字做；規範沒寫或照做不好用的地方回報給 tdp，不在 lib 裡自己決定。
+principle，目前對應 tdp v1.1.2。lib 只照 tdp 最新 tag 的文字做；規範沒寫或照做不好用的地方回報給 tdp，不在 lib 裡自己決定。
 
 ## 運作方式
 
@@ -24,7 +24,7 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
 - **一個畫面怎麼畫出來**（`App.Frame`）：最上面一列（畫面 chip 列加分隔線，或 statusbar）、panel 區（每個 panel 畫好框再用 `Composite`
   放上去；失焦的 panel 內容淡化一次，串流除外）、footer。有 popup 時整個底下淡化一次，再由下往上疊每一層 popup（最上層以外都淡化），
   最後疊 toast。每一層都照開關動畫的那一格畫（`layer.drawFrame`）。
-- **按鍵**（`handleKey`）：開到一半的 popup 不收鍵 → 離開流程裡的第二個 `Ctrl-C` → toast 先收 `Esc` → `Ctrl-C` 進離開流程 → 最上層
+- **按鍵**（`handleKey`）：開到一半的 popup 不收鍵 → 離開流程裡的第二個 `Ctrl-C` → toast 先收 `Esc`（inspect toast 不收）→ `Ctrl-C` 進離開流程 → 最上層
   popup → focus 的 panel（輸入態、模式、一般）。`g` 開頭的兩鍵組合（`gg`、`go`）在 app 這一層接起來，body 收到的是 `gg`。
 - **input**：每一種 input 都是一個 `Input`（`TextInput`、`Select`、`DatePicker`…），單獨打開用 `App.Open`（或 `App.Text` 這類捷徑）；
   表單的欄位用 `Edit` 在打開時做出它的 `Input`，表單打開它時傳一個 `written`，值寫回時表單記成「改過了」（離開前先問）。一般的
@@ -161,6 +161,11 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   就蓋掉錯誤。
 - **toast 與 App Log 的字照原樣**（tdp toast.2）：開頭大寫是 app 的字。lib 分不出一列的開頭是名稱（`kbu.yaml saved`）還是一般的字，
   替 app 改大寫會改壞名稱，tdptest 檢查也會誤報，所以兩邊都不做；lib 自己給的字都大寫開頭。
+- **inspect toast 由 lib 問、app 只回答**（tdp toast.4，v1.1.2，webu）：`Panel.Inspect`、`Mode.Inspect` 只回答游標那一項有什麼
+  可看。每個訊息之後 lib 問一次 focus 的 panel（在模式裡先問最內層有 `Inspect` 的那一層），出現、換成另一項的、消失、被一般 toast
+  取代後回來都由 lib 做（`syncInspect`）：app 不用在每個移動游標的地方叫 lib，離開模式時 toast 也不會留下來。toast 在哪裡是 lib 的，
+  捲動是 body 的：lib 每次畫之前用 `Uncover(rows)` 告訴 focus 的 panel 的 body 下面幾列被蓋住，`List`、`Values` 自己捲，app 自己的
+  body 實作 `Uncover` 自己捲；lib 不知道 app 的 body 裡游標在哪一列。
 - **提權時密碼由 lib 問、只交給 sudo**（tdp terminal.7，v0.11.4，hostu 回報）：`App.Elevate` 只收指令與工具，問密碼的 popup
   是 lib 自己建的 `lineInput`，沒有 `Done` 拿得到值，所以 app 碰不到密碼。跟 sudo 講話的方式（`elevate.go`）：
   - **先問要不要密碼，不跑指令**：`sudo -n -v`。直接 `sudo -n <指令>` 失敗時分不出是要密碼還是指令失敗，再跑一次就跑了兩次。

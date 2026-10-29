@@ -42,11 +42,33 @@ type toastView struct {
 	id    int
 	// most is the app's cap on its lines (App.ToastLines), 0 for none.
 	most int
+	// inspect makes it the inspect toast (tdp toast.4): no timer and no hint,
+	// Esc going through it too; its kind is Info, for its text in Text.
+	inspect bool
 }
 
 type toastDone struct{ id int }
 
-func (t *toastView) hint() []KeyHint { return []KeyHint{{"Esc", "close"}} }
+func (t *toastView) hint() []KeyHint {
+	if t.inspect {
+		return nil // no key closes it
+	}
+	return []KeyHint{{"Esc", "close"}}
+}
+
+func (t *toastView) glyph() string {
+	if t.inspect {
+		return glyphInspect
+	}
+	return t.kind.glyph()
+}
+
+func (t *toastView) title() string {
+	if t.inspect {
+		return "INSPECT"
+	}
+	return t.kind.title()
+}
 
 func (t *toastView) measure(sw, sh int) (int, int) {
 	most := max(min(sw-2, 120), 1)
@@ -56,7 +78,7 @@ func (t *toastView) measure(sw, sh int) (int, int) {
 		text[i] = Escape(s) // a short text (components, control characters)
 		widest = max(widest, Width(text[i]))
 	}
-	w := min(max(widest+4, Width(titleCapsule(t.kind.glyph(), t.kind.title(), Base, 1<<20))+4, hintWidth(t.hint())+6), most)
+	w := min(max(widest+4, Width(titleCapsule(t.glyph(), t.title(), Base, 1<<20))+4, hintWidth(t.hint())+6), most)
 	var lines []string
 	for _, s := range text {
 		lines = append(lines, Wrap(s, w-4)...)
@@ -86,7 +108,7 @@ func (t *toastView) draw(w, h int, _ Color) []string {
 	for _, l := range t.lines {
 		body = append(body, " "+Center(Fg(t.kind.color()).Render(l), inner-2)+" ")
 	}
-	return popupBox{color: LayerColor(1), glyph: t.kind.glyph(), title: t.kind.title(), hint: t.hint()}.draw(w, body)
+	return popupBox{color: LayerColor(1), glyph: t.glyph(), title: t.title(), hint: t.hint()}.draw(w, body)
 }
 
 func (t *toastView) key(*App, string, tea.KeyMsg) (bool, tea.Cmd) { return false, nil }

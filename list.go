@@ -132,6 +132,7 @@ type List struct {
 	view   []int // rows shown, in order: sorted, then filtered
 	cursor int   // index into view
 	top    int   // first row shown
+	cover  int   // rows at the bottom under the inspect toast (Uncover)
 	marked map[string]bool
 	held   bool // the row under the cursor is held in a Drag mode
 
@@ -434,6 +435,11 @@ func leadingNumber(s string) (float64, error) {
 	return strconv.ParseFloat(s[:end], 64)
 }
 
+// Uncover keeps the cursor's row above the rows at the bottom of the list
+// that the inspect toast covers (tdp toast.4); the lib calls it before each
+// Draw.
+func (l *List) Uncover(rows int) { l.cover = rows }
+
 // Draw draws the list in w × h: the location row, the filter's typing row,
 // the header, the rows.
 func (l *List) Draw(w, h int, focused bool) []string {
@@ -487,10 +493,11 @@ func (l *List) Draw(w, h int, focused bool) []string {
 	if want < l.top {
 		l.top = want
 	}
-	if cl >= l.top+rows {
-		l.top = cl - rows + 1
+	seen := max(rows-l.cover, 1) // the rows above the inspect toast (tdp toast.4)
+	if cl >= l.top+seen {
+		l.top = cl - seen + 1
 	}
-	l.top = min(max(l.top, 0), max(len(lines)-rows, 0))
+	l.top = min(max(l.top, 0), max(len(lines)-seen, 0))
 	for i := 0; i < rows; i++ {
 		li := l.top + i
 		if li >= len(lines) {

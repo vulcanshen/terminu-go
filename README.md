@@ -106,9 +106,9 @@ program's output — never reaches the terminal as it is:
 ## The App Log
 
 `!` on any panel opens the App Log: what the app did and what went wrong, newest last, in memory only. Every toast
-and every error popup is in it by itself; `app.Log(kind, text)` adds the rest — an action's result, what the app does
-in the background — from any goroutine, worded as a toast, with a capital first. While errors or warnings came in
-unseen, the footer's `!:log` says how many.
+but the inspect toast, which only follows the cursor, and every error popup is in it by itself; `app.Log(kind, text)`
+adds the rest — an action's result, what the app does in the background — from any goroutine, worded as a toast, with
+a capital first. While errors or warnings came in unseen, the footer's `!:log` says how many.
 
 ## A file of your own it can't read
 
@@ -212,7 +212,7 @@ in whenever it is due.
 
 ## Which terminu design
 
-terminu-go implements **tdp v1.1.1**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
+terminu-go implements **tdp v1.1.2**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
 
 ## Links
 
