@@ -154,18 +154,39 @@ type Panel struct {
 	// reference of its own (tdp M6: a PTY, a grid), after the panel's own.
 	OtherKeys []KeySection
 
-	mode *Mode
-	app  *App
+	mode  *Mode
+	under []*Mode // the layers mode is in, outermost first
+	app   *App
 }
 
 // EnterMode puts the panel in m; Esc leaves it (tdp K11).
-func (p *Panel) EnterMode(m *Mode) { p.mode = m }
+func (p *Panel) EnterMode(m *Mode) { p.mode, p.under = m, nil }
 
-// LeaveMode leaves the mode without running its OnExit.
-func (p *Panel) LeaveMode() { p.mode = nil }
+// EnterLayer goes a layer further into the mode the panel is in, to m (tdp
+// K11): its name follows the mode's after ">" (Visual>select), its keys and
+// Exit are the ones that work, and Esc leaves m alone, running its OnExit,
+// back to the layer it was in. Out of a mode it is EnterMode.
+func (p *Panel) EnterLayer(m *Mode) {
+	if p.mode != nil {
+		p.under = append(p.under, p.mode)
+	}
+	p.mode = m
+}
 
-// InMode reports the mode the panel is in, or nil.
+// LeaveMode leaves the whole mode, every layer, without running an OnExit.
+func (p *Panel) LeaveMode() { p.mode, p.under = nil, nil }
+
+// InMode reports the mode the panel is in, its innermost layer, or nil.
 func (p *Panel) InMode() *Mode { return p.mode }
+
+// modeLayers is the names of the mode's layers, outermost first.
+func (p *Panel) modeLayers() []string {
+	var out []string
+	for _, m := range p.under {
+		out = append(out, m.Name)
+	}
+	return append(out, p.mode.Name)
+}
 
 // typer is a body with a typing row (the panel filter).
 type typer interface {
@@ -335,7 +356,7 @@ func (p *Panel) draw(n, w, h int, focused, pointed bool) []string {
 // K11).
 func (p *Panel) modeName() string {
 	if p.mode != nil {
-		return p.mode.Name
+		return strings.Join(p.modeLayers(), ">")
 	}
 	if t, ok := p.Body.(*Terminal); ok {
 		return t.modeName()

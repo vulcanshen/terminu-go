@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 // TestModeLabelOpens: entering a mode its name opens from the middle on the
@@ -161,6 +163,75 @@ func TestModeMenuLayers(t *testing.T) {
 	ta.press("v", "v", "Space")
 	if text := ta.screenText(); !strings.Contains(text, "VISUAL>SELECT MODE") || !strings.Contains(text, "[Esc] Unselect") {
 		t.Errorf("the menu once selecting:\n%s", text)
+	}
+}
+
+// TestPanelModeLayers: a panel's own mode goes a layer in with EnterLayer:
+// Visual>select on the frame, grown from the tail, the layer's keys and verb
+// in the hint, its Space menu and its ?; Esc leaves the layer alone, running
+// its OnExit, back to Visual, then the whole mode; LeaveMode and EnterMode
+// leave every layer (tdp K11, panel.1).
+func TestPanelModeLayers(t *testing.T) {
+	ta, clk := logApp(t)
+	var exits []string
+	sel := &Mode{Name: "select", Exit: "unselect", Pause: true, OnExit: func() tea.Cmd { exits = append(exits, "select"); return nil },
+		Keys: []ModeKey{{Key: "y", Desc: "copy", Do: func(string) tea.Cmd { ta.pods.LeaveMode(); return nil }}}}
+	visual := &Mode{Name: "Visual", Exit: "cancel", OnExit: func() tea.Cmd { exits = append(exits, "Visual"); return nil },
+		Keys: []ModeKey{{Key: "v", Desc: "select", Do: func(string) tea.Cmd { ta.pods.EnterLayer(sel); return nil }}}}
+	top := func() string { return StripStyles(ta.rowWith("PODS")) }
+	ta.pods.EnterMode(visual)
+	ta.press("v")
+	if ta.pods.InMode() != sel || !strings.Contains(top(), "┫Visual>select┣") {
+		t.Fatalf("EnterLayer: in %v, %q", ta.pods.InMode(), top())
+	}
+	if text := ta.screenText(); !strings.Contains(text, "y:copy Esc:unselect") {
+		t.Errorf("the layer's hint:\n%s", text)
+	}
+	ta.press("Space")
+	if text := ta.screenText(); !strings.Contains(text, "VISUAL>SELECT MODE") || !strings.Contains(text, "[Esc] Unselect") {
+		t.Errorf("the layer's Space menu:\n%s", text)
+	}
+	ta.press("Esc", "?")
+	if n, ok := ta.topView().(*noteView); !ok || n.title != "VISUAL>SELECT KEYS" || !strings.Contains(ta.screenText(), "unselect, back to Visual") {
+		t.Errorf("the layer's key reference:\n%s", ta.screenText())
+	}
+	ta.press("?", "Tab")
+	if !strings.Contains(ta.screenText(), "Press [Esc] to leave Visual>select first") {
+		t.Errorf("Tab paused in the layer:\n%s", ta.screenText())
+	}
+	ta.press("Esc")
+	ta.Update2(keyMsg("Esc"))
+	if ta.pods.InMode() != visual || len(exits) != 1 || exits[0] != "select" {
+		t.Fatalf("Esc leaves the layer alone: in %v, OnExit ran %v", ta.pods.InMode(), exits)
+	}
+	clk.t = clk.t.Add(frameTime)
+	if !strings.Contains(top(), "┫Visual>selec┣") {
+		t.Errorf("a layer less goes back from the tail: %q", top())
+	}
+	ta.settle()
+	if !strings.Contains(top(), "┫Visual┣") || !strings.Contains(ta.screenText(), "Esc:cancel") {
+		t.Errorf("back to Visual: %q\n%s", top(), ta.screenText())
+	}
+	ta.press("Esc")
+	if ta.pods.InMode() != nil || len(exits) != 2 || exits[1] != "Visual" {
+		t.Fatalf("the second Esc leaves the mode: in %v, OnExit ran %v", ta.pods.InMode(), exits)
+	}
+	ta.pods.EnterMode(visual)
+	ta.press("v", "y")
+	if ta.pods.InMode() != nil || len(exits) != 2 {
+		t.Errorf("LeaveMode leaves every layer, no OnExit run: in %v, %v", ta.pods.InMode(), exits)
+	}
+	ta.pods.EnterLayer(sel) // out of a mode: EnterMode
+	ta.settle()
+	if !strings.Contains(top(), "┫select┣") {
+		t.Errorf("EnterLayer out of a mode: %q", top())
+	}
+	ta.pods.EnterMode(visual)
+	ta.press("v")
+	ta.pods.EnterMode(visual)
+	ta.press("Esc")
+	if ta.pods.InMode() != nil || len(exits) != 3 {
+		t.Errorf("EnterMode leaves the layers: in %v, %v", ta.pods.InMode(), exits)
 	}
 }
 

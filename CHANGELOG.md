@@ -2,6 +2,15 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.1.1 — tdp v1.1.0
+
+- `Panel.EnterLayer`: a panel's own mode can have layers, as the viewer's selection mode has (tdp K11, panel.1, from
+  webu). The layer's name follows the mode's after `>` (`Visual>select`) and grows from its tail; its keys and `Exit`
+  are what the hint, the Space menu (`VISUAL>SELECT MODE`) and `?` show; `Esc` leaves the layer alone, running its
+  `OnExit`, back to the layer before it, and the next `Esc` leaves the mode. `LeaveMode` leaves every layer at once,
+  as copying and leaving does; `EnterMode` starts the mode with no layer. An app no longer puts its mode back from
+  `OnExit` to keep the outer layer
+
 ## v1.1.0 — tdp v1.1.0
 
 Everything since v1.0.2, the betas v1.1.0-beta.1 to beta.3 included:

@@ -1144,9 +1144,13 @@ func (a *App) modeKeyRef(p *Panel) *noteView {
 	for _, k := range p.mode.Keys {
 		rows = append(rows, KeyRow{Key: k.Key, Desc: k.Desc, Disabled: k.off()})
 	}
-	rows = append(rows, KeyRow{Key: "Esc", Desc: cmpOr(p.mode.Exit, "leave") + ", back to before " + p.mode.Name})
+	back := ", back to before " + p.mode.Name
+	if l := p.modeLayers(); len(l) > 1 {
+		back = ", back to " + strings.Join(l[:len(l)-1], ">")
+	}
+	rows = append(rows, KeyRow{Key: "Esc", Desc: cmpOr(p.mode.Exit, "leave") + back})
 	core := []KeyRow{{Key: "Space", Desc: "what you can do here"}, {Key: "?", Desc: "this list"}, {Key: "q|Ctrl-C", Desc: "quit"}}
-	return keyReference(Upper(p.mode.Name), []refSection{{title: p.mode.Name, rows: rows}, {title: "core keys", rows: core}})
+	return keyReference(Upper(p.modeName()), []refSection{{title: p.modeName(), rows: rows}, {title: "core keys", rows: core}})
 }
 
 // --- keys --------------------------------------------------------------------
@@ -1411,7 +1415,7 @@ func (a *App) modeKey(p *Panel, key string, msg tea.KeyMsg) tea.Cmd {
 		return a.startQuit()
 	case key == "Tab" || isDigit(key) && key != "0":
 		if p.mode.Pause {
-			return a.Toast(Info, "Press [Esc] to leave "+p.mode.Name+" first")
+			return a.Toast(Info, "Press [Esc] to leave "+p.modeName()+" first")
 		}
 		s := a.Screen()
 		if key == "Tab" {

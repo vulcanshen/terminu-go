@@ -74,7 +74,7 @@ func (a *App) panelModeMenu(p *Panel) tea.Cmd {
 		}
 	}
 	keys = append(keys, leaveRow(cmpOr(m.Exit, "leave"), func() tea.Cmd { return a.leavePanelMode(p) }))
-	return a.modeMenu(a.modeTitle(), m.Name, item, keys)
+	return a.modeMenu(a.modeTitle(), p.modeName(), item, keys)
 }
 
 // leavePanelMode leaves the mode p is in, back to before it, as Esc does.
@@ -84,6 +84,9 @@ func (a *App) leavePanelMode(p *Panel) tea.Cmd {
 		return nil
 	}
 	p.mode = nil
+	if n := len(p.under); n > 0 { // a layer less (tdp K11)
+		p.mode, p.under = p.under[n-1], p.under[:n-1]
+	}
 	return run(m.OnExit)
 }
 
