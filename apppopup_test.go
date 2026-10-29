@@ -344,7 +344,7 @@ func (b *scrollBody) Scroll() string { return b.at }
 
 // TestAppPopupScroll: an app popup whose body scrolls has its scroll position
 // on the right of the bottom frame line, in the layer colour, and room for it
-// with the whole hint (tdp popup; kamonu KM9).
+// with the whole hint (tdp popup; from kamonu).
 func TestAppPopupScroll(t *testing.T) {
 	ta := newTestApp(t)
 	b := &scrollBody{testBody: testBody{w: 10, h: 3}, at: "3 of 40"}
@@ -362,7 +362,7 @@ func TestAppPopupScroll(t *testing.T) {
 }
 
 // TestCloseAll: the app can close the whole stack, the lib's popups among it
-// (tdp T1; kbu KB10).
+// (tdp T1; from kbu).
 func TestCloseAll(t *testing.T) {
 	ta := newTestApp(t)
 	ta.Viewer(testViewer())
@@ -378,8 +378,8 @@ func TestCloseAll(t *testing.T) {
 
 // TestCanvas: a screen the app draws itself, whole, has the lib's popups and
 // toasts over it and no footer; its keys are the app's, the screens under it
-// get none, and only Ctrl-C is left to the quit flow (tdp E8, K9; locku
-// LK1).
+// get none, and only Ctrl-C is left to the quit flow (tdp E8, K9; from
+// locku).
 func TestCanvas(t *testing.T) {
 	ta := newTestApp(t)
 	ta.Quit = &Ask{Question: "Quit test?", Verb: "quit"}

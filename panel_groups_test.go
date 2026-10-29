@@ -176,7 +176,7 @@ func TestValuesOnMove(t *testing.T) {
 // TestK3EnterToDetails: Enter on a list may send the focus to its details
 // panel, on the items the app says (tdp K3,
 // panel.13); going in, by Enter or by its row in the menu, moves the focus
-// and does not go in the App Log (tdp note.7, DM42).
+// and does not go in the App Log (tdp note.7, from demou).
 func TestK3EnterToDetails(t *testing.T) {
 	ta := &testApp{App: anySize(New("test"))}
 	kinds := groupList()

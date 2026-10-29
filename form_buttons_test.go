@@ -135,7 +135,7 @@ func TestFormActionAreaMoves(t *testing.T) {
 // after the title, and says it is done in a toast; the form stays.
 // TestFormButtonOpens: a button can open a popup over the form, a terminal
 // popup for one; as it closes, Back reads what was done there into the
-// form, which then counts as changed (tdp form; sshu SS19).
+// form, which then counts as changed (tdp form; from sshu).
 func TestFormButtonOpens(t *testing.T) {
 	ta := newTestApp(t)
 	key := ""
@@ -479,7 +479,7 @@ func TestFormButtonSubject(t *testing.T) {
 
 // TestFormFocusWideArrow: with the powerline arrow two cells wide, the
 // focused field still shows its whole value, no "…" (tdp input.3:
-// a value is cut only when too long; demou DM14).
+// a value is cut only when too long; from demou).
 func TestFormFocusWideArrow(t *testing.T) {
 	for _, pw := range []int{1, 2} {
 		withWidths(t, 1, pw)

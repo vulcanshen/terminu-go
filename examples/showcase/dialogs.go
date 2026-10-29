@@ -562,34 +562,12 @@ status:
 
 func (ds *dialogsScreen) yaml() tea.Cmd {
 	a := ds.s.app
-	v := &terminu.Viewer{Title: "YAML", Subject: "pod/nginx-7d4f", Glyph: glyphYaml, Lines: yamlLines, Lang: "yaml"}
-	// The app's own search: the lib underlines every hit and draws the
-	// current one as the cursor block (Viewer.Hits).
-	step := func(by int) func() tea.Cmd {
-		return func() tea.Cmd {
-			if len(v.Hits) == 0 {
-				return nil
-			}
-			v.Current = (v.Current + by + len(v.Hits)) % len(v.Hits)
-			v.ScrollTo(v.Hits[v.Current].Line)
-			return nil
-		}
-	}
+	// The viewer's search: / asks with these words, the lib finds, underlines
+	// and goes through the hits with n|N (tdp note.3).
+	v := &terminu.Viewer{Title: "YAML", Subject: "pod/nginx-7d4f", Glyph: glyphYaml, Lines: yamlLines, Lang: "yaml",
+		Search: &terminu.ViewerSearch{Title: "Search", Glyph: glyphSearch, Prompt: "Find in the YAML"}}
 	v.Keys = []terminu.ViewerKey{
 		{Key: "y", Desc: "copy", Do: func() tea.Cmd { return a.Toast(terminu.Success, "Copied the YAML") }},
-		{Key: "/", Desc: "search", Do: func() tea.Cmd {
-			return a.Text(terminu.TextInput{Title: "Search", Glyph: glyphSearch, Prompt: "Find in the YAML", Verb: "find", Search: true,
-				Done: func(s string) tea.Cmd {
-					v.Hits, v.Current = v.FindText(s), 0
-					if len(v.Hits) == 0 {
-						return a.Toast(terminu.Info, "No line has "+s)
-					}
-					v.ScrollTo(v.Hits[0].Line)
-					return nil
-				}})
-		}},
-		{Key: "n", Desc: "next", Do: step(1)},
-		{Key: "N", Desc: "previous", Do: step(-1)},
 	}
 	// No Select: the selection mode every viewer has, copying to the
 	// terminal's clipboard (tdp note).

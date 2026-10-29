@@ -393,7 +393,7 @@ func (ps *panelsScreen) sortMenu() tea.Cmd {
 					{Label: "Ascending", Desc: "smallest first", Do: func() tea.Cmd { ps.podList.SortBy(terminu.SortKey{Col: i}); return nil }},
 					{Label: "Descending", Desc: "largest first", Do: func() tea.Cmd { ps.podList.SortBy(terminu.SortKey{Col: i, Desc: true}); return nil }},
 					// Two keys in two directions: both sort glyphs in the header at once,
-					// to see which way each one looks (C3 of the walkthrough).
+					// to see which way each one looks (the walkthrough's sort glyphs).
 					{Label: "Then by age", Desc: "this column first, then the age, oldest first", Do: func() tea.Cmd {
 						ps.podList.SortBy(terminu.SortKey{Col: i}, terminu.SortKey{Col: 4, Desc: true})
 						return nil

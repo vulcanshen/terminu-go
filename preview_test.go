@@ -326,7 +326,7 @@ func (m memFS) ReadDir(name string) ([]fs.FileInfo, error) {
 
 // TestFinderFilesInFS: a finder of files in a file system the app gives
 // previews them, their trees and their facts from it (tdp
-// file-picker.3; sshu SS18).
+// file-picker.3; from sshu).
 // readAll draws a frame and reads at once what it asked to read in the
 // background, as the app does off the update loop; the screen then.
 func (ta *testApp) readAll() string {
@@ -361,7 +361,7 @@ func (ta *testApp) runAll(cmd tea.Cmd) {
 // TestFilePreviewReadInTheBackground: a file preview is read off the update
 // loop: meanwhile the loading icon after its title, "(loading…)" and blank
 // facts; what was read is kept for the row while the popup is open
-// (tdp file-picker; sshu SS40).
+// (tdp file-picker; from sshu).
 func TestFilePreviewReadInTheBackground(t *testing.T) {
 	remote := memFS{"/srv/": "", "/srv/app.conf": "port = 22\n", "/srv/b.conf": "host = web\n"}
 	ta := newTestApp(t)
@@ -444,7 +444,7 @@ func TestFinderFilesInFS(t *testing.T) {
 
 // TestFilePreviewPanel: a panel can show a file as a file-picker's preview
 // does, from a line a search found, with its facts under it
-// (tdp file-picker; tdp panel.13; filu FL3, FL16).
+// (tdp file-picker; tdp panel.13; from filu).
 func TestFilePreviewPanel(t *testing.T) {
 	dir := t.TempDir()
 	var text []string

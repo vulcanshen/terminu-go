@@ -2,6 +2,21 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.1.5 — tdp v1.1.4
+
+- The viewer's search is the lib's (tdp note.3). `Viewer.Search` gives its words: the input popup's title, glyph and
+  prompt. `/` asks for the text, every place it is is underlined and the first is scrolled into sight; `n|N` go to the
+  next and the previous hit, wrapping at the ends and scrolling only when it is out of sight; with none an Info toast
+  says `No line has <text>`. The hint has `/:search`, and `n|N` are in `?` while there are hits. The hits go when the
+  viewer closes, also those an app sets itself. `Hits`, `Current` and `FindText` stay for an app that searches on its
+  own. A viewer that does not wrap scrolls only up and down to a hit past the cut, until tdp says more
+- The showcase's YAML viewer uses it; its hint is now `y:copy /:search v:visual Esc:close`
+- Going into or out of a mode is not in the App Log (tdp note.7). The lib's own modes never logged it; now a test says so
+- Settings keys and caches no longer used (tdp E3), two-dimensional content (tdp K12) and the search of a panel without
+  a cursor (tdp panel.14) are the app's; nothing in the lib changes for them
+- The docs, the comments, the tests and this CHANGELOG no longer cite the numbers of notes kept outside this
+  repository; they say in words what was meant, or which family app it came from
+
 ## v1.1.4 — tdp v1.1.3
 
 - tdp now says what the lib already did with the inspect toast (tdp toast.4, note.7): it is not shown while a popup is
@@ -115,7 +130,7 @@ Everything since v1.0.2, the betas v1.1.0-beta.1 to beta.3 included:
   the app's error popup; `Esc` cancels, and the command does not run. Telling the two apart reads nothing sudo prints
   in the user's language, and holds when sudo keeps no password (`timestamp_timeout=0`). `Tool: Doas` asks in a
   terminal popup, as before. While the password is checked the popup shows the loading icon and takes only `Esc`
-- A list that cannot be marked may draw one flag a row in its mark column (tdp panel.7, from locku LK22):
+- A list that cannot be marked may draw one flag a row in its mark column (tdp panel.7, from locku):
   `List.Flags` keeps the column, `Row.Flag` is the row's glyph and colour, and every row without one is blank there, so
   the text does not move when the flag does. In a list in groups the flag goes where a tick does (tdp panel.11); a row
   held in a Drag mode shows the swap glyph and its flag again once put down (tdp panel.8). A list that can be marked
@@ -125,19 +140,19 @@ Everything since v1.0.2, the betas v1.1.0-beta.1 to beta.3 included:
 ## v0.6.3 — tdp v0.11.3
 
 - Going into the details with `Enter` on a list, or with its row in the menu, moves the focus (tdp K3) and does not
-  go in the App Log (tdp note.7, from DM42): the details already follow the cursor. The lib logged nothing for it
+  go in the App Log (tdp note.7, from demou): the details already follow the cursor. The lib logged nothing for it
   already; only the comments, docs and tests change
 
 ## v0.6.2 — tdp v0.11.2
 
-- Two more things do not go in the App Log (tdp note.7): a panel's compare mode (KB34), and an operation cancelled
+- Two more things do not go in the App Log (tdp note.7): a panel's compare mode (from kbu), and an operation cancelled
   with `Esc` at the confirm before it, at its form or at the input popup that takes its value, as it was not done
-  (SS46). The lib logged neither already; only the comments, docs and tests change. The toasts in the compare mode
+  (from sshu). The lib logged neither already; only the comments, docs and tests change. The toasts in the compare mode
   still go in, as every toast does. An app that logs its own compare or a cancel takes that out
 
 ## v0.6.1 — tdp v0.11.1
 
-- The panel filter does not go in the App Log (tdp note.7, from G103): filtering only changes what is in view, like
+- The panel filter does not go in the App Log (tdp note.7): filtering only changes what is in view, like
   moving the cursor. The lib's list filter (`/`) logged nothing already; only the comments and docs change. An app
   that logs its own filter takes that out
 
@@ -152,7 +167,7 @@ Everything since v1.0.2, the betas v1.1.0-beta.1 to beta.3 included:
 - The App Log: a switch of screens the user runs, by the screen's key or from the global operation popup, goes in by
   itself as `Switched to <screen>` (tdp note.7's words). The app logs every operation of its own the user runs, one
   that only looks too (opening a viewer); moving the cursor or the focus, the Space menu, `?` and `!` are not logged.
-  The list's own filter (`/`) is not logged yet: what to write for it is not in tdp (G103)
+  The list's own filter (`/`) is not logged yet: what to write for it is not in tdp
 - tdptest: `Check` fails a `MinWidth`, `MinHeight` above 60 × 32 and a `NarrowBelow` above 60, naming the setting; it
   launches on 60 × 32 in place of 80 × 40, where every frame is checked as before; under the least size it checks the
   three rows, their order and which go first, also at 30 columns and two rows. `Sizes` has 59 × 32, 60 × 31 and
@@ -168,7 +183,7 @@ Everything since v1.0.2, the betas v1.1.0-beta.1 to beta.3 included:
   `install.ps1`, `uninstall.ps1` with a Windows build), the Makefile of project.5 and the CHANGELOG of project.6. A
   failure names the file, shows the difference and says which template to copy again and where the lib's copy is. The
   lib's own module is not checked (tdp E8) (harness: hostu's `family.mk` lacked `dev` and nothing caught it)
-- How far a mark reaches, as tdp v0.10.3 writes it (project.2, from G102): a `# app:` comment in `.goreleaser.yaml`
+- How far a mark reaches, as tdp v0.10.3 writes it (project.2): a `# app:` comment in `.goreleaser.yaml`
   stays whole, its other lines too, and covers the value of the key right below it, a list or a whole block included,
   the key's name kept; `dependencies` is added where its comment is, and `test:` stays as it is. The Windows lines
   lose only their leading `# `; the trailing `# Windows` stays. The `<APP>` in `uninstall.sh`'s comment stays as it is
@@ -191,7 +206,7 @@ Everything since v1.0.2, the betas v1.1.0-beta.1 to beta.3 included:
 
 ## v0.5.1 — tdp v0.10.1
 
-- The error row of a popup of the app's own with `Actions` is the app's to decide (tdp popup.8, from G101): the
+- The error row of a popup of the app's own with `Actions` is the app's to decide (tdp popup.8): the
   lib's, from `Check`, takes no focus as in an input popup; an app that wants another leaves `Check` out and draws its
   own as the last rows of its content. Nothing changes in the lib's behaviour
 
@@ -216,13 +231,13 @@ Everything since v1.0.2, the betas v1.1.0-beta.1 to beta.3 included:
 
 - `Terminal.OnLeave` runs when the exit key is accepted, asked first or not, once the focus is out (and, with
   `Ends`, the program told to stop): where the focus goes after leaving is the app's (Rules K10), such as back to
-  the list row of the session left (sshu SS45). The app's own keys that call `Hide` do not run it; unset, nothing
+  the list row of the session left (from sshu). The app's own keys that call `Hide` do not run it; unset, nothing
   changes
 - The showcase: leaving [1] SHELL puts the focus on its row in [2] SESSIONS
 
 ## v0.4.21 — tdp v0.9.16
 
-- A pointed panel (layout/panel, the frame; sshu SS44): `List.Points` says which panel on the screen a row stands
+- A pointed panel (layout/panel, the frame; from sshu): `List.Points` says which panel on the screen a row stands
   for. While the list has the focus, the panel its cursor's row stands for has its frame in Lavender, its capsules
   with it, still thin and square: it is not focused, and its content is dimmed as any panel's without the focus
   (a stream's and a PTY's not). Another row points at its own panel, or at none when its panel is not on the screen;
@@ -243,11 +258,11 @@ Everything since v1.0.2, the betas v1.1.0-beta.1 to beta.3 included:
 - tdptest: a Driver fails a test whose frames showed a line break by its name in Red (`\n`, `\r`) by default, in an
   app's own tests too, reported when the test ends. `Driver.AllowLineBreaks` lets it be, for data with such names on
   purpose, set any time before the end; `Check` sets it when the `App` is `Tricky`. It takes the place of v0.4.18's
-  `Driver.LineBreaks`, which was off by default (sshu SS43)
+  `Driver.LineBreaks`, which was off by default (from sshu)
 
 ## v0.4.18 — tdp v0.9.15
 
-- An error popup's message and a toast's text come a row at a time (components, control characters; sshu SS43):
+- An error popup's message and a toast's text come a row at a time (components, control characters; from sshu):
   `Error(title, message...)`, `ErrorAbout(title, subject, message...)`, `Toast(kind, text...)`, each string a row
   of its own, folded when too long, no blank row between; calls of one string compile as they did. The app's own
   text carries no line break, so a `\n` on the screen is from outside and stays its name in Red. The App Log has
@@ -259,7 +274,7 @@ Everything since v1.0.2, the betas v1.1.0-beta.1 to beta.3 included:
 ## v0.4.17 — tdp v0.9.14
 
 - Where `h|l` switch tabs the lib writes `h|l:tab` in the hint, the app giving nothing (components/layout/panel,
-  layout/popup, dialog/note, hint; filu FL27): on a panel of two tabs or more after `Enter`, in a viewer of two tabs
+  layout/popup, dialog/note, hint; from filu): on a panel of two tabs or more after `Enter`, in a viewer of two tabs
   or more (the compare's `UNIFIED`/`SPLIT`, a viewer of pages) first. Not with one tab, nor while `h|l` do something
   else: a panel's mode, a viewer's selection, the compare's `SPLIT` off on a narrow terminal. Ahead of the
   panel's own keys, it is dropped after them when the hint does not fit
@@ -283,13 +298,13 @@ Everything since v1.0.2, the betas v1.1.0-beta.1 to beta.3 included:
 ## v0.4.14 — tdp v0.9.12
 
 - A checkbox group's options are two cells further in than its `Select all`, on a form, a value panel and in a
-  checkbox popup, where they stay so while filtering hides it (components/input/checkbox, select all; kbu KB31)
+  checkbox popup, where they stay so while filtering hides it (components/input/checkbox, select all; from kbu)
 - With every option of a form's group disabled, its `Select all` is disabled too: drawn in Surface2, not a focus item
 
 ## v0.4.13 — tdp v0.9.11
 
 - Every checkbox group (two options or more) has a first row of its own, `Select all` (components/input/checkbox,
-  select all; kbu KB31): on a form and a value panel on the label's row, a focus item, the options under it; first in
+  select all; from kbu): on a form and a value panel on the label's row, a focus item, the options under it; first in
   a checkbox popup's list, scrolling with it, hidden while something is typed. It is not an option: not in the value,
   not counted among the five drawn on a form; the app gives nothing. Ticking it ticks every option, the unavailable
   ones too, unticking unticks them all, with the keys and at the time an option's tick takes effect (at once on a
@@ -301,12 +316,12 @@ Everything since v1.0.2, the betas v1.1.0-beta.1 to beta.3 included:
 
 - A mode's name opens a character a frame: the junctions first, then one more character every 32ms, so every frame
   changes and the time goes with the name (`Drag` about 160ms, `Compare` about 256ms), no longer spread over 288ms
-  (kbu KB30)
+  (from kbu)
 
 ## v0.4.11 — tdp v0.9.9
 
 - A mode's name opens from its middle on the frame and closes back to the line (components/layout/panel, the
-  frame; kbu KB30): the junctions side by side first, then apart, the name showing from its middle, about 288ms by
+  frame; from kbu): the junctions side by side first, then apart, the name showing from its middle, about 288ms by
   the clock whatever its length; switched halfway it turns where it is. Only the name moves: the mode and the
   frame's colour change at once, keys work all the while, and the title keeps the name's room. On panels, in popups
   and on PTYs. tdptest plays it to its end with `Auto` on and steps it with `Auto` off
@@ -315,7 +330,7 @@ Everything since v1.0.2, the betas v1.1.0-beta.1 to beta.3 included:
 
 ## v0.4.10 — tdp v0.9.8
 
-- With a popup open (a toast is not one) the first `q` or `Ctrl-C` never leaves at once (Rules K9, kbu KB29): an app
+- With a popup open (a toast is not one) the first `q` or `Ctrl-C` never leaves at once (Rules K9, from kbu): an app
   with no `App.Quit` asks `Quit <app>?`, and a `QuitFlow` that would leave there and then asks it first, leaving on
   `Enter`; a flow that asks something of its own asks only that. `Esc` goes back to the popup; on a panel the app's
   flow is as it was; the second `Ctrl-C` still leaves at once
@@ -323,7 +338,7 @@ Everything since v1.0.2, the betas v1.1.0-beta.1 to beta.3 included:
 
 ## v0.4.9 — tdp v0.9.7
 
-- `Space` in a mode opens the mode's Space menu (Rules K11; components/dialog/menu, in a mode; kbu KB28), on a panel,
+- `Space` in a mode opens the mode's Space menu (Rules K11; components/dialog/menu, in a mode; from kbu), on a panel,
   in a popup (a viewer's selection, a reorder's Drag) and on a PTY (History, selection: `Space` no longer goes to the
   program there). It is titled as where the mode is; `ITEM OPERATION` lists what can be done to the item under the
   cursor, run as its key (Compare's `[C]ompare with <anchor>`, `[v] Select`, then `[y] Copy`, `[Enter] Drop`), off
@@ -353,12 +368,12 @@ Everything since v1.0.2, the betas v1.1.0-beta.1 to beta.3 included:
 ## v0.4.6 — tdp v0.9.5
 
 - `List.Anchor`: the row a mode keeps picked while the cursor moves on (a Compare mode's first pick) is drawn whole
-  in Yellow with Base text, not bold, no arrow, as a selected range; the cursor on it wins (kbu KB27)
+  in Yellow with Base text, not bold, no arrow, as a selected range; the cursor on it wins (from kbu)
 
 ## v0.4.5 — tdp v0.9.5
 
 - Capsule chains (panel titles and tabs, screen chips, a popup's tabs) say every colour they use, so they look the
-  same on any terminal ground (kbu KB26, tdp v0.9.4 and v0.9.5): an unselected part is on Mantle `#181825`, every join
+  same on any terminal ground (from kbu, tdp v0.9.4 and v0.9.5): an unselected part is on Mantle `#181825`, every join
   is a slant the way of the left end, in the chain's colour on Mantle — U+E0BC out of a selected part, U+E0BA into
   one, the thin U+E0BB between two unselected ones; the ends take the ground of the part beside them, nothing behind
   them. U+E0B1 is no longer used
@@ -388,19 +403,19 @@ Everything since v1.0.2, the betas v1.1.0-beta.1 to beta.3 included:
 
 - `App.MoveAsideRecord` (Rules E3, when a file cannot be read): for data kept one record per file, `Enter` only
   renames the record that cannot be read to `.bak` and runs the app's reread, nothing new made in its place; the
-  question is `Move it to <name>.bak and go on without it?` (kamonu KM18)
+  question is `Move it to <name>.bak and go on without it?` (from kamonu)
 - `Column.Line` marks a list column of lines of text (a line of source code, of a log): a Tab in it is drawn as
-  `input_tab_width` spaces, other control characters still by name in Red (components, control characters; webu
-  WB21)
+  `input_tab_width` spaces, other control characters still by name in Red (components, control characters;
+  from webu)
 
 ## v0.4.1 — tdp v0.9.0
 
 - tdptest: `App.Tricky` says the data `Seed` puts in has tricky values (`Tricky`): `Check` then leaves a colour code
-  drawn as text alone, the data's, not a colour of the app's own left out of its spans (locku LK21)
+  drawn as text alone, the data's, not a colour of the app's own left out of its spans (from locku)
 
 ## v0.4.0 — tdp v0.9.0
 
-tdp v0.9.0 settles how control characters are drawn (G100), gives every app an App Log and a way out of a file it
+tdp v0.9.0 settles how control characters are drawn, gives every app an App Log and a way out of a file it
 cannot read, and keeps History and the selection for interactive terminals. Upgrading: see "Changes to make" below.
 
 - Control characters are drawn in three groups (components, control characters):
@@ -414,7 +429,7 @@ cannot read, and keeps History and the selection for interactive terminals. Upgr
   - Reading content — a viewer, a panel's log (`Pager`), a finder's preview, a file preview — is drawn as a terminal
     draws it: `\n` starts another line, one in a line the app gave too; a `\r` inside a line leaves its last state
     (`10%\r100%` is `100%`); colour codes colour, a file's own too; any other control character or escape sequence
-    is its name in Red. `Reading` draws reading content that way for a body of the app's own (kbu KB24)
+    is its name in Red. `Reading` draws reading content that way for a body of the app's own (from kbu)
 - A proposal (`TextInput.Suggest`) taken with nothing touched is checked for control characters too (input-52)
 - Every app has an App Log (components/dialog/note, Rules K1, F5): `!` on a panel opens it, a viewer, newest last;
   each entry is its time, its level (`INFO` `OK` `WARN` `ERR`) and what happened. Every toast and error popup goes
@@ -512,15 +527,15 @@ cannot read, and keeps History and the selection for interactive terminals. Upgr
 
 ## v0.2.0 — tdp v0.8.1
 
-- tdp v0.8.1 writes down G98 and G99 as the library does them (a list's location row stays when it is empty; an
+- tdp v0.8.1 writes down two things as the library does them (a list's location row stays when it is empty; an
   unwrapped viewer scrolls across under the selection cursor); its Windows cache folder and item-by-item moves are
   the app's
-- tdp v0.8.0 settles the family's refactor; the library follows it in the third batch below. G96 is settled as
+- tdp v0.8.0 settles the family's refactor; the library follows it in the third batch below. A tab is settled as
   the library had it but for values: text on the screen draws a tab as `input_tab_width` spaces, a value on a
-  form or a panel as a red `\t`; G97 as the library had it (a preview from a line puts it on the third row)
+  form or a panel as a red `\t`; a preview from a line as the library had it (the line on the third row)
 
 - tdp v0.7.3 writes down that text which is only shown (a confirm, a toast, an error popup, the splash) does not
-  draw the space it breaks at, as the library already did (G95); the checklist now counts genes, which the library
+  draw the space it breaks at, as the library already did; the checklist now counts genes, which the library
   does not apply
 - tdp v0.7.4 changes only the checklist (an item can be judged "cannot tell"), so nothing changes
 - A popup on a terminal shorter than its frame (5 rows and under, 1×1) is cut off instead of panicking; on a short
@@ -658,7 +673,7 @@ cannot read, and keeps History and the selection for interactive terminals. Upgr
   on the terminal's clipboard (`Clipboard`, OSC 52) and a Success toast says `Copied` (components/dialog/note)
 - `Viewer.NoWrap` keeps a long line on its row, cut with `…`; `Viewer.NoNumbers` leaves out the line numbers, for
   a table the app lays out. In the selection mode every line scrolls across to keep the cursor in sight, as vim's
-  nowrap does, `…` where each is cut on either side; a terminal's selection mode does the same (G99)
+  nowrap does, `…` where each is cut on either side; a terminal's selection mode does the same
 - `Viewer.Hits` and `Current` draw a search the app runs: every hit underlined in its own colours, the current
   one as the cursor block; `FindText` finds them (components/dialog/note)
 - A viewer's key reference lists its scroll keys only when its lines do not all fit
@@ -695,7 +710,7 @@ cannot read, and keeps History and the selection for interactive terminals. Upgr
   the next row
 - A finder with no results, a search still listing before its first result included, leaves `Enter` out of the hint,
   as `Enter` does nothing there (`Tab:list Esc:cancel`, `Tab|/:filter Esc:cancel`), and puts it back once there are
-  results (G93). On a checkbox popup's list `Enter` still applies the checks, now with no results too, and only
+  results. On a checkbox popup's list `Enter` still applies the checks, now with no results too, and only
   `Space` is left out. The width stays what it was when the popup opened
 - The colour picker's hjkl move only among R, G and B, wrapping there; `Choose` is reached only with `Tab`, as a
   form's two areas
@@ -703,10 +718,10 @@ cannot read, and keeps History and the selection for interactive terminals. Upgr
   with no marks
 - Every group of the showcase's `Open with` menu has a title, the first too (Rules M8); `MenuSection` says so
 - A select or checkbox popup that scrolls is wide enough for its whole hint and its scroll position at the widest,
-  as a menu already was: with 18 options at 80×24 its frame was 42 cells and dropped `Esc:cancel` (demou's DM3)
+  as a menu already was: with 18 options at 80×24 its frame was 42 cells and dropped `Esc:cancel` (from demou)
 - Typing in a panel filter that matches nothing, the footer leaves `Enter` out: `Tab:list Esc:clear` (tdp v0.7.2)
 - tdp v0.7.2 also writes down what the library already did: in the textarea and the viewer a space that does not
-  fit starts the next row (G94); a panel's hint with no item in its list leaves out `Enter` and the keys on an item;
+  fit starts the next row; a panel's hint with no item in its list leaves out `Enter` and the keys on an item;
   a popup at its tallest leaves the chip row or the statusbar and the footer in view, covering the divider
 
 ## v0.1.12 — tdp v0.6.15

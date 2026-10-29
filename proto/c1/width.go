@@ -1,4 +1,4 @@
-// Package main is a throwaway prototype for C1 in the blind-spot record: does
+// Package main is a throwaway prototype that checked one question: does
 // lipgloss v2's layer compositing keep frames straight when a Nerd Font icon
 // advances the cursor two cells (tdp E5)? It is not the lib.
 package main

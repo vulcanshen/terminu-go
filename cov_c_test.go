@@ -1580,7 +1580,7 @@ func TestListCursor(t *testing.T) {
 
 // TestListAnchor: the row a mode keeps picked (List.Anchor) is Yellow with
 // Base text, not bold, across the row, with no arrow; the cursor on it wins
-// (kbu KB27).
+// (from kbu).
 func TestListAnchor(t *testing.T) {
 	ta := newTestApp(t)
 	ta.list.Anchor = "3"
@@ -2030,7 +2030,7 @@ func TestListLocationRow(t *testing.T) {
 	}
 	l.SetRows(nil)
 	if lines := l.Draw(30, 8, true); len(lines) != 8 || !strings.Contains(StripStyles(lines[0]), "/components/layout") {
-		t.Errorf("an empty list keeps its location (G98, for now): %q", StripStyles(strings.Join(lines, "|")))
+		t.Errorf("an empty list keeps its location: %q", StripStyles(strings.Join(lines, "|")))
 	}
 	if got := len(l.Draw(30, 0, true)); got != 0 {
 		t.Errorf("%d rows drawn in 0", got)
@@ -2432,7 +2432,7 @@ func TestPanelFilterFocusReturn(t *testing.T) {
 
 // TestValuesEmptyState: a one-value-per-row panel with nothing to list says
 // so as a list does, the fact and the hint in Overlay0 (tdp screen.8;
-// ccdrawu CD23).
+// from ccdrawu).
 func TestValuesEmptyState(t *testing.T) {
 	ta := newTestApp(t)
 	ta.values.Fields = nil

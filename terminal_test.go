@@ -223,7 +223,7 @@ func TestTerminalSelectMode(t *testing.T) {
 
 // TestTerminalExitKey: the exit key is the app's, Alt-Esc unless it says;
 // the hint shows it as it is now; another asks first only when the app says
-// (tdp K10; sshu SS5, SS6).
+// (tdp K10; from sshu).
 func TestTerminalExitKey(t *testing.T) {
 	ta, term, sent := ptyApp(t)
 	term.ExitKey = "Alt-q"
@@ -415,7 +415,7 @@ func TestToastPositionOverTerminal(t *testing.T) {
 
 // TestTerminalResizeWhileExiting: drawn at a new size while its program ends,
 // before the update loop hears of it, a terminal resizes the PTY its reader
-// is closing; the two are kept apart (sshu SS10, go test -race).
+// is closing; the two are kept apart (from sshu, go test -race).
 func TestTerminalResizeWhileExiting(t *testing.T) {
 	term := &Terminal{Command: []string{"sh", "-c", "exit 0"}}
 	term.Start()
@@ -441,7 +441,7 @@ func TestTerminalResizeWhileExiting(t *testing.T) {
 
 // TestTerminalKeyTakesSeveral: one of the app's keys in a PTY can take
 // several keys, written once in the footer, and its DoKey hears which
-// (tdp K10, M5; sshu SS12).
+// (tdp K10, M5; from sshu).
 func TestTerminalKeyTakesSeveral(t *testing.T) {
 	ta, term, sent := ptyApp(t)
 	var got []string
@@ -459,8 +459,8 @@ func TestTerminalKeyTakesSeveral(t *testing.T) {
 }
 
 // TestTerminalFirstOutput: a terminal tells the app once when its program
-// first prints, so the app can end the panel's loading (tdp K10, F7; sshu
-// SS11).
+// first prints, so the app can end the panel's loading (tdp K10, F7; from
+// sshu).
 func TestTerminalFirstOutput(t *testing.T) {
 	ta := newTestApp(t)
 	calls := 0

@@ -59,7 +59,7 @@ func TestMoveAside(t *testing.T) {
 
 // TestMoveAsideRecord: data kept one record per file: Enter only renames the
 // record that cannot be read to .bak, and the app reads the rest again; the
-// question says go on without it (E3-22; kamonu KM18). A rename that fails
+// question says go on without it (E3-22; from kamonu). A rename that fails
 // asks the same again.
 func TestMoveAsideRecord(t *testing.T) {
 	dir := t.TempDir()

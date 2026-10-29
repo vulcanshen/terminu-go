@@ -88,7 +88,7 @@ func TestCheckFindsColourCodes(t *testing.T) {
 
 // TestCheckTrickySeed: seeded data with a colour code in a name, drawn as
 // text as it should be, is not taken for a colour left out of spans when the
-// App says it is Tricky (locku LK21).
+// App says it is Tricky (from locku).
 func TestCheckTrickySeed(t *testing.T) {
 	Check(t, App{Name: "tiny", Tricky: true, New: func() *terminu.App {
 		ty := newTiny()
@@ -210,7 +210,7 @@ func breakingApp() *terminu.App {
 
 // TestCheckFindsLineBreaks: Check fails an app whose own text carries a line
 // break, drawn by its name in Red; it runs in a child test process, which
-// must fail (components-30; sshu SS43). An app saying its data is Tricky is
+// must fail (components-30; from sshu). An app saying its data is Tricky is
 // not failed for one.
 func TestCheckFindsLineBreaks(t *testing.T) {
 	if os.Getenv("TDPTEST_CHILD") == "breaking" {

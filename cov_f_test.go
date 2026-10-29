@@ -2134,7 +2134,7 @@ func TestCheckboxUnavailableInPlace(t *testing.T) {
 
 // TestSearchInputNotBlocked: a text input that is only searched for draws a
 // pasted control character and takes it on Enter (tdp input.8;
-// kbu KB11).
+// from kbu).
 func TestSearchInputNotBlocked(t *testing.T) {
 	ta := newTestApp(t)
 	got := "unset"

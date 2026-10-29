@@ -517,7 +517,7 @@ func TestS5SplashTooSmall(t *testing.T) {
 // TestS5SplashRefusesWideText: no row of the text is wider than the mark (50
 // columns); the lib refuses one when it builds the splash (tdp S5, E8).
 // TestPlaySplash: the app can play a splash of its own accord, any splash it
-// has; any key closes it, as the app's own on V (tdp S3; kamonu KM8).
+// has; any key closes it, as the app's own on V (tdp S3; from kamonu).
 func TestPlaySplash(t *testing.T) {
 	ta := withSplash(newTestApp(t))
 	played := 0
@@ -540,7 +540,7 @@ func TestPlaySplash(t *testing.T) {
 }
 
 // TestS5SplashKeepsTime: the reveal goes by the time since it opened, not by
-// counting ticks that come late (hostu HU9).
+// counting ticks that come late (from hostu).
 func TestS5SplashKeepsTime(t *testing.T) {
 	ta := newTestApp(t)
 	ta.Splash, _ = showcaseSplash(t)

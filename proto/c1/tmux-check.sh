@@ -1,5 +1,5 @@
 #!/bin/sh
-# Runs the C1 prototype in an 80x24 tmux pane where Nerd Font icons can be made
+# Runs the width prototype in an 80x24 tmux pane where Nerd Font icons can be made
 # to take two cells (tmux codepoint-widths; run on 3.7c), then prints the pane with
 # every icon replaced by one "@" per cell it takes, so the columns read true.
 #

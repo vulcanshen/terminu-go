@@ -635,7 +635,7 @@ func TestSpinning(t *testing.T) {
 
 // TestAppMovesFocus: the app moves the focus or the screen where the user
 // expects it (tdp K3); the focus stays on its panel when panels come and
-// go, and a screen whose panels got fewer does not panic (sshu SS3).
+// go, and a screen whose panels got fewer does not panic (from sshu).
 func TestAppMovesFocus(t *testing.T) {
 	ta := newTestApp(t)
 	s := ta.Screen()
@@ -805,7 +805,7 @@ func TestL1LeastSize(t *testing.T) {
 }
 
 // TestOnResize: the app hears of a new terminal size after the lib has laid
-// the screen out again (tdp L1; kbu KB20).
+// the screen out again (tdp L1; from kbu).
 func TestOnResize(t *testing.T) {
 	ta := newTestApp(t)
 	var got [][2]int

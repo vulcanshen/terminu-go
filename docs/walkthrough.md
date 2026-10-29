@@ -1,6 +1,6 @@
 # 手動走一遍展示場
 
-規範確認的第三件事是 user 親自走過展示場。這份是起點：怎麼開、每個畫面看什麼、C2–C4（要在真的終端機上看過才知道的事）怎麼驗。
+規範確認的第三件事是 user 親自走過展示場。這份是起點：怎麼開、每個畫面看什麼、要在真的終端機上看過才知道的三件事怎麼驗。
 每一條規定在哪裡按得到，查 [`coverage.md`](coverage.md)。
 
 ## 開起來
@@ -83,7 +83,7 @@ go build -o /tmp/showcase ./examples/showcase
 **t — terminal**：PTY。
 - `[1] SHELL` 是 panel 裡的 shell：`Enter` 進去打字，`Alt-Esc` 出來（先問）。在外面按 `?`，最後一段 `TERMINAL` 寫 shell 裡的鍵。
 - `[2] SESSIONS` 每一列 `Enter` 開一個 terminal popup：`shell`、`keys`（`cat -v`，看每個鍵送了什麼）、`top`、`vi`。
-- popup 裡 `Alt-t` 藏起來；`Alt-b` 讓展示場卡 2 秒（C2 用），卡完會跳一個 toast。
+- popup 裡 `Alt-t` 藏起來；`Alt-b` 讓展示場卡 2 秒（試 `Esc` 與 `Alt-Esc` 用），卡完會跳一個 toast。
 
 **K — Kinds**：清單分組與明細。
 - `[1] KINDS` 是分組的清單（WORKLOADS、NETWORK、CONFIG、STORAGE、CLUSTER）：`j|k` 會跳過分組標題，`gg|G` 到第一個、最後一個種類；
@@ -95,7 +95,7 @@ go build -o /tmp/showcase ./examples/showcase
 
 **splash**：在 panel 上按 `V`（I 的 `[2] FILES` 除外），任意鍵關掉。畫的是 tdp 的 mark（藍色 U 框裡一個金色的 T），底 → T → U 框一段一段揭露，最後是下面的字。
 
-## C2：`Esc` 與 `Alt-Esc`
+## `Esc` 與 `Alt-Esc`
 
 在 **tmux 裡**與**不進 tmux 的 Ghostty** 各做一次。`t` → `2` → 移到 `keys` → `Enter`，畫面上會印出每個鍵送給程式的 byte
 （`Esc` 印成 `^[`）。
@@ -109,16 +109,16 @@ go build -o /tmp/showcase ./examples/showcase
 
 每一種記下「在哪個環境、按了什麼、看到什麼」，跟我說。
 
-## C3：排序 glyph 的方向
+## 排序 glyph 的方向
 
 P → `[1] PODS`：按 `s`（Sort by），選 `Name`，再選 `Then by age`：照名字升冪、再照 age 降冪，表頭 `NAME` 旁邊是升冪的 glyph
 （U+F160）、`AGE` 旁邊是降冪的 glyph（U+F161），兩個同時看得到。
 
 看兩個 glyph 各自「看起來」是由小到大還是由大到小，跟規範的名稱（升冪、降冪）對不對得上。截一張表頭的圖。
 
-## C4：每一個 glyph 畫出來看一次
+## 每一個 glyph 畫出來看一次
 
-[`coverage.md`](coverage.md) 最後的「glyph（C4 的清單）」一節列了規範指定的每一個 glyph，以及在展示場的哪裡出現。每一個看三件事：
+[`coverage.md`](coverage.md) 最後的「glyph」一節列了規範指定的每一個 glyph，以及在展示場的哪裡出現。每一個看三件事：
 
 1. **前進幾格**：glyph 後面的字有沒有被吃掉或多空一格；它所在那一列的右框有沒有對齊。
 2. **清不清楚**：尤其 outline 的（`nf-md-checkbox_blank_outline`、`nf-md-shield_alert` 等）線會不會太細。

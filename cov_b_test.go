@@ -1700,7 +1700,7 @@ func TestF2LayersCloseTogether(t *testing.T) {
 
 // TestF7ShortScreenKeepsFooter: on a screen too short for a popup, it is
 // drawn no taller than its height, so the chip row and the footer stay in
-// sight (tdp F7; demou DM5).
+// sight (tdp F7; from demou).
 func TestF7ShortScreenKeepsFooter(t *testing.T) {
 	calls := inputOpeners(t)
 	for name, open := range dialogOpeners() {
@@ -1737,7 +1737,7 @@ func TestF7ShortScreenKeepsFooter(t *testing.T) {
 
 // TestInputShortScreenKeepsTypingRow: an input too short for its prompt keeps
 // the typing row in sight, and the error row while there is room for both
-// (tdp popup; demou DM6).
+// (tdp popup; from demou).
 func TestInputShortScreenKeepsTypingRow(t *testing.T) {
 	for sh := 5; sh <= 10; sh++ {
 		ta := newTestApp(t)
@@ -1758,7 +1758,7 @@ func TestInputShortScreenKeepsTypingRow(t *testing.T) {
 
 // TestOnCancel: a confirm or an input closed with no answer, by Esc or by the
 // popup under it closing, runs its OnCancel, once; an answer does not, even
-// one that leaves the value as it was (tdp F6; webu WB3, sshu SS8).
+// one that leaves the value as it was (tdp F6; from webu, sshu).
 func TestOnCancel(t *testing.T) {
 	ta := newTestApp(t)
 	cases := []struct {
@@ -1810,8 +1810,8 @@ func TestOnCancel(t *testing.T) {
 
 // TestF6AskFor: an action can make its question when it runs, after Hidden
 // and Disabled, or ask nothing; from the Space menu its confirm opens over
-// the menu, and Esc goes back to it (tdp F6, T1; kamonu KM12, filu FL15,
-// sshu SS29, webu WB15).
+// the menu, and Esc goes back to it (tdp F6, T1; from kamonu, filu,
+// sshu, webu).
 func TestF6AskFor(t *testing.T) {
 	ta := newTestApp(t)
 	var order []string

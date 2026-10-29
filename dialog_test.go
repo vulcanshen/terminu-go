@@ -104,7 +104,7 @@ func TestViewerNoWrapNoNumbers(t *testing.T) {
 // TestViewerNoWrapFollowsCursor: in a NoWrap viewer the selection's cursor
 // past the cut scrolls every line across to keep it in sight, as vim's
 // nowrap does, "…" where each is cut on either side; what is cut is still
-// selected and copied (G99, settled A; tdp note).
+// selected and copied (tdp note).
 func TestViewerNoWrapFollowsCursor(t *testing.T) {
 	ta := newTestApp(t)
 	ta.resize(40, 20)
@@ -178,9 +178,80 @@ func TestViewerSearchHits(t *testing.T) {
 	}
 }
 
+// TestViewerSearch: / asks for the text in an input popup with the app's
+// words; the hits are found and the first is in sight; n|N go to the next and
+// the previous, wrapping at the ends and scrolling only when it is out of
+// sight; with none an Info toast; the hint has /:search but not n|N, which
+// are in ? while there are hits; the hits go when the viewer closes (tdp
+// note.3, note-86).
+func TestViewerSearch(t *testing.T) {
+	ta := newTestApp(t)
+	lines := make([]string, 60)
+	for i := range lines {
+		lines[i] = fmt.Sprintf("line %d", i+1)
+	}
+	lines[4], lines[39], lines[40] = "image: nginx", "name: nginx", "app: NGINX"
+	v := &Viewer{Title: "YAML", Lines: lines, Search: &ViewerSearch{Title: "Search", Prompt: "Find in the YAML"}}
+	ta.Viewer(v)
+	ta.settle()
+	if h := fmt.Sprint(ta.topView().(*viewerView).hint()); h != "[{/ search} {v visual} {Esc close}]" {
+		t.Errorf("hint: %s", h)
+	}
+	inSight := func(line int) bool { return v.top <= line && line < v.top+v.visible }
+	find := func(q string) {
+		t.Helper()
+		ta.press("/")
+		if text := ta.screenText(); !strings.Contains(text, "SEARCH") || !strings.Contains(text, "Find in the YAML") {
+			t.Fatalf("/ did not ask for the text:\n%s", text)
+		}
+		for _, c := range q {
+			ta.press(string(c))
+		}
+		ta.press("Enter")
+	}
+	find("nginx")
+	if len(v.Hits) != 3 || v.Current != 0 || v.top != 0 {
+		t.Fatalf("found %v, current %d, top %d: the first in sight, nothing scrolled", v.Hits, v.Current, v.top)
+	}
+	if ta.press("n"); v.Current != 1 || !inSight(39) {
+		t.Errorf("n: current %d, top %d", v.Current, v.top)
+	}
+	if ta.press("n", "n"); v.Current != 0 || !inSight(4) {
+		t.Errorf("n past the last: current %d, top %d", v.Current, v.top)
+	}
+	if ta.press("N"); v.Current != 2 || !inSight(40) {
+		t.Errorf("N past the first: current %d, top %d", v.Current, v.top)
+	}
+	top := v.top // the hit before is in sight above it
+	if ta.press("N"); v.Current != 1 || v.top != top {
+		t.Errorf("N to a hit in sight: current %d, scrolled from %d to %d", v.Current, top, v.top)
+	}
+	var move []string
+	for _, s := range ta.topView().keyRef() {
+		for _, r := range s.rows {
+			move = append(move, r.Key)
+		}
+	}
+	if !slices.Contains(move, "/") || !slices.Contains(move, "n|N") {
+		t.Errorf("? with hits: %q", move)
+	}
+	find("zzz")
+	if tv, ok := ta.toast.view.(*toastView); !ok || tv.kind != Info || !strings.Contains(ta.screenText(), "No line has zzz") || len(v.Hits) != 0 {
+		t.Errorf("no hit: toast %v, hits %v", ta.toast, v.Hits)
+	}
+	ta.press("n", "Esc", "G") // n with no hit does nothing; Esc the toast
+	if find("nginx"); !inSight(4) {
+		t.Errorf("found from the bottom: top %d, the first hit out of sight", v.top)
+	}
+	ta.press("Esc")
+	if ta.top() != nil || v.Hits != nil || v.Current != 0 {
+		t.Errorf("closed: popup %v, hits %v", ta.top() != nil, v.Hits)
+	}
+}
+
 // TestErrorPopupBeforeTheSize: an error popup opened before the terminal's
 // size is known (App.Start) folds at the width it gets once it is: not a
-// character a row (sshu SS37).
+// character a row (from sshu).
 func TestErrorPopupBeforeTheSize(t *testing.T) {
 	ta := &testApp{App: anySize(New("t"))}
 	ta.AddScreen(&Screen{Name: "S", Panels: []*Panel{{Label: "P", Body: &Pager{}}}})
@@ -535,7 +606,7 @@ func TestKeyReferenceTitleKeepsName(t *testing.T) {
 
 // TestPopupSubjectErrorMenu: an error popup and a menu about one thing keep
 // its name as it is after ": " in the title (components, upper case;
-// tdp note; sshu SS33, filu FL14).
+// tdp note; from sshu, filu).
 func TestPopupSubjectErrorMenu(t *testing.T) {
 	ta := newTestApp(t)
 	ta.ErrorAbout("Rename failed", "notes.md", "a file called notes.md is already there")

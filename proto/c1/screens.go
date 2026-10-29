@@ -208,7 +208,7 @@ func e5Side(w, h int) []string {
 
 // e5Base is the whole screen: statusbar, two panels side by side, footer.
 func e5Base(w, h int) []string {
-	out := []string{pad(sDim.Render(" C1 prototype · icon width ")+sBlue.Render(itoa(iconWidth)), w)}
+	out := []string{pad(sDim.Render(" Width prototype · icon width ")+sBlue.Render(itoa(iconWidth)), w)}
 	sw := w / 3
 	side, main := e5Side(sw, h-2), e5Panel(w-sw, h-2)
 	for i := range side {

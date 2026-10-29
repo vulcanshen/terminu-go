@@ -102,7 +102,7 @@ func TestControlCharsNamesAndShortTexts(t *testing.T) {
 // TestControlCharsLineColumn: in a list column marked a line of text (Line)
 // a Tab is input_tab_width spaces, its layout; any other control character
 // is still its name in Red, and a column not marked keeps the Tab's name
-// (components, control characters: components-29; webu WB21).
+// (components, control characters: components-29; from webu).
 func TestControlCharsLineColumn(t *testing.T) {
 	ta := newTestApp(t)
 	ta.resize(160, 40)
@@ -185,7 +185,7 @@ func TestTabWidthWithoutRun(t *testing.T) {
 }
 
 // TestReadingForAppBodies: Reading draws reading content for a body of the
-// app's own as the Pager does (components, control characters; kbu KB24).
+// app's own as the Pager does (components, control characters; from kbu).
 func TestReadingForAppBodies(t *testing.T) {
 	rows := Reading("\x1b[32mgreen\x1b[0m", "10%\r100%", "x\x1b[2Jy", "one\ntwo", "t\tt", "crlf\r")
 	plain := make([]string, len(rows))

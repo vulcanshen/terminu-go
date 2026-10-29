@@ -388,7 +388,7 @@ func TestPopupWidthCountsScroll(t *testing.T) {
 	check("confirm", func(ta *testApp) {
 		ta.Confirm(Ask{Title: "Wipe", Question: "Wipe?", Verb: "wipe", Details: details}, nil)
 	}, "Enter:wipe Esc:cancel", "30-30 of 30")
-	// The finders too (demou's DM3: 18 options left Esc:cancel out).
+	// The finders too (from demou: 18 options left Esc:cancel out).
 	options := make([]string, 18)
 	for i := range options {
 		options[i] = string(rune('a' + i))
@@ -402,7 +402,7 @@ func TestPopupWidthCountsScroll(t *testing.T) {
 // TestFinderHintNoResults: with no results Enter does nothing on either row
 // and the hint leaves it out, back once there are results; a checkbox
 // popup's list still applies its checks and leaves out only Space; the hint
-// is whole (tdp finder, checkbox; G93).
+// is whole (tdp finder, checkbox).
 func TestFinderHintNoResults(t *testing.T) {
 	ta := newTestApp(t)
 	ta.resize(120, 30)
@@ -1136,7 +1136,7 @@ func TestConfirmHint(t *testing.T) {
 
 // TestLoadSelectAndChecks: a select or checkbox popup can open before its
 // options are there, loading in its title, as wide as it can be, and fill
-// as they come (tdp F7; kbu KB8).
+// as they come (tdp F7; from kbu).
 func TestLoadSelectAndChecks(t *testing.T) {
 	ta := newTestApp(t)
 	chose := -1
@@ -1170,8 +1170,8 @@ func TestLoadSelectAndChecks(t *testing.T) {
 
 // TestCommitFailureKeepsPopup: a write-back that fails opens an error popup
 // over the input, which stays with its value; closing it goes back there
-// (tdp popup.7, F4; ccdrawu CD24,
-// filu FL18, sshu SS33, locku LK10).
+// (tdp popup.7, F4; from ccdrawu,
+// filu, sshu, locku).
 func TestCommitFailureKeepsPopup(t *testing.T) {
 	ta := newTestApp(t)
 	taken := errors.New("a file called backup is already there")

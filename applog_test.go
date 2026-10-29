@@ -86,7 +86,7 @@ func TestAppLogScreenSwitch(t *testing.T) {
 
 // TestAppLogCancelled: an operation cancelled with Esc at the confirm before
 // it, at its form, or at the input popup that takes its value was not done
-// and goes unrecorded (tdp note.7, SS46).
+// and goes unrecorded (tdp note.7, from sshu).
 func TestAppLogCancelled(t *testing.T) {
 	ta, _ := logApp(t)
 	ta.press("x", "Esc") // Delete asks first
@@ -101,6 +101,35 @@ func TestAppLogCancelled(t *testing.T) {
 	ta.settle()
 	if len(ta.logs.entries) != 0 || len(ta.ran) != 0 || r.submitted != 0 || ta.top() != nil {
 		t.Errorf("logged %v, ran %q, submitted %d, a popup still open %v", ta.logs.entries, ta.ran, r.submitted, ta.top() != nil)
+	}
+}
+
+// TestAppLogModes: going into or out of a mode is not recorded: a panel's
+// (Drag, left with Esc and with its own key), a viewer's or a PTY's selection
+// mode, a layer deeper and back; what is done in it is, by its result: the
+// copy's toast (tdp note.7, note-77).
+func TestAppLogModes(t *testing.T) {
+	ta, _ := logApp(t)
+	ta.press("D", "Esc", "D", "Enter")
+	ta.Viewer(&Viewer{Title: "YAML", Lines: []string{"kind: Pod"}})
+	ta.settle()
+	ta.press("v", "v", "Esc", "Esc", "v", "v", "l", "y")
+	ta.settle()
+	var got []string
+	for _, e := range ta.logs.entries {
+		got = append(got, e.text)
+	}
+	if fmt.Sprint(got) != "[Copied]" {
+		t.Errorf("logged %q, want only the copy", got)
+	}
+	tt, _, _ := termWithHistory(t)
+	before := len(tt.logs.entries) // switched to its screen
+	tt.Update(altV)
+	tt.settle()
+	tt.press("v", "Esc", "Esc")
+	tt.settle()
+	if len(tt.logs.entries) != before {
+		t.Errorf("a PTY's selection mode logged %v", tt.logs.entries[before:])
 	}
 }
 

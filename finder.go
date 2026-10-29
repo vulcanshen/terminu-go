@@ -509,7 +509,7 @@ func (f *finderView) draw(w, h int, layer Color) []string {
 	// At 96 wide or more (w is the screen's width − 2 under 120) the list
 	// and the preview sit side by side, the facts under the preview. Below
 	// that the list and the facts share the top half and the preview takes
-	// the bottom, as wide as the popup (tdp finder; G30).
+	// the bottom, as wide as the popup (tdp finder).
 	lw := (w - 1) / 2
 	// Each box is cut or padded to its share: on a tiny screen a box would
 	// otherwise take more rows than it has.

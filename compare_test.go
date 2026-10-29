@@ -45,7 +45,7 @@ func compareApp(t *testing.T) (*testApp, *bool) {
 // the compare keys are off on the anchor and on a row that cannot be
 // compared; Enter compares; the same text is an Info toast; Esc leaves, the
 // anchor gone (tdp panel.9). The mode goes unrecorded in the App Log, its
-// toasts in as every toast (tdp note.7, KB34).
+// toasts in as every toast (tdp note.7, from kbu).
 func TestCompareMode(t *testing.T) {
 	ta, _ := compareApp(t)
 	ta.press("C")
@@ -261,7 +261,7 @@ func TestCompareResize(t *testing.T) {
 // nothing: on a panel of two tabs or more after Enter, in a viewer first;
 // not with one tab, nor while h|l do something else, a mode, the selection,
 // SPLIT off on a narrow terminal (panel-17, panel-19, popup-10, popup-11;
-// filu FL27).
+// from filu).
 func TestHintTab(t *testing.T) {
 	ta := newTestApp(t)
 	ta.resize(240, 40)

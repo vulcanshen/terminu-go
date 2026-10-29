@@ -1332,7 +1332,7 @@ func TestFormKeyReferenceFollowsFields(t *testing.T) {
 }
 
 // TestK6ShiftTabInKeyReference: with Shift-Tab going to the previous panel,
-// the panel's key reference says so with Tab (tdp K6; filu FL7).
+// the panel's key reference says so with Tab (tdp K6; from filu).
 func TestK6ShiftTabInKeyReference(t *testing.T) {
 	for _, on := range []bool{false, true} {
 		ta := newTestApp(t)
@@ -1347,7 +1347,7 @@ func TestK6ShiftTabInKeyReference(t *testing.T) {
 
 // TestM6HiddenGlobalNotInKeyReference: a global action whose object does not
 // exist now is not in the app-wide section of a panel's key reference (Rules
-// M6; sshu SS36).
+// M6; from sshu).
 func TestM6HiddenGlobalNotInKeyReference(t *testing.T) {
 	ta := newTestApp(t)
 	hidden := true
@@ -1367,7 +1367,7 @@ func TestM6HiddenGlobalNotInKeyReference(t *testing.T) {
 // TestValuesEnterInMenuAndKeys: what Enter does on a one-value-per-row panel
 // is in its Space menu and its key reference too, from the same place as the
 // hint; on a disabled field in the disabled colour; an Enter the app
-// registered itself is the only one (tdp M3, M6, K6; ccdrawu CD19).
+// registered itself is the only one (tdp M3, M6, K6; from ccdrawu).
 func TestValuesEnterInMenuAndKeys(t *testing.T) {
 	ta := newTestApp(t)
 	ta.press("3", "?")

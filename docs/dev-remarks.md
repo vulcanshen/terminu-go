@@ -1,7 +1,7 @@
 # terminu-go 開發者備忘
 
 terminu-go 是 terminu design principle（tdp）的 Go 實作：給 app 呼叫的 lib，加上展示場 `examples/showcase`。遵循 terminu design
-principle，目前對應 tdp v1.1.3。lib 只照 tdp 最新 tag 的文字做；規範沒寫或照做不好用的地方回報給 tdp，不在 lib 裡自己決定。
+principle，目前對應 tdp v1.1.4。lib 只照 tdp 最新 tag 的文字做；規範沒寫或照做不好用的地方回報給 tdp，不在 lib 裡自己決定。
 
 ## 運作方式
 
@@ -12,7 +12,7 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   `Width`、`Padding`、`Border`、`Align`，`JoinHorizontal`／`JoinVertical`、`Place`，以及 bubbletea-overlay 都不用 —— 它們用自己的
   寬度，icon 一律算一格。
 - **畫到終端機**：用 bubbletea v1 的 renderer。它把改變的列從第 0 欄整列重寫，終端機自己決定每個字落在哪一格，所以 icon 佔兩格
-  也對得上（C1：`proto/c1` 改用 v1 之後，在 icon 佔兩格與一格的 tmux 裡逐字比對過，框線都對齊、更新後不壞）。
+  也對得上（`proto/c1` 這個原型改用 v1 之後，在 icon 佔兩格與一格的 tmux 裡逐字比對過，框線都對齊、更新後不壞）。
   - 例外是 renderer 在列尾補的「清到行尾」：它用 `ansi.StringWidth`（icon 算一格）量每一列，比終端機寬短的列後面補 `ESC [ K`。
     icon 兩格時，含 icon 的列量起來一定比較短，整列寫滿之後還會送一次 `ESC [ K`，照 xterm 規矩的終端機（Ghostty 也是）會把最後一格
     （右框）擦掉；tmux 不會。lib 畫的每一列都剛好是終端機寬（L4），這個清除永遠是多餘的，所以 `App.Run` 交給 bubbletea 的輸出
@@ -33,7 +33,7 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
 - **上色**：自己寫 SGR（`Style.Render`，一律 24-bit），淡化（`Dim`）就是改寫每一列的 SGR。淡化往 `#0c0c13`（`dimTo`）靠，
   不是 Base：比 Base 暗的顏色也跟著變暗，膠囊串沒選中的段的 Mantle 被蓋住時就成了 Crust，不用另外寫特例。
 - **膠囊串**（`drawChain`）：串裡每一格都寫明前景與背景（沒選中的段與接縫是串色配 Mantle），只有兩端外側不塗，所以終端機的底
-  是什麼顏色都一樣（kbu 的 KB26）。`[N]` 與第一個 tab 由 `Panel.capsules` 併成一段，中間的空白一個 powerline 符號寬；`drawChain`
+  是什麼顏色都一樣（kbu 回報的）。`[N]` 與第一個 tab 由 `Panel.capsules` 併成一段，中間的空白一個 powerline 符號寬；`drawChain`
   遇到兩段相鄰都選中時也畫同樣的空白。
 - **app 自己的 popup**（`apppopup.go`）：`App.Popup` 把 app 的 `PopupBody` 包成 popup 疊裡的一層，跟 lib 自己的 popup 一樣走
   `measure`、`draw`、`key`。app 給框裡的大小（`Size`）、內容（`Draw`，框線到框線的寬度）、按鍵（`Key`）、hint、key reference 的鍵；
@@ -75,11 +75,11 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
 - **一行文字的欄**（`Column.Line`）：格子的字（含 `Styled` 每一段的字）先把 Tab 換成 `input_tab_width` 格空白再 `Escape`，
   其他控制字元照樣畫名字；app 給的 span 不改，換在複製的那份上。
 
-`proto/c1` 是驗證 C1（icon 佔兩格時，畫到終端機的列還對不對得上）的拋棄式原型，不是 lib 的一部分；lib 寫好後刪掉（go.mod 裡的 lipgloss 只有它在用）。
+`proto/c1` 是驗證 icon 佔兩格時、畫到終端機的列還對不對得上的拋棄式原型，不是 lib 的一部分；lib 寫好後刪掉（go.mod 裡的 lipgloss 只有它在用）。
 
 ## 設計決定
 
-- **bubbletea v1，不是 v2**（C1 驗出來，tdp 不用改就定案）：bubbletea v2 的 renderer 把 `View` 拆成自己的格子、只補改變的格子，lipgloss v2 的
+- **bubbletea v1，不是 v2**（`proto/c1` 驗出來，tdp 不用改就定案）：bubbletea v2 的 renderer 把 `View` 拆成自己的格子、只補改變的格子，lipgloss v2 的
   排版與 `Compositor`／`Canvas` 也是；兩者的寬度都換不了，icon 佔兩格時框線歪掉、更新後消失。要用 v2 就得自己重寫輸出層。
   user：v2 還不成熟，不為它打破既有狀態、重新造輪；等 v2 的 renderer 與排版能指定寬度函式（或正確處理 icon 佔兩格）時再升。
   輸出那一層盡量寫成換得掉的。
@@ -92,15 +92,15 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   `Style.Render` 碰到多列字串還會用自己的寬度補空白。lib 要的只有「這段字用這個顏色」，自己寫 SGR 就夠了，輸出也一定是 24-bit
   （淡化的前提）。app 內容的顏色要用 lip gloss 照用，淡化照樣改得到它的 SGR。
 - **app 自己的 popup 進 lib 的疊**（2026-10-15，user）：kamonu 畫格子的 popup 原本插不進 lib 的疊，kamonu 只好不用 `App.Run`、
-  自己包一層 program，照抄 Probe 與拿掉 `ESC [ K`，連疊在上面的 confirm、文字輸入、error popup、key reference 都自己畫。kamonu 記的
-  KM2（「lib 不放 app 自己的 popup」）理解成 lib 不做格子這種元件；通用的入口可以做：內容與按鍵歸 app，框與 core key 歸 lib。
+  自己包一層 program，照抄 Probe 與拿掉 `ESC [ K`，連疊在上面的 confirm、文字輸入、error popup、key reference 都自己畫。kamonu 原本
+  把「lib 不放 app 自己的 popup」理解成 lib 不做格子這種元件；通用的入口可以做：內容與按鍵歸 app，框與 core key 歸 lib。
   在五個 app 改用 lib 之前把 API 定下來，現在改只動到 kamonu 與 ccdrawu。
   - `Draw` 拿框線到框線的寬度，左右的留白 app 自己留：layout/popup 規定整列 cursor 與表單的 focus 色塊蓋住留白，lib 先留好就做不到。
   - 離開的 confirm 多一句用 `QuitNote`，不讓 app 自己換 `App.Quit`：kamonu 的回饋，沒存的狀態在三處變、三處復原，漏一處主畫面的
     `Quit` 也會帶著那句；在離開流程開始時問 body，不用存狀態。`App.Quit` 是 nil 時有 note 照樣先問（`Quit <app>?`）：app 給了 note
     就是要使用者看到。
   - 表單送出成功只關表單自己（`closeOnly`），不是關最上層：kamonu 在 `NEW KAMON` 的 Submit 裡開 `DRAW`，關最上層會關掉剛開的
-    `DRAW`、留下表單。層色也改成只數底下開著的層，`DRAW` 從第一格就是第 1 層色，不會等表單收完才跳色。在收的那層不算一層，規範原本沒寫，G90 補進 tdp v0.6.10。
+    `DRAW`、留下表單。層色也改成只數底下開著的層，`DRAW` 從第一格就是第 1 層色，不會等表單收完才跳色。在收的那層不算一層，規範原本沒寫，tdp v0.6.10 補進去了。
   - 打字列、模式、loading、下框的捲動位置先不做；要的時候用 optional method 加，`PopupBody` 不變。
 - **icon 與 powerline 符號各量各的**（tdp E5）：兩種寬度各自照「app 的變數 → 家族的變數 → 隔著 ssh 帶過來的 → 探測」決定
   （`<APP>__ICON_WIDTH`／`TERMINU__ICON_WIDTH`／`LC_TERMINU_ICON_WIDTH`，powerline 符號同一套）；探測時印一個 file icon、
@@ -113,19 +113,18 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   panel 的 `FilePreview` 還是畫的時候讀。
 - **剪貼簿走終端機**（OSC 52）：viewer 預設的複製把字交給 `Clipboard`，跟著下一個畫面在同一次 write 送出（`screenOutput`），
   不會插在畫面的 escape 序列中間；不呼叫系統的剪貼簿程式，隔著 ssh 也複製得到本機。
-- **viewer 的搜尋由 app 做**：terminu 給的兩條路（lib 自己做 `/`，或 app 標範圍、lib 照 S25 畫）選了後者。規範沒寫 viewer 搜尋的
-  打字列放哪，lib 自己做就得替規範決定；app 把命中交給 `Viewer.Hits`，打字用一般的 text input（`Search`），kbu、webu 原本的 `/`
-  與 `n|N` 照留。
+- **viewer 的搜尋是 lib 的**（tdp v1.1.4 的 note.3）：app 用 `Viewer.Search` 給 input popup 的字，`/`、找、底線、`n|N`、找不到的
+  toast、關掉時清掉都由 lib 做。tdp v1.1.4 以前規範沒寫搜尋怎麼問，lib 只畫 app 交來的命中；`Viewer.Hits`、`FindText` 留著，
+  給自己找的 app 用。沒有 cursor 的 panel（`Pager`）還沒有搜尋，家族要用時再加。
 - **最低尺寸預設 60×32**（tdp L1；tdp v0.11.0 以前是 80×40）：用 lib 的 app 在比較小的終端機裡會只看到名稱、提示與怎麼離開；
   版面在更小的畫面也畫得下的 app 自己調低
   （`App.MinWidth`、`MinHeight`）。測試的 app 都調到 1×1，各自的測試照樣在小畫面上跑。
 
 - **lib 執行的 operation 由 lib 記進 App Log**（tdp note.7，v0.11.0）：切換畫面是 lib 照登記產生、自己執行的，app 不知道，所以 lib
   自己記 `Switched to <畫面名>`（note.7 的例子）；app 用 `ShowScreen`、`Focus` 切過去的是 app 那個動作的結果，由 app 記。lib
-  的 list 篩選（`/`）也是 lib 執行的，照 note.7 不記：篩選只是換看得到的範圍（tdp v0.11.1，G103）。比較模式（`CompareAction`）
-  也照 note.7 不記，裡面跳的 toast 照樣記（tdp v0.11.2，KB34）；在 confirm、表單、input popup 上按 `Esc` 取消的動作沒做，lib
-  不記，也不跑 `Do`、`Submit`、`Done`（SS46）。清單上 `Enter`（或 menu 上那一列）進明細只是換 focus（K3），lib 不記（tdp v0.11.3，
-  DM42）。
+  的 list 篩選（`/`）也是 lib 執行的，照 note.7 不記：篩選只是換看得到的範圍（tdp v0.11.1）。比較模式（`CompareAction`）
+  也照 note.7 不記，裡面跳的 toast 照樣記（tdp v0.11.2）；在 confirm、表單、input popup 上按 `Esc` 取消的動作沒做，lib
+  不記，也不跑 `Do`、`Submit`、`Done`。清單上 `Enter`（或 menu 上那一列）進明細只是換 focus（K3），lib 不記（tdp v0.11.3）。
 - **tdptest 走 lib 內部的 hook，不開公開 API**（2026-10-20，harness 的請求）：driver 要知道 popup 還在不在播、有幾層、有沒有 toast、
   剪貼簿裡等著什麼，也要把 App 放上測試的時鐘。這些放在 `internal/testhook`（只有這個 module 裡的套件 import 得到），terminu 在
   `init` 填進去（`clock.go`）；app 看得到的只有 `App.Tick`。
@@ -133,7 +132,7 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   （hostu 少了 family.mk 的 `dev`，沒有一關抓到）。tgo 一版只對到一版 tdp，所以 lib 帶著那一版的 `project/` 範本
   （`tdptest/_project`：`_` 開頭的目錄 go 不當成 package，裡面的 `version.go` 才不會被編譯）；`TestTemplatesAreTdps` 與
   `TestTdpVersionIsTheChangelogs` 守住它跟 CHANGELOG 寫的 tdp 一致，跟新的 tdp 時兩個要一起換。標記管到哪裡照 tdp v0.10.3 的
-  project.2（G102 補進去的）：`app:` 只放行底下那一個鍵的值，註解、鍵名與 `# Windows` 照原樣，`<APP>` 也照原樣。要判斷的
+  project.2：`app:` 只放行底下那一個鍵的值，註解、鍵名與 `# Windows` 照原樣，`<APP>` 也照原樣。要判斷的
   （README 的段落、引用的寫法）不查。
 - **測試的時鐘，不是真的時間**：真的跑 32ms 一格的動畫，掃一次展示場要幾分鐘，toast 何時消失也跟機器快慢有關；harness 也要能停在
   開場動畫中間（F2）、自己推時間。時鐘從真的時間起算、對齊 loading icon 的一整圈（720ms），app 用真的時間算出來的期限（PIN 的暫停）
@@ -180,14 +179,14 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
     因為停不掉以 root 跑的指令，也不能讓 app 以為沒寫。
   - doas 不能從標準輸入讀密碼，照舊在 terminal popup 裡跑、讓它自己問；`doas -n` 失敗時分不出原因，跟 hostu 原本的做法一樣直接開
     terminal popup。Windows 不走 `Elevate`。
-- **旗標畫在標記欄**（tdp panel.7，v0.11.4，locku LK22）：`List.Flags` 保留標記欄，`Row.Flag` 是一列的 glyph 與顏色。
+- **旗標畫在標記欄**（tdp panel.7，v0.11.4，locku 回報的）：`List.Flags` 保留標記欄，`Row.Flag` 是一列的 glyph 與顏色。
   可以標記的清單同時開 `Flags` 是寫錯程式，跟登記了不能用的鍵一樣在 `AddScreen` panic，不放進 tdptest `Check`：
   `Check` 要等 app 寫了測試、跑起來才報，`AddScreen` 一開 app 就報。
 
 ## 已否決，不要重提
 
 - **bubbletea v2 與 lipgloss v2**：見「設計決定」。
-- **用 lipgloss 的 `Style` 排版、`Join*`、`Place`，或 bubbletea-overlay 疊 popup**：icon 佔兩格時框歪，而且換不了寬度函式（C1）。
+- **用 lipgloss 的 `Style` 排版、`Join*`、`Place`，或 bubbletea-overlay 疊 popup**：icon 佔兩格時框歪，而且換不了寬度函式（`proto/c1` 驗過）。
 
 ## 已知的牆與未做
 
@@ -216,8 +215,8 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
 ## 設計文件導讀
 
 - [`coverage.md`](coverage.md)：tdp 逐條的清單 —— 規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱。也是展示場「所有的組合」的定義。
-- [`walkthrough.md`](walkthrough.md)：手動走一遍展示場的起點 —— 怎麼開、每個畫面看什麼、C2–C4 怎麼驗。C 與 G 的編號是什麼，
-  見 [`coverage.md`](coverage.md) 開頭。
+- [`walkthrough.md`](walkthrough.md)：手動走一遍展示場的起點 —— 怎麼開、每個畫面看什麼、要在真的終端機上看過
+  才知道的事怎麼驗。
 
 ## 建置與開發
 
@@ -234,7 +233,7 @@ tdptest 的 `TestTemplatesAreTdps` 拿 `_project` 跟 tdp 的 `project/` 逐字�
 Go 原始碼裡的 Nerd Font glyph 一律寫成 `\U0000E0B0` 這種 8 位數的 code point（tdp E4）。用工具寫檔時，`\uE0B0` 這種 4 位數的寫法
 會被當成 JSON 的跳脫字元、變成字面的 PUA 字元。
 
-C1 原型：
+`proto/c1` 原型：
 
 ```sh
 go run ./proto/c1 dump 80 24 menu fits           # 印一個畫面

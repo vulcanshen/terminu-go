@@ -46,12 +46,19 @@ type Viewer struct {
 	// NoNumbers leaves out the line numbers, for a table the app lays out
 	// itself, where they mean nothing (tdp note).
 	NoNumbers bool
-	// Hits are what a search the app runs found (its own / and n|N): each
-	// underlined in its own colours, Hits[Current] drawn as the cursor block,
-	// "you are here" (tdp note.2; FindText
-	// finds them). No new colour: Yellow is the selection's.
+	// Hits are what a search found, Search's or one the app runs itself
+	// (FindText finds them): each underlined in its own colours,
+	// Hits[Current] drawn as the cursor block, "you are here" (tdp note.2).
+	// No new colour: Yellow is the selection's. They go when the viewer
+	// closes (tdp note.3).
 	Hits    []TextMatch
 	Current int
+	// Search, when set, is the viewer's search (tdp note.3): / asks for the
+	// text in an input popup, every place it is becomes a hit, the first
+	// scrolled into sight, and n|N go to the next and the previous, wrapping
+	// at the ends; with none an Info toast says so. /, n and N are then the
+	// search's, not Keys'.
+	Search *ViewerSearch
 
 	// top is the line the first row in sight belongs to and sub that row
 	// among the rows the line folds onto; visible the rows of text; textW
@@ -109,6 +116,37 @@ func (v *Viewer) FindText(q string) []TextMatch {
 		}
 	}
 	return out
+}
+
+// ViewerSearch is the words of a viewer's search, the app's (tdp note.3):
+// the input popup's title ("Search" when unset), glyph and prompt ("Find in
+// the YAML").
+type ViewerSearch struct {
+	Title, Glyph, Prompt string
+}
+
+// find makes the places q is the hits, the first in sight; with none an
+// Info toast says so (tdp note.3).
+func (v *Viewer) find(a *App, q string) tea.Cmd {
+	v.Hits, v.Current = v.FindText(q), 0
+	if len(v.Hits) == 0 {
+		return a.Toast(Info, "No line has "+q)
+	}
+	v.follow(v.Hits[0].Line)
+	return nil
+}
+
+// stepHit goes by hits, wrapping at the ends, and scrolls only when the hit
+// is out of sight (tdp note.3).
+//
+// TODO(tdp note.3): tdp does not say whether a NoWrap viewer scrolls across
+// to a hit past the cut, as it does only for the selection mode's cursor;
+// until it does the line comes into sight, the hit after its "…".
+func (v *Viewer) stepHit(by int) {
+	if n := len(v.Hits); n > 0 {
+		v.Current = ((v.Current+by)%n + n) % n
+		v.follow(v.Hits[v.Current].Line)
+	}
 }
 
 // ViewerKey is one of a viewer's own hotkeys.
@@ -221,6 +259,9 @@ func (vv *viewerView) hint() []KeyHint {
 	}
 	for _, k := range v.Keys {
 		h = append(h, KeyHint{k.Key, k.Desc})
+	}
+	if v.Search != nil {
+		h = append(h, KeyHint{"/", "search"}) // n|N move between the hits: not in the hint (tdp popup)
 	}
 	if v.Select != nil {
 		h = append(h, KeyHint{v.Select.Key, strings.ToLower(cmpOr(v.Select.Name, "select"))})
@@ -894,6 +935,19 @@ func (vv *viewerView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 	case "Enter", "Space":
 		// A note closes with Esc only (tdp note).
 	default:
+		if s := v.Search; s != nil {
+			switch key {
+			case "/":
+				return true, a.Text(TextInput{Title: cmpOr(s.Title, "Search"), Glyph: s.Glyph, Prompt: s.Prompt, Verb: "find", Search: true,
+					Done: func(q string) tea.Cmd { return v.find(a, q) }})
+			case "n":
+				v.stepHit(1)
+				return true, nil
+			case "N":
+				v.stepHit(-1)
+				return true, nil
+			}
+		}
 		if v.Select != nil && key == v.Select.Key {
 			// The cursor comes out at the start of the first line in sight;
 			// nothing is selected yet.
@@ -921,6 +975,9 @@ func run2tab(f func(int) tea.Cmd, i int) tea.Cmd {
 	}
 	return f(i)
 }
+
+// closed is the viewer gone, its hits with it (tdp note.3).
+func (vv *viewerView) closed() { vv.v.Hits, vv.v.Current = nil, 0 }
 
 func (vv *viewerView) surface() string  { return vv.title() }
 func (vv *viewerView) refTitle() string { return vv.title() }
@@ -952,6 +1009,9 @@ func (vv *viewerView) keyRef() []refSection {
 	for _, k := range v.Keys {
 		rows = append(rows, KeyRow{Key: k.Key, Desc: k.Desc})
 	}
+	if v.Search != nil {
+		rows = append(rows, KeyRow{Key: "/", Desc: "search the text"})
+	}
 	if v.Select != nil {
 		rows = append(rows, KeyRow{Key: v.Select.Key, Desc: "select text (" + cmpOr(v.Select.Name, "Select") + ")"})
 	}
@@ -967,6 +1027,9 @@ func (vv *viewerView) keyRef() []refSection {
 	}
 	if len(v.Tabs) > 0 {
 		move = append([]KeyRow{{Key: "h|l", Desc: "the tab before, after"}}, move...)
+	}
+	if v.Search != nil && len(v.Hits) > 0 { // only with hits to go to (tdp M6)
+		move = append(move, KeyRow{Key: "n|N", Desc: "the next, the previous hit"})
 	}
 	return []refSection{{rows: rows}, {title: "move", rows: move}}
 }

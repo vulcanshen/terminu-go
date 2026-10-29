@@ -202,7 +202,7 @@ func TestFormEnterDescribesItsFields(t *testing.T) {
 
 // TestInputPromptFolds: a long prompt folds (several sentences, its own line
 // breaks), the popup growing with it; at its tallest the last row it keeps
-// ends in "…" (tdp input; webu WB20).
+// ends in "…" (tdp input; from webu).
 func TestInputPromptFolds(t *testing.T) {
 	ta := newTestApp(t)
 	ta.resize(60, 40)
@@ -341,7 +341,7 @@ func TestCheckboxPopup(t *testing.T) {
 }
 
 // Checks.Cursor opens a checkbox popup with the cursor on that option, in
-// sight even past the first page (ccdrawu's CD8: the app decides).
+// sight even past the first page (from ccdrawu: the app decides).
 func TestCheckboxPopupCursor(t *testing.T) {
 	ta := newTestApp(t)
 	ta.resize(80, 20) // too short for all 29
@@ -1389,7 +1389,7 @@ func TestCheckboxPopupUnavailable(t *testing.T) {
 }
 
 // TestInputErrEmptyNamesValue: ErrEmpty in the error row names the value, as
-// every input error does (tdp input; sshu SS15).
+// every input error does (tdp input; from sshu).
 func TestInputErrEmptyNamesValue(t *testing.T) {
 	ta := newTestApp(t)
 	notEmpty := func(v string) error {
@@ -1411,7 +1411,7 @@ func TestInputErrEmptyNamesValue(t *testing.T) {
 
 // TestTextareaCheck: a textarea with a check holds back a changed text that
 // fails it, the error row naming the text, the popup open; an unchanged
-// text closes unchecked (tdp K3; hostu, sshu SS19).
+// text closes unchecked (tdp K3; from hostu and sshu).
 func TestTextareaCheck(t *testing.T) {
 	ta := newTestApp(t)
 	got, calls := "", 0
@@ -1442,7 +1442,7 @@ func TestTextareaCheck(t *testing.T) {
 
 // TestInputSteps: a flow of inputs, each step a popup of its own over the one
 // before; Esc goes back a step with its value still there, and the last step
-// ends the flow, no step cancelled (tdp F1, F4, T1; locku LK7).
+// ends the flow, no step cancelled (tdp F1, F4, T1; from locku).
 func TestInputSteps(t *testing.T) {
 	ta := newTestApp(t)
 	var pins []string
@@ -1567,7 +1567,7 @@ func TestInputSuggestedValue(t *testing.T) {
 }
 
 // TestInputGreyTakesABurst: a burst of characters typed on a grey suggestion
-// is typed whole (HU10).
+// is typed whole (from hostu).
 func TestInputGreyTakesABurst(t *testing.T) {
 	ta := newTestApp(t)
 	got := ""
