@@ -2,6 +2,11 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.1.7 — tdp v1.1.6
+
+- tdp no longer cites the record numbers of the family's notes; where a rule came from it names the app, as this
+  repository's files already do. No rule changes; nothing changes for an app
+
 ## v1.1.6 — tdp v1.1.5
 
 - A viewer always wraps and never cuts a line with `…` (tdp note.2), so nothing in it is out of sight sideways and
