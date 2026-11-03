@@ -1,7 +1,7 @@
 # terminu-go 開發者備忘
 
 terminu-go 是 terminu design principle（tdp）的 Go 實作：給 app 呼叫的 lib，加上展示場 `examples/showcase`。遵循 terminu design
-principle，目前對應 tdp v1.1.10。lib 只照 tdp 最新 tag 的文字做；規範沒寫或照做不好用的地方回報給 tdp，不在 lib 裡自己決定。
+principle，目前對應 tdp v1.2.0-beta.1。lib 只照 tdp 最新 tag 的文字做；規範沒寫或照做不好用的地方回報給 tdp，不在 lib 裡自己決定。
 
 ## 運作方式
 
@@ -128,12 +128,8 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
 - **tdptest 走 lib 內部的 hook，不開公開 API**（2026-10-20，harness 的請求）：driver 要知道 popup 還在不在播、有幾層、有沒有 toast、
   剪貼簿裡等著什麼，也要把 App 放上測試的時鐘。這些放在 `internal/testhook`（只有這個 module 裡的套件 import 得到），terminu 在
   `init` 填進去（`clock.go`）；app 看得到的只有 `App.Tick`。
-- **repo 的檢查在 `Check` 裡自己跑**（2026-10-26，harness 的請求）：app 不改測試，升 tgo 以後 `make check` 就查得到範本走樣
-  （hostu 少了 family.mk 的 `dev`，沒有一關抓到）。tgo 一版只對到一版 tdp，所以 lib 帶著那一版的 `project/` 範本
-  （`tdptest/_project`：`_` 開頭的目錄 go 不當成 package，裡面的 `version.go` 才不會被編譯）；`TestTemplatesAreTdps` 與
-  `TestTdpVersionIsTheChangelogs` 守住它跟 CHANGELOG 寫的 tdp 一致，跟新的 tdp 時兩個要一起換。標記管到哪裡照 tdp v0.10.3 的
-  project.2：`app:` 只放行底下那一個鍵的值，註解、鍵名與 `# Windows` 照原樣，`<APP>` 也照原樣。要判斷的
-  （README 的段落、引用的寫法）不查。
+- **repo 的檢查搬到 harness**（tdp v1.2.0）：v1.1.x 的 `Check` 先在子測試 `repo` 裡照 tdp project 的範本查 app 的 repo（lib 帶著
+  `tdptest/_project`）。tdp v1.2.0 把 project 與範本搬到 terminu-harness，查 repo 也跟著搬過去；tdptest 只管畫面。
 - **測試的時鐘，不是真的時間**：真的跑 32ms 一格的動畫，掃一次展示場要幾分鐘，toast 何時消失也跟機器快慢有關；harness 也要能停在
   開場動畫中間（F2）、自己推時間。時鐘從真的時間起算、對齊 loading icon 的一整圈（720ms），app 用真的時間算出來的期限（PIN 的暫停）
   差不多對得上，loading icon 每次都從同一格開始。
@@ -207,6 +203,10 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   `chromaLexers`，`TestSyntaxGapsInChroma` 拿它跑表的每一列、要它還缺；chroma 自己補好了，這個測試就失敗，那份 XML 刪掉。
   chroma 是 MIT，`lexers/COPYING-chroma` 是它的授權。上色時最後一行後面補一個換行，跟檔案裡一樣：讀到換行才算一行的 lexer
   （Markdown 的標題、清單）最後一行才有顏色。
+  chroma 沒有 lexer 或認錯的格式（go.mod、SSH 設定、hosts、ignore 檔、requirements.txt）也放在 `lexers/`；Go 的 lexer 在 chroma 是
+  Go 寫的，raw string 裡套了模板的 lexer，翻不成 XML，`goLexer` 拿它的規則加三條。檔名相同的格式（`config`）看資料夾分：
+  `byDirectory` 列出 `.ssh`、`.git`，預覽與 `lexerFor` 先問它。`TestSyntaxGapsInChroma` 拿 chroma 原本的 registry（`chromaOwn`，
+  換掉之前留的一份）照檔名挑 lexer，看它還缺不缺，所以 chroma 不認得檔名（`Jenkinsfile`）也算缺。
   一行裡的 `\r`（進度列）不能交給 chroma：它把單獨的 `\r` 當換行，交給別的 lexer 的那段（Markdown 的程式碼區塊）還關不掉，
   後面每一行都錯一行。所以上色前換成檔案裡沒有的 U+0085（regex 把它跟 `\r` 一樣當空白），上完色換回來。
 - **家族共用的設定 key**（Rules E3）：`hide_secrets_in_preview`、`input_tab_width` 是使用者的設定，lib 不讀設定檔；app 從自己的設定檔讀，
@@ -235,9 +235,6 @@ go vet ./...
 gofmt -l .
 make showcase    # 用目前的程式碼建展示場（/tmp/showcase）並打開
 ```
-
-tdptest 的 `TestTemplatesAreTdps` 拿 `_project` 跟 tdp 的 `project/` 逐字比對，要有一份 tdp 的 clone：`TERMINU_GO__TDP_REPO` 指到它；
-沒設時看這個 repo 旁邊的 `terminu`（`../terminu`）。兩處都沒有就略過。
 
 Go 原始碼裡的 Nerd Font glyph 一律寫成 `\U0000E0B0` 這種 8 位數的 code point（tdp E4）。用工具寫檔時，`\uE0B0` 這種 4 位數的寫法
 會被當成 JSON 的跳脫字元、變成字面的 PUA 字元。

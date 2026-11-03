@@ -347,7 +347,10 @@ func highlight(p, text string, h, tabW, first int) []string {
 		raw[i] = lastState(raw[i])
 		lines[i] = fileText(raw[i], tabW)
 	}
-	lexer := lexers.Match(filepath.Base(p))
+	lexer := lexerOfPath(p) // a name more than one format has, by its directory
+	if lexer == nil {
+		lexer = lexers.Match(filepath.Base(p))
+	}
 	if lexer == nil {
 		lexer = lexers.Fallback
 	}

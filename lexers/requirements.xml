@@ -1,0 +1,35 @@
+<!--
+  pip's requirements.txt and requirements-*.txt, which chroma reads as plain
+  text (tdp file-picker.3, "Where chroma leaves a gap"): a comment is
+  Comment; a version is LiteralNumber; ==, >=, ~= and the like are Operator.
+-->
+<lexer>
+  <config>
+    <name>pip requirements</name>
+    <alias>requirements</alias>
+    <filename>requirements.txt</filename>
+    <filename>requirements-*.txt</filename>
+  </config>
+  <rules>
+    <state name="root">
+      <rule pattern="(?:^|(?&lt;=\s))#.*">
+        <token type="Comment"/>
+      </rule>
+      <rule pattern="\s+">
+        <token type="Text"/>
+      </rule>
+      <rule pattern="===|==|~=|!=|&gt;=|&lt;=|&gt;|&lt;">
+        <token type="Operator"/>
+      </rule>
+      <rule pattern="[A-Za-z_][\w.\-]*">
+        <token type="Text"/>
+      </rule>
+      <rule pattern="\d+(?:\.\d+)*(?:[a-zA-Z]+\d*)*(?:\.\*)?">
+        <token type="LiteralNumber"/>
+      </rule>
+      <rule pattern=".">
+        <token type="Text"/>
+      </rule>
+    </state>
+  </rules>
+</lexer>

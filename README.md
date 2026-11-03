@@ -102,7 +102,8 @@ program's output — never reaches the terminal as it is:
 - **What is read** (a viewer, a panel's log, previews) is drawn as a terminal would: colour codes colour, `\n` starts
   a line, a progress bar's `\r` leaves its last state, anything else is its name in Red. A body of your own that
   shows a log draws its lines with `Reading`.
-- **Syntax colours**: a viewer whose `Lang` names a language, and a text file in a preview, are coloured as tdp asks:
+- **Syntax colours**: a viewer whose `Lang` names a language, and a text file in a preview, are coloured as tdp asks
+  (a file's format by its name, and by its directory where formats share a name: a `config` in `.ssh` is SSH's):
   chroma's catppuccin-mocha, its colours, bold, italic and underline but never its background, with the gaps chroma
   leaves filled the family's one way (TOML's table names and keys, YAML's values without quotes…). A body of your own that shows a file colours it with
   `Syntax(lang, lines)`, to look as it does in the preview. Importing the library puts its lexers in chroma's global
@@ -191,13 +192,7 @@ func TestFirstLaunch(t *testing.T) {
   line break was drawn by its name in Red (a `\n` in a toast of your own); set `AllowLineBreaks` when your data has
   such names on purpose. `Env` gets the sandbox's `HOME`, so a variable can point to a file `Seed` put
   there. With `go test -short` it launches on the least size and 80×24 only, icons one cell wide.
-  First, in a subtest `repo`, it reads the app's repository — the `go.mod` at or above the test's directory — against
-  tdp project: the templates (`family.mk`, `release.yml`, `.goreleaser.yaml`, `install.sh`, `uninstall.sh`,
-  `version.go`, `.gitignore`) as the tdp this version implements has them, but for what each lets an app change; the
-  files every app has; the Makefile's layout; the CHANGELOG's start and headings; that git tracks no `CLAUDE.md`, and
-  under `.claude/` only harness's `.claude/rules/terminu.md`. A failure names the file, shows the
-  difference and says which template to copy again. tdp project binds the family members alone: the repository of an
-  app whose `go.mod` module is not under `github.com/vulcanshen` is not checked.
+  It does not read the app's repository: the family's templates and the repository checks are in [terminu-harness](https://github.com/vulcanshen/terminu-harness).
 - **`Tricky`, `Sizes` and `Mashes`** are values that have broken screens: control characters, escape sequences, wide
   and joined characters, very long values; odd terminal sizes; keys pressed faster than the animations (`Mash`).
 
@@ -215,9 +210,30 @@ In the program it is `tea.Tick`. Under a test it waits for the test's time, so `
 its own. A timer made with `tea.Tick` runs on the real clock there too: the test cannot move it, and what it does comes
 in whenever it is due.
 
+## What the lib does and what an app does
+
+tdp E8 keeps three principles for any shared lib: an app does not redo what the lib covers, the screen tests split by
+who draws what, and the lib does not do its own thing. How the work splits between this lib and an app using it:
+
+| Rule | The lib | The example app | An app using the lib |
+|---|---|---|---|
+| The on-screen rules (K, M, L, F, X, T, S1–S4, components) | covers them | shows all of them | from the lib, not done again |
+| E1 `version`, `help` | — | yes | its own |
+| E2 naming environment variables | the variables the lib reads hang under the app's name (e.g. `<APP>__ICON_WIDTH`) | as E2 (e.g. `SHOWCASE__…`) | its own variables follow E2 |
+| E3 where config and data live | — | stores nothing, not applicable | its own |
+| E4 requirements | stated in the README | — | stated in the README |
+| E5 the actual icon width | covers it: the probe (icons and powerline symbols), the display-width functions, setting `TERMINU__ICON_WIDTH` and `TERMINU__POWERLINE_WIDTH` for subprocesses, reading `LC_TERMINU_ICON_WIDTH` and `LC_TERMINU_POWERLINE_WIDTH` at startup; in E5's tests, measuring the bare box of each kind of popup (the lib draws the popups) | — | from the lib; an app with ssh sends `LC_TERMINU_*` itself when connecting. E5's tests cover its own whole screen only: its own layout plus the popups it opens, at E5's widths and sizes, every line full width |
+| E6 releases | a git tag (a Go module), no binary; the L4 screen tests are required | not released; the L4 screen tests are required | as E6 (the screen tests split as in the row above); the family's templates and the repository checks are in [terminu-harness](https://github.com/vulcanshen/terminu-harness) |
+| S5 the icon the splash draws | the splash mechanism; building a splash, it returns an error for a row of text wider than 50 columns | tdp's `principle/icon.svg` (terminu's mark) | its own `docs/icon.svg` |
+| E7 README | a structure of its own: installation is `go get`, the quick start is code, and it says how to run the example app | none of its own | as E7 |
+| A requirement that cannot be met, or works badly ("Leaving it to the app" at the start of the Rules) | **the lib does not do its own thing**: it reports a gap in tdp, and the lib changes once the spec does | — | reports a gap in tdp |
+
+This only sets the split when an app uses the lib; whether to use it, the app decides. An app moving to the lib can
+delete its on-screen code and its E5 code; E1, E3, E6, E7 and its own icon stay.
+
 ## Which terminu design
 
-terminu-go implements **tdp v1.1.10**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
+terminu-go implements **tdp v1.2.0-beta.1**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
 
 ## Links
 

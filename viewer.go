@@ -548,10 +548,14 @@ func onText(l string) string {
 }
 
 // lexerFor is the lexer a viewer's Lang names: a lexer's name or alias, a
-// file name, or a content type; nil when there is none.
+// file name or path (a path's directory telling a name more than one format
+// has), or a content type; nil when there is none.
 func lexerFor(lang string) chroma.Lexer {
 	if lang == "" {
 		return nil
+	}
+	if l := lexerOfPath(lang); l != nil {
+		return l
 	}
 	if l := lexers.Get(lang); l != nil {
 		return l

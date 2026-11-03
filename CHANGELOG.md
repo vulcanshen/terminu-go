@@ -2,6 +2,20 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.0-beta.1 — tdp v1.2.0-beta.1
+
+- A file's format goes by its name, and where formats share a name, by its directory: a `config` in `.ssh` is
+  coloured as SSH's config, one in `.git` as git's (tdp file-picker.3, note.2). The preview, a viewer and `Syntax`,
+  given a path, tell it the same way
+- More of chroma's gaps filled, as tdp file-picker.3's table now lists them: `go.mod` and `go.work`, which chroma
+  read as AMPL; SSH's config, `/etc/hosts`, `.gitignore` and `.dockerignore`, and `requirements.txt`, which it had
+  no lexer for; a `Jenkinsfile`, now read as Groovy; and the names in a declaration: a function's and a class's in
+  JavaScript and TypeScript, a type's and the package's in Go, a function's in the shells, an attribute's key in
+  Terraform
+- `tdptest.Check` no longer reads the app's repository: tdp v1.2.0 moves the family's templates and the repository
+  checks to terminu-harness. `tdptest/_project` is gone
+- The README has the table of what the lib does and what an app using it does, which tdp E8 no longer carries
+
 ## v1.1.11 — tdp v1.1.10
 
 - Markdown bold and italic at the start of a line, `**Why**: …` or `*Note* …` and with `__` or `_`, are bold and

@@ -1,0 +1,53 @@
+<!--
+  go.mod and go.work, which chroma reads as AMPL (*.mod) (tdp file-picker.3,
+  "Where chroma leaves a gap"): a directive is Keyword, as Go's keywords; a
+  version is LiteralNumber; => is Operator; a comment is Comment. Its
+  priority puts it before AMPL.
+-->
+<lexer>
+  <config>
+    <name>Go module</name>
+    <alias>gomod</alias>
+    <alias>gowork</alias>
+    <filename>go.mod</filename>
+    <filename>go.work</filename>
+    <priority>2</priority>
+  </config>
+  <rules>
+    <state name="root">
+      <rule pattern="\s+">
+        <token type="Text"/>
+      </rule>
+      <rule pattern="//.*">
+        <token type="Comment"/>
+      </rule>
+      <rule pattern="^(module|go|toolchain|godebug|require|replace|exclude|retract|use|tool|ignore)\b">
+        <token type="Keyword"/>
+      </rule>
+      <rule pattern="=&gt;">
+        <token type="Operator"/>
+      </rule>
+      <rule pattern="v\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?">
+        <token type="LiteralNumber"/>
+      </rule>
+      <rule pattern="go\d+(?:\.\d+)*(?:rc\d+|beta\d+)?\b">
+        <token type="LiteralNumber"/>
+      </rule>
+      <rule pattern="\d+(?:\.\d+)+">
+        <token type="LiteralNumber"/>
+      </rule>
+      <rule pattern="[()\[\],]">
+        <token type="Punctuation"/>
+      </rule>
+      <rule pattern="&#34;(\\.|[^&#34;\\\n])*&#34;">
+        <token type="LiteralString"/>
+      </rule>
+      <rule pattern="[^\s()\[\],&#34;=/]+(?:/[^\s()\[\],&#34;]*)*">
+        <token type="Text"/>
+      </rule>
+      <rule pattern=".">
+        <token type="Text"/>
+      </rule>
+    </state>
+  </rules>
+</lexer>

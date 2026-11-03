@@ -1,6 +1,6 @@
-# tdp v1.1.10 coverage
+# tdp v1.2.0-beta.1 coverage
 
-tdp v1.1.10 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
+tdp v1.2.0-beta.1 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
 每個元件、規範列的每一種方案、寫到的每一種狀態與疊法，在展示場都按得到。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -231,9 +231,9 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | E5 | icon 與 powerline 符號（U+E0A0–U+E0D7）各量各的；啟動時 CPR 探測（unix）；順序 `<APP>__ICON_WIDTH` → `TERMINU__ICON_WIDTH` → `LC_TERMINU_ICON_WIDTH`（隔著 ssh 帶過來的）→ 探測，powerline 照 `<APP>__POWERLINE_WIDTH` → `TERMINU__POWERLINE_WIDTH` → `LC_TERMINU_POWERLINE_WIDTH` → 探測；Windows 預設一格 | 在 icon 佔兩格的 tmux 裡啟動看 statusbar（寫出兩種寬度） | `TestE5WidthOrder`、`TestE5ProbeCPR` |
 | E5 | 有 PTY 的 app 開子程序時設 `TERMINU__ICON_WIDTH`、`TERMINU__POWERLINE_WIDTH`（自己的格數） | T `[1] SHELL` 裡 `echo $TERMINU__ICON_WIDTH $TERMINU__POWERLINE_WIDTH` | `TestE5ChildEnv` |
 | E5 | 疊 popup 不當掉：比畫面寬、高、兩邊都大都切，不 panic | 縮小終端機再開 popup | `TestE5CompositeOversized` |
-| E6 | lib：git tag，沒有 binary；展示場不發布；L4 的畫面測試兩邊都要；E6 指向的 project（v0.7.0：app 的 repo 怎麼排、怎麼發布）lib 與展示場不套，照 E8 的表 | — | `TestL4EveryRowFullWidth` |
+| E6 | lib：git tag，沒有 binary；展示場不發布；L4 的畫面測試兩邊都要；家族 app 的範本與 repo 的檢查在 terminu-harness（tdp v1.2.0），lib 與展示場不套 | — | `TestL4EveryRowFullWidth` |
 | E7 | lib 的 README 自己的結構（安裝 `go get`、快速開始是程式碼、寫明展示場怎麼跑；設定段寫出 E3 的共用設定 key 怎麼交給 lib）。開發者文件不在 tdp 的範圍裡（P5）：`docs/dev-remarks.md` 是這個 repo 自己留的 | 對照這個 repo 的 README | — |
-| E8 | 分工表；lib 不自己另做：做不到或不好用的回報成 tdp 的缺漏，規範改了 lib 才跟著改 | 做不到的回報成盲點（G），定案後補進 tdp | —、`TestCanvas`（lib：`App.Canvas`，lib 管不到的畫面照樣用 confirm、toast、input） |
+| E8 | 三點：用 lib 的 app 不另外做 lib 做到的、畫面測試照誰畫的分、lib 不自己另做（做不到或不好用的回報成 tdp 的缺漏，規範改了 lib 才跟著改）；lib 與 app 的分工表在 README（tdp v1.2.0 從 E8 搬過來） | 做不到的回報成盲點（G），定案後補進 tdp | —、`TestCanvas`（lib：`App.Canvas`，lib 管不到的畫面照樣用 confirm、toast、input） |
 
 ## color
 
@@ -436,7 +436,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | note.7 | 每個 app 都有；`!` 在 panel 上打開，是 viewer、最新的在最下面、打開時在最後、開著時新的一筆照樣進來；每一筆 `HH:MM:SS`（Overlay0）、等級（`INFO` Text、`OK` Green、`WARN` Peach、`ERR` Red，四格靠左）、發生的事（照 toast.2 的開頭大寫：lib 自己記的 `Moved … to …`、展示場的 `Started; …`）；每一個 toast（inspect toast 除外，note-77）與 error popup 自動記，app 用 `App.Log` 記動作與背景的事（任何 goroutine 都能叫） | 任一 panel 按 `!`；展示場啟動時記兩筆 | `TestAppLogEntries`、`TestMoveAside`（大寫開頭）、`TestToastInspect`（inspect toast 不記） |
 | note.7 | 記的動作是 P3 的 item、panel、global operation，從 menu、letter hotkey 或 `Enter` 執行，只看不改的也記；移動 cursor、換 focus（在清單上用 `Enter` 或 menu 上那一列進明細也是，K3）、Space menu、`?`、`!`、panel filter（lib 的 list 篩選 `/`）、比較模式（lib 的 `CompareAction`，note.8；裡面跳的 toast 照樣記）、進出其他模式（K11：panel 的模式、viewer 與 PTY 的選取模式；模式裡做完的事照結果記，例：複製的 `Copied`）不記；在動作前面的 confirm、填值的表單或 input popup 上按 `Esc` 取消的，動作沒做，不記：lib 不記，`Do`、`Submit`、`Done` 也不跑；popup 裡的操作只記它所屬那個動作的結果。lib 執行的切換畫面（畫面的鍵、global operation popup）lib 自己記 `Switched to <畫面名>`（note.7 的例子）；app 自己的 operation 由 app 用 `App.Log` 記，字是 app 的 | 在 P `[1] PODS` 按 `/` 篩選、按 `C` 比較再 `Esc` 離開、按 `D` 再 `Esc`、跑 `[x] Delete` 再 `Esc`，D「Form: New host」改過再 `Esc`、`Enter` 放棄；按 `O`、從 global operation popup 切回 `Panels`；K `[1] KINDS` 在 namespaced 的種類上 `Enter` 進 `[2]`，按 `!` | `TestAppLogScreenSwitch`、`TestAppLogCancelled`、`TestCompareMode`（比較模式不記、toast 照記）、`TestK3EnterToDetails`（進明細不記）、`TestAppLogModes`（進出模式不記） |
 | note.7 | 只放在記憶體，筆數有上限（1000），滿了丟最舊的 | lib | `TestAppLogInMemory` |
-| note.2 | 有固定格式的照 file-picker 預覽上色（chroma catppuccin-mocha：照它的顏色、粗體、斜體與底線，不上背景色）；語言由 app 給（`Viewer.Lang`），檔案內容照檔名；沒有固定格式或判斷不出來的是純文字 Text（建議；app 自己給的顏色保留，例：log 的 ERROR、WARN 行）；行號 Overlay0；選取範圍 Yellow 底 Base 字、範圍裡不顯示語法顏色與粗體、斜體、底線（note-17） | D「Note viewer」（YAML）；I `[2] FILES` 的 `[V]iew`（`README.md` 的標題粗體，選起來就不是）；P `[2] LOG` 按 `Enter`（ERROR 紅、WARN 橘保留） | `TestViewerSyntaxColours`、`TestViewerSelectionPlain` |
+| note.2 | 有固定格式的照 file-picker 預覽上色（chroma catppuccin-mocha：照它的顏色、粗體、斜體與底線，不上背景色）；語言由 app 給（`Viewer.Lang`），檔案內容照檔名、同名的再看資料夾（note-16）；沒有固定格式或判斷不出來的是純文字 Text（建議；app 自己給的顏色保留，例：log 的 ERROR、WARN 行）；行號 Overlay0；選取範圍 Yellow 底 Base 字、範圍裡不顯示語法顏色與粗體、斜體、底線（note-17） | D「Note viewer」（YAML）；I `[2] FILES` 的 `[V]iew`（`README.md` 的標題粗體，選起來就不是）；P `[2] LOG` 按 `Enter`（ERROR 紅、WARN 橘保留） | `TestViewerSyntaxColours`、`TestViewerSelectionPlain` |
 | note.2 | viewer 一樣補上 chroma 漏掉的語法顏色（file-picker.3 的表），同一個檔在 viewer 與預覽裡顏色一樣（note-87） | I `[2] FILES` 的 `config/build.toml` 按 `[V]iew`，跟 `[/] Find` 移到它時的預覽比表名與 key | `TestSyntaxPreviewViewerSame` |
 | note.3 | 折行的 viewer 以畫出來的一列為單位捲（`j\|k` 一列、`u\|d` 照列算）；`N-M of T` 的 N、M 是最上面、最下面那一列所屬的行；選取模式照舊以行為單位 | D「Note viewer」把視窗縮窄 | `TestViewerScrollsRows` |
 | note.3 | 捲動 `j\|k` `u\|d` `gg\|G`；只用 `Esc` 關（`Enter`、`Space` 不關）；error popup（不管怎麼打開的）與表單的打字說明 `Enter` 也能關；hint 熱鍵在前、`Esc:close` 最後 | 同上；D「Error popup」 | `TestNoteKeys` |
@@ -550,7 +550,8 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | color-picker.4 | hex 一律大寫；表單與 panel 上 3 格的色塊、空一格、hex；cursor 在這一欄時色塊保留自己的顏色、hex 換成 Base | I `[1] INPUTS` 的 `Background` | `TestValueDisplay`、`TestSwatchOnCursor` |
 | file-picker.3 | 預覽與 metadata 不在畫畫面的時候讀（遠端、慢的檔案系統也一樣），打字、移 cursor 不等；讀取中預覽框標題後面 loading icon、框裡灰字 `(loading…)`、metadata 的值先空著（不寫 `—`）；讀到了再畫；讀過的照路徑記住，popup 開著時回到同一筆不再讀；從某一行開始的預覽整個檔放得下時從第 1 行畫 | I 的 `Identity file`；I `[2] FILES` 的 `[/] Find` | `TestFilePreviewReadInTheBackground`、`TestPreviewFromALineThatFits` |
 | file-picker.3 | 語法顏色照 catppuccin-mocha 的顏色、粗體、斜體與底線（file-picker-95）：Markdown 的 `**粗體**` 粗體、`*斜體*` 斜體、`#` 標題粗體，註解斜體，`=`、`&&` 這類運算符號粗體；它的背景色一律不上，文字後面的 Base、diff 新增與刪除行後面的 Surface0 都不塗。lib：`Style.Italic` | I `[2] FILES` 的 `[/] Find` 移到 `README.md`（標題粗體）與 `main.go`（註解斜體） | `TestSyntaxStyles`（`Syntax` 與預覽各一次、沒有背景色、diff 的行照顏色）、`TestSyntaxPreviewViewerSame`（viewer 與預覽的粗體、斜體也一樣） |
-| file-picker.3 | 文字檔的語法顏色照「chroma 漏掉的地方」那張表補上（file-picker-94）：TOML 的表名 Mauve、key Blue（有引號的、全是數字的也是）、各種寫法的數字 Peach、各種寫法的日期與時間 Text；YAML 沒引號的值 Green、flow mapping 第一對之後的 key Mauve、帶正負號或點開頭的數字 Peach；`.gitconfig` 區段裡縮排的 key Blue；Makefile 的指令（`include`、`ifeq`、`define`……）Overlay0、recipe 裡的變數 Rosewater、`define` 到 `endef` 之間的行跟一行的變數值一樣照 shell 讀；Dockerfile `LABEL` 的 key Rosewater、映像名有變數時後面的 `AS` Mauve 與名稱 Green、有小數點的版本整段 Peach；Markdown 底下畫 `===` 或 `---` 的標題 Peach、清單項的 `+` Mauve、參考式連結第一個方括號 Mauve、第二個方括號或網址 Blue、行首的粗體與斜體（`**為什麼**：`、`*注意*`，`__`、`_` 也是；chroma 只在前面有空白時認得，檔案開頭、標題與清單項之後的行首就漏了）跟行中一樣。lib：`lexers/` 裡照 chroma v2.27.0 改的 lexer，import 時用同名蓋掉 chroma 全域 registry 裡的；自己畫內容的 app 用 `Syntax(lang, lines)` 上色 | I `[2] FILES` 的 `[/] Find` 移到 `config/build.toml`（表名、key、數字）與 `config/app.yaml`（沒引號的值） | `TestSyntaxGaps`（表的每一列）、`TestSyntaxGapsInChroma`（chroma 自己的 lexer 還缺；chroma 補好了就失敗，`lexers/` 裡那份刪掉）、`TestSyntaxLexersReplaceChroma`、`TestSyntax`（`Lang` 的寫法、認不出來是 Text、跨行的字串）、`TestSyntaxFrontMatter` |
+| file-picker.3 | 檔案的格式照檔名判斷，同名的檔再看資料夾（file-picker-96）：`.ssh` 裡的 `config` 照 SSH 設定、`.git` 裡的照 Git 設定，別處的 `config` 是純文字；預覽、viewer、`Syntax`（給路徑時）都一樣 | I `[2] FILES` 的 `[/] Find`：假專案沒有這兩種檔，在自己的機器上用 file-picker 走到 `~/.ssh/config` 與某個 repo 的 `.git/config` | `TestSyntaxByDirectory`、`TestSyntaxPreviewViewerSame`（SSH 那一列用路徑） |
+| file-picker.3 | 文字檔的語法顏色照「chroma 漏掉的地方」那張表補上（file-picker-94）：TOML 的表名 Mauve、key Blue（有引號的、全是數字的也是）、各種寫法的數字 Peach、各種寫法的日期與時間 Text；YAML 沒引號的值 Green、flow mapping 第一對之後的 key Mauve、帶正負號或點開頭的數字 Peach；`.gitconfig` 區段裡縮排的 key Blue；Makefile 的指令（`include`、`ifeq`、`define`……）Overlay0、recipe 裡的變數 Rosewater、`define` 到 `endef` 之間的行跟一行的變數值一樣照 shell 讀；Dockerfile `LABEL` 的 key Rosewater、映像名有變數時後面的 `AS` Mauve 與名稱 Green、有小數點的版本整段 Peach；Markdown 底下畫 `===` 或 `---` 的標題 Peach、清單項的 `+` Mauve、參考式連結第一個方括號 Mauve、第二個方括號或網址 Blue、行首的粗體與斜體（`**為什麼**：`、`*注意*`，`__`、`_` 也是；chroma 只在前面有空白時認得，檔案開頭、標題與清單項之後的行首就漏了）跟行中一樣。chroma 認錯或沒有 lexer 的：`go.mod`、`go.work`（指令 Mauve、版本 Peach、`=>` Sky、註解）、SSH 設定（`~/.ssh/config`、`ssh_config`、`sshd_config`：關鍵字 Mauve、數字 Peach、註解）、hosts（位址 Peach、註解）、`.gitignore`、`.dockerignore`（註解、行首的 `!` Mauve）、`requirements.txt`（註解、版本 Peach、`==` 這類 Sky）、`Jenkinsfile`（chroma 的 Groovy）；宣告處的名字：JS、TS 的函式名 Blue、class 名 Yellow，Go 的型別名（`type ( … )` 區塊裡的也是）Yellow、套件名 Peach，shell 定義處的函式名 Blue，Terraform 屬性的 key Blue。Go 的 lexer 在 chroma 是 Go 寫的（raw string 裡套了模板的 lexer），lib 拿它的規則加三條，不翻成 XML。lib：`lexers/` 裡照 chroma v2.27.0 改的 lexer，import 時用同名蓋掉 chroma 全域 registry 裡的；自己畫內容的 app 用 `Syntax(lang, lines)` 上色 | I `[2] FILES` 的 `[/] Find` 移到 `config/build.toml`（表名、key、數字）與 `config/app.yaml`（沒引號的值） | `TestSyntaxGaps`（表的每一列）、`TestSyntaxGapsInChroma`（chroma 自己會拿來讀那個檔的 lexer 還缺；chroma 補好了就失敗，`lexers/` 裡那份刪掉）、`TestSyntaxLexersReplaceChroma`、`TestSyntax`（`Lang` 的寫法、認不出來是 Text、跨行的字串）、`TestSyntaxFrontMatter` |
 | file-picker.2 | 根目錄 app 給、只是起點，最上面 `..`（`/` 沒有）；目前的目錄寫在標題（欄位名後，太長從前截）；打字列打開是空的；每列前目錄／檔案 icon（顏色 app 定）；原本的值 cursor 停在它、字 Green；`..` → 目錄 → 檔案、照名字不分大小寫，隱藏檔只在篩選字 `.` 開頭時列（`*` 不比對隱藏檔、`**` 不走進隱藏目錄）；打字列前面 U+F105；四塊：打字列、清單、預覽、metadata；預覽最多讀 64 KB：目錄與壓縮檔是三層的樹（`├─` `└─` `│` Overlay0、隱藏檔不列、滿了最後一列 `…`、`(empty)`、`(permission denied)`）、圖片第一列灰字 `data:image/png · 12.4 KB` 空一列接 data URI（超過 1 MB 只寫一句）、PDF 第一列灰字頁數空一列接前 20 頁的文字（最多 128 KB，沒有文字寫 `(no extractable text)`）、文字檔上色加行號、其他是十六進位一律一列 8 bytes 接 ASCII（33 格，並排、上下疊都一樣）、讀不到 `(unreadable)`；metadata 四列 `TYPE`（`text` `private key` `image` `PDF` `archive` `binary`、`link → <目標>`、`directory`）`SIZE`（1024 進位一位小數、目錄寫 `N items`、一項寫 `1 item`，不算隱藏檔）`MODIFIED`（本地時間到分）`MODE`（`ls -l` 的寫法），symlink 三列寫目標的，拿不到的寫 `—`（讀不到的目錄的 `SIZE`、斷掉的 link 的三列、列出之後才不見的檔的每一列），label 層色、值 Text；設定 `hide_secrets_in_preview`（預設關）打開時私鑰露第一行接灰字、其他只有擁有者能讀的檔一行都不露（目錄不算），metadata 照常 | I 的 `Identity file`（假的 `.ssh`，打 `/tmp/terminu-showcase/project/` 走到假的專案：`empty` 是 `(empty)`、`locked` 是 `(permission denied)`）；I `[2] FILES` 的 `[/] Find`（假的專案，每一種檔各一個：`latest.pdf` 是 link、`broken.pdf` 是斷掉的 link、`docs/scan.pdf` 沒有文字、`assets/photo-large.png` 超過 1 MB、`secret.bin` 讀不到）；global 的 `Hide secrets in preview` | `TestFilePickerLayout`、`TestFilePickerHiddenAndOrder`、`TestFilePreviewKinds`、`TestFilePreviewEscapes`（檔案裡寫的 escape 序列照字畫、ESC 寫紅色的名字、一個字都不丟）、`TestLsMode`（`MODE` 照 `ls -l`：`drwxrwxrwt`、`-rwsr-xr-x`）、`TestFilePreviewHidesSecrets`、`TestFileInfo`、`TestFilePickerMetaDash`、`TestFinderFilesInFS`（預覽讀 app 給的檔案系統：`PreviewFS`、`Finder.FS`）、`TestFilePreviewPanel`（從某一行開始：`FinderItem.Line`，那一行在第三列、上面兩行前文、不另外標、行號照檔案真實的行號） |
 | file-picker.6 | 清單 `Enter`：目錄進去（清篩選、cursor 在 `..` 下第一項）、檔案選中寫回關掉；選檔時目錄永遠不會被選中 | 同上 | `TestFilePicker` |
 | file-picker.7 | 清單只列目錄，`.` → `..` → 目錄；最上面 `. (this directory)`、icon U+F0252；在 `.` 上 `Enter` 選目前的目錄（`Enter:choose`），在目錄上 `Enter` 走進去（`Enter:into`）；打字列有篩選字或 wildcard 時沒有 `.`、wildcard 結果只列目錄；其他照 file-picker | I 的 `Path`、`Download to`（**`Download to` 打開的是真的 `~/Downloads`**） | `TestFilePickerDirMode` |
@@ -561,31 +562,10 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | reorder.3 | 拿著一項（Drag mode）：`j\|k` 跟下一項、上一項交換，cursor 跟著，到頭尾繞回；`Enter` 放下、cursor 留在那一項；`Esc` 放回拿起前的位置；其他鍵不作用（`D` 不是放下）；hint `Enter:drop Esc:cancel`；`?` 是 Drag mode 的鍵 | 同上 | `TestReorderDrag`、`TestReorderDragWraps`、`TestReorderDragModeKeys` |
 | reorder.1 | 表單與 panel 上照目前的順序用 `, ` 接，太長加 `…` | I `[1] INPUTS` 的 `Segments` | `TestValueDisplay` |
 
-## project（tdptest 替 app 查，lib 與展示場不套：E8）
+## project（tdp v1.2.0 搬到 terminu-harness）
 
-`tdptest.Check` 先在子測試 `repo` 裡讀 app 的 repo（測試目錄往上找到的 `go.mod`）。lib 帶著 tdp 這一版的範本（`tdptest/_project`）。
-project 只綁家族成員（project.1）：module 不在 `github.com/vulcanshen` 底下的 app 是照 tdp 做的，整段不查。
-
-| 出處 | 規定 | 怎麼驗 | 測試 |
-|---|---|---|---|
-| project.2 | `family.mk` 照範本原樣，一個字都不差（project-1） | `Check` 讀 app 的 repo | `TestRepoFamilyMk`、`TestRepoAsTdpHasIt` |
-| project.2 | `.github/workflows/release.yml` 只差出 Windows 版時 matrix 的 `windows-latest`（project-2、project-8） | 同上 | `TestRepoChangedTemplates`、`TestRepoWindows` |
-| project.2 | `.goreleaser.yaml` 只差 `<app>`、標著 `app:` 的註解底下、出 Windows 版時打開標著 `Windows` 的註解（project-3、project-9）；標記管到哪裡：`# app:` 註解連同底下幾列照原樣，只放行緊接在它底下那一個鍵的值（清單或整塊都算，鍵名照原樣），註解講的鍵範本裡還沒有（`dependencies`）時加在註解那裡，其他的鍵（`test:`）照原樣；打開 `Windows` 只拿掉行首的 `# `，行尾的 `# Windows` 留著 | 同上 | `TestRepoWhatAnAppMayChange`、`TestRepoMarks`、`TestRepoChangedTemplates`、`TestRepoWindows` |
-| project.2 | `install.sh` 只差 `<app>`、`WINDOWS`、標著 `app's own` 的段落（project-4、project-10） | 同上 | `TestRepoWhatAnAppMayChange`、`TestRepoChangedTemplates`、`TestRepoWindows` |
-| project.2 | `uninstall.sh` 只差 `<app>`、標著 `app's own` 的段落；註解裡的 `<APP>` 不是 `<app>`，照原樣（project-5） | 同上 | `TestRepoWhatAnAppMayChange`、`TestRepoMarks`、`TestRepoChangedTemplates` |
-| project.2 | `internal/version/version.go` 只差 `<app>`（project-6） | 同上 | `TestRepoChangedTemplates` |
-| project.2 | `.gitignore` 範本在前、只差 `<app>`，app 自己的行接在最後（project-7） | 同上 | `TestRepoWhatAnAppMayChange`、`TestRepoChangedTemplates` |
-| project.1 | 只綁家族成員：`go.mod` 的 module 不在 `github.com/vulcanshen` 底下的 app（照 tdp 做的）repo 怎麼放自己決定，範本、檔案、Makefile、CHANGELOG、module 都不查 | 同上 | `TestRepoNotFamily` |
-| project.3 | `cmd/<app>/main.go`、`go.mod` 的 module 是 `github.com/vulcanshen/<app>`（CHANGELOG 最新的 release 是 v2 以上時結尾帶 `/vN`，beta 也算；v0、v1 不帶）、`go.sum`、`LICENSE`、`docs/icon.svg`（project-12、13、15、16、18）；`install.sh` 的 `WINDOWS="yes"` 時另有 `install.ps1`、`uninstall.ps1`（project-19） | 同上 | `TestRepoFiles`、`TestRepoModuleMajor`、`TestRepoWindows` |
-| project.3 | git 沒有追蹤任何 `CLAUDE.md`，`.claude/` 底下只追蹤 harness 的 `.claude/rules/terminu.md`（project-37）；範本的 `.gitignore` 擋住其他的；不在 git 的工作目錄裡（或沒有 git）時不查 | `Check` 在 app 的 repo 跑 `git ls-files` | `TestRepoClaudeFiles` |
-| project.5 | Makefile：開頭三列照範本、`include family.mk` 之前只有變數、`BINARY := <app>`、`##@ <app> 自己的` 是最後一段、target 不跟 family.mk 的重名（project-23～27） | 同上 | `TestRepoMakefile` |
-| project.6 | CHANGELOG 的開頭照範本、`## Unreleased` 單獨一列、寫了 tdp 的標題是 `## vX.Y.Z — tdp vA.B.C`，兩個版本都可以帶 pre-release（例 `v1.1.0-beta.1`）（project-28、29、30）；沒寫 tdp 的舊標題不查（project-31） | 同上 | `TestRepoChangelog` |
-| E8 | lib 自己的 module 不查 | lib | `TestRepoLibModule` |
-| — | `Check` 自己跑，app 不改測試；失敗寫出檔名、diff、要重新複製的範本與 lib 的複本在哪 | lib | `TestCheckReadsTheRepo`、`TestRepoRoot` |
-| — | lib 帶的範本是 tdp 這一版的 `project/` 原樣，tdp 的版本跟 CHANGELOG 寫的一樣 | lib | `TestTemplatesAreTdps`、`TestTdpVersionIsTheChangelogs` |
-
-不查（要判斷，或要跑、要看 git）：project-11（端到端測試這類目錄 app 可以自行決定）、14、20～22、30 的 commit、31 的改寫、32～36；README 的段落、
-`tdp` 引用的寫法、splash 對 `docs/icon.svg`。
+tdp v1.2.0 把 project 與它的範本（`family.mk`、`release.yml`、`.goreleaser.yaml`、`install.sh`、`uninstall.sh`、`version.go`、`.gitignore`）
+搬到 terminu-harness，`project-` 的條目跟著搬過去。repo 的檢查也一起搬：`tdptest.Check` 不再讀 app 的 repo。
 
 ## 熱鍵標記（M5）在展示場用到的地方
 

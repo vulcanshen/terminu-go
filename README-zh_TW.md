@@ -92,7 +92,8 @@ go run github.com/vulcanshen/terminu-go/examples/showcase@latest
   畫面上紅色的 `\n` 就一定是外面來的。
 - **拿來讀的內容**（viewer、panel 上的 log、預覽）：照終端機會畫的樣子，顏色碼照著上色、`\n` 換行、進度列的 `\r` 只留最後的
   狀態，其他畫成紅色的名字。自己畫的 body 要顯示 log 時，用 `Reading` 畫它的每一行。
-- **語法顏色**：`Lang` 寫了語言的 viewer、預覽裡的文字檔，照 tdp 上色：chroma 的 catppuccin-mocha，照它的顏色、粗體、斜體與底線，不上背景色，chroma 漏掉的照
+- **語法顏色**：`Lang` 寫了語言的 viewer、預覽裡的文字檔，照 tdp 上色（檔案的格式照檔名判斷，同名的再看資料夾：`.ssh` 裡的 `config`
+  是 SSH 設定）：chroma 的 catppuccin-mocha，照它的顏色、粗體、斜體與底線，不上背景色，chroma 漏掉的照
   家族的一種補法補上（TOML 的表名與 key、YAML 沒引號的值……）。自己畫的 body 要顯示檔案時，用 `Syntax(lang, lines)` 上色，
   長得就跟預覽一樣。import 函式庫時，它會把自己的 lexer 放進 chroma 的全域 registry，你自己呼叫 chroma 也拿到補過的。
 
@@ -168,11 +169,7 @@ func TestFirstLaunch(t *testing.T) {
   失敗；資料刻意放了這種名字時設 `AllowLineBreaks`。
   `Env` 拿得到沙盒的 `HOME`，環境變數可以指到 `Seed` 放進去的檔。
   `go test -short` 時只在最低尺寸與 80×24 啟動，icon 只用一格。
-  它先在子測試 `repo` 裡讀 app 的 repo（測試目錄往上找到的 `go.mod`），照 tdp project 檢查：範本（`family.mk`、`release.yml`、
-  `.goreleaser.yaml`、`install.sh`、`uninstall.sh`、`version.go`、`.gitignore`）要跟這一版實作的 tdp 一樣，只差每一份允許 app 改的地方；
-  每個 app 都有的檔案；Makefile 的排法；CHANGELOG 的開頭與標題；git 沒有追蹤 `CLAUDE.md`，`.claude/` 底下只追蹤 harness 的
-  `.claude/rules/terminu.md`。失敗時寫出哪個檔、差在哪裡、要重新複製哪一份範本。
-  tdp project 只綁家族成員：`go.mod` 的 module 不在 `github.com/vulcanshen` 底下的 app，repo 不查。
+  它不讀 app 的 repo：家族的範本與 repo 的檢查在 [terminu-harness](https://github.com/vulcanshen/terminu-harness)。
 - **`Tricky`、`Sizes` 與 `Mashes`** 是弄壞過畫面的值：控制字元、escape sequence、寬字與組合字、很長的值；奇怪的終端機尺寸；
   比動畫還快的連按（`Mash`）。
 
@@ -189,9 +186,29 @@ return app.Tick(300*time.Millisecond, func(time.Time) tea.Msg { return searchNow
 在程式裡它就是 `tea.Tick`。在測試裡它等測試的時間，`Advance` 推到了才觸發，不會自己跑。用 `tea.Tick` 做的計時器在測試裡也照
 真的時間跑：測試推不動它，它做的事在時間到的時候才進來。
 
+## lib 與 app 的分工
+
+tdp E8 對任何共用的 lib 只留三點：用 lib 的 app 不另外做 lib 做到的、畫面測試照誰畫的分、lib 不自己另做。這個 lib 跟用它的 app
+怎麼分工，照這張表：
+
+| 規定 | lib | 範例 app | 用 lib 的 app |
+|---|---|---|---|
+| 畫面的規定（K、M、L、F、X、T、S1–S4、components） | 做到 | 全部展示出來 | lib 給的，自己不另外做 |
+| E1 `version`、`help` | — | 要 | 自己做 |
+| E2 環境變數的命名 | lib 自己讀的變數掛在 app 的名字底下（例：`<APP>__ICON_WIDTH`） | 照 E2（例：`SHOWCASE__…`） | 自己的變數照 E2 |
+| E3 設定與資料的位置 | — | 不存東西，不適用 | 自己做 |
+| E4 需求 | README 寫明 | — | README 寫明 |
+| E5 icon 的實際寬度 | 做到：探測（icon 與 powerline 符號）、顯示寬度函式、替子程序設 `TERMINU__ICON_WIDTH` 與 `TERMINU__POWERLINE_WIDTH`、啟動時讀 `LC_TERMINU_ICON_WIDTH` 與 `LC_TERMINU_POWERLINE_WIDTH`；E5 的測試裡單獨量每一種 popup 的框（popup 是 lib 畫的） | — | lib 給的；有 ssh 的 app 連線時自己送 `LC_TERMINU_*`。E5 的測試只測自己的整個畫面：自己的版面加上自己會開的 popup，照 E5 的寬度與尺寸，每一列都滿寬 |
+| E6 發布 | 打 git tag（Go module），沒有 binary；L4 的畫面測試要有 | 不發布；L4 的畫面測試要有 | 照 E6（畫面測試照上一列的分工）；家族的範本與 repo 的檢查在 [terminu-harness](https://github.com/vulcanshen/terminu-harness) |
+| S5 splash 畫的 icon | splash 的機制；建立 splash 時，下面的字有一列超過 50 欄就回錯誤 | tdp 的 `principle/icon.svg`（terminu 的 mark） | 自己的 `docs/icon.svg` |
+| E7 README | lib 自己的結構：安裝是 `go get`、快速開始是程式碼、寫明範例 app 怎麼跑 | 不另外寫 | 照 E7 |
+| 做不到或不好用的規定（Rules 開頭的「放行」） | **lib 不自己另做**：回報成 tdp 的缺漏，規範改了 lib 才跟著改 | — | 回報成 tdp 的缺漏 |
+
+這裡只寫「用 lib 時」的分工，用不用 lib 由 app 決定。app 改用 lib 時，畫面與 E5 的程式可以刪掉，E1、E3、E6、E7 與自己的 icon 留著。
+
 ## 實作哪一版 terminu design
 
-terminu-go 實作 **tdp v1.1.10**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
+terminu-go 實作 **tdp v1.2.0-beta.1**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
 
 ## 相關連結
 

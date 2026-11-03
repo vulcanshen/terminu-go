@@ -1,0 +1,34 @@
+<!--
+  .gitignore and .dockerignore, which chroma has no lexer for (tdp
+  file-picker.3, "Where chroma leaves a gap"): a comment, a line starting
+  with #, is Comment; the ! at the start of a line, which takes a pattern
+  back, is Keyword.
+-->
+<lexer>
+  <config>
+    <name>Ignore file</name>
+    <alias>gitignore</alias>
+    <alias>dockerignore</alias>
+    <filename>.gitignore</filename>
+    <filename>.dockerignore</filename>
+  </config>
+  <rules>
+    <state name="root">
+      <rule pattern="^#.*">
+        <token type="Comment"/>
+      </rule>
+      <rule pattern="^!">
+        <token type="Keyword"/>
+      </rule>
+      <rule pattern="\\.">
+        <token type="Text"/>
+      </rule>
+      <rule pattern="[^\\\n]+">
+        <token type="Text"/>
+      </rule>
+      <rule pattern="\n">
+        <token type="Text"/>
+      </rule>
+    </state>
+  </rules>
+</lexer>

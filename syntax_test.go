@@ -2,6 +2,8 @@ package terminu
 
 import (
 	"fmt"
+	"io/fs"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -94,6 +96,70 @@ var syntaxGaps = []struct {
 		[]string{"**Why**: because", "# Head", "*Note* this", "- item", "__Bold__ too", "> quote", "_It_ too",
 			"* item", "- **Lead** item", "Mid **bold** and *em*"},
 		[]gapPart{{1, "**Why**", Text}, {8, "*", mauve}, {9, "-", mauve}}},
+	{"go.mod, go.work: chroma reads them as AMPL", "go.mod",
+		[]string{"module example.com/app", "go 1.24", "require (", "\texample.com/b v1.2.3 // indirect", ")", "replace example.com/b => ../b"},
+		[]gapPart{{1, "module", mauve}, {2, "1.24", Peach}, {3, "require", mauve}, {4, "v1.2.3", Peach}, {4, "// indirect", Overlay0},
+			{6, "=>", sky}, {1, "example.com/app", Text}}},
+	{"SSH config: chroma has no lexer", "/home/me/.ssh/config",
+		[]string{"# keys", "Host web", "    HostName 10.0.0.5", "    Port 2222", "    IdentityFile ~/.ssh/id"},
+		[]gapPart{{1, "# keys", Overlay0}, {2, "Host", mauve}, {3, "HostName", mauve}, {4, "Port", mauve}, {4, "2222", Peach}, {5, "IdentityFile", mauve}}},
+	{"hosts: no lexer", "/etc/hosts",
+		[]string{"# local", "127.0.0.1\tlocalhost", "::1\tlocalhost"},
+		[]gapPart{{1, "# local", Overlay0}, {2, "127.0.0.1", Peach}, {2, "localhost", Text}, {3, "::1", Peach}}},
+	{".gitignore, .dockerignore: no lexer", ".gitignore",
+		[]string{"# build", "/bin/", "!keep.log"},
+		[]gapPart{{1, "# build", Overlay0}, {2, "/bin/", Text}, {3, "!", mauve}, {3, "keep.log", Text}}},
+	{"requirements.txt: no lexer", "requirements.txt",
+		[]string{"# pinned", "requests==2.31.0", "numpy~=1.26.4  # fast"},
+		[]gapPart{{1, "# pinned", Overlay0}, {2, "requests", Text}, {2, "==", sky}, {2, "2.31.0", Peach}, {3, "~=", sky}, {3, "1.26.4", Peach}, {3, "# fast", Overlay0}}},
+	{"Jenkinsfile: chroma does not know the name", "Jenkinsfile",
+		[]string{"pipeline {", "  stages { stage('Build') { } }", "}", "def greet(String name) { return 1 }"},
+		[]gapPart{{2, "'Build'", Green}, {4, "def", Red}, {4, "greet", Blue}}},
+	{"JavaScript: a declared function's and class's name", "app.js",
+		[]string{"function greet(a) {}", "class Point extends Base {}"},
+		[]gapPart{{1, "greet", Blue}, {2, "Point", Yellow}}},
+	{"TypeScript: a declared function's and class's name", "app.ts",
+		[]string{"export function greet(p: P): string {}", "export class Point implements Shape {}"},
+		[]gapPart{{1, "greet", Blue}, {2, "Point", Yellow}}},
+	{"Go: a declared type's name, the package's name", "main.go",
+		[]string{"package main", "type Point struct{}", "type (", "\tID string", "\tFn func(a int) error", "\tPair struct{ A int }", "\tName string", ")"},
+		[]gapPart{{1, "main", Peach}, {2, "Point", Yellow}, {4, "ID", Yellow}, {5, "Fn", Yellow}, {6, "Pair", Yellow}, {6, "A", Text}, {7, "Name", Yellow}}},
+	{"Bash and the shells: a defined function's name", "deploy.sh",
+		[]string{"greet() {", "  echo hi", "}", "function hello {", "}"},
+		[]gapPart{{1, "greet", Blue}, {4, "hello", Blue}}},
+	{"Terraform: an attribute's key", "main.tf",
+		[]string{`resource "x" "y" {`, `  ami = "ami-1"`, `}`},
+		[]gapPart{{2, "ami", Blue}}},
+}
+
+// TestSyntaxByDirectory: a file's format goes by its name, and where more
+// than one format has the name, by the directory it is in (file-picker-96):
+// a config in .ssh is SSH's, one in .git is git's, any other plain. The
+// preview and Syntax tell it the same way; TestSyntaxPreviewViewerSame
+// has a viewer do so too.
+func TestSyntaxByDirectory(t *testing.T) {
+	ssh, git := []string{"Host web", "  Port 22"}, []string{"[core]", "editor = vim"}
+	for _, c := range []struct {
+		file  string
+		lines []string
+		parts []gapPart
+	}{
+		{"/home/me/.ssh/config", ssh, []gapPart{{1, "Host", mauve}, {2, "22", Peach}}},
+		{"/repo/.git/config", git, []gapPart{{1, "[core]", mauve}, {2, "editor", Blue}, {2, "vim", Green}}},
+		{"/etc/ssh/sshd_config", ssh, []gapPart{{1, "Host", mauve}}},
+		{"/repo/app/config", ssh, []gapPart{{1, "Host web", Text}, {2, "Port 22", Text}}},
+		{"config", git, []gapPart{{1, "[core]", Text}}},
+	} {
+		got := Syntax(c.file, c.lines)
+		for _, w := range syntaxGapsIn(got, c.lines, c.parts) {
+			t.Errorf("%s: %s", c.file, w)
+		}
+		for i, l := range highlight(c.file, strings.Join(c.lines, "\n"), 10, 4, 1) {
+			if body := strings.TrimPrefix(l, Fg(Overlay0).Render(fmt.Sprint(i+1))+" "); body != got[i] {
+				t.Errorf("%s, line %d: the preview has %q, Syntax %q", c.file, i+1, body, got[i])
+			}
+		}
+	}
 }
 
 // stylePart is a part of a line and whether it is bold and italic: the
@@ -286,15 +352,41 @@ func TestSyntaxGaps(t *testing.T) {
 	}
 }
 
+// chromaFor is the lexer chroma itself reads file with, by its name, as
+// its registry picks one before the lib's lexers go in: the one with the
+// highest priority of those whose file names match; plain text when none
+// does.
+func chromaFor(file string) chroma.Lexer {
+	base := filepath.Base(file)
+	var best chroma.Lexer
+	var top float32
+	for _, l := range chromaOwn {
+		for _, glob := range l.Config().Filenames {
+			if ok, _ := filepath.Match(glob, base); ok {
+				p := l.Config().Priority
+				if p == 0 {
+					p = 1
+				}
+				if best == nil || p > top {
+					best, top = l, p
+				}
+			}
+		}
+	}
+	if best == nil {
+		return lexers.Fallback
+	}
+	return best
+}
+
 // TestSyntaxGapsInChroma: chroma's own lexer still leaves each gap the lib
 // fills. When chroma fills one itself, this fails: the lib's fix in lexers
 // has no more to do, and goes.
 func TestSyntaxGapsInChroma(t *testing.T) {
 	for _, g := range syntaxGaps {
-		mine := lexerFor(g.file)
-		theirs := chromaLexers[mine.Config().Name]
-		if theirs == nil || theirs == mine {
-			t.Errorf("%s: no lexer of chroma's own kept for %s", g.row, mine.Config().Name)
+		theirs := chromaFor(g.file)
+		if theirs == lexerFor(g.file) {
+			t.Errorf("%s: no lexer of chroma's own kept for %s", g.row, g.file)
 			continue
 		}
 		coloured := colourise(theirs, g.lines)
@@ -308,9 +400,21 @@ func TestSyntaxGapsInChroma(t *testing.T) {
 // in chroma's own registry, for an app that calls chroma itself, and chroma
 // keeps one lexer of each name.
 func TestSyntaxLexersReplaceChroma(t *testing.T) {
-	for name := range chromaLexers {
+	theirs := map[string]chroma.Lexer{}
+	for _, l := range chromaOwn {
+		theirs[l.Config().Name] = l
+	}
+	paths, _ := fs.Glob(lexerFiles, "lexers/*.xml")
+	names := []string{"Go"}
+	for _, p := range paths {
+		names = append(names, chroma.MustNewXMLLexer(lexerFiles, p).Config().Name)
+	}
+	if len(names) < 17 {
+		t.Errorf("the lib has %d lexers: %v", len(names), names)
+	}
+	for _, name := range names {
 		l := lexers.Get(name)
-		if l == nil || chromaLexers[name] == l {
+		if l == nil || theirs[name] == l {
 			t.Errorf("%s: chroma still answers with its own", name)
 			continue
 		}
@@ -325,13 +429,17 @@ func TestSyntaxLexersReplaceChroma(t *testing.T) {
 		}
 	}
 	for file, name := range map[string]string{"Cargo.toml": "TOML", "pod.yml": "YAML", ".gitconfig": "Git Config",
-		"build.mk": "Makefile", "Dockerfile": "Docker", "README.md": "markdown", "setup.cfg": "INI"} {
+		"build.mk": "Makefile", "Dockerfile": "Docker", "README.md": "markdown", "setup.cfg": "INI",
+		"go.mod": "Go module", "go.work": "Go module", "lib.mod": "AMPL", "ssh_config": "SSH config", "sshd_config": "SSH config",
+		"hosts": "hosts", ".gitignore": "Ignore file", ".dockerignore": "Ignore file", "requirements.txt": "pip requirements",
+		"requirements-dev.txt": "pip requirements", "notes.txt": "plaintext", "Jenkinsfile": "Groovy", "app.js": "JavaScript",
+		"app.ts": "TypeScript", "main.go": "Go", "deploy.sh": "Bash", "main.tf": "Terraform"} {
 		if l := lexers.Match(file); l == nil || l.Config().Name != name {
 			t.Errorf("%s: read by %v, want %s", file, l, name)
 		}
 	}
 	for _, mime := range []string{"text/x-toml", "text/x-yaml", "text/x-markdown"} {
-		if l := lexers.MatchMimeType(mime); l == nil || l == chromaLexers[l.Config().Name] {
+		if l := lexers.MatchMimeType(mime); l == nil || l == theirs[l.Config().Name] {
 			t.Errorf("%s: chroma's own lexer", mime)
 		}
 	}
