@@ -360,12 +360,14 @@ func highlight(p, text string, h, tabW, first int) []string {
 
 // colourise is lines in the colours of catppuccin-mocha as lexer reads them,
 // foreground only; what it leaves uncoloured is Text. A viewer colours its
-// content with it too (tdp note).
+// content with it too (tdp note), and so does Syntax. The last line ends
+// with a line break, as in a file: a lexer that reads a heading or a list
+// item up to its line break colours the last line too.
 func colourise(lexer chroma.Lexer, lines []string) []string {
 	style := styles.Get("catppuccin-mocha")
 	coloured := make([]strings.Builder, len(lines))
 	row := 0
-	if it, err := chroma.Coalesce(lexer).Tokenise(nil, strings.Join(lines, "\n")); err == nil {
+	if it, err := chroma.Coalesce(lexer).Tokenise(nil, strings.Join(lines, "\n")+"\n"); err == nil {
 		for tok := it(); tok != chroma.EOF; tok = it() {
 			c := style.Get(tok.Type).Colour
 			parts := strings.Split(tok.Value, "\n")

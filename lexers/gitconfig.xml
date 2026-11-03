@@ -1,0 +1,40 @@
+<!--
+  chroma v2.27.0's INI lexer for .gitconfig, where every key in a section is
+  indented: INI reads an indented line as the value going on, and so the
+  keys after the first were a value (tdp file-picker.3, "Where chroma leaves
+  a gap"). Here an indented key is a key, as the first. Its priority puts it
+  before INI for .gitconfig; INI stays as it is for its other files. Based
+  on chroma, MIT: see COPYING-chroma.
+-->
+<lexer>
+  <config>
+    <name>Git Config</name>
+    <alias>gitconfig</alias>
+    <filename>.gitconfig</filename>
+  </config>
+  <rules>
+    <state name="root">
+      <rule pattern="\s+">
+        <token type="Text"/>
+      </rule>
+      <rule pattern="[;#].*">
+        <token type="CommentSingle"/>
+      </rule>
+      <rule pattern="\[.*?\]$">
+        <token type="Keyword"/>
+      </rule>
+      <rule pattern="(.*?)([ \t]*)(=)([ \t]*)(.*)">
+        <bygroups>
+          <token type="NameAttribute"/>
+          <token type="Text"/>
+          <token type="Operator"/>
+          <token type="Text"/>
+          <token type="LiteralString"/>
+        </bygroups>
+      </rule>
+      <rule pattern="(.+?)$">
+        <token type="NameAttribute"/>
+      </rule>
+    </state>
+  </rules>
+</lexer>

@@ -102,6 +102,11 @@ program's output — never reaches the terminal as it is:
 - **What is read** (a viewer, a panel's log, previews) is drawn as a terminal would: colour codes colour, `\n` starts
   a line, a progress bar's `\r` leaves its last state, anything else is its name in Red. A body of your own that
   shows a log draws its lines with `Reading`.
+- **Syntax colours**: a viewer whose `Lang` names a language, and a text file in a preview, are coloured as tdp asks:
+  chroma's catppuccin-mocha, foreground only, with the gaps chroma leaves filled the family's one way (TOML's table
+  names and keys, YAML's values without quotes…). A body of your own that shows a file colours it with
+  `Syntax(lang, lines)`, to look as it does in the preview. Importing the library puts its lexers in chroma's global
+  registry, so code of yours that calls chroma gets the gaps filled too.
 
 ## The App Log
 
@@ -212,7 +217,7 @@ in whenever it is due.
 
 ## Which terminu design
 
-terminu-go implements **tdp v1.1.6**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
+terminu-go implements **tdp v1.1.7**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
 
 ## Links
 

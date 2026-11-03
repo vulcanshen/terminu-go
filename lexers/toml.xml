@@ -1,0 +1,196 @@
+<!--
+  chroma v2.27.0's TOML lexer, rewritten to tell a table's name, a key and a
+  value apart (tdp file-picker.3, "Where chroma leaves a gap"): a table's
+  name is Keyword and a key NameAttribute, as an INI section and key; a
+  number in any form is a number; a date or a time in any form is
+  LiteralDate. Based on chroma, MIT: see COPYING-chroma.
+-->
+<lexer>
+  <config>
+    <name>TOML</name>
+    <alias>toml</alias>
+    <filename>*.toml</filename>
+    <filename>Pipfile</filename>
+    <filename>poetry.lock</filename>
+    <filename>uv.lock</filename>
+    <mime_type>text/x-toml</mime_type>
+  </config>
+  <rules>
+    <state name="root">
+      <rule pattern="\s+">
+        <token type="Text"/>
+      </rule>
+      <rule pattern="#.*">
+        <token type="Comment"/>
+      </rule>
+      <rule pattern="\[\[?">
+        <token type="Punctuation"/>
+        <push state="table"/>
+      </rule>
+      <rule pattern="=">
+        <token type="Punctuation"/>
+        <push state="value"/>
+      </rule>
+      <rule>
+        <include state="key"/>
+      </rule>
+    </state>
+    <state name="key">
+      <rule pattern="[A-Za-z0-9_-]+">
+        <token type="NameAttribute"/>
+      </rule>
+      <rule pattern="&#34;(\\.|[^&#34;\\\n])*&#34;">
+        <token type="NameAttribute"/>
+      </rule>
+      <rule pattern="&#39;[^&#39;\n]*&#39;">
+        <token type="NameAttribute"/>
+      </rule>
+      <rule pattern="\.">
+        <token type="Punctuation"/>
+      </rule>
+    </state>
+    <state name="table">
+      <rule pattern="[ \t]+">
+        <token type="Text"/>
+      </rule>
+      <rule pattern="\]\]?">
+        <token type="Punctuation"/>
+        <pop depth="1"/>
+      </rule>
+      <rule pattern="\n">
+        <token type="Text"/>
+        <pop depth="1"/>
+      </rule>
+      <rule pattern="[A-Za-z0-9_-]+">
+        <token type="Keyword"/>
+      </rule>
+      <rule pattern="&#34;(\\.|[^&#34;\\\n])*&#34;">
+        <token type="Keyword"/>
+      </rule>
+      <rule pattern="&#39;[^&#39;\n]*&#39;">
+        <token type="Keyword"/>
+      </rule>
+      <rule pattern="\.">
+        <token type="Punctuation"/>
+      </rule>
+    </state>
+    <state name="value">
+      <rule pattern="\n">
+        <token type="Text"/>
+        <pop depth="1"/>
+      </rule>
+      <rule pattern="[ \t]+">
+        <token type="Text"/>
+      </rule>
+      <rule pattern="#.*">
+        <token type="Comment"/>
+      </rule>
+      <rule>
+        <include state="values"/>
+      </rule>
+    </state>
+    <state name="array">
+      <rule pattern="\s+">
+        <token type="Text"/>
+      </rule>
+      <rule pattern="#.*">
+        <token type="Comment"/>
+      </rule>
+      <rule pattern=",">
+        <token type="Punctuation"/>
+      </rule>
+      <rule pattern="\]">
+        <token type="Punctuation"/>
+        <pop depth="1"/>
+      </rule>
+      <rule>
+        <include state="values"/>
+      </rule>
+    </state>
+    <state name="inline">
+      <rule pattern="\s+">
+        <token type="Text"/>
+      </rule>
+      <rule pattern=",">
+        <token type="Punctuation"/>
+      </rule>
+      <rule pattern="\}">
+        <token type="Punctuation"/>
+        <pop depth="1"/>
+      </rule>
+      <rule pattern="=">
+        <token type="Punctuation"/>
+        <push state="inline-value"/>
+      </rule>
+      <rule>
+        <include state="key"/>
+      </rule>
+    </state>
+    <state name="inline-value">
+      <rule pattern="[ \t]+">
+        <token type="Text"/>
+      </rule>
+      <rule pattern="(?=[,}\n])">
+        <pop depth="1"/>
+      </rule>
+      <rule>
+        <include state="values"/>
+      </rule>
+    </state>
+    <state name="values">
+      <rule pattern="(true|false)\b">
+        <token type="KeywordConstant"/>
+      </rule>
+      <rule pattern="\d{4}-\d{2}-\d{2}([Tt ]\d{2}:\d{2}(:\d{2}(\.\d+)?)?([Zz]|[+-]\d{2}:\d{2})?)?">
+        <token type="LiteralDate"/>
+      </rule>
+      <rule pattern="\d{2}:\d{2}(:\d{2}(\.\d+)?)?">
+        <token type="LiteralDate"/>
+      </rule>
+      <rule pattern="[+-]?0x[0-9A-Fa-f](_?[0-9A-Fa-f])*">
+        <token type="LiteralNumberHex"/>
+      </rule>
+      <rule pattern="[+-]?0o[0-7](_?[0-7])*">
+        <token type="LiteralNumberOct"/>
+      </rule>
+      <rule pattern="[+-]?0b[01](_?[01])*">
+        <token type="LiteralNumberBin"/>
+      </rule>
+      <rule pattern="[+-]?(inf|nan)\b">
+        <token type="LiteralNumberFloat"/>
+      </rule>
+      <rule pattern="[+-]?\d(_?\d)*(\.\d(_?\d)*)?[eE][+-]?\d(_?\d)*">
+        <token type="LiteralNumberFloat"/>
+      </rule>
+      <rule pattern="[+-]?\d(_?\d)*\.\d(_?\d)*">
+        <token type="LiteralNumberFloat"/>
+      </rule>
+      <rule pattern="[+-]?\d(_?\d)*">
+        <token type="LiteralNumberInteger"/>
+      </rule>
+      <rule pattern="&#34;&#34;&#34;(\\[\s\S]|[^\\])*?&#34;&#34;&#34;&#34;{0,2}">
+        <token type="LiteralStringDouble"/>
+      </rule>
+      <rule pattern="&#39;&#39;&#39;[\s\S]*?&#39;&#39;&#39;&#39;{0,2}">
+        <token type="LiteralStringSingle"/>
+      </rule>
+      <rule pattern="&#34;(\\.|[^&#34;\\\n])*&#34;">
+        <token type="LiteralStringDouble"/>
+      </rule>
+      <rule pattern="&#39;[^&#39;\n]*&#39;">
+        <token type="LiteralStringSingle"/>
+      </rule>
+      <rule pattern="\[">
+        <token type="Punctuation"/>
+        <push state="array"/>
+      </rule>
+      <rule pattern="\{">
+        <token type="Punctuation"/>
+        <push state="inline"/>
+      </rule>
+      <rule pattern="[^\s,\]}#]+">
+        <token type="Text"/>
+      </rule>
+    </state>
+  </rules>
+</lexer>

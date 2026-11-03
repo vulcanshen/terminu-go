@@ -92,6 +92,9 @@ go run github.com/vulcanshen/terminu-go/examples/showcase@latest
   畫面上紅色的 `\n` 就一定是外面來的。
 - **拿來讀的內容**（viewer、panel 上的 log、預覽）：照終端機會畫的樣子，顏色碼照著上色、`\n` 換行、進度列的 `\r` 只留最後的
   狀態，其他畫成紅色的名字。自己畫的 body 要顯示 log 時，用 `Reading` 畫它的每一行。
+- **語法顏色**：`Lang` 寫了語言的 viewer、預覽裡的文字檔，照 tdp 上色：chroma 的 catppuccin-mocha、只上前景色，chroma 漏掉的照
+  家族的一種補法補上（TOML 的表名與 key、YAML 沒引號的值……）。自己畫的 body 要顯示檔案時，用 `Syntax(lang, lines)` 上色，
+  長得就跟預覽一樣。import 函式庫時，它會把自己的 lexer 放進 chroma 的全域 registry，你自己呼叫 chroma 也拿到補過的。
 
 ## App Log
 
@@ -188,7 +191,7 @@ return app.Tick(300*time.Millisecond, func(time.Time) tea.Msg { return searchNow
 
 ## 實作哪一版 terminu design
 
-terminu-go 實作 **tdp v1.1.6**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
+terminu-go 實作 **tdp v1.1.7**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
 
 ## 相關連結
 

@@ -2,6 +2,21 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.1.8 — tdp v1.1.7
+
+- Syntax colours fill the gaps chroma leaves, as tdp file-picker.3's new table lists them, in a file preview and in a
+  viewer alike (note.2; from viewu): TOML (a table's name Mauve, a key Blue, a number or a date in any form), YAML (a
+  value without quotes Green, a key in a flow mapping, a number with a sign or a leading dot), `.gitconfig` (an
+  indented key), Makefile (a directive, a variable in a recipe), Dockerfile (a `LABEL`'s key, `AS` after an image
+  with a variable, a version with a dot) and Markdown (an underlined heading, a `+` item, a reference link). The
+  lexers are chroma v2.27.0's with the gaps filled, in `lexers/`; importing the library puts them in chroma's global
+  registry in place of chroma's own, so code that calls chroma itself gets them too
+- `Syntax(lang, lines)` colours lines as a preview and a viewer do, for an app that draws a file in a body of its
+  own; `lang` is what `Viewer.Lang` takes
+- The last line of a text file is coloured as chroma colours it in the file, with a line break after it: a Markdown
+  heading or list item on the last line had no colour
+- The showcase's pretend project has a TOML file, `config/build.toml`
+
 ## v1.1.7 — tdp v1.1.6
 
 - tdp no longer cites the record numbers of the family's notes; where a rule came from it names the app, as this

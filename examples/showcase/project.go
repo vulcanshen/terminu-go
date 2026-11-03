@@ -39,6 +39,7 @@ func fakeProject() string {
 	put("assets/logo.png", tinyPNG(), 0o644)
 	put("assets/fonts.zip", tinyZip(), 0o644)
 	put("bin/tool", []byte("\x7fELF\x02\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x3e\x00showcase tool"), 0o755)
+	put("config/build.toml", []byte("# how the showcase builds\n[project]\nname = \"showcase\"\nversion = \"0.1.0\"\n\n[build]\ntargets = [\"linux\", \"darwin\"]\njobs = 4\n"), 0o644)
 	put("config/app.yaml", []byte("token: 3f9a-not-a-real-token\nendpoint: https://example.com\n"), 0o600)
 	put("keys/deploy_key", []byte("-----BEGIN OPENSSH PRIVATE KEY-----\n(a fake key for the showcase)\n-----END OPENSSH PRIVATE KEY-----\n"), 0o644)
 	put(".env", []byte("SHOWCASE_SECRET=not-a-real-secret\n"), 0o600)

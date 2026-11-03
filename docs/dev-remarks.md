@@ -1,7 +1,7 @@
 # terminu-go 開發者備忘
 
 terminu-go 是 terminu design principle（tdp）的 Go 實作：給 app 呼叫的 lib，加上展示場 `examples/showcase`。遵循 terminu design
-principle，目前對應 tdp v1.1.6。lib 只照 tdp 最新 tag 的文字做；規範沒寫或照做不好用的地方回報給 tdp，不在 lib 裡自己決定。
+principle，目前對應 tdp v1.1.7。lib 只照 tdp 最新 tag 的文字做；規範沒寫或照做不好用的地方回報給 tdp，不在 lib 裡自己決定。
 
 ## 運作方式
 
@@ -200,6 +200,13 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
 - **檔案預覽**（`preview.go`）：照 input/file-picker 的「預覽」表。語法上色用 `alecthomas/chroma/v2`（MIT，catppuccin-mocha，
   只上前景色）；PDF 用 `dslipak/pdf`（BSD-3，rsc.io/pdf 的分支，能取純文字）；壓縮檔用標準庫（zip、tar、gzip、bzip2）。圖片的 data URI
   只讀畫得到的那一段，不把整個檔案（最多 1 MB）都編碼。預覽框不能捲，PDF 讀到預覽區滿了就停，不一定讀滿 20 頁。
+- **chroma 漏掉的語法顏色**（file-picker.3 的表）：`lexers/` 裡是照 chroma v2.27.0 改的 lexer XML（TOML 整份重寫；YAML、Makefile、
+  Dockerfile 照抄再改幾條；Markdown 在 chroma 是 Go 寫的，翻成 XML；`.gitconfig` 是 INI 的一份，priority 比 INI 高），embed 進 lib，
+  init 時 `lexers.Register` 用 chroma 原本的名字登記，蓋掉 chroma 全域 registry 裡的那一個：預覽、viewer、`Syntax`，還有 app
+  自己呼叫 chroma，拿到的都是補過的。不在 token 出來之後改種類，同一個檔怎麼讀全在 lexer 裡。被蓋掉的 chroma lexer 留在
+  `chromaLexers`，`TestSyntaxGapsInChroma` 拿它跑表的每一列、要它還缺；chroma 自己補好了，這個測試就失敗，那份 XML 刪掉。
+  chroma 是 MIT，`lexers/COPYING-chroma` 是它的授權。上色時最後一行後面補一個換行，跟檔案裡一樣：讀到換行才算一行的 lexer
+  （Markdown 的標題、清單）最後一行才有顏色。
 - **家族共用的設定 key**（Rules E3）：`hide_secrets_in_preview`、`input_tab_width` 是使用者的設定，lib 不讀設定檔；app 從自己的設定檔讀，
   設到 `App.HideSecretsInPreview`、`App.InputTabWidth`。
 - **PTY 只在 unix**：`terminal_other.go` 開不了 PTY，只在畫面上寫出原因。

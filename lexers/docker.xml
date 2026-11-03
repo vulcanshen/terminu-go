@@ -1,0 +1,141 @@
+<!--
+  chroma v2.27.0's Dockerfile lexer with the gaps filled (tdp file-picker.3,
+  "Where chroma leaves a gap"): a LABEL's key is NameVariable, as an ENV's;
+  AS and the stage's name after an image with a variable, FROM
+  golang:${GO} AS build, are coloured as without the variable; a version
+  with a dot, ARG GO=1.24, is one number. Based on chroma, MIT: see
+  COPYING-chroma.
+-->
+<lexer>
+  <config>
+    <name>Docker</name>
+    <alias>docker</alias>
+    <alias>dockerfile</alias>
+    <alias>containerfile</alias>
+    <filename>Dockerfile</filename>
+    <filename>Dockerfile.*</filename>
+    <filename>*.Dockerfile</filename>
+    <filename>*.docker</filename>
+    <filename>Containerfile</filename>
+    <filename>Containerfile.*</filename>
+    <filename>*.Containerfile</filename>
+    <mime_type>text/x-dockerfile-config</mime_type>
+    <case_insensitive>true</case_insensitive>
+  </config>
+  <rules>
+    <state name="root">
+      <rule pattern="#.*">
+        <token type="Comment" />
+      </rule>
+      <rule pattern="(ONBUILD)((?:\s*\\?\s*))">
+        <bygroups>
+          <token type="Keyword" />
+          <using lexer="Bash" />
+        </bygroups>
+      </rule>
+      <rule pattern="(HEALTHCHECK)((?:(?:\s*\\?\s*)--\w+=\w+(?:\s*\\?\s*))*)">
+        <bygroups>
+          <token type="Keyword" />
+          <using lexer="Bash" />
+        </bygroups>
+      </rule>
+      <rule pattern="(VOLUME|ENTRYPOINT|CMD|SHELL)((?:\s*\\?\s*))(\[.*?\])">
+        <bygroups>
+          <token type="Keyword" />
+          <using lexer="Bash" />
+          <using lexer="JSON" />
+        </bygroups>
+      </rule>
+      <rule pattern="(LABEL)(?=\s)">
+        <token type="Keyword"/>
+        <push state="label"/>
+      </rule>
+      <rule pattern="(ARG|ENV)(?=\s)">
+        <token type="Keyword"/>
+        <push state="assign"/>
+      </rule>
+      <rule pattern="(FROM)(\s+)(\S*\$\{[^}\s]*\}\S*)(?:(\s+)(AS)\b(\s+)(\S+))?">
+        <bygroups>
+          <token type="Keyword"/>
+          <token type="TextWhitespace"/>
+          <token type="LiteralString"/>
+          <token type="TextWhitespace"/>
+          <token type="Keyword"/>
+          <token type="TextWhitespace"/>
+          <token type="LiteralString"/>
+        </bygroups>
+      </rule>
+      <rule
+        pattern="((?:FROM|MAINTAINER|EXPOSE|WORKDIR|USER|STOPSIGNAL)|VOLUME)\b(\s)([\S]*)\b(?:(\s)(AS)\b(\s)([\S]*))?\b"
+      >
+        <bygroups>
+          <token type="Keyword" />
+          <token type="TextWhitespace" />
+          <token type="LiteralString" />
+          <token type="TextWhitespace" />
+          <token type="Keyword" />
+          <token type="TextWhitespace" />
+          <token type="LiteralString" />
+        </bygroups>
+      </rule>
+      <rule pattern="((?:RUN|CMD|ENTRYPOINT|ENV|ARG|LABEL|ADD|COPY))">
+        <token type="Keyword" />
+      </rule>
+      <rule pattern="(.*\\\n)*.+">
+        <using lexer="Bash" />
+      </rule>
+    </state>
+    <state name="label">
+      <rule pattern="\\\n">
+        <token type="LiteralStringEscape"/>
+      </rule>
+      <rule pattern="\n">
+        <token type="Text"/>
+        <pop depth="1"/>
+      </rule>
+      <rule pattern="[ \t]+">
+        <token type="Text"/>
+      </rule>
+      <rule pattern="([\w.-]+)(=)">
+        <bygroups>
+          <token type="NameVariable"/>
+          <token type="Operator"/>
+        </bygroups>
+      </rule>
+      <rule pattern="&#34;(?:\\.|[^&#34;\\])*&#34;">
+        <token type="LiteralStringDouble"/>
+      </rule>
+      <rule pattern="&#39;[^&#39;]*&#39;">
+        <token type="LiteralStringSingle"/>
+      </rule>
+      <rule pattern="(?:[^\s=&#34;&#39;\\]|\\.)+">
+        <using lexer="Bash"/>
+      </rule>
+      <rule pattern="[=&#34;&#39;\\]">
+        <using lexer="Bash"/>
+      </rule>
+    </state>
+    <state name="assign">
+      <rule pattern="\\\n">
+        <token type="LiteralStringEscape"/>
+      </rule>
+      <rule pattern="\n">
+        <token type="Text"/>
+        <pop depth="1"/>
+      </rule>
+      <rule pattern="(\w+)(=)(\d+(?:\.\d+)+)(?=[\s\\]|$)">
+        <bygroups>
+          <token type="NameVariable"/>
+          <token type="Operator"/>
+          <token type="LiteralNumber"/>
+        </bygroups>
+      </rule>
+      <rule pattern="(?:[^\n\\]|\\.)+?(?=\w+=\d+(?:\.\d+)+(?:[\s\\]|$)|\\\n|\n|$)">
+        <using lexer="Bash"/>
+      </rule>
+      <rule pattern="\\">
+        <using lexer="Bash"/>
+      </rule>
+    </state>
+  </rules>
+</lexer>
