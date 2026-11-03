@@ -69,6 +69,7 @@ func LayerColor(k int) Color { return layerColors[min(max(k, 1), 4)-1] }
 type Style struct {
 	Fg, Bg    Color
 	Bold      bool
+	Italic    bool // syntax colours have it where catppuccin-mocha does (tdp file-picker.3)
 	Underline bool
 }
 
@@ -85,6 +86,9 @@ func (s Style) sgr() string {
 	var p []string
 	if s.Bold {
 		p = append(p, "1")
+	}
+	if s.Italic {
+		p = append(p, "3")
 	}
 	if s.Underline {
 		p = append(p, "4")

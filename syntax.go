@@ -42,8 +42,8 @@ func init() {
 
 // Syntax is lines in syntax colours, as the lib colours a text file in its
 // file preview and in a viewer (tdp file-picker.3, note.2): chroma's
-// catppuccin-mocha, foreground only, with the gaps chroma leaves filled the
-// family's one way. An app that draws a file in a body of its own colours
+// catppuccin-mocha, its colours, bold, italic and underline but never its
+// background, with the gaps chroma leaves filled the family's one way. An app that draws a file in a body of its own colours
 // it with this, so that the file looks the same there as in the preview.
 //
 // lang is what Viewer.Lang takes: a lexer's name or alias ("toml"), a file

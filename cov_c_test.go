@@ -19,8 +19,8 @@ import (
 
 // covCStyle is what one cell is drawn with, read back from the SGR codes.
 type covCStyle struct {
-	Fg, Bg Color
-	Bold   bool
+	Fg, Bg                  Color
+	Bold, Italic, Underline bool
 }
 
 // covCCell is one character on the screen: where it is and how it is drawn.
@@ -59,6 +59,14 @@ func covCApply(st *covCStyle, params string) {
 			st.Bold = true
 		case "22":
 			st.Bold = false
+		case "3":
+			st.Italic = true
+		case "23":
+			st.Italic = false
+		case "4":
+			st.Underline = true
+		case "24":
+			st.Underline = false
 		case "39":
 			st.Fg = Color{}
 		case "49":

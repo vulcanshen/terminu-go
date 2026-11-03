@@ -2,6 +2,16 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.1.10 — tdp v1.1.9
+
+- Syntax colours keep catppuccin-mocha's bold, italic and underline, in a file preview, a viewer and `Syntax` alike
+  (tdp file-picker.3, note.2): Markdown's `**bold**` is bold and `*italic*` italic, a `#` heading bold, a comment
+  italic, an operator such as `=` or `&&` bold. Its background is never drawn, as before: no Base behind the text,
+  no Surface0 behind a diff's added and removed lines. The lexers the lib has for chroma's gaps take the same
+  styles (a Makefile directive is italic, as a comment)
+- A viewer's selection shows none of it: Base on Yellow, as before (tdp note.2)
+- `Style.Italic` draws text in italics
+
 ## v1.1.9 — tdp v1.1.8
 
 - The lines between a Makefile's `define` and `endef`, a variable's value over several lines, are coloured as a

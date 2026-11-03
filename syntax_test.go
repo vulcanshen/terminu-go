@@ -2,10 +2,12 @@ package terminu
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
 	"unicode/utf8"
 
+	"github.com/alecthomas/chroma/v2"
 	"github.com/alecthomas/chroma/v2/lexers"
 )
 
@@ -87,12 +89,12 @@ var syntaxGaps = []struct {
 		[]gapPart{{1, "the docs", mauve}, {1, "ref", Blue}, {1, "here", mauve}, {1, "https://x.org", Blue}, {3, "ref", mauve}, {3, "https://example.com", Blue}}},
 }
 
-// fgRunes is the characters of a styled line, a tab among them, and the
-// foreground each is drawn in.
-func fgRunes(line string) ([]rune, []Color) {
+// styleRunes is the characters of a styled line, a tab among them, and the
+// style each is drawn in.
+func styleRunes(line string) ([]rune, []covCStyle) {
 	var st covCStyle
 	var rs []rune
-	var fgs []Color
+	var sts []covCStyle
 	for i := 0; i < len(line); {
 		if m := sgrAt.FindString(line[i:]); m != "" {
 			covCApply(&st, m[2:len(m)-1])
@@ -100,10 +102,95 @@ func fgRunes(line string) ([]rune, []Color) {
 			continue
 		}
 		r, n := utf8.DecodeRuneInString(line[i:])
-		rs, fgs = append(rs, r), append(fgs, st.Fg)
+		rs, sts = append(rs, r), append(sts, st)
 		i += n
 	}
+	return rs, sts
+}
+
+// fgRunes is the characters of a styled line, a tab among them, and the
+// foreground each is drawn in.
+func fgRunes(line string) ([]rune, []Color) {
+	rs, sts := styleRunes(line)
+	fgs := make([]Color, len(sts))
+	for i, st := range sts {
+		fgs[i] = st.Fg
+	}
 	return rs, fgs
+}
+
+// TestSyntaxStyles: syntax colours keep catppuccin-mocha's bold, italic
+// and underline, never its background (file-picker-95): Markdown's
+// **bold** is bold and *italic* italic, a # heading bold, a comment
+// italic, an operator bold; a diff's added and removed lines have no
+// background behind them. The preview draws the same.
+func TestSyntaxStyles(t *testing.T) {
+	type want struct {
+		n                       int
+		text                    string
+		bold, italic, underline bool
+	}
+	for _, g := range []struct {
+		file  string
+		lines []string
+		parts []want
+	}{
+		{"README.md", []string{"Some **bold** and *em* text", "# Title"},
+			[]want{{1, "Some", false, false, false}, {1, "**bold**", true, false, false}, {1, "*em*", false, true, false}, {2, "# Title", true, false, false}}},
+		{"main.go", []string{"// a note", "ok := a && b"},
+			[]want{{1, "// a note", false, true, false}, {2, "&&", true, false, false}, {2, "ok", false, false, false}}},
+		{"change.diff", []string{"--- a/x", "+++ b/x", "@@ -1 +1 @@", "-old", "+new", " same"},
+			[]want{{4, "-old", false, false, false}, {5, "+new", false, false, false}, {6, " same", false, false, false}}},
+		{"Makefile", []string{"include other.mk"}, []want{{1, "include other.mk", false, true, false}}},
+	} {
+		for _, src := range []struct {
+			lines []string
+			skip  int // the preview's line number and its space
+		}{{Syntax(g.file, g.lines), 0}, {highlight(g.file, strings.Join(g.lines, "\n"), 20, 4, 1), 2}} {
+			for n, l := range src.lines {
+				rs, sts := styleRunes(l)
+				rs, sts = rs[src.skip:], sts[src.skip:]
+				for i, st := range sts {
+					if st.Bg.Set {
+						t.Errorf("%s, line %d: %q on a background %v", g.file, n+1, string(rs[i]), st.Bg)
+						break
+					}
+				}
+				for _, p := range g.parts {
+					if p.n != n+1 {
+						continue
+					}
+					at := strings.Index(string(rs), p.text)
+					if at < 0 {
+						t.Errorf("%s, line %d has no %q: %q", g.file, n+1, p.text, string(rs))
+						continue
+					}
+					at = utf8.RuneCountInString(string(rs)[:at])
+					for k, r := range []rune(p.text) {
+						st := sts[at+k]
+						if r != ' ' && (st.Bold != p.bold || st.Italic != p.italic || st.Underline != p.underline) {
+							t.Errorf("%s, line %d: %q is bold %v, italic %v, underline %v; want %v, %v, %v",
+								g.file, n+1, p.text, st.Bold, st.Italic, st.Underline, p.bold, p.italic, p.underline)
+							break
+						}
+					}
+				}
+			}
+		}
+	}
+	// No lexer the lib has gives a GenericUnderline: one that does.
+	under := chroma.MustNewLexer(&chroma.Config{Name: "underlined"}, func() chroma.Rules {
+		return chroma.Rules{"root": {{Pattern: `[^\n]+`, Type: chroma.GenericUnderline}, {Pattern: `\n`, Type: chroma.Text}}}
+	})
+	if _, sts := styleRunes(colourise(under, []string{"x"})[0]); len(sts) != 1 || !sts[0].Underline || sts[0].Bg.Set {
+		t.Errorf("GenericUnderline: %+v, not underlined without a background", sts)
+	}
+	// Each diff line in its colour, as catppuccin-mocha has it.
+	for i, c := range map[int]Color{3: Red, 4: Green} {
+		if _, fgs := fgRunes(Syntax("change.diff", []string{"--- a/x", "+++ b/x", "@@ -1 +1 @@", "-old", "+new"})[i]); fgs[0] != c {
+			t.Errorf("diff line %d is %v, not %v", i+1, fgs[0], c)
+		}
+	}
 }
 
 // syntaxGapsIn is what is wrong with the parts of a row in lines coloured:
@@ -261,6 +348,41 @@ func TestSyntaxCR(t *testing.T) {
 	}
 }
 
+// TestViewerSelectionPlain: in a viewer's selection the syntax colours,
+// bold, italic and underline are not shown: Base on Yellow (note-17); out
+// of it they are.
+func TestViewerSelectionPlain(t *testing.T) {
+	line := "Some **bold** and *em* text"
+	ta := newTestApp(t)
+	ta.Viewer(&Viewer{Title: "README", Lines: []string{line, "# Title"}, Lang: "README.md", Select: &Selection{Key: "v", Name: "Visual"}})
+	ta.settle()
+	bold := func() bool {
+		for _, c := range covCCells(viewerRows(ta)[0]) {
+			if c.St.Bold || c.St.Italic {
+				return true
+			}
+		}
+		return false
+	}
+	if !bold() {
+		t.Fatal("no bold or italic before the selection")
+	}
+	ta.press("v", "v", "$")
+	cells := covCCells(viewerRows(ta)[0])
+	for _, c := range cells {
+		if c.Col < 6 || c.Col >= 6+len(line)-1 { // the last one is under the cursor
+			continue
+		}
+		if c.St != (covCStyle{Fg: Base, Bg: Yellow}) {
+			t.Errorf("cell %d %q of the selection: %+v, not Base on Yellow alone", c.Col, c.Ch, c.St)
+			break
+		}
+	}
+	if _, sts := styleRunes(viewerRows(ta)[1]); !slices.ContainsFunc(sts, func(st covCStyle) bool { return st.Bold }) {
+		t.Error("the heading out of the selection is not bold")
+	}
+}
+
 // TestSyntaxFrontMatter: a Markdown file's YAML front matter at the top is
 // YAML, as in chroma; a --- further down is not.
 func TestSyntaxFrontMatter(t *testing.T) {
@@ -271,23 +393,29 @@ func TestSyntaxFrontMatter(t *testing.T) {
 	}
 }
 
-// TestSyntaxPreviewViewerSame: a file has the same colours in a viewer
-// and in the file preview, the gaps chroma leaves filled in both (note-87).
+// TestSyntaxPreviewViewerSame: a file has the same colours, bold, italic
+// and underline in a viewer and in the file preview, the gaps chroma leaves
+// filled in both (note-87).
 func TestSyntaxPreviewViewerSame(t *testing.T) {
-	for _, g := range syntaxGaps {
+	gaps := append(slices.Clone(syntaxGaps), struct {
+		row, file string
+		lines     []string
+		parts     []gapPart
+	}{"bold, italic", "README.md", []string{"Some **bold** and *em* text", "# Title", "<!-- a note -->"}, nil})
+	for _, g := range gaps {
 		preview := highlight(g.file, strings.Join(g.lines, "\n"), 20, 4, 1)
 		ta := newTestApp(t)
 		ta.Viewer(&Viewer{Title: "File", Lines: g.lines, Lang: g.file})
 		ta.settle()
 		rows := viewerRows(ta)
 		for i := range g.lines {
-			var got, want []Color
+			var got, want []covCStyle
 			for _, c := range covCCells(preview[i])[2:] { // after the number and its space
-				want = append(want, c.St.Fg)
+				want = append(want, c.St)
 			}
 			for _, c := range covCCells(rows[i]) {
 				if c.Col >= 6 && len(got) < len(want) {
-					got = append(got, c.St.Fg)
+					got = append(got, c.St)
 				}
 			}
 			if fmt.Sprint(got) != fmt.Sprint(want) {

@@ -321,7 +321,8 @@ func linesFrom(r io.Reader, first, h int) (int, string) {
 	return max(n-len(window)+1, 1), strings.Join(window, "\n")
 }
 
-// highlight is text in the colours of catppuccin-mocha (foreground only),
+// highlight is text in the colours of catppuccin-mocha (its bold, italic and
+// underline too, never its background),
 // its line numbers in Overlay0; tabs and control characters as a viewer
 // draws them. A file with colour codes of its own is drawn in them instead,
 // not lexed; a \r inside a line leaves its last state (tdp
@@ -378,7 +379,8 @@ func crStandIn(text string) string {
 }
 
 // colourise is lines in the colours of catppuccin-mocha as lexer reads them,
-// foreground only; what it leaves uncoloured is Text. A viewer colours its
+// with its bold, italic and underline, never its background (tdp
+// file-picker.3); what it leaves uncoloured is Text. A viewer colours its
 // content with it too (tdp note), and so does Syntax. The last line ends
 // with a line break, as in a file: a lexer that reads a heading or a list
 // item up to its line break colours the last line too. Only \n breaks a
@@ -395,7 +397,11 @@ func colourise(lexer chroma.Lexer, lines []string) []string {
 	opts := &chroma.TokeniseOptions{State: "root"} // EnsureLF off, for when there is no stand-in
 	if it, err := chroma.Coalesce(lexer).Tokenise(opts, text); err == nil {
 		for tok := it(); tok != chroma.EOF; tok = it() {
-			c := style.Get(tok.Type).Colour
+			e := style.Get(tok.Type)
+			st := Style{Fg: Text, Bold: e.Bold == chroma.Yes, Italic: e.Italic == chroma.Yes, Underline: e.Underline == chroma.Yes}
+			if c := e.Colour; c.IsSet() {
+				st.Fg = Color{RGB: RGB{c.Red(), c.Green(), c.Blue()}, Set: true}
+			}
 			v := tok.Value
 			if cr != "" {
 				v = strings.ReplaceAll(v, cr, "\r")
@@ -408,11 +414,7 @@ func colourise(lexer chroma.Lexer, lines []string) []string {
 				if row >= len(coloured) || part == "" {
 					continue
 				}
-				if c.IsSet() {
-					coloured[row].WriteString(Fg(Color{RGB: RGB{c.Red(), c.Green(), c.Blue()}, Set: true}).Render(part))
-				} else {
-					coloured[row].WriteString(Fg(Text).Render(part))
-				}
+				coloured[row].WriteString(st.Render(part))
 			}
 		}
 	}
