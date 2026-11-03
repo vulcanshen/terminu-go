@@ -358,19 +358,49 @@ func highlight(p, text string, h, tabW, first int) []string {
 	return out
 }
 
+// crStandIn is what a \r in text goes to the lexer as, and comes back from:
+// chroma reads a lone \r as a line break, and every line after a progress
+// bar's 10%\r100% would be a line off. Turning that off is not enough, as
+// chroma turns it back on for a block it hands to another lexer (a
+// Markdown code block). The stand-in is a character a lexer reads as it
+// reads a \r, space and not a line break, that text does not have; "" when
+// text has no \r, or has all of them.
+func crStandIn(text string) string {
+	if !strings.Contains(text, "\r") {
+		return ""
+	}
+	for _, s := range []string{"\U00000085", "\U00002028", "\U00002029"} {
+		if !strings.Contains(text, s) {
+			return s
+		}
+	}
+	return ""
+}
+
 // colourise is lines in the colours of catppuccin-mocha as lexer reads them,
 // foreground only; what it leaves uncoloured is Text. A viewer colours its
 // content with it too (tdp note), and so does Syntax. The last line ends
 // with a line break, as in a file: a lexer that reads a heading or a list
-// item up to its line break colours the last line too.
+// item up to its line break colours the last line too. Only \n breaks a
+// line, and a \r stays where it is: see crStandIn.
 func colourise(lexer chroma.Lexer, lines []string) []string {
 	style := styles.Get("catppuccin-mocha")
 	coloured := make([]strings.Builder, len(lines))
 	row := 0
-	if it, err := chroma.Coalesce(lexer).Tokenise(nil, strings.Join(lines, "\n")+"\n"); err == nil {
+	text := strings.Join(lines, "\n") + "\n"
+	cr := crStandIn(text)
+	if cr != "" {
+		text = strings.ReplaceAll(text, "\r", cr)
+	}
+	opts := &chroma.TokeniseOptions{State: "root"} // EnsureLF off, for when there is no stand-in
+	if it, err := chroma.Coalesce(lexer).Tokenise(opts, text); err == nil {
 		for tok := it(); tok != chroma.EOF; tok = it() {
 			c := style.Get(tok.Type).Colour
-			parts := strings.Split(tok.Value, "\n")
+			v := tok.Value
+			if cr != "" {
+				v = strings.ReplaceAll(v, cr, "\r")
+			}
+			parts := strings.Split(v, "\n")
 			for i, part := range parts {
 				if i > 0 {
 					row++

@@ -1,7 +1,7 @@
 # terminu-go 開發者備忘
 
 terminu-go 是 terminu design principle（tdp）的 Go 實作：給 app 呼叫的 lib，加上展示場 `examples/showcase`。遵循 terminu design
-principle，目前對應 tdp v1.1.7。lib 只照 tdp 最新 tag 的文字做；規範沒寫或照做不好用的地方回報給 tdp，不在 lib 裡自己決定。
+principle，目前對應 tdp v1.1.8。lib 只照 tdp 最新 tag 的文字做；規範沒寫或照做不好用的地方回報給 tdp，不在 lib 裡自己決定。
 
 ## 運作方式
 
@@ -207,6 +207,8 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   `chromaLexers`，`TestSyntaxGapsInChroma` 拿它跑表的每一列、要它還缺；chroma 自己補好了，這個測試就失敗，那份 XML 刪掉。
   chroma 是 MIT，`lexers/COPYING-chroma` 是它的授權。上色時最後一行後面補一個換行，跟檔案裡一樣：讀到換行才算一行的 lexer
   （Markdown 的標題、清單）最後一行才有顏色。
+  一行裡的 `\r`（進度列）不能交給 chroma：它把單獨的 `\r` 當換行，交給別的 lexer 的那段（Markdown 的程式碼區塊）還關不掉，
+  後面每一行都錯一行。所以上色前換成檔案裡沒有的 U+0085（regex 把它跟 `\r` 一樣當空白），上完色換回來。
 - **家族共用的設定 key**（Rules E3）：`hide_secrets_in_preview`、`input_tab_width` 是使用者的設定，lib 不讀設定檔；app 從自己的設定檔讀，
   設到 `App.HideSecretsInPreview`、`App.InputTabWidth`。
 - **PTY 只在 unix**：`terminal_other.go` 開不了 PTY，只在畫面上寫出原因。

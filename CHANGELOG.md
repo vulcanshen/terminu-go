@@ -2,6 +2,16 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.1.9 — tdp v1.1.8
+
+- The lines between a Makefile's `define` and `endef`, a variable's value over several lines, are coloured as a
+  one-line variable's value, read as a shell's (tdp file-picker.3's table gains the row): chroma read them as make
+  lines, a line with a colon becoming a target and any other line an error in Red. `define` and `endef` stay
+  directives
+- `Syntax` keeps a `\r` inside a line where it is, as it says it does: chroma read a lone `\r` (a progress bar's
+  `10%\r100%`) as a line break, so every line after it came back a line off and the last one was lost (#1, from
+  viewu). The lib's own preview and viewers draw such a line's last state before colouring it and were not affected
+
 ## v1.1.8 — tdp v1.1.7
 
 - Syntax colours fill the gaps chroma leaves, as tdp file-picker.3's new table lists them, in a file preview and in a

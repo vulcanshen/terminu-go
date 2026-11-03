@@ -3,7 +3,9 @@
   "Where chroma leaves a gap"): a directive (include, ifeq, define...) is
   CommentPreproc, as chroma's main branch has it, not an error; a recipe is
   read line by line, so that a variable in it, $(GO), is NameVariable as
-  elsewhere in the file, the rest of the line still read as a shell's.
+  elsewhere in the file, the rest of the line still read as a shell's; the
+  lines between define and endef, a variable's value over several lines,
+  are read as a shell's, as a one-line variable's value is.
   Based on chroma, MIT: see COPYING-chroma.
 -->
 <lexer>
@@ -28,6 +30,10 @@
   </config>
   <rules>
     <state name="root">
+      <rule pattern="^ *define(?=\s).*\n">
+        <token type="CommentPreproc"/>
+        <push state="define"/>
+      </rule>
       <rule pattern="^(?: *(?:ifn?eq|ifn?def|else|endif|-?include|sinclude|define|endef|undefine|vpath)|\.\s*(?:include|undef|error|warning|if|else|elif|endif|for|endfor)|if)(?=\s)(?:.*\\\n)*.*\n">
         <token type="CommentPreproc"/>
       </rule>
@@ -140,6 +146,15 @@
       </rule>
       <rule pattern=".">
         <token type="Text"/>
+      </rule>
+    </state>
+    <state name="define">
+      <rule pattern="^ *endef(?=\s).*\n">
+        <token type="CommentPreproc"/>
+        <pop depth="1"/>
+      </rule>
+      <rule pattern="(?:(?! *endef(?=\s)).*\n)+">
+        <using lexer="Bash"/>
       </rule>
     </state>
     <state name="recipe">

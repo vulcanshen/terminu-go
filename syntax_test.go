@@ -14,6 +14,7 @@ import (
 var (
 	mauve     = Hex("#cba6f7")
 	rosewater = Hex("#f5e0dc")
+	sky       = Hex("#89dceb")
 )
 
 // gapPart is a part of a line and the colour it is drawn in: the first
@@ -62,6 +63,10 @@ var syntaxGaps = []struct {
 	{"Makefile: a variable in a recipe", "Makefile",
 		[]string{"BIN := bin/app", "build: $(BIN)", "\t$(GO) build -o $(BIN)", "\t@echo \"built $(BIN)\""},
 		[]gapPart{{2, "BIN", rosewater}, {3, "GO", rosewater}, {3, "build -o", Text}, {4, "BIN", rosewater}, {4, `"built `, Green}}},
+	{"Makefile: the lines between define and endef", "Makefile",
+		[]string{`X = echo "hi"`, "define HELP", "Usage: make build", "builds the app", `echo "hi"`, "endef", "all: x"},
+		[]gapPart{{1, "echo", sky}, {1, `"hi"`, Green}, {2, "define HELP", Overlay0}, {3, "Usage: make build", Text},
+			{4, "builds the app", Text}, {5, "echo", sky}, {5, `"hi"`, Green}, {6, "endef", Overlay0}, {7, "all", Blue}}},
 	{"Dockerfile: a LABEL's key", "Dockerfile",
 		[]string{"ENV MODE=prod", `LABEL a.b="x"`},
 		[]gapPart{{1, "MODE", rosewater}, {2, "a.b", rosewater}, {2, `"x"`, Green}}},
@@ -214,6 +219,44 @@ func TestSyntax(t *testing.T) {
 			if want := []string{Fg(Text).Render("name = 1"), ""}[i]; l != want {
 				t.Errorf("%q, line %d: %q, want %q", lang, i+1, l, want)
 			}
+		}
+	}
+}
+
+// TestSyntaxCR: a \r inside a line (a progress bar's 10%\r100%) stays in
+// that line as it is, for the caller to draw, and the lines after it keep
+// their places and colours; chroma reads a lone \r as a line break unless
+// told not to.
+func TestSyntaxCR(t *testing.T) {
+	for _, g := range []struct {
+		file  string
+		lines []string
+		parts []gapPart
+	}{
+		{"a.txt", []string{"a\tb", "10%\r100%", "z"}, nil},
+		{"main.go", []string{"// 10%\r100%", "func main() {}", "x"}, []gapPart{{2, "main", Blue}}},
+		{"pod.yaml", []string{"a: 10%\r100%", "kind: Pod", "x: 1"}, []gapPart{{2, "kind", mauve}, {3, "1", Peach}}},
+		{"Cargo.toml", []string{`a = "10%` + "\r" + `100%"`, "[project]", "name = 1"}, []gapPart{{2, "project", mauve}, {3, "name", Blue}}},
+		{"README.md", []string{"10%\r100%", "# Title", "+ item"}, []gapPart{{2, "# Title", Peach}, {3, "+", mauve}}},
+		{"fence.md", []string{"```go", "x := 1 // 10%\r100%", "```", "# Title"}, []gapPart{{4, "# Title", Peach}}},
+		{"Dockerfile", []string{"RUN echo 10%\r100%", "FROM alpine AS run"}, []gapPart{{2, "AS", mauve}}},
+		// A line that has the stand-ins too keeps them, and its \r.
+		{"b.txt", []string{"x\r\U00000085y", "z"}, nil},
+		{"c.txt", []string{"x\r\U00000085\U00002028\U00002029y", "z"}, nil},
+		{"crlf.yaml", []string{"kind: Pod\r", "x: 1\r"}, []gapPart{{1, "kind", mauve}, {2, "1", Peach}}},
+	} {
+		got := Syntax(g.file, g.lines)
+		if len(got) != len(g.lines) {
+			t.Errorf("%s: %d lines out of %d", g.file, len(got), len(g.lines))
+			continue
+		}
+		for i, l := range got {
+			if StripStyles(l) != g.lines[i] {
+				t.Errorf("%s, line %d: %q, want %q", g.file, i+1, StripStyles(l), g.lines[i])
+			}
+		}
+		for _, w := range syntaxGapsIn(got, g.lines, g.parts) {
+			t.Errorf("%s: %s", g.file, w)
 		}
 	}
 }
