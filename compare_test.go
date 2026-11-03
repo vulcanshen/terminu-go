@@ -302,7 +302,7 @@ func TestHintTab(t *testing.T) {
 	ta.press("Esc", "Esc")
 	ta.Viewer(&Viewer{Title: "Log", Lines: []string{"x"}})
 	ta.settle()
-	if fmt.Sprint(ta.topView().(*viewerView).hint()) != "[{v visual} {Esc close}]" {
+	if fmt.Sprint(ta.topView().(*viewerView).hint()) != "[{/ search} {v visual} {Esc close}]" {
 		t.Errorf("no tabs: %v", ta.topView().(*viewerView).hint())
 	}
 	ta.press("Esc")

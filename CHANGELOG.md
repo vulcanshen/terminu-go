@@ -2,6 +2,18 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.0-beta.2 — tdp v1.2.0-beta.2
+
+- Every viewer has `/` search (tdp note.3): `Viewer.Search` unset, it is there, titled Search; a viewer whose own `Keys`
+  take `/`, `n` or `N` has none of the lib's, the app searching there itself. The App Log, the diff and a form's result
+  have it now
+- The key reference searches as a viewer does (tdp note.5): `/`, the hits underlined, the current one the cursor block,
+  `n|N`, an Info toast when there is none; its hint is `/:search ?|Esc:close`
+- A search run from the Space menu clears the menu once it runs (tdp T1): the lib's own searches are on popups, which
+  have no Space menu; a panel's search, the app's, ends its `Done` with `App.CloseAll()`
+- A `hosts` is coloured as the hosts file only in `/etc` (tdp file-picker.3): one elsewhere, an Ansible inventory, is
+  plain text. Its lexer is named `hosts file`
+
 ## v1.2.0-beta.1 — tdp v1.2.0-beta.1
 
 - A file's format goes by its name, and where formats share a name, by its directory: a `config` in `.ssh` is

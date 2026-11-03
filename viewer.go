@@ -52,11 +52,13 @@ type Viewer struct {
 	// closes (tdp note.3).
 	Hits    []TextMatch
 	Current int
-	// Search, when set, is the viewer's search (tdp note.3): / asks for the
-	// text in an input popup, every place it is becomes a hit, the first
-	// scrolled into sight, and n|N go to the next and the previous, wrapping
-	// at the ends; with none an Info toast says so. /, n and N are then the
-	// search's, not Keys'.
+	// Search is the viewer's search (tdp note.3): / asks for the text in an
+	// input popup, every place it is becomes a hit, the first scrolled into
+	// sight, and n|N go to the next and the previous, wrapping at the ends;
+	// with none an Info toast says so. /, n and N are then the search's, not
+	// Keys'. Every viewer has one (tdp note.3): unset, it is titled Search.
+	// A viewer whose Keys take /, n or N has none of the lib's: the app runs
+	// its own search there.
 	Search *ViewerSearch
 
 	// top is the line the first row in sight belongs to and sub that row
@@ -97,13 +99,21 @@ type TextMatch struct{ Line, From, To int }
 // search (Hits).
 func (v *Viewer) FindText(q string) []TextMatch {
 	v.sync()
+	rows := make([][]string, len(v.text))
+	for i, l := range v.text {
+		rows[i] = v.chars(l)
+	}
+	return findIn(rows, q)
+}
+
+// findIn is every place q is in the rows of characters, in either case.
+func findIn(rows [][]string, q string) []TextMatch {
 	want := graphemes(strings.ToLower(q))
 	if len(want) == 0 {
 		return nil
 	}
 	var out []TextMatch
-	for i, l := range v.text {
-		chars := v.chars(l)
+	for i, chars := range rows {
 		for k := 0; k+len(want) <= len(chars); k++ {
 			if strings.ToLower(strings.Join(chars[k:k+len(want)], "")) == strings.Join(want, "") {
 				out = append(out, TextMatch{i, k, k + len(want)})
@@ -167,6 +177,9 @@ func (a *App) Viewer(v *Viewer) tea.Cmd {
 	v.numW, v.tabW = 0, a.inputTabWidth()
 	if v.Select == nil {
 		v.Select = &Selection{Key: "v", Name: "Visual"}
+	}
+	if v.Search == nil && !slices.ContainsFunc(v.Keys, func(k ViewerKey) bool { return k.Key == "/" || k.Key == "n" || k.Key == "N" }) {
+		v.Search = &ViewerSearch{}
 	}
 	if v.Select.Copy == nil {
 		v.Select.Copy = func(text string) tea.Cmd {

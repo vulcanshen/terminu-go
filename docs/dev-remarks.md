@@ -1,7 +1,7 @@
 # terminu-go 開發者備忘
 
 terminu-go 是 terminu design principle（tdp）的 Go 實作：給 app 呼叫的 lib，加上展示場 `examples/showcase`。遵循 terminu design
-principle，目前對應 tdp v1.2.0-beta.1。lib 只照 tdp 最新 tag 的文字做；規範沒寫或照做不好用的地方回報給 tdp，不在 lib 裡自己決定。
+principle，目前對應 tdp v1.2.0-beta.2。lib 只照 tdp 最新 tag 的文字做；規範沒寫或照做不好用的地方回報給 tdp，不在 lib 裡自己決定。
 
 ## 運作方式
 
@@ -115,7 +115,11 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   不會插在畫面的 escape 序列中間；不呼叫系統的剪貼簿程式，隔著 ssh 也複製得到本機。
 - **viewer 的搜尋是 lib 的**（tdp v1.1.4 的 note.3）：app 用 `Viewer.Search` 給 input popup 的字，`/`、找、底線、`n|N`、找不到的
   toast、關掉時清掉都由 lib 做。tdp v1.1.4 以前規範沒寫搜尋怎麼問，lib 只畫 app 交來的命中；`Viewer.Hits`、`FindText` 留著，
-  給自己找的 app 用。沒有 cursor 的 panel（`Pager`）還沒有搜尋，家族要用時再加。
+  給自己找的 app 用。沒有 cursor 的 panel（`Pager`）還沒有搜尋，家族要用時再加。tdp v1.2.0 起每個 viewer 都有：沒給
+  `Viewer.Search` 也有（標題 `Search`），只有 `Keys` 自己用了 `/`、`n` 或 `N` 的 viewer 沒有 lib 的 —— 那是 app 自己搜，lib 不蓋掉它的鍵。
+  key reference 也有 `/`（`noteView.search`）：它的列每次量大小時重排（「每一列」那一節照寬度折行），命中的字跟著重找。
+  從 Space menu 搜尋時 menu 要收起（tdp T1），lib 自己的搜尋都在 popup 上，碰不到 Space menu；panel 的搜尋是 app 的，
+  `Done` 回 `App.CloseAll()`。
 - **最低尺寸預設 60×32**（tdp L1；tdp v0.11.0 以前是 80×40）：用 lib 的 app 在比較小的終端機裡會只看到名稱、提示與怎麼離開；
   版面在更小的畫面也畫得下的 app 自己調低
   （`App.MinWidth`、`MinHeight`）。測試的 app 都調到 1×1，各自的測試照樣在小畫面上跑。

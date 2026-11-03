@@ -72,10 +72,12 @@ func goLexer() chroma.Lexer {
 }
 
 // byDirectory are the file names more than one format has: the directory the
-// file is in tells which (tdp file-picker.3).
+// file is in tells which (tdp file-picker.3). A hosts is the hosts file only
+// in /etc: elsewhere (an Ansible inventory) it is another format.
 var byDirectory = []struct{ dir, name, lexer string }{
 	{".ssh", "config", "SSH config"},
 	{".git", "config", "Git Config"},
+	{"etc", "hosts", "hosts file"},
 }
 
 // lexerOfPath is the lexer the directory of the file at p picks, for a name
@@ -100,7 +102,8 @@ func lexerOfPath(p string) chroma.Lexer {
 // lang is what Viewer.Lang takes: a lexer's name or alias ("toml"), a file
 // name or path ("Cargo.toml"), or a content type ("application/json"). A
 // path also tells a name more than one format has by its directory: a
-// config in .ssh is SSH's, one in .git is git's. A language it cannot tell
+// config in .ssh is SSH's, one in .git is git's, a hosts in /etc is the hosts
+// file and one elsewhere is not. A language it cannot tell
 // leaves the lines plain, in Text. The lines are
 // plain text, read together (a string may go on to the next line), and each
 // gives one line back; a tab or a \r stays as it is, for the caller to draw.

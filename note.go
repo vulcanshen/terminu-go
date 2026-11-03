@@ -1,6 +1,9 @@
 package terminu
 
 import (
+	"slices"
+	"strings"
+
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -31,6 +34,14 @@ type noteView struct {
 	name         string
 	extraKeys    []KeyRow
 	top, visible int
+	// search is a key reference's / search, as a viewer's (tdp note.5,
+	// note.3): query is what was asked for, hits where it is in the lines,
+	// found again each time they are built, current the one drawn as the
+	// cursor block.
+	search  bool
+	query   string
+	hits    []TextMatch
+	current int
 }
 
 func (n *noteView) measure(sw, sh int) (int, int) {
@@ -64,6 +75,10 @@ func (n *noteView) measure(sw, sh int) (int, int) {
 	if n.build != nil {
 		n.lines = n.build(max(w-4, 1)) // folded to the room it has
 	}
+	if n.query != "" {
+		n.hits = findIn(noteChars(n.lines), n.query)
+		n.current = min(n.current, max(len(n.hits)-1, 0))
+	}
 	h := min(len(n.lines)+4, max(sh-2, 3))
 	return w, h
 }
@@ -79,7 +94,7 @@ func (n *noteView) draw(w, h int, layer Color) []string {
 	body := make([]string, 0, n.visible)
 	for i := n.top; i < n.top+n.visible; i++ {
 		if i < len(n.lines) {
-			body = append(body, padRow(n.lines[i], inner))
+			body = append(body, padRow(n.hitsDrawn(i, layer), inner))
 		} else {
 			body = append(body, Repeat(" ", inner))
 		}
@@ -124,11 +139,91 @@ func (n *noteView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {
 		return false, nil
 	case "Space":
 		return true, nil
+	case "/", "n", "N":
+		if !n.search {
+			return false, nil
+		}
+		if key == "/" {
+			return true, a.Text(TextInput{Title: "Search", Verb: "find", Search: true, Done: func(q string) tea.Cmd { return n.find(a, q) }})
+		}
+		if len(n.hits) > 0 {
+			by := map[string]int{"n": 1, "N": -1}[key]
+			n.current = ((n.current+by)%len(n.hits) + len(n.hits)) % len(n.hits)
+			n.follow(n.hits[n.current].Line)
+		}
+		return true, nil
 	default:
 		return false, nil
 	}
 	n.top = min(max(n.top, 0), max(len(n.lines)-n.visible, 0))
 	return true, nil
+}
+
+// find makes the places q is in the lines the hits, the first in sight; with
+// none an Info toast says so (tdp note.3).
+func (n *noteView) find(a *App, q string) tea.Cmd {
+	n.query, n.current = q, 0
+	n.hits = findIn(noteChars(n.lines), q)
+	if len(n.hits) == 0 {
+		return a.Toast(Info, "No line has "+q)
+	}
+	n.follow(n.hits[0].Line)
+	return nil
+}
+
+// follow scrolls as little as it takes to show line.
+func (n *noteView) follow(line int) {
+	if line < n.top {
+		n.top = line
+	} else if line >= n.top+n.visible {
+		n.top = line - n.visible + 1
+	}
+}
+
+// noteChars is the plain characters of each line.
+func noteChars(lines []string) [][]string {
+	rows := make([][]string, len(lines))
+	for i, l := range lines {
+		rows[i] = graphemes(StripStyles(l))
+	}
+	return rows
+}
+
+// hitsDrawn is line i with the search's hits on it: each underlined in its
+// own colours, the current one the cursor block (tdp note.2).
+func (n *noteView) hitsDrawn(i int, layer Color) string {
+	line := n.lines[i]
+	if !slices.ContainsFunc(n.hits, func(m TextMatch) bool { return m.Line == i }) {
+		return line
+	}
+	chars := graphemes(StripStyles(line))
+	hit := make([]int, len(chars)) // 0 none, 1 a hit, 2 the current one
+	for k, m := range n.hits {
+		if m.Line != i {
+			continue
+		}
+		for c := max(m.From, 0); c < min(m.To, len(chars)); c++ {
+			hit[c] = 1
+			if k == n.current {
+				hit[c] = 2
+			}
+		}
+	}
+	var b strings.Builder
+	cell := 0
+	for k, c := range chars {
+		w := Width(c)
+		switch hit[k] {
+		case 2:
+			b.WriteString(On(layer).Render(c))
+		case 1:
+			b.WriteString(underlined(Cut(line, cell, cell+w)))
+		default:
+			b.WriteString(Cut(line, cell, cell+w))
+		}
+		cell += w
+	}
+	return b.String()
 }
 
 func (n *noteView) surface() string { return n.name }
@@ -141,14 +236,24 @@ func (n *noteView) keyRef() []refSection {
 	default:
 		rows = append(rows, KeyRow{Key: "Esc", Desc: "close"})
 	}
-	secs := []refSection{{rows: rows}}
+	if n.search {
+		rows = append([]KeyRow{{Key: "/", Desc: "search the text"}}, rows...)
+	}
+	var move []KeyRow
 	if len(n.lines) > n.visible {
 		// Only when it does not all fit (tdp M6).
-		secs = append(secs, refSection{title: "move", rows: []KeyRow{
+		move = []KeyRow{
 			{Key: "j|k", Desc: "scroll down, up"},
 			{Key: "u|d", Desc: "half a page up, down"},
 			{Key: "gg|G", Desc: "to the top, the bottom"},
-		}})
+		}
+	}
+	if len(n.hits) > 0 { // only with hits to go to (tdp M6)
+		move = append(move, KeyRow{Key: "n|N", Desc: "the next, the previous hit"})
+	}
+	secs := []refSection{{rows: rows}}
+	if len(move) > 0 {
+		secs = append(secs, refSection{title: "move", rows: move})
 	}
 	return secs
 }
@@ -204,8 +309,8 @@ func keyReference(title string, sections []refSection) *noteView {
 		return lines
 	}
 	return &noteView{
-		glyph: glyphKeys, title: title + " KEYS", lines: build(1 << 20), build: build, known: true, helpCloses: true,
-		hint: []KeyHint{{"?|Esc", "close"}}, name: title + " keys",
+		glyph: glyphKeys, title: title + " KEYS", lines: build(1 << 20), build: build, known: true, helpCloses: true, search: true,
+		hint: []KeyHint{{"/", "search"}, {"?|Esc", "close"}}, name: title + " keys",
 	}
 }
 

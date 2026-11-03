@@ -1,13 +1,13 @@
 <!--
   hosts (/etc/hosts), which chroma has no lexer for (tdp file-picker.3,
   "Where chroma leaves a gap"): an address, 127.0.0.1 or ::1, is
-  LiteralNumber; a comment is Comment.
+  LiteralNumber; a comment is Comment. Only a hosts in /etc: one elsewhere,
+  an Ansible inventory, is another format. So it has no file name here, the
+  lib telling it by its directory (byDirectory in syntax.go).
 -->
 <lexer>
   <config>
-    <name>hosts</name>
-    <alias>hosts</alias>
-    <filename>hosts</filename>
+    <name>hosts file</name>
   </config>
   <rules>
     <state name="root">

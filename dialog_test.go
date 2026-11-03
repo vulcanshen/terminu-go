@@ -126,6 +126,9 @@ func TestViewerSearchHits(t *testing.T) {
 	if got := (&Viewer{Lines: []string{"aaaa"}}).FindText("aa"); !slices.Equal(got, []TextMatch{{0, 0, 2}, {0, 2, 4}}) {
 		t.Errorf("hits do not overlap: %v", got)
 	}
+	if got := (&Viewer{Lines: []string{"\x1b[31mred\x1b[0m line"}}).FindText("red line"); !slices.Equal(got, []TextMatch{{0, 0, 8}}) {
+		t.Errorf("in a coloured line, the characters as drawn: %v", got)
+	}
 	v.Current = 1
 	ta.Viewer(v)
 	ta.settle()
@@ -212,6 +215,202 @@ func TestViewerSearch(t *testing.T) {
 	}
 }
 
+// TestNoteEveryViewerSearches: every viewer has / search, the App Log and
+// one the app opens without a Search too; a viewer whose own keys take / runs
+// the app's search; the key reference has one, its hint /:search ?|Esc:close
+// (tdp note.3, note.5, note-88, note-61).
+func TestNoteEveryViewerSearches(t *testing.T) {
+	ta := newTestApp(t)
+	asks := func(what string) {
+		t.Helper()
+		ta.press("/")
+		if _, ok := ta.topView().(*lineInput); !ok || !strings.Contains(ta.screenText(), "SEARCH") {
+			t.Errorf("%s: / does not ask for the text: %T", what, ta.topView())
+		}
+		ta.press("Esc")
+	}
+	ta.press("!")
+	if v := ta.topView().(*viewerView); v.v.Search == nil || !slices.Contains(v.hint(), KeyHint{"/", "search"}) {
+		t.Errorf("the App Log has no search: %v", v.hint())
+	}
+	asks("the App Log")
+	ta.press("Esc")
+	v := &Viewer{Title: "Log", Lines: []string{"one", "two"}}
+	ta.Viewer(v)
+	ta.settle()
+	asks("a viewer the app opens without a Search")
+	ta.press("Esc")
+	own := 0
+	v = &Viewer{Title: "Page", Lines: []string{"one"}, Keys: []ViewerKey{{Key: "/", Desc: "find", Do: func() tea.Cmd { own++; return nil }}}}
+	ta.Viewer(v)
+	ta.settle()
+	if ta.press("/"); v.Search != nil || own != 1 {
+		t.Errorf("a viewer whose keys take /: the lib search %v, the app's ran %d times", v.Search != nil, own)
+	}
+	ta.press("Esc", "?")
+	if n := ta.topView().(*noteView); fmt.Sprint(n.hint) != "[{/ search} {?|Esc close}]" {
+		t.Errorf("the key reference's hint: %v", n.hint)
+	}
+	asks("the key reference")
+	if _, ok := ta.topView().(*noteView); !ok {
+		t.Errorf("Esc on the search goes back to the key reference: %T", ta.topView())
+	}
+}
+
+// TestKeyReferenceSearch: a key reference searches as a viewer does: the
+// hits underlined in their own colours, the current one the cursor block, the
+// first in sight; n|N go to the next and the previous, wrapping at the ends
+// and scrolling to it; with none an Info toast (tdp note.5, note.3).
+func TestKeyReferenceSearch(t *testing.T) {
+	ta := newTestApp(t)
+	ta.resize(120, 12)
+	ta.press("?")
+	ta.Frame() // drawn, as after every key
+	n := ta.topView().(*noteView)
+	want := 0
+	for _, l := range n.lines {
+		want += strings.Count(strings.ToLower(StripStyles(l)), "this")
+	}
+	if want < 4 {
+		t.Fatalf("the test wants hits far apart: %d", want)
+	}
+	inSight := func(line int) bool { return n.top <= line && line < n.top+n.visible }
+	press := func(keys ...string) { ta.press(keys...); ta.Frame() } // drawn after every key, as in an app
+	press("G")
+	press("/", "t", "h", "i", "s", "Enter")
+	if len(n.hits) != want || n.current != 0 || !inSight(n.hits[0].Line) {
+		t.Fatalf("found from the bottom %v of %d, current %d, top %d: the first in sight", n.hits, want, n.current, n.top)
+	}
+	row := ta.rowWith(StripStyles(n.lines[n.hits[0].Line])[1:])
+	if !strings.Contains(row, On(LayerColor(1)).Render("t")) {
+		t.Errorf("the current hit is the cursor block: %q", row)
+	}
+	last := n.hits[len(n.hits)-1]
+	if last.Line == n.hits[0].Line {
+		t.Fatal("the test wants hits on more than one row")
+	}
+	for i := 1; i < len(n.hits); i++ {
+		line, below := n.hits[i].Line, n.hits[i].Line >= n.top+n.visible
+		if press("n"); n.current != i || !inSight(line) {
+			t.Errorf("n to hit %d: current %d, top %d", i, n.current, n.top)
+		}
+		if below && n.top != line-n.visible+1 {
+			t.Errorf("n to hit %d below: top %d, scrolled more than it takes", i, n.top)
+		}
+	}
+	if press("n"); n.current != 0 || !inSight(n.hits[0].Line) {
+		t.Errorf("n past the last: current %d, top %d", n.current, n.top)
+	}
+	if other := n.hits[1]; !inSight(other.Line) || other.Line == n.hits[0].Line {
+		t.Fatalf("the test wants the second hit in sight on a row of its own: %v, top %d", other, n.top)
+	} else if row := ta.rowWith(StripStyles(n.lines[other.Line])[1:]); !strings.Contains(row, "\x1b[4m") || strings.Contains(row, On(LayerColor(1)).Render("t")) {
+		t.Errorf("a hit not current is underlined, not the cursor block: %q", row)
+	}
+	if press("N"); n.current != len(n.hits)-1 || !inSight(last.Line) {
+		t.Errorf("N past the first: current %d, top %d", n.current, n.top)
+	}
+	keys := map[string]bool{}
+	for _, sec := range n.keyRef() {
+		for _, r := range sec.rows {
+			keys[r.Key] = true
+		}
+	}
+	if !keys["/"] || !keys["n|N"] {
+		t.Errorf("its keys with hits: %v", keys)
+	}
+	ta.resize(110, 12)
+	ta.Frame()
+	if len(n.hits) != want || n.current != len(n.hits)-1 {
+		t.Errorf("the hits after a resize: %d of %d, current %d", len(n.hits), want, n.current)
+	}
+	press("/", "z", "z", "z", "Enter")
+	if tv, ok := ta.toast.view.(*toastView); !ok || tv.kind != Info || !strings.Contains(ta.screenText(), "No line has zzz") || len(n.hits) != 0 {
+		t.Errorf("no hit: toast %v, hits %v", ta.toast, n.hits)
+	}
+
+	// A row's description folds to the room there is: narrower, the hit is
+	// found where it is now.
+	a := anySize(New("t"))
+	vals := &Values{Fields: []*Field{{Label: "Timeout", Value: func() string { return "5" },
+		Desc: "how long the screen waits before it locks itself again, counted in whole minutes"}}}
+	a.AddScreen(&Screen{Name: "S", Panels: []*Panel{{Label: "Settings", Body: vals}}})
+	tb := &testApp{App: a}
+	tb.resize(160, 30)
+	tb.press("?")
+	tb.Frame()
+	n = tb.topView().(*noteView)
+	tb.press("/", "m", "i", "n", "u", "t", "e", "s", "Enter")
+	tb.resize(40, 30)
+	tb.Frame()
+	if len(n.hits) != 1 || !strings.Contains(StripStyles(n.lines[n.hits[0].Line]), "minutes") {
+		t.Errorf("narrower: hits %v in %q", n.hits, n.lines)
+	}
+}
+
+// TestT1SearchFromMenu: a search run from the Space menu clears the menu
+// once it runs, found or not, the input popup and the menu closing together;
+// Esc on the input popup goes back to the menu. The lib's own searches are
+// on popups, which have no Space menu (tdp K5); a panel's search is the app's,
+// its Done ending with CloseAll; the list's filter opens nothing, so the menu
+// goes. One Esc on a menu left over the hits closes only the menu (tdp T1,
+// T1-10, K4).
+func TestT1SearchFromMenu(t *testing.T) {
+	for _, closeAll := range []bool{true, false} {
+		ta := &testApp{App: anySize(New("t"))}
+		hits := ""
+		pg := &Pager{}
+		pg.SetLines([]string{"alpha", "beta"})
+		p := &Panel{Label: "Text", Body: pg, OnEsc: func() tea.Cmd { hits = ""; return nil }}
+		p.Actions = []Action{{Key: "/", Label: "Search", Desc: "the text", Scope: PanelScope, Do: func() tea.Cmd {
+			return ta.Text(TextInput{Title: "Search", Verb: "find", Search: true, Done: func(q string) tea.Cmd {
+				hits = q
+				if closeAll {
+					return ta.CloseAll()
+				}
+				return nil
+			}})
+		}}}
+		ta.AddScreen(&Screen{Name: "S", Panels: []*Panel{p}})
+		ta.resize(80, 24)
+		ta.press("Space", "/")
+		if _, ok := ta.topView().(*lineInput); !ok || len(ta.stack) != 2 {
+			t.Fatalf("the search does not ask over the menu: %T, %d layers", ta.topView(), len(ta.stack))
+		}
+		if ta.press("Esc"); len(ta.stack) != 1 {
+			t.Fatalf("Esc on the input popup: %d layers", len(ta.stack))
+		}
+		if _, ok := ta.topView().(*menuView); !ok {
+			t.Fatalf("Esc on the input popup goes back to the menu: %T", ta.topView())
+		}
+		ta.press("/", "a")
+		ta.Update(keyMsg("Enter"))
+		if !closeAll {
+			ta.settle()
+			if _, ok := ta.topView().(*menuView); !ok || hits != "a" {
+				t.Fatalf("a menu left over the hits: %T, hits %q", ta.topView(), hits)
+			}
+			if ta.press("Esc"); ta.top() != nil || hits != "a" {
+				t.Errorf("one Esc on the menu: popup %v, hits %q; it closes the menu only", ta.top() != nil, hits)
+			}
+			continue
+		}
+		if len(ta.stack) != 2 || !ta.stack[0].closing || !ta.stack[1].closing || hits != "a" {
+			t.Fatalf("Enter: the input popup and the menu do not close together: %d layers, hits %q", len(ta.stack), hits)
+		}
+		if ta.settle(); ta.top() != nil {
+			t.Errorf("a popup left: %T", ta.topView())
+		}
+		if ta.press("Esc"); hits != "" {
+			t.Error("Esc on the panel clears the hits")
+		}
+	}
+	ta := newTestApp(t)
+	ta.press("Space", "/")
+	if ta.top() != nil || !ta.list.Typing() {
+		t.Errorf("the filter from the menu: popup %v, typing %v", ta.top() != nil, ta.list.Typing())
+	}
+}
+
 // TestErrorPopupBeforeTheSize: an error popup opened before the terminal's
 // size is known (App.Start) folds at the width it gets once it is: not a
 // character a row (from sshu).
@@ -246,7 +445,7 @@ func TestNoteKeys(t *testing.T) {
 	ta.Viewer(v)
 	ta.settle()
 	vv := ta.topView().(*viewerView)
-	if h := vv.hint(); len(h) != 3 || h[0].Key != "y" || h[1].Key != "v" || h[2] != (KeyHint{"Esc", "close"}) {
+	if h := vv.hint(); len(h) != 4 || h[0].Key != "y" || h[1] != (KeyHint{"/", "search"}) || h[2].Key != "v" || h[3] != (KeyHint{"Esc", "close"}) {
 		t.Errorf("the note's own keys come first, Esc:close last: %v", h)
 	}
 	ta.press("Enter", "Space")

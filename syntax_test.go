@@ -139,6 +139,7 @@ var syntaxGaps = []struct {
 // has a viewer do so too.
 func TestSyntaxByDirectory(t *testing.T) {
 	ssh, git := []string{"Host web", "  Port 22"}, []string{"[core]", "editor = vim"}
+	hosts, inventory := []string{"127.0.0.1 localhost", "::1 localhost"}, []string{"[web]", "web1 ansible_host=10.0.0.5"}
 	for _, c := range []struct {
 		file  string
 		lines []string
@@ -149,6 +150,9 @@ func TestSyntaxByDirectory(t *testing.T) {
 		{"/etc/ssh/sshd_config", ssh, []gapPart{{1, "Host", mauve}}},
 		{"/repo/app/config", ssh, []gapPart{{1, "Host web", Text}, {2, "Port 22", Text}}},
 		{"config", git, []gapPart{{1, "[core]", Text}}},
+		{"/etc/hosts", hosts, []gapPart{{1, "127.0.0.1", Peach}, {2, "::1", Peach}}},
+		{"/srv/ansible/hosts", inventory, []gapPart{{1, "[web]", Text}, {2, "10.0.0.5", Text}}},
+		{"hosts", hosts, []gapPart{{1, "127.0.0.1", Text}}},
 	} {
 		got := Syntax(c.file, c.lines)
 		for _, w := range syntaxGapsIn(got, c.lines, c.parts) {
@@ -431,7 +435,7 @@ func TestSyntaxLexersReplaceChroma(t *testing.T) {
 	for file, name := range map[string]string{"Cargo.toml": "TOML", "pod.yml": "YAML", ".gitconfig": "Git Config",
 		"build.mk": "Makefile", "Dockerfile": "Docker", "README.md": "markdown", "setup.cfg": "INI",
 		"go.mod": "Go module", "go.work": "Go module", "lib.mod": "AMPL", "ssh_config": "SSH config", "sshd_config": "SSH config",
-		"hosts": "hosts", ".gitignore": "Ignore file", ".dockerignore": "Ignore file", "requirements.txt": "pip requirements",
+		".gitignore": "Ignore file", ".dockerignore": "Ignore file", "requirements.txt": "pip requirements",
 		"requirements-dev.txt": "pip requirements", "notes.txt": "plaintext", "Jenkinsfile": "Groovy", "app.js": "JavaScript",
 		"app.ts": "TypeScript", "main.go": "Go", "deploy.sh": "Bash", "main.tf": "Terraform"} {
 		if l := lexers.Match(file); l == nil || l.Config().Name != name {

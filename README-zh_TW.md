@@ -93,7 +93,7 @@ go run github.com/vulcanshen/terminu-go/examples/showcase@latest
 - **拿來讀的內容**（viewer、panel 上的 log、預覽）：照終端機會畫的樣子，顏色碼照著上色、`\n` 換行、進度列的 `\r` 只留最後的
   狀態，其他畫成紅色的名字。自己畫的 body 要顯示 log 時，用 `Reading` 畫它的每一行。
 - **語法顏色**：`Lang` 寫了語言的 viewer、預覽裡的文字檔，照 tdp 上色（檔案的格式照檔名判斷，同名的再看資料夾：`.ssh` 裡的 `config`
-  是 SSH 設定）：chroma 的 catppuccin-mocha，照它的顏色、粗體、斜體與底線，不上背景色，chroma 漏掉的照
+  是 SSH 設定，`hosts` 只有在 `/etc` 裡才是 hosts）：chroma 的 catppuccin-mocha，照它的顏色、粗體、斜體與底線，不上背景色，chroma 漏掉的照
   家族的一種補法補上（TOML 的表名與 key、YAML 沒引號的值……）。自己畫的 body 要顯示檔案時，用 `Syntax(lang, lines)` 上色，
   長得就跟預覽一樣。import 函式庫時，它會把自己的 lexer 放進 chroma 的全域 registry，你自己呼叫 chroma 也拿到補過的。
 
@@ -208,7 +208,7 @@ tdp E8 對任何共用的 lib 只留三點：用 lib 的 app 不另外做 lib �
 
 ## 實作哪一版 terminu design
 
-terminu-go 實作 **tdp v1.2.0-beta.1**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
+terminu-go 實作 **tdp v1.2.0-beta.2**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
 
 ## 相關連結
 

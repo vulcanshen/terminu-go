@@ -103,7 +103,8 @@ program's output — never reaches the terminal as it is:
   a line, a progress bar's `\r` leaves its last state, anything else is its name in Red. A body of your own that
   shows a log draws its lines with `Reading`.
 - **Syntax colours**: a viewer whose `Lang` names a language, and a text file in a preview, are coloured as tdp asks
-  (a file's format by its name, and by its directory where formats share a name: a `config` in `.ssh` is SSH's):
+  (a file's format by its name, and by its directory where formats share a name: a `config` in `.ssh` is SSH's, a `hosts` is the hosts file only in
+  `/etc`):
   chroma's catppuccin-mocha, its colours, bold, italic and underline but never its background, with the gaps chroma
   leaves filled the family's one way (TOML's table names and keys, YAML's values without quotes…). A body of your own that shows a file colours it with
   `Syntax(lang, lines)`, to look as it does in the preview. Importing the library puts its lexers in chroma's global
@@ -233,7 +234,7 @@ delete its on-screen code and its E5 code; E1, E3, E6, E7 and its own icon stay.
 
 ## Which terminu design
 
-terminu-go implements **tdp v1.2.0-beta.1**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
+terminu-go implements **tdp v1.2.0-beta.2**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
 
 ## Links
 

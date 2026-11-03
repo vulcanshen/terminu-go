@@ -1062,7 +1062,7 @@ func TestKeyReferenceKeys(t *testing.T) {
 	if !strings.Contains(zap, "\x1b["+Fg(Surface2).sgr()+"mz") || !strings.Contains(zap, Fg(Surface2).Render("Zap — not now")) {
 		t.Errorf("a key that cannot be pressed now is Surface2, its text too: %q", zap)
 	}
-	if b := covEBottom(ta); !strings.HasPrefix(b, "┗━ ?|Esc:close ━") {
+	if b := covEBottom(ta); !strings.HasPrefix(b, "┗━ /:search ?|Esc:close ━") {
 		t.Errorf("hint: %q", b)
 	}
 	ta.press("Enter")
