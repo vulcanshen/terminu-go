@@ -2,10 +2,10 @@
   chroma v2.27.0's Markdown lexer, written in Go there, as XML with the gaps
   filled (tdp file-picker.3, "Where chroma leaves a gap"): a heading
   underlined with a line of = or of dashes is a heading, as a # heading;
-  a list item's +
-  is a marker, as - and *; a reference link is coloured as an inline link.
-  A YAML front matter at the top is YAML, as in chroma. Based on chroma,
-  MIT: see COPYING-chroma.
+  a list item's + is a marker, as - and *; a reference link is coloured as
+  an inline link; bold and italic at the start of a line are bold and
+  italic, as in the middle of one. A YAML front matter at the top is YAML,
+  as in chroma. Based on chroma, MIT: see COPYING-chroma.
 -->
 <lexer>
   <config>
@@ -109,6 +109,12 @@
       </rule>
       <rule pattern="\\.">
         <token type="Text"/>
+      </rule>
+      <rule pattern="^(?:\*\*\S(?:.*?\S)?\*\*|__\S(?:.*?\S)?__)(?=\W|$)">
+        <token type="GenericStrong"/>
+      </rule>
+      <rule pattern="^(?:\*[^\s*](?:[^*\n]*?[^\s*])?\*|_[^\s_](?:[^_\n]*?[^\s_])?_)(?=\W|$)">
+        <token type="GenericEmph"/>
       </rule>
       <rule pattern="(\s)(\*|_)((?:(?!\2).)*)(\2)((?=\W|\n))">
         <bygroups>

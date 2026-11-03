@@ -87,6 +87,57 @@ var syntaxGaps = []struct {
 	{"Markdown: a reference link", "README.md",
 		[]string{"See [the docs][ref] or [here](https://x.org).", "", "[ref]: https://example.com"},
 		[]gapPart{{1, "the docs", mauve}, {1, "ref", Blue}, {1, "here", mauve}, {1, "https://x.org", Blue}, {3, "ref", mauve}, {3, "https://example.com", Blue}}},
+	{"Markdown: bold or italic at the start of a line", "README.md",
+		// chroma finds them after a space, a line break among them, so only
+		// where a rule took the line break before: the top of the file, after
+		// a heading, a list item or a quote, and in a list item's text.
+		[]string{"**Why**: because", "# Head", "*Note* this", "- item", "__Bold__ too", "> quote", "_It_ too",
+			"* item", "- **Lead** item", "Mid **bold** and *em*"},
+		[]gapPart{{1, "**Why**", Text}, {8, "*", mauve}, {9, "-", mauve}}},
+}
+
+// stylePart is a part of a line and whether it is bold and italic: the
+// first time text comes in line n (from 1).
+type stylePart struct {
+	n            int
+	text         string
+	bold, italic bool
+}
+
+// syntaxGapStyles are the bold and italic a row of syntaxGaps asks for,
+// where its colour is the same either way.
+var syntaxGapStyles = map[string][]stylePart{
+	"Markdown: bold or italic at the start of a line": {
+		{1, "**Why**", true, false}, {1, "because", false, false}, {3, "*Note*", false, true}, {5, "__Bold__", true, false},
+		{7, "_It_", false, true}, {8, "item", false, false}, {9, "**Lead**", true, false}, {9, "item", false, false},
+		{10, "**bold**", true, false}, {10, "*em*", false, true}, {10, "Mid", false, false},
+	},
+}
+
+// syntaxStylesIn is what is wrong with the bold and italic of parts in
+// lines coloured: nothing when each is as it should be.
+func syntaxStylesIn(coloured []string, parts []stylePart) []string {
+	var wrong []string
+	for _, p := range parts {
+		var rs []rune
+		var sts []covCStyle
+		if p.n-1 < len(coloured) {
+			rs, sts = styleRunes(coloured[p.n-1])
+		}
+		at := strings.Index(string(rs), p.text)
+		if at < 0 {
+			wrong = append(wrong, fmt.Sprintf("line %d has no %q", p.n, p.text))
+			continue
+		}
+		at = utf8.RuneCountInString(string(rs)[:at])
+		for k, r := range []rune(p.text) {
+			if st := sts[at+k]; r != ' ' && (st.Bold != p.bold || st.Italic != p.italic) {
+				wrong = append(wrong, fmt.Sprintf("%q in line %d is bold %v, italic %v; want %v, %v", p.text, p.n, st.Bold, st.Italic, p.bold, p.italic))
+				break
+			}
+		}
+	}
+	return wrong
 }
 
 // styleRunes is the characters of a styled line, a tab among them, and the
@@ -228,7 +279,8 @@ func syntaxGapsIn(coloured []string, lines []string, parts []gapPart) []string {
 // colour with.
 func TestSyntaxGaps(t *testing.T) {
 	for _, g := range syntaxGaps {
-		for _, w := range syntaxGapsIn(Syntax(g.file, g.lines), g.lines, g.parts) {
+		coloured := Syntax(g.file, g.lines)
+		for _, w := range append(syntaxGapsIn(coloured, g.lines, g.parts), syntaxStylesIn(coloured, syntaxGapStyles[g.row])...) {
 			t.Errorf("%s (%s): %s", g.row, g.file, w)
 		}
 	}
@@ -245,7 +297,8 @@ func TestSyntaxGapsInChroma(t *testing.T) {
 			t.Errorf("%s: no lexer of chroma's own kept for %s", g.row, mine.Config().Name)
 			continue
 		}
-		if len(syntaxGapsIn(colourise(theirs, g.lines), g.lines, g.parts)) == 0 {
+		coloured := colourise(theirs, g.lines)
+		if len(syntaxGapsIn(coloured, g.lines, g.parts))+len(syntaxStylesIn(coloured, syntaxGapStyles[g.row])) == 0 {
 			t.Errorf("%s: chroma's own %s lexer colours it now: the fix in lexers/ can go", g.row, theirs.Config().Name)
 		}
 	}
@@ -410,7 +463,7 @@ func TestSyntaxPreviewViewerSame(t *testing.T) {
 		rows := viewerRows(ta)
 		for i := range g.lines {
 			var got, want []covCStyle
-			for _, c := range covCCells(preview[i])[2:] { // after the number and its space
+			for _, c := range covCCells(preview[i])[len(fmt.Sprint(len(g.lines)))+1:] { // after the number and its space
 				want = append(want, c.St)
 			}
 			for _, c := range covCCells(rows[i]) {

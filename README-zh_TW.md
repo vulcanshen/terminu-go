@@ -191,7 +191,7 @@ return app.Tick(300*time.Millisecond, func(time.Time) tea.Msg { return searchNow
 
 ## 實作哪一版 terminu design
 
-terminu-go 實作 **tdp v1.1.9**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
+terminu-go 實作 **tdp v1.1.10**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
 
 ## 相關連結
 

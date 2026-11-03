@@ -2,6 +2,13 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.1.11 — tdp v1.1.10
+
+- Markdown bold and italic at the start of a line, `**Why**: …` or `*Note* …` and with `__` or `_`, are bold and
+  italic as in the middle of one (tdp file-picker.3's table gains the row). chroma finds them only after a space,
+  a line break among them, so it missed them at the top of a file, after a heading, a list item or a quote, and at
+  the start of a list item's text
+
 ## v1.1.10 — tdp v1.1.9
 
 - Syntax colours keep catppuccin-mocha's bold, italic and underline, in a file preview, a viewer and `Syntax` alike
