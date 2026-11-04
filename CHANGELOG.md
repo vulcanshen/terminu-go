@@ -2,6 +2,15 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.0-beta.4 — tdp v1.2.0-beta.4
+
+- An app's own body can say as it draws that it has nothing to show (tdp panel.15): a body with a `Failure() *Failure`
+  method is asked after each `Draw`, and a failure it reports is drawn as `Panel.Fail` in that same frame, the body
+  taken as empty. It is for content laid out to the panel's width, as a diagram, whose failure is known only once the
+  width is and may change with it (#2, from catu). The panel's own `LoadingText` and `Fail` come first
+- tdp now says that the location row stays while loading and on an error too (panel.10), as the lib has drawn it since
+  v1.2.0-beta.3
+
 ## v1.2.0-beta.3 — tdp v1.2.0-beta.3
 
 - `PgUp|PgDn` are `u|d` in the Compare mode too (tdp K12): they moved everywhere else `u|d` move already

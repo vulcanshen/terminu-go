@@ -2299,6 +2299,68 @@ func TestPanelFailOnTab(t *testing.T) {
 	}
 }
 
+// covCLayout is an app's body laid out to the panel's width, as a diagram:
+// narrower than need it has nothing to show and says so by Failure(). Its
+// Pager has lines, so it is not Empty().
+type covCLayout struct {
+	Pager
+	need, w int
+	fail    *Failure
+}
+
+func (b *covCLayout) Draw(w, h int, focused bool) []string {
+	b.w, b.fail = w, nil
+	if w < b.need {
+		b.fail = &Failure{Fact: fmt.Sprintf("The diagram needs %d columns", b.need), Hint: "Press [h] for its text"}
+	}
+	return b.Pager.Draw(w, h, focused)
+}
+
+func (b *covCLayout) Failure() *Failure { return b.fail }
+
+// TestPanelFailFromBody: a tab whose content cannot be made, known only as
+// its body is laid out to the panel's width (tdp panel.15): the body's
+// Failure() is drawn as Fail in that same frame, the fact Red and the hint
+// Overlay0, its content gone though it is not Empty(); a width it fits comes
+// back on a resize; the panel's own LoadingText and Fail come first.
+func TestPanelFailFromBody(t *testing.T) {
+	ta := newTestApp(t)
+	b := &covCLayout{}
+	b.SetLines([]string{"the diagram"})
+	ta.pods.Body = b
+	if text := ta.screenText(); !strings.Contains(text, "the diagram") || strings.Contains(text, "needs") {
+		t.Fatalf("it fits: the diagram:\n%s", text)
+	}
+	b.need = b.w + 1
+	frame := ta.Frame()
+	_, fact := covCFind(t, frame, fmt.Sprintf("The diagram needs %d columns", b.need))
+	_, hint := covCFind(t, frame, "Press [h] for its text")
+	if fact[0].St.Fg != Red || hint[0].St.Fg != Overlay0 {
+		t.Errorf("fact in %v, hint in %v; want Red, Overlay0", fact[0].St.Fg, hint[0].St.Fg)
+	}
+	if strings.Contains(ta.screenText(), "the diagram") {
+		t.Errorf("failed: its content gone:\n%s", ta.screenText())
+	}
+	ta.pods.Loading, ta.pods.LoadingText = true, "laying out…"
+	if text := ta.screenText(); !strings.Contains(text, "laying out…") || strings.Contains(text, "needs") {
+		t.Errorf("LoadingText first:\n%s", text)
+	}
+	ta.pods.Loading, ta.pods.Fail = false, &Failure{Fact: "No such file", Hint: "Press [R] to retry"}
+	if text := ta.screenText(); !strings.Contains(text, "No such file") || strings.Contains(text, "needs") {
+		t.Errorf("the panel's Fail first:\n%s", text)
+	}
+	ta.pods.Fail = nil
+	narrow := b.w
+	ta.resize(240, 40)
+	text := ta.screenText()
+	if b.w <= narrow {
+		t.Fatalf("a wider terminal, a wider panel: %d, was %d", b.w, narrow)
+	}
+	if !strings.Contains(text, "the diagram") || strings.Contains(text, "needs") {
+		t.Errorf("wide enough again: the diagram:\n%s", text)
+	}
+}
+
 // TestPanel15EveryKind: loading and errors are the same in every kind of
 // panel (tdp panel.15): an empty one, whatever its body, has its LoadingText
 // or its Fail in the middle; a PTY not started yet is empty, one whose Start

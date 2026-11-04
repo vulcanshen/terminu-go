@@ -11,7 +11,11 @@ import (
 // itself. A body with an Empty() bool method that reports true has the
 // panel's LoadingText or Fail in its middle instead, whatever the kind of
 // panel (tdp panel.15); the lib's all have it, and a panel with no Body is
-// empty too. A body with an Uncover(rows int) method is told before each Draw
+// empty too. A body that learns only as it draws that it has nothing to show
+// (laid out to the panel's width, as a diagram) has a Failure() *Failure
+// method: the panel asks it after each Draw, and one it reports is drawn as
+// Fail in the same frame, the body taken as empty; the panel's own
+// LoadingText and Fail come first. A body with an Uncover(rows int) method is told before each Draw
 // how many rows at the bottom of its inside the inspect toast covers, 0 for
 // none (tdp toast.4): it scrolls so that the item under its cursor shows above
 // them, as List and Values do.
@@ -159,6 +163,8 @@ type Panel struct {
 	Loading     bool
 	LoadingText string
 	// Fail, when set and the panel has nothing to show, is shown in its middle.
+	// A failure known only while the body draws is the body's Failure()
+	// (Body).
 	Fail *Failure
 	// OnEsc is the app's "one level up" for Esc on this panel (tdp K4); it
 	// reports whether there was one.
@@ -362,12 +368,21 @@ func (p *Panel) draw(n, w, h int, focused, pointed bool) []string {
 	if e, ok := p.Body.(interface{ Empty() bool }); ok {
 		empty = e.Empty()
 	}
+	fail := p.Fail
+	if f, ok := p.Body.(interface{ Failure() *Failure }); ok {
+		if bf := f.Failure(); bf != nil { // known as it drew, just now
+			empty = true
+			if fail == nil {
+				fail = bf
+			}
+		}
+	}
 	if empty {
 		switch {
 		case p.Loading && p.LoadingText != "":
 			body = emptyState(inner, ih, loadingFrame()+" "+p.LoadingText, Fg(Overlay0), "", Style{})
-		case p.Fail != nil:
-			body = emptyState(inner, ih, p.Fail.Fact, Fg(Red), bracketKeys(p.Fail.Hint), Fg(Overlay0))
+		case fail != nil:
+			body = emptyState(inner, ih, fail.Fact, Fg(Red), bracketKeys(fail.Hint), Fg(Overlay0))
 		}
 	}
 	b.hint, b.hintOff = p.hint()

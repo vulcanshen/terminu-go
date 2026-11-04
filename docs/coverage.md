@@ -1,6 +1,6 @@
-# tdp v1.2.0-beta.3 coverage
+# tdp v1.2.0-beta.4 coverage
 
-tdp v1.2.0-beta.3 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
+tdp v1.2.0-beta.4 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
 每個元件、規範列的每一種方案、寫到的每一種狀態與疊法，在展示場都按得到。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -317,8 +317,8 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | panel.5 | 截斷從尾端加 `…`；路徑、檔名可以從前面截；兩端都有意義的從中間截（`demo-app…66-gm72n`），每一欄從哪裡截，app 可以自行決定（panel-74；lib：`Column.Path`、`Column.Middle`） | P `[1] PODS` 的長名字（從中間截）；I `[2] FILES` 的路徑 | `TestListTruncate`、`TestTruncateMiddle` |
 | panel.5 | 欄的寬度：可以截短的欄（名稱、網址、一行文字）分剩下的寬度、照各自的截法截，其他短欄照最寬的值不縮；放不下先把可以截短的縮到最少寬度（app 定，預設 12），還放不下才照 app 標的順序整欄收（表頭一起），名稱欄不收；變大時欄照順序回來、可以截短的長回去（lib：`Column.Shrink`、`MinWidth`、`Drop`） | P `[1] PODS` 把視窗縮窄：名稱先縮到 12 格，再 `AGE`、`RESTARTS`、`READY` 依序收掉 | `TestListColumnsGiveWay` |
 | panel.5 | 單欄的清單沒有欄名時不畫表頭 | K `[1] KINDS` | `TestListColumnsGiveWay` |
-| panel.10 | 清單上面一列寫目前的位置（要不要由 app 決定）：panel 內第一列、離框一格，在 panel filter 的打字列與表頭上面，固定不捲；Lavender、失焦跟著淡化；太長從前面截；只顯示：cursor 不停、捲動位置不算（lib：`List.Location`）；清單空了時照樣留著，空狀態只取代表頭與清單；loading、`Fail` 時也留著（panel-134）；失焦跟著淡化，Stream 的 panel 也一樣（panel-131）。lib：在 panel 裡由 panel 畫，跟 `Panel.Location` 同一套；兩個都設時是 `Panel.Location` | I `[2] FILES`（假的專案的目錄）；按 `/` 打字列在它下面 | `TestListLocationRow`、`TestListLocationInPanel` |
-| panel.10 | 沒有清單、沒有 cursor 的閱讀用 panel（viewu 顯示的檔案、webu 顯示的網頁）也可以有，放在文字上面（要不要由 app 決定）。lib：`Panel.Location`，任何 body 都可以（app 自己的也是）；畫法跟 `List.Location` 一樣（第一列、離框一格、Lavender、從前面截），固定不捲，body 少一列；空狀態、loading、`Fail` 時照樣留著；失焦跟著淡化，Stream 的 panel 也一樣（它不是串流的內容，T2） | P `[2] LOG`（log 檔的路徑）：按 `G`、按 `1` 讓它失焦、`Space` 選 `Empty` | `TestPanelLocationRow` |
+| panel.10 | 清單上面一列寫目前的位置（要不要由 app 決定）：panel 內第一列、離框一格，在 panel filter 的打字列與表頭上面，固定不捲；Lavender、失焦跟著淡化；太長從前面截；只顯示：cursor 不停、捲動位置不算（lib：`List.Location`）；清單空了、loading 中、出錯時照樣留著，空狀態、loading 的那一句、錯誤的兩句只取代表頭與清單（panel-134）；失焦跟著淡化，Stream 的 panel 也一樣（panel-131）。lib：在 panel 裡由 panel 畫，跟 `Panel.Location` 同一套；兩個都設時是 `Panel.Location` | I `[2] FILES`（假的專案的目錄）；按 `/` 打字列在它下面 | `TestListLocationRow`、`TestListLocationInPanel` |
+| panel.10 | 沒有清單、沒有 cursor 的閱讀用 panel（catu 顯示的檔案、webu 顯示的網頁）也可以有，放在文字上面（要不要由 app 決定）。lib：`Panel.Location`，任何 body 都可以（app 自己的也是）；畫法跟 `List.Location` 一樣（第一列、離框一格、Lavender、從前面截），固定不捲，body 少一列；空狀態、loading 的那一句、錯誤的兩句只取代它的文字，位置列照樣留著（panel-134）；失焦跟著淡化，Stream 的 panel 也一樣（它不是串流的內容，T2） | P `[2] LOG`（log 檔的路徑）：按 `G`、按 `1` 讓它失焦、`Space` 選 `Empty` | `TestPanelLocationRow` |
 | panel.5 | 排序的群：app 替每一列指定群、群的先後由 app 定，排序只在群裡，群之間不畫標題（lib：`Row.SortGroup`） | I `[2] FILES`：資料夾裡的檔在前、最上層的在後，各自照名稱排 | `TestListSortGroups` |
 | panel.5 | 清單的順序要固定：同一份資料每次排出來都一樣；沒有順序的資料先排（lib：`List.SortBy` 照名稱、數字照數值，排不出先後的照 `Row.ID`） | P `[1] PODS`、I `[2] FILES` 一打開就照名稱排 | `TestListFixedOrder` |
 | panel.5 | 空的照空狀態 | `Empty` | `TestEmptyState` |
@@ -329,7 +329,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | panel.15 | loading：icon 在整串膠囊後、用框線色（focus Blue、失焦 Surface2）；沒內容時中間寫一句（`󰪞 loading pods…`）；重新載入舊內容留著（panel-75、panel-76） | `Loading`（空的時候與有內容時各一次） | `TestPanelLoading`、`TestPanelLoadingIconAfterChain`（顏色） |
 | panel.15 | PTY 的 panel：還沒 Start、或開了還沒輸出時算空的，`LoadingText` 畫在中間；Start 失敗時畫它的錯誤（lib：`Terminal.Empty`） | T `[1] SHELL` 的 `Slow start` | `TestTerminalEmptyUntilItSpeaks`、`TestPanel15EveryKind` |
 | panel.15 | 錯誤：置中兩句，事實 Red、提示 Overlay0；舊內容在就留著、錯誤用 toast 報（panel-77～80） | `Fail`（空的時候與有內容時各一次） | `TestPanelError` |
-| panel.15 | 做不出內容的 tab（不合法的 JSON 的排版檢視、畫不出來的圖）跟錯誤一樣：置中兩句，事實 Red、提示 Overlay0；tab 的膠囊照樣在。lib：app 的 `OnTab` 換上空的 body 並設 `Fail`，換回做得出的 tab 時拿掉 | P `[1] PODS` 按 `l` 到 Events，`Empty` 再 `Fail` | `TestPanelFailOnTab` |
+| panel.15 | 做不出內容的 tab（不合法的 JSON 的排版檢視、畫不出來的圖）跟錯誤一樣：置中兩句，事實 Red、提示 Overlay0；tab 的膠囊照樣在。lib：app 的 `OnTab` 換上空的 body 並設 `Fail`，換回做得出的 tab 時拿掉；要畫的時候（照 panel 的寬度排版）才知道的，app 的 body 加上 `Failure()`，panel 每次畫完問它，同一格就畫出來，body 當成空的，panel 自己的 `LoadingText`、`Fail` 先 | P `[1] PODS` 按 `l` 到 Events，`Empty` 再 `Fail` | `TestPanelFailOnTab`、`TestPanelFailFromBody` |
 | panel.15 | 每一種 panel 都一樣：一般清單、一列一個值、明細、預覽、log、PTY 的格子。lib：body 有 `Empty()` 回 true 時畫（`List`、`Values`、`Pager`、`FilePreview`、`Terminal` 都有；沒有 `Body` 的 panel 也算空的），app 自己的 body 加上 `Empty()` 就有 | P 三個 panel 各自的 `Empty`、`Loading`、`Fail`；T `[1] SHELL` 的 `Slow start` | `TestPanel15EveryKind` |
 | panel.12 | 照表單：項目逐一移動（有 tab 時 `h\|l` 給 tab）；`Enter` 開 input popup，radio、checkbox 原地選；確定後 focus 留在同一列 | P `[3] SETTINGS`；I `[1] INPUTS` | `TestValuePanelMoves`、`TestValuePanelEnter` |
 | panel.12 | 沒有送出：確定的那一刻就生效；沒有動作區、沒有「改過了要先問」 | 同上 | `TestValuePanelAppliesNow` |

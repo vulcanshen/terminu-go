@@ -1,7 +1,7 @@
 # terminu-go 開發者備忘
 
 terminu-go 是 terminu design principle（tdp）的 Go 實作：給 app 呼叫的 lib，加上展示場 `examples/showcase`。遵循 terminu design
-principle，目前對應 tdp v1.2.0-beta.3。lib 只照 tdp 最新 tag 的文字做；規範沒寫或照做不好用的地方回報給 tdp，不在 lib 裡自己決定。
+principle，目前對應 tdp v1.2.0-beta.4。lib 只照 tdp 最新 tag 的文字做；規範沒寫或照做不好用的地方回報給 tdp，不在 lib 裡自己決定。
 
 ## 運作方式
 
@@ -158,6 +158,10 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
 - **loading 與錯誤畫在 panel 上，不在 body 裡**（tdp panel.15）：`Panel.Loading`、`LoadingText`、`Fail` 對每一種 panel 都一樣，
   body 只回答 `Empty()`。PTY 還沒 Start 也算空的；Start 失敗時錯誤寫在它的畫面上，不算空的，不然 app 忘了關 `Loading`
   就蓋掉錯誤。
+- **畫的時候才知道做不出內容，body 自己回答 `Failure()`**（tdp panel.15）：照 panel 的寬度排版的內容（例：mermaid 圖），
+  要等 `Draw` 拿到寬度才知道排不排得出來，終端機大小變了答案也會變。讓 `Draw` 回頭設 `Panel.Fail`，畫的時候就會改 panel 的狀態，
+  順序也得一直保證；所以錯誤留在 body 上，panel 每次 `Draw` 之後問它，跟 `Empty()`、`Uncover()` 同一種可選方法。回了就當成空的，
+  app 不用另外讓 `Empty()` 跟著對。
 - **toast 與 App Log 的字照原樣**（tdp toast.2）：開頭大寫是 app 的字。lib 分不出一列的開頭是名稱（`kbu.yaml saved`）還是一般的字，
   替 app 改大寫會改壞名稱，tdptest 檢查也會誤報，所以兩邊都不做；lib 自己給的字都大寫開頭。
 - **inspect toast 由 lib 問、app 只回答**（tdp toast.4，v1.1.2，webu）：`Panel.Inspect`、`Mode.Inspect` 只回答游標那一項有什麼
