@@ -446,8 +446,7 @@ func (t *Terminal) modeRef() *noteView {
 	}
 	return keyReference(Upper(historyMode), []refSection{{title: historyMode, rows: []KeyRow{
 		{Key: "j|k", Desc: "a line down, up"},
-		{Key: "u|d", Desc: "half a page up, down"},
-		{Key: "PgUp|PgDn", Desc: "half a page up, down"},
+		{Key: "u|d", Desc: "half a page up, down"}, // PgUp|PgDn too, not listed (tdp K12)
 		{Key: "gg|G", Desc: "the oldest line, the live screen's last"},
 		{Key: "Esc", Desc: "back to the live screen"},
 	}}, {title: "the program", rows: []KeyRow{{Key: "any other", Desc: "leaves History and goes to the program"}}}})

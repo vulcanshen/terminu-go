@@ -67,7 +67,8 @@ func newPanelsScreen(s *showcase) *panelsScreen {
 		Text: func(r terminu.Row) (string, error) { return podYAML(r), nil }}))
 
 	ps.logText = &terminu.Pager{Follow: true, EmptyFact: "No log lines yet"}
-	ps.log = &terminu.Panel{Label: "Log", Body: ps.logText, Stream: true, Actions: []terminu.Action{
+	// Its location row says whose log it is (tdp panel.10: a reader may have one).
+	ps.log = &terminu.Panel{Label: "Log", Body: ps.logText, Stream: true, Location: "/var/log/pods/default_api-7d4f9c/api/0.log", Actions: []terminu.Action{
 		{Key: "Enter", Label: "View", Desc: "the whole log in a viewer", Scope: terminu.PanelScope, Hint: "view",
 			Do: func() tea.Cmd {
 				return s.app.Viewer(&terminu.Viewer{Title: "Log", Subject: "api", Glyph: glyphYaml, Lines: slices.Clone(ps.logText.Lines())})

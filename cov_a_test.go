@@ -1007,6 +1007,48 @@ func TestK12HomeEndOnlyTyping(t *testing.T) {
 	}
 }
 
+// TestK12PgUpPgDnAreUD: PgUp|PgDn are u|d (K12-18). TestK7AliasEverywhere
+// presses them on the lists, menus, viewers and pickers; the modes with u|d
+// move the same (the Compare mode, a terminal's History), and no key
+// reference or mode menu lists them beside u|d.
+func TestK12PgUpPgDnAreUD(t *testing.T) {
+	for _, m := range []struct {
+		name string
+		open func() *testApp
+	}{
+		{"compare", func() *testApp { ta, _ := compareApp(t); ta.press("C"); return ta }},
+		{"history", func() *testApp { ta, _, _ := termWithHistory(t); ta.press("PgUp"); return ta }},
+	} {
+		after := func(keys []string) string {
+			ta := m.open()
+			ta.settle()
+			ta.press(keys...)
+			ta.settle()
+			return ta.screenText()
+		}
+		for _, c := range [][2][]string{{{"d"}, {"PgDn"}}, {{"d", "d", "u"}, {"PgDn", "PgDn", "PgUp"}}, {{"G", "u"}, {"G", "PgUp"}}} {
+			if a, b := after(c[0]), after(c[1]); a != b {
+				t.Errorf("%s: %v and %v differ:\n%s\n---\n%s", m.name, c[0], c[1], a, b)
+			}
+		}
+		for _, key := range []string{"?", "Space"} {
+			if s := after([]string{key}); !strings.Contains(s, "u|d") || strings.Contains(s, "PgUp") || strings.Contains(s, "PgDn") {
+				t.Errorf("%s, %s: u|d and no PgUp|PgDn beside it:\n%s", m.name, key, s)
+			}
+		}
+	}
+	for _, s := range covAMoveSurfaces() {
+		ta := newTestApp(t)
+		ta.resize(80, 16)
+		s.open(ta)
+		ta.settle()
+		ta.press("?")
+		if text := ta.screenText(); strings.Contains(text, "PgUp") || strings.Contains(text, "PgDn") {
+			t.Errorf("%s: ? lists PgUp|PgDn:\n%s", s.name, text)
+		}
+	}
+}
+
 // --- K8, K9 ------------------------------------------------------------------
 
 func TestK8InputState(t *testing.T) {

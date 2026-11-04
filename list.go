@@ -110,7 +110,9 @@ type List struct {
 	// directory, a remote path, the level drilled into), in Lavender on the
 	// panel's first row, cut from the front. It is only shown: the cursor
 	// does not stop on it and the scroll position does not count it
-	// (tdp panel.10). Whether a list has one is the app's.
+	// (tdp panel.10). Whether a list has one is the app's. In a panel the
+	// panel draws it, as Panel.Location: it stays over Loading and Fail and
+	// dims with the focus, a streaming panel's too.
 	Location string
 	// OnMove runs when the cursor comes to another row, by a key or not, the
 	// first time included: before the frame is drawn, so a details panel
@@ -435,6 +437,14 @@ func leadingNumber(s string) (float64, error) {
 	return strconv.ParseFloat(s[:end], 64)
 }
 
+// locationRow is a panel's location row (tdp panel.10) in w cells: one
+// cell from the frame on the left, the arrow's room on the right, in
+// Lavender, cut from the front.
+func locationRow(loc string, w int) string {
+	room := w - 1 - Width(glyphHard)
+	return " " + Pad(Fg(Lavender).Render(TruncateLeft(Escape(loc), room)), w-1)
+}
+
 // Uncover keeps the cursor's row above the rows at the bottom of the list
 // that the inspect toast covers (tdp toast.4); the lib calls it before each
 // Draw.
@@ -442,12 +452,14 @@ func (l *List) Uncover(rows int) { l.cover = rows }
 
 // Draw draws the list in w × h: the location row, the filter's typing row,
 // the header, the rows.
-func (l *List) Draw(w, h int, focused bool) []string {
+func (l *List) Draw(w, h int, focused bool) []string { return l.draw(w, h, focused, true) }
+
+// draw draws the list, its location row only when own: a panel draws a
+// list's location row itself (Panel.Location).
+func (l *List) draw(w, h int, focused, own bool) []string {
 	out := make([]string, 0, h)
-	if l.Location != "" {
-		// One cell from the frame on the left, the arrow's room on the right.
-		room := w - 1 - Width(glyphHard)
-		out = append(out, " "+Pad(Fg(Lavender).Render(TruncateLeft(Escape(l.Location), room)), w-1))
+	if own && l.Location != "" {
+		out = append(out, locationRow(l.Location, w))
 	}
 	if l.filter != nil {
 		out = append(out, l.filterRow(w, focused))

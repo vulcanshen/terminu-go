@@ -86,7 +86,7 @@ func (a *App) startCompare(p *Panel, l *List, c Compare, anchor Row) {
 	off := func() bool { r, ok := l.Current(); return !ok || r.ID == l.Anchor || !c.can(r) }
 	cm.mode = &Mode{Name: "Compare", Exit: "leave", Pause: true, Keys: []ModeKey{
 		{Key: "j|k", Keys: []string{"j", "k", "↓", "↑"}, Desc: "down, up", NoFooter: true, Do: move},
-		{Key: "u|d", Keys: []string{"u", "d"}, Desc: "half a page up, down", NoFooter: true, Do: move},
+		{Key: "u|d", Keys: []string{"u", "d", "PgUp", "PgDn"}, Desc: "half a page up, down", NoFooter: true, Do: move},
 		{Key: "gg|G", Keys: []string{"gg", "G"}, Desc: "to the top, the bottom", NoFooter: true, Do: move},
 		{Key: c.Key + "|Enter", Keys: []string{c.Key, "Enter"}, Desc: "compare", Disabled: off,
 			Item: true, Label: "Compare", MenuDesc: "with " + cm.name,

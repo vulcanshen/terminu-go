@@ -137,6 +137,18 @@ anywhere. `Done` gets how the command ended: an `*terminu.ElevateError` when it 
 error popup; `OnCancel` runs when the user cancels. With doas and no sudo, set `Tool: terminu.Doas`: doas asks for the
 password itself in a terminal popup. Not for Windows: use gsudo or the sudo Windows has there, the system asking with UAC.
 
+## Modes of your own
+
+`panel.EnterMode(&terminu.Mode{...})` puts a panel in a mode of the app's own (tdp K11): only the mode's `Keys` and the
+core keys work there, and `Esc` leaves. A `ModeKey` takes only the keys its `Keys` lists; the library adds none. List
+the arrow keys and `PgUp|PgDn` there yourself, as tdp K12 has them; `Key` is what the key reference and the footer
+write, the letters alone:
+
+```go
+{Key: "j|k", Keys: []string{"j", "k", "↓", "↑"}, Desc: "down, up", NoFooter: true, Do: move},
+{Key: "u|d", Keys: []string{"u", "d", "PgUp", "PgDn"}, Desc: "half a page up, down", NoFooter: true, Do: move},
+```
+
 ## Settings
 
 Two of the user's settings are shared by every terminu app (tdp E3). The library does not read config files: the
@@ -234,7 +246,7 @@ delete its on-screen code and its E5 code; E1, E3, E6, E7 and its own icon stay.
 
 ## Which terminu design
 
-terminu-go implements **tdp v1.2.0-beta.2**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
+terminu-go implements **tdp v1.2.0-beta.3**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
 
 ## Links
 

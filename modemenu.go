@@ -97,7 +97,7 @@ func (a *App) selectModeMenu(v *Viewer, press func(key string) tea.Cmd) tea.Cmd 
 	item := []Action{{Key: v.Select.Key, Label: "Select", Desc: "from the cursor", Do: do(v.Select.Key)}}
 	if v.selecting {
 		ck := v.Select.copyKey()
-		item = []Action{{Key: ck, Label: "[" + ck + "] Copy", Desc: "the selection, and leave", Do: do(ck)}}
+		item = []Action{{Key: ck, Label: "Copy", Desc: "the selection, and leave", Do: do(ck)}}
 	}
 	var keys []Action
 	for _, s := range (&viewerView{v: v}).keyRef() {
@@ -134,7 +134,7 @@ func (a *App) terminalModeMenu(t *Terminal) tea.Cmd {
 	}
 	keys := []Action{
 		moveRow("j|k", "a line down, up"), moveRow("u|d", "half a page up, down"),
-		moveRow("PgUp|PgDn", "half a page up, down"), moveRow("gg|G", "the oldest line, the live screen's last"),
+		moveRow("gg|G", "the oldest line, the live screen's last"),
 		leaveRow("live", func() tea.Cmd { t.leaveMode(); return nil }),
 	}
 	return a.modeMenu(a.modeTitle(), historyMode, nil, keys)

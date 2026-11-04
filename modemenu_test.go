@@ -69,7 +69,7 @@ func TestModeSpaceMenu(t *testing.T) {
 }
 
 // TestModeSpaceMenuInPopups: in a viewer's selection mode [v] Select, then
-// [y] Copy, titled as the viewer; in a reorder's Drag mode [Enter] Drop;
+// Cop[y], titled as the viewer; in a reorder's Drag mode [Enter] Drop;
 // in a terminal's History Space opens its menu, not the program's
 // (K5-3, reorder-19).
 func TestModeSpaceMenuInPopups(t *testing.T) {
@@ -82,12 +82,12 @@ func TestModeSpaceMenuInPopups(t *testing.T) {
 		t.Errorf("the selection mode's menu (%q):\n%s", m.cased, text)
 	}
 	ta.press("Enter", "l", "Space")
-	if !strings.Contains(ta.screenText(), "[y] Copy") {
+	if !strings.Contains(ta.screenText(), "Cop[y]") {
 		t.Errorf("selecting, the menu offers Copy:\n%s", ta.screenText())
 	}
 	ta.press("Enter")
 	if v := ta.topView().(*viewerView).v; v.inMode || !strings.Contains(ta.screenText(), "Copied") || len(takeClipboard()) == 0 {
-		t.Error("[y] Copy from the menu did not copy and leave")
+		t.Error("Cop[y] from the menu did not copy and leave")
 	}
 	ta.press("Esc", "Esc")
 

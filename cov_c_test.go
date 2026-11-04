@@ -2045,6 +2045,127 @@ func TestListLocationRow(t *testing.T) {
 	}
 }
 
+// TestPanelLocationRow: a reader may have a location row too (tdp panel.10,
+// Panel.Location): on its first row above the text, drawn as a list's; the
+// text under it scrolls and the row stays; the body gets the rows left,
+// its last line on the last row at G; the row dims with the focus, on a
+// streaming panel too, and stays over Fail and with no body.
+func TestPanelLocationRow(t *testing.T) {
+	a := anySize(New("t"))
+	var lines []string
+	for i := range 30 {
+		lines = append(lines, fmt.Sprintf("line %02d", i))
+	}
+	pager, other := &Pager{}, &Pager{}
+	pager.SetLines(lines)
+	other.SetLines([]string{"x"})
+	reader := &Panel{Label: "Reader", Body: pager, Location: "~/projects/terminu/components/layout/panel.md"}
+	a.AddScreen(&Screen{Name: "S", Panels: []*Panel{reader, {Label: "Other", Body: other}}})
+	ta := &testApp{App: a}
+	ta.resize(40, 14) // [1] in columns 0-19, its rows 1-11 inside the frame
+	row := func(y int) string { return Cut(ta.Frame()[y], 1, 19) }
+	text := func(y int) string { return strings.TrimSpace(StripStyles(row(y))) }
+	want := StripStyles(locationRow(reader.Location, 18))
+	if got := StripStyles(row(1)); got != want || !strings.HasPrefix(got, " …") || !strings.HasSuffix(strings.TrimSpace(got), "panel.md") {
+		t.Errorf("the first row, one cell in, cut from the front:\n%q\n%q", got, want)
+	}
+	if c := covCAt(ta.Frame()[1], 2); c.St.Fg != Lavender {
+		t.Errorf("in Lavender: %v", c.St.Fg)
+	}
+	if text(2) != "line 00" {
+		t.Errorf("the text under it: %q", text(2))
+	}
+	ta.press("d")
+	if StripStyles(row(1)) != want || text(2) == "line 00" {
+		t.Errorf("d scrolls the text, not the row: %q, %q", row(1), text(2))
+	}
+	ta.press("G")
+	if text(11) != "line 29" {
+		t.Errorf("at G the last line on the last row: %q", text(11))
+	}
+	lit := covCAt(ta.Frame()[11], 2).St.Fg
+	ta.press("2")
+	if c := covCAt(ta.Frame()[1], 2); c.St.Fg != DimColor(Lavender) {
+		t.Errorf("unfocused, it dims: %v", c.St.Fg)
+	}
+	reader.Stream = true
+	if c, l := covCAt(ta.Frame()[1], 2), covCAt(ta.Frame()[11], 2); c.St.Fg != DimColor(Lavender) || l.St.Fg != lit {
+		t.Errorf("on a stream the row dims, the text does not: %v, %v", c.St.Fg, l.St.Fg)
+	}
+	reader.Stream = false
+	ta.press("1")
+	pager.SetLines(nil)
+	reader.Fail = &Failure{Fact: "Forbidden", Hint: "Press [R] to retry"}
+	found := false
+	for y := 2; y <= 11; y++ {
+		found = found || text(y) == "Forbidden"
+	}
+	if StripStyles(row(1)) != want || !found {
+		t.Errorf("Fail under the row: %q, found %v", row(1), found)
+	}
+	reader.Fail, reader.Body = nil, nil
+	if StripStyles(row(1)) != want || text(2) != "" {
+		t.Errorf("no body, the row stays: %q %q", row(1), row(2))
+	}
+	for _, h := range []int{2, 3, 4} {
+		if got := len(reader.draw(1, 20, h, true, false)); got != h {
+			t.Errorf("%d rows drawn in %d", got, h)
+		}
+	}
+}
+
+// TestListLocationInPanel: in a panel a list's location row is drawn as
+// Panel.Location (tdp panel.10, panel-131, panel-134): once, staying when
+// the list is empty, over Loading and Fail, and dimming without the focus,
+// a streaming panel's too; with Panel.Location set as well, that one.
+func TestListLocationInPanel(t *testing.T) {
+	ta := newTestApp(t)
+	ta.resize(120, 14)
+	ta.list.Location = "~/projects/a/very/long/path/down/to/terminu/components"
+	rows := func() []string {
+		var out []string
+		for _, l := range ta.Frame() {
+			if strings.Contains(StripStyles(l), "terminu/components") {
+				out = append(out, l)
+			}
+		}
+		return out
+	}
+	if got := rows(); len(got) != 1 {
+		t.Fatalf("one location row: %q", got)
+	}
+	if !strings.Contains(ta.screenText(), "pod-00") {
+		t.Error("the rows under it")
+	}
+	all := ta.list.Rows()
+	ta.list.SetRows(nil)
+	ta.pods.Loading, ta.pods.LoadingText = true, "loading pods…"
+	if len(rows()) != 1 || !strings.Contains(ta.screenText(), "loading pods…") {
+		t.Errorf("empty and loading: the row and the loading line: %q", ta.screenText())
+	}
+	ta.pods.Loading = false
+	ta.pods.Fail = &Failure{Fact: "Forbidden: pods in kube-system", Hint: "Press [R] to retry"}
+	if len(rows()) != 1 || !strings.Contains(ta.screenText(), "Forbidden") {
+		t.Errorf("empty and failed: the row and the fact: %q", ta.screenText())
+	}
+	ta.pods.Fail = nil
+	ta.list.SetRows(all)
+	ta.pods.Stream = true
+	ta.press("2")
+	r := rows()
+	if len(r) != 1 {
+		t.Fatalf("unfocused, one row: %q", r)
+	}
+	i := strings.Index(StripStyles(r[0]), "…")
+	if c := covCAt(r[0], Width(StripStyles(r[0])[:i])); c.St.Fg != DimColor(Lavender) {
+		t.Errorf("unfocused on a stream, it dims: %v", c.St.Fg)
+	}
+	ta.pods.Location = "/somewhere/else"
+	if got := rows(); len(got) != 0 || !strings.Contains(ta.screenText(), "/somewhere/else") {
+		t.Errorf("Panel.Location set as well, it is the row: %q", got)
+	}
+}
+
 // TestPanelName: the name of what a panel shows is kept as it is after its
 // label, in its title, Space menu and key reference; with no label it is the
 // whole label (components, upper case).
@@ -2144,6 +2265,37 @@ func TestPanelError(t *testing.T) {
 	ta.list.SetRows(rows)
 	if text := ta.screenText(); !strings.Contains(text, "pod-00") || strings.Contains(text, "Forbidden") {
 		t.Error("the rows back, the error should go")
+	}
+}
+
+// TestPanelFailOnTab: a tab whose content cannot be made (an invalid JSON's
+// formatted view) looks as an error does (tdp panel.15): the app's OnTab
+// empties the body and sets Fail, the fact in Red and the hint in Overlay0
+// in the middle, the tab chain still there; back on a tab that can be made,
+// its content and no fact.
+func TestPanelFailOnTab(t *testing.T) {
+	ta := newTestApp(t)
+	ta.pods.OnTab = func(tab int) tea.Cmd {
+		if tab == 1 {
+			ta.pods.Body, ta.pods.Fail = &Pager{}, &Failure{Fact: "Not valid JSON: line 3", Hint: "Press [h] for the rows"}
+		} else {
+			ta.pods.Body, ta.pods.Fail = ta.list, nil
+		}
+		return nil
+	}
+	ta.press("l")
+	inside := covCCrop(ta.Frame(), 1, 39)
+	_, fact := covCFind(t, inside, "Not valid JSON: line 3")
+	_, hint := covCFind(t, inside, "Press [h] for the rows")
+	if fact[0].St.Fg != Red || hint[0].St.Fg != Overlay0 {
+		t.Errorf("fact in %v, hint in %v; want Red, Overlay0", fact[0].St.Fg, hint[0].St.Fg)
+	}
+	if text := ta.screenText(); !strings.Contains(text, "EVENTS") || strings.Contains(text, "pod-00") {
+		t.Errorf("on the tab: its chain and no rows:\n%s", text)
+	}
+	ta.press("h")
+	if text := ta.screenText(); !strings.Contains(text, "pod-00") || strings.Contains(text, "Not valid JSON") {
+		t.Errorf("back on the rows' tab:\n%s", text)
 	}
 }
 

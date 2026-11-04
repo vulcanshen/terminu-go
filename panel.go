@@ -67,7 +67,9 @@ type Mode struct {
 // ModeKey is one of a mode's keys.
 type ModeKey struct {
 	// Key is how it is written in the footer and the key reference ("j|k");
-	// Keys are the keys it takes, Key itself when empty.
+	// Keys are the keys it takes, Key itself when empty. The lib adds none:
+	// the arrow keys and PgUp|PgDn go in Keys as tdp K12 has them (j|k
+	// takes j, k, ↓, ↑; u|d takes u, d, PgUp, PgDn), Key writing the letters.
 	Key  string
 	Keys []string
 	Desc string
@@ -134,6 +136,14 @@ type Panel struct {
 	Tab   int
 	OnTab func(tab int) tea.Cmd
 	Body  Body
+	// Location, when set, is the location row of a panel with no list, a
+	// reader (a file, a web page): where the user is, on the panel's first
+	// row above its body, drawn as List.Location (tdp panel.10) and kept
+	// there whatever the body shows, its empty state, Loading or Fail
+	// included; it dims with the focus, on a Stream panel too. A list's
+	// List.Location is drawn here the same way; with both set, this one is
+	// the row. Whether a panel has one is the app's.
+	Location string
 	// Actions are the panel's item and panel operations; a "Enter" key is
 	// what Enter does here (tdp K3).
 	Actions []Action
@@ -330,10 +340,21 @@ func (p *Panel) draw(n, w, h int, focused, pointed bool) []string {
 	}
 	b.mode, b.modeClosed = mode, 1-lab.shown
 	inner, ih := w-2, h-2
+	where := p.Location
+	list, _ := p.Body.(*List)
+	if where == "" && list != nil {
+		where = list.Location
+	}
+	var loc []string
+	if where != "" && ih > 0 {
+		loc, ih = []string{locationRow(where, inner)}, ih-1
+	}
 	var body []string
 	switch {
 	case p.Body == nil:
 		body = blankLines(inner, ih)
+	case list != nil:
+		body = list.draw(inner, ih, focused, false) // its location row is loc
 	default:
 		body = p.Body.Draw(inner, ih, focused)
 	}
@@ -349,21 +370,22 @@ func (p *Panel) draw(n, w, h int, focused, pointed bool) []string {
 			body = emptyState(inner, ih, p.Fail.Fact, Fg(Red), bracketKeys(p.Fail.Hint), Fg(Overlay0))
 		}
 	}
-	b.body = body
 	b.hint, b.hintOff = p.hint()
 	if p.Body != nil {
 		b.scroll = p.Body.Scroll()
 	}
 	_, pty := p.Body.(*Terminal)
 	if !focused && !p.Stream && !pty { // a program's screen is live, like a stream (tdp T2)
-		b.body = DimLines(b.body)
+		body = DimLines(body)
 	}
 	if !focused {
-		// The hint dims on every panel without the focus, a stream's too: it
-		// is not what streams (tdp T2).
+		// The hint and the location row dim on every panel without the
+		// focus, a stream's too: they are not what streams (tdp T2).
 		b.hintKey = Fg(DimColor(Blue))
 		b.hintWords = DimColor(Overlay0)
+		loc = DimLines(loc)
 	}
+	b.body = append(loc, body...)
 	return b.draw()
 }
 

@@ -119,6 +119,17 @@ app 讀不了自己的設定、狀態或資料（格式錯、檔案壞掉、沒�
 （指令印出來的每一列），交給 error popup；使用者取消時跑 `OnCancel`。沒有 sudo 只有 doas 時設 `Tool: terminu.Doas`，doas
 在 terminal popup 裡自己問密碼。Windows 不用這個，照舊用 gsudo 或 Windows 的 sudo（系統跳 UAC）。
 
+## app 自己的模式
+
+`panel.EnterMode(&terminu.Mode{...})` 讓 panel 進入 app 自己的模式（tdp K11）：只有模式的 `Keys` 與 core key 作用，`Esc` 離開。
+`ModeKey` 只收 `Keys` 列出來的鍵，lib 不會替你補：方向鍵與 `PgUp|PgDn` 照 tdp K12 自己列進去；key reference 與 footer
+寫的是 `Key`，只寫字母：
+
+```go
+{Key: "j|k", Keys: []string{"j", "k", "↓", "↑"}, Desc: "down, up", NoFooter: true, Do: move},
+{Key: "u|d", Keys: []string{"u", "d", "PgUp", "PgDn"}, Desc: "half a page up, down", NoFooter: true, Do: move},
+```
+
 ## 設定
 
 使用者的設定裡，有兩個是 terminu 家族每個 app 共用的（tdp E3）。函式庫不讀設定檔：由 app 從自己的設定檔讀出來交給它。
@@ -208,7 +219,7 @@ tdp E8 對任何共用的 lib 只留三點：用 lib 的 app 不另外做 lib �
 
 ## 實作哪一版 terminu design
 
-terminu-go 實作 **tdp v1.2.0-beta.2**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
+terminu-go 實作 **tdp v1.2.0-beta.3**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
 
 ## 相關連結
 

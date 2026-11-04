@@ -2,6 +2,23 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.0-beta.3 — tdp v1.2.0-beta.3
+
+- `PgUp|PgDn` are `u|d` in the Compare mode too (tdp K12): they moved everywhere else `u|d` move already
+- A terminal's History mode no longer lists `PgUp|PgDn` beside `u|d`, in its key reference or its Space menu (tdp
+  terminal.5); they still scroll there, and the way in is the live screen's `PgUp:history`
+- A viewer's selection mode offers `Cop[y]` in its Space menu, the key in the label (tdp menu.4)
+- The README says that a mode of your own lists the arrow keys and `PgUp|PgDn` in `ModeKey.Keys` itself: the lib adds
+  none
+- A tab whose content cannot be made (tdp panel.15) is drawn as an error: the app's `OnTab` empties the body and sets
+  `Fail`
+- `Panel.Location`: a reader, a panel with no list and whatever its body, may have a location row above its text (tdp
+  panel.10), drawn as `List.Location`. It does not scroll, stays over the empty state, Loading and `Fail`, and dims
+  with the focus, a streaming panel's too. The showcase's log has one
+- In a panel, a list's `List.Location` is drawn by the panel the same way (tdp panel.10): an empty list keeps it over
+  Loading and `Fail` too, and it dims on a streaming panel without the focus. With `Panel.Location` set as well, that
+  one is the row
+
 ## v1.2.0-beta.2 — tdp v1.2.0-beta.2
 
 - Every viewer has `/` search (tdp note.3): `Viewer.Search` unset, it is there, titled Search; a viewer whose own `Keys`
