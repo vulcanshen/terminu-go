@@ -2,6 +2,16 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.0-beta.5 — tdp v1.2.0-beta.5
+
+- An app reading a pipe (`git log | app`) probes the terminal as any other does (tdp E5): with stdin a pipe and stdout
+  a terminal, the replies are read from the controlling terminal, `/dev/tty`, as Bubble Tea reads the keys from it,
+  and the pipe is left unread. The probe was skipped there before: an icon and a powerline symbol were one cell unless
+  a variable said otherwise, and the 16 colours were not asked for (tdp color.4) (from catu)
+- tdp's new E3 points are the app's: a file only for this run goes in the system temp dir and is deleted at quit, and
+  with no screen, a file of its own that cannot be read makes it quit, the path and the reason on stderr. The lib makes
+  no files, and with no screen it is not running
+
 ## v1.2.0-beta.4 — tdp v1.2.0-beta.4
 
 - An app's own body can say as it draws that it has nothing to show (tdp panel.15): a body with a `Failure() *Failure`

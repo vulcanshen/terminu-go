@@ -1,6 +1,6 @@
-# tdp v1.2.0-beta.4 coverage
+# tdp v1.2.0-beta.5 coverage
 
-tdp v1.2.0-beta.4 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
+tdp v1.2.0-beta.5 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
 每個元件、規範列的每一種方案、寫到的每一種狀態與疊法，在展示場都按得到。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -228,9 +228,11 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | E3 | 不再用的檔：app 改版後不再用的設定、狀態、資料檔不刪、不跳 toast；檔案還在時每次啟動在 App Log 記一筆 INFO，寫出路徑（`No longer used: <路徑>; delete it if you don't need it`）（lib：`App.NoLongerUsed`） | 展示場啟動時：`/tmp/terminu-showcase/layout.yaml`（假裝舊版用過），按 `!` 看 | `TestNoLongerUsed` |
 | E3 | 設定檔裡 app 不再讀的 key 照不再用的檔處理：留著，app 重寫那個檔時也留著，不跳 toast；每次啟動在 App Log 記一筆 INFO，寫出 key 與檔案（`No longer used: <key> in <檔案>; delete it if you don't need it`）（E3-24） | lib 不適用：設定檔是 app 讀寫的，lib 不碰，app 用 `App.Log` 記；展示場沒有設定檔 | — |
 | E3 | 不再用的快取在第一次啟動時刪掉，App Log 記一筆 INFO，寫出在哪裡、多大（E3-25） | lib 不適用：快取是 app 的；展示場沒有快取 | — |
+| E3 | 只給這一次執行用的檔案（例：從 pipe 讀進來的內容）放在系統的暫存目錄（`$TMPDIR`、`%TEMP%`），不在 config、data、cache 的位置，app 結束時刪掉（E3-26） | lib 不適用：lib 不建檔；展示場沒有這種檔 | — |
+| E3 | 沒有畫面時（不打開 app、直接印出來的指令），設定、狀態或資料讀不了：不動任何檔案、什麼都不印，路徑與原因寫到 stderr，以非 0 的 exit status 結束（E3-27） | lib 不適用：沒有畫面時 app 不走 `Run`，那一句是 app 寫的（有畫面時按 `Esc` 離開，`Run` 回傳的是 `<path> can't be read: <reason>`）；展示場不存設定 | — |
 | E4 | 需要 Nerd Font 與 truecolor（lib 的 README 寫明）；PUA glyph 在程式碼裡寫成 code point | 看 README；掃原始碼找不到 PUA 字元 | `TestE4NoLiteralPUA` |
 | E5 | 量的是游標實際前進幾格；所有量寬度的地方走同一個函式（含疊 popup）；畫到終端機用 bubbletea v1 的 renderer：它整列重寫改變的列，icon 佔兩格也對得上（`proto/c1` 這個原型在 icon 佔兩格的 tmux 裡逐字比對過） | `SHOWCASE__ICON_WIDTH=2`；`proto/c1/tmux-check.sh` 的作法 | `TestL4EveryRowFullWidth`（icon 兩格）、`TestE5OutputDropsEraseRight`（renderer 量錯寬度、在列尾補的「清到行尾」拿掉）、`TestVTWideCharacters`（PTY 裡的字也照同一個寬度放） |
-| E5 | icon 與 powerline 符號（U+E0A0–U+E0D7）各量各的；啟動時 CPR 探測（unix）；順序 `<APP>__ICON_WIDTH` → `TERMINU__ICON_WIDTH` → `LC_TERMINU_ICON_WIDTH`（隔著 ssh 帶過來的）→ 探測，powerline 照 `<APP>__POWERLINE_WIDTH` → `TERMINU__POWERLINE_WIDTH` → `LC_TERMINU_POWERLINE_WIDTH` → 探測；Windows 預設一格 | 在 icon 佔兩格的 tmux 裡啟動看 statusbar（寫出兩種寬度） | `TestE5WidthOrder`、`TestE5ProbeCPR` |
+| E5 | icon 與 powerline 符號（U+E0A0–U+E0D7）各量各的；啟動時 CPR 探測（unix）；順序 `<APP>__ICON_WIDTH` → `TERMINU__ICON_WIDTH` → `LC_TERMINU_ICON_WIDTH`（隔著 ssh 帶過來的）→ 探測，powerline 照 `<APP>__POWERLINE_WIDTH` → `TERMINU__POWERLINE_WIDTH` → `LC_TERMINU_POWERLINE_WIDTH` → 探測；Windows 預設一格；輸入從 pipe 來（`git log \| app`）照樣探測：lib 從控制終端機 `/dev/tty` 讀回覆，pipe 不讀 | 在 icon 佔兩格的 tmux 裡啟動看 statusbar（寫出兩種寬度） | `TestE5WidthOrder`、`TestE5ProbeCPR`、`TestE5ProbePipedStdin` |
 | E5 | 有 PTY 的 app 開子程序時設 `TERMINU__ICON_WIDTH`、`TERMINU__POWERLINE_WIDTH`（自己的格數） | T `[1] SHELL` 裡 `echo $TERMINU__ICON_WIDTH $TERMINU__POWERLINE_WIDTH` | `TestE5ChildEnv` |
 | E5 | 疊 popup 不當掉：比畫面寬、高、兩邊都大都切，不 panic | 縮小終端機再開 popup | `TestE5CompositeOversized` |
 | E6 | lib：git tag，沒有 binary；展示場不發布；L4 的畫面測試兩邊都要；家族 app 的範本與 repo 的檢查在 terminu-harness（tdp v1.2.0），lib 與展示場不套 | — | `TestL4EveryRowFullWidth` |

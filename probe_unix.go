@@ -15,11 +15,25 @@ import (
 const probeTimeout = 300 * time.Millisecond
 
 // askTerminal sends the probe and reads the replies until DA1's, in raw mode.
-// It is false when stdin or stdout is not a terminal or nothing came back.
+// It is false when stdout is not a terminal or nothing came back. With input
+// piped in (git log | app) the replies are read from the controlling
+// terminal, /dev/tty, as Bubble Tea reads the keys from it: the screen is
+// still the terminal's (tdp E5), and the pipe is left unread.
 func askTerminal(widths bool) (answers, bool) {
 	in, out := os.Stdin, os.Stdout
-	if !term.IsTerminal(in.Fd()) || !term.IsTerminal(out.Fd()) {
+	if !term.IsTerminal(out.Fd()) {
 		return answers{}, false
+	}
+	if !term.IsTerminal(in.Fd()) {
+		tty, err := os.Open("/dev/tty")
+		if err != nil {
+			return answers{}, false
+		}
+		defer tty.Close()
+		if !term.IsTerminal(tty.Fd()) {
+			return answers{}, false
+		}
+		in = tty
 	}
 	state, err := term.MakeRaw(in.Fd())
 	if err != nil {
