@@ -2,6 +2,50 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.0 — tdp v1.2.0
+
+Everything since v1.1.11, the betas v1.2.0-beta.1 to beta.5 included:
+
+- `tdptest.Check` no longer reads the app's repository: tdp v1.2.0 moves the family's templates and the repository
+  checks to terminu-harness. `tdptest/_project` is gone. The README has the table of what the lib does and what an app
+  using it does, which tdp E8 no longer carries
+- A file's format goes by its name, and where formats share a name, by its directory: a `config` in `.ssh` is
+  coloured as SSH's config, one in `.git` as git's, and a `hosts` as the hosts file only in `/etc`, one elsewhere (an
+  Ansible inventory) being plain text (tdp file-picker.3, note.2). The preview, a viewer and `Syntax`, given a path,
+  tell it the same way
+- More of chroma's gaps filled, as tdp file-picker.3's table lists them: `go.mod` and `go.work`, which chroma read as
+  AMPL; SSH's config, `/etc/hosts` (its lexer named `hosts file`), `.gitignore` and `.dockerignore`, and
+  `requirements.txt`, which it had no lexer for; a `Jenkinsfile`, now read as Groovy; and the names in a declaration: a
+  function's and a class's in JavaScript and TypeScript, a type's and the package's in Go, a function's in the shells,
+  an attribute's key in Terraform
+- Every viewer has `/` search (tdp note.3): `Viewer.Search` unset, it is there, titled Search; a viewer whose own `Keys`
+  take `/`, `n` or `N` has none of the lib's, the app searching there itself. The App Log, the diff and a form's result
+  have it
+- The key reference searches as a viewer does (tdp note.5): `/`, the hits underlined, the current one the cursor block,
+  `n|N`, an Info toast when there is none; its hint is `/:search ?|Esc:close`
+- A search run from the Space menu clears the menu once it runs (tdp T1): the lib's own searches are on popups, which
+  have no Space menu; a panel's search, the app's, ends its `Done` with `App.CloseAll()`
+- `PgUp|PgDn` are `u|d` in the Compare mode too (tdp K12), as everywhere else `u|d` move. Like the arrow keys they are
+  not listed beside `u|d`: a terminal's History mode no longer lists them in its key reference or its Space menu (tdp
+  terminal.5). The README says that a mode of your own lists the arrow keys and `PgUp|PgDn` in `ModeKey.Keys` itself:
+  the lib adds none
+- A viewer's selection mode offers `Cop[y]` in its Space menu, the key in the label (tdp menu.4)
+- A tab whose content cannot be made (tdp panel.15) is drawn as an error: the app's `OnTab` empties the body and sets
+  `Fail`. A body that learns only as it draws that it has nothing to show, laid out to the panel's width as a diagram,
+  answers `Failure() *Failure`: the panel asks it after each `Draw` and draws a failure as `Fail` in that same frame,
+  the body taken as empty, the panel's own `LoadingText` and `Fail` first (#2, from catu)
+- `Panel.Location`: a reader, a panel with no list and whatever its body, may have a location row above its text (tdp
+  panel.10), drawn as `List.Location`. In a panel a list's `List.Location` is drawn by the panel the same way; with
+  both set, `Panel.Location` is the row. The row does not scroll, stays over the empty state, Loading and `Fail`, and
+  dims with the focus, a streaming panel's too. The showcase's log has one
+- An app reading a pipe (`git log | app`) probes the terminal as any other does (tdp E5): with stdin a pipe and stdout
+  a terminal, the replies are read from the controlling terminal, `/dev/tty`, as Bubble Tea reads the keys from it,
+  and the pipe is left unread. The probe was skipped there before: an icon and a powerline symbol were one cell unless
+  a variable said otherwise, and the 16 colours were not asked for (tdp color.4) (from catu)
+- tdp's new E3 points are the app's: a file only for this run goes in the system temp dir and is deleted at quit, and
+  with no screen, a file of its own that cannot be read makes it quit, the path and the reason on stderr. The lib makes
+  no files, and with no screen it is not running
+
 ## v1.2.0-beta.5 — tdp v1.2.0-beta.5
 
 - An app reading a pipe (`git log | app`) probes the terminal as any other does (tdp E5): with stdin a pipe and stdout
