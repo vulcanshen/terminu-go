@@ -14,7 +14,8 @@ import (
 
 // inputsScreen is [I]NPUTS: every kind of input. [1] INPUTS has one row per
 // input and per way of drawing one, Enter opening its popup; [2] FILES is a
-// list whose [/] Find opens a general finder with a preview.
+// list whose [/] Find opens a general finder with a preview, and whose
+// Folders tab walks the project a folder at a time.
 type inputsScreen struct {
 	s        *showcase
 	screen   *terminu.Screen
@@ -22,7 +23,8 @@ type inputsScreen struct {
 	inputs   *terminu.Panel
 	files    *terminu.Panel
 	fileList *terminu.List
-	tab      int // the Files panel's: its files, or main.go's lines
+	tab      int    // the Files panel's: its files, main.go's lines, or its folders
+	dir      string // the folder the Folders tab is in
 	disabled bool
 	index    *terminu.Finder // the slow index, while it fills
 	grepping string          // what Find in files searches for now
@@ -254,9 +256,16 @@ func newInputsScreen(s *showcase) *inputsScreen {
 	is.fileList.Location = projectDir // where the files are (tdp panel.10)
 	// This panel's hint lists only what can be pressed now (tdp M6: the
 	// app's choice): View, disabled, leaves it.
-	is.files = &terminu.Panel{Label: "Files", Tabs: []string{"Lines"}, Body: is.fileList, HintPressableOnly: true, OnTab: is.switchTab}
+	is.files = &terminu.Panel{Label: "Files", Tabs: []string{"Lines", "Folders"}, Body: is.fileList, HintPressableOnly: true, OnTab: is.switchTab}
+	is.dir = projectDir
 	is.files.Actions = append([]terminu.Action{
-		{Key: "/", Label: "Find", Desc: "search the files, with a preview", Scope: terminu.PanelScope, Hint: "find", Do: is.find},
+		// Folders hold folders: Enter goes in one level, Esc comes back up
+		// (OnEsc), never a tree that folds open (tdp panel.10).
+		{Key: "Enter", Label: "Open", Desc: "go into the folder", Scope: terminu.ItemScope, Hint: "open", Do: is.goIn,
+			Hidden: func() bool { return is.tab != 2 }, Disabled: func() bool { return !is.onFolder() }},
+		// On the Folders tab, / is the list's filter.
+		{Key: "/", Label: "Find", Desc: "search the files, with a preview", Scope: terminu.PanelScope, Hint: "find", Do: is.find,
+			Hidden: func() bool { return is.tab == 2 }},
 		{Key: "S", Label: "Slow index", Desc: "a search whose results keep arriving", Scope: terminu.PanelScope, Do: is.slowIndex},
 		{Key: "F", Label: "Find in files", Desc: "search the files' text, the app searching", Scope: terminu.PanelScope, Do: is.grep},
 		{Key: "L", Label: "Copy URL", Desc: "the file's address", Scope: terminu.ItemScope,
@@ -264,7 +273,7 @@ func newInputsScreen(s *showcase) *inputsScreen {
 		// This panel gives V to an action of its own: the splash does not open
 		// here (tdp S1).
 		{Key: "V", Label: "View", Desc: "the file's text", Scope: terminu.ItemScope, Hint: "view", Do: is.view,
-			Disabled: func() bool { return is.disabled }},
+			Disabled: func() bool { return is.disabled || is.onFolder() }},
 	}, is.stateActions(is.files)...)
 
 	is.screen = &terminu.Screen{Name: "Inputs", Key: "I", Desc: "every kind of input",
@@ -279,22 +288,78 @@ var (
 	lineColumns = []terminu.Column{{Title: "Line", Number: true}, {Title: "Text", Line: true, Shrink: true}}
 )
 
-// switchTab shows the project's files, or main.go a line a row.
+// switchTab shows the project's files, main.go a line a row, or the folder
+// the Folders tab was left in.
 func (is *inputsScreen) switchTab(tab int) tea.Cmd {
 	is.tab = tab
-	is.fileList.Columns, is.fileList.Location = fileColumns, projectDir
+	is.fileList.ClearFilter() // only the Folders tab has one
+	is.fileList.Columns, is.fileList.Location, is.fileList.Filterable = fileColumns, projectDir, tab == 2
 	if tab == 1 {
 		is.fileList.Columns, is.fileList.Location = lineColumns, filepath.Join(projectDir, "main.go")
 	}
-	is.fileList.SetRows(is.rows())
 	is.fileList.SortBy(terminu.SortKey{Col: 0})
+	if tab == 2 {
+		is.showFolder()
+		return nil
+	}
+	is.files.OnEsc, is.files.Fail = nil, nil
+	is.fileList.SetRows(is.rows())
 	return nil
+}
+
+// showFolder shows the Folders tab's folder, the cursor at the top: the
+// location row is the path down to it, and Esc goes up a level, doing
+// nothing at the top (tdp panel.10).
+func (is *inputsScreen) showFolder() {
+	rows, err := folderRows(is.dir)
+	is.fileList.Location, is.files.Fail = is.dir, nil
+	if err != nil {
+		is.files.Fail = &terminu.Failure{Fact: "Cannot read " + filepath.Base(is.dir), Hint: "Press [Esc] to go back up"}
+	}
+	is.fileList.SetRows(nil)
+	is.fileList.SetRows(rows)
+	is.files.OnEsc = nil
+	if is.dir != projectDir {
+		is.files.OnEsc = is.up
+	}
+}
+
+// goIn goes into the folder under the cursor. A filter holds the level it
+// was typed on only, so it stays behind (tdp panel.10).
+func (is *inputsScreen) goIn() tea.Cmd {
+	row, ok := is.fileList.Current()
+	if !ok || !is.onFolder() {
+		return nil
+	}
+	is.fileList.ClearFilter()
+	is.dir = row.ID
+	is.showFolder()
+	return nil
+}
+
+// up goes back to the folder above, the cursor on the one it came out of.
+func (is *inputsScreen) up() tea.Cmd {
+	from := is.dir
+	is.dir = filepath.Dir(from)
+	is.showFolder()
+	is.fileList.Select(from)
+	return nil
+}
+
+// onFolder reports whether the cursor is on a folder of the Folders tab.
+func (is *inputsScreen) onFolder() bool {
+	row, ok := is.fileList.Current()
+	return ok && is.tab == 2 && strings.HasSuffix(row.Cells[0], "/")
 }
 
 // rows are the rows of the Files panel's tab.
 func (is *inputsScreen) rows() []terminu.Row {
 	if is.tab == 0 {
 		return fileRows()
+	}
+	if is.tab == 2 {
+		rows, _ := folderRows(is.dir)
+		return rows
 	}
 	p := filepath.Join(projectDir, "main.go")
 	b, _ := os.ReadFile(p)

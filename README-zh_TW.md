@@ -92,6 +92,9 @@ go run github.com/vulcanshen/terminu-go/examples/showcase@latest
   畫面上紅色的 `\n` 就一定是外面來的。
 - **拿來讀的內容**（viewer、panel 上的 log、預覽）：照終端機會畫的樣子，顏色碼照著上色、`\n` 換行、進度列的 `\r` 只留最後的
   狀態，其他畫成紅色的名字。自己畫的 body 要顯示 log 時，用 `Reading` 畫它的每一行。
+- **從標記語言畫出來的文件**（網頁、畫成文件的 Markdown 檔）：照瀏覽器的樣子畫。函式庫沒有畫這種文件的元件，viewer 與預覽
+  顯示的是 Markdown 檔的原文。自己排版時，一般文字裡的 Tab 與 `\n` 換成空白；程式碼區塊裡的 Tab 換成 `App.InputTabWidth`
+  格空白（沒設是 4）、照 `\n` 分列；再用 `Escape` 畫，其他控制字元（連顏色碼的 ESC）都是紅色的名字，顏色不從文件來。
 - **語法顏色**：`Lang` 寫了語言的 viewer、預覽裡的文字檔，照 tdp 上色（檔案的格式照檔名判斷，同名的再看資料夾：`.ssh` 裡的 `config`
   是 SSH 設定，`hosts` 只有在 `/etc` 裡才是 hosts）：chroma 的 catppuccin-mocha，照它的顏色、粗體、斜體與底線，不上背景色，chroma 漏掉的照
   家族的一種補法補上（TOML 的表名與 key、YAML 沒引號的值……）。自己畫的 body 要顯示檔案時，用 `Syntax(lang, lines)` 上色，
@@ -219,7 +222,7 @@ tdp E8 對任何共用的 lib 只留三點：用 lib 的 app 不另外做 lib �
 
 ## 實作哪一版 terminu design
 
-terminu-go 實作 **tdp v1.2.1**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
+terminu-go 實作 **tdp v1.2.2**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
 
 ## 相關連結
 

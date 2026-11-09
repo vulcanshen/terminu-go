@@ -1,6 +1,6 @@
-# tdp v1.2.1 coverage
+# tdp v1.2.2 coverage
 
-tdp v1.2.1 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
+tdp v1.2.2 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
 每個元件、規範列的每一種方案、寫到的每一種狀態與疊法，在展示場都按得到。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -20,7 +20,7 @@ app 名 `showcase`，五個畫面，畫面 chip 列 `[P]ANELS [I]NPUTS [D]IALOGS
 | 畫面 | 一句話 | panel |
 |---|---|---|
 | `[P]ANELS` | panel 的每一種樣子與狀態 | `[1] PODS`：一般清單（tab `PODS` / `EVENTS`、表頭排序、標記、cursor、40 列、截斷、panel filter、`[D]rag` 模式）；`[2] LOG`：串流內容、沒有 cursor，`Enter` 開 viewer、`[F]reeze` 是不暫停 `Tab` 的模式；`[3] SETTINGS`：一列一個值 |
-| `[I]NPUTS` | 每一種 input | `[1] INPUTS`：一列一個值，每一種 input（含各方案）各一列，`Enter` 打開它的 popup（`Host` 是 app 自己給預覽的 finder）；`[2] FILES`：清單，`[/] Find` 開一般的 finder（有預覽）、`[S]low index` 是結果慢慢進來的 finder、`[V]iew` 用 viewer 開檔案 |
+| `[I]NPUTS` | 每一種 input | `[1] INPUTS`：一列一個值，每一種 input（含各方案）各一列，`Enter` 打開它的 popup（`Host` 是 app 自己給預覽的 finder）；`[2] FILES`：清單，`[/] Find` 開一般的 finder（有預覽）、`[S]low index` 是結果慢慢進來的 finder、`[V]iew` 用 viewer 開檔案；`Folders` 分頁一層一層走假專案的資料夾（`Enter` 進、`Esc` 回） |
 | `[D]IALOGS` | 每一種 dialog 與疊法 | `[1] DIALOGS`：每一列是一個情境（某一種 dialog、某一種狀態、某一種疊法），`Enter` 開它 |
 | `[t]ERMINAL` | PTY 的兩種放法（畫面的鍵是小寫的 `t`） | `[1] SHELL`：PTY 放在 panel 裡；`[2] SESSIONS`：清單，`[Alt-t]erm` 開 terminal popup；第一列 `panel` 代表 `[1] SHELL`，cursor 在那一列時指著它 |
 | `[K]INDS` | 清單分組與跟著 cursor 換的明細 | `[1] KINDS`：分組的一般清單（五組、16 種、panel filter）；`[2]`：`[1]` cursor 那一種的明細（一列一個值），標題 `[2] KIND: pods`，名稱照原樣 |
@@ -267,6 +267,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | components.5 | 名字與短字（表單與 panel 上的值、清單的格子與位置列、menu、popup 的標題、toast、confirm、error popup、選項、說明列、錯誤列、空狀態、statusbar、tab 的名稱、finder 的項目）裡每個控制字元，連 Tab、`\n`、顏色碼的 ESC，都畫成紅色的名字，不丟、不換成空白、不送給終端機；色塊上 Red 底 Base 字（lib：`Escape`；app 要上色的另外給 `Span`：`Row.Styled`、`Field.Styled`、`FormField.Styled`、`App.Status`） | 任何地方：展示場的資料沒有控制字元，靠測試 | `TestControlCharsNamesAndShortTexts`、`TestControlCharsOnABlock`、`TestSpansStyled`；tdptest 的 `TestTrickyValuesEverywhere` |
 | components.5 | app 自己寫的字不帶換行字元：error popup 的訊息、toast 的字一列一列給（`Error`、`ErrorAbout`、`Toast` 收好幾個字串），每一列另起一列、太長折行、列跟列之間不空列；元素裡的 `\n` 是外面來的，照舊畫成紅色的名字；tdptest 的 Driver 預設檢查，畫面上有紅色的 `\n` 測試結束時就失敗，資料刻意放了時設 `Driver.AllowLineBreaks`，`Check` 照 `Tricky` 設（components-30、31，sshu 回報的；components-32 是 app 的事） | D「Error popup: long」 | `TestMessageRows`、tdptest 的 `TestCheckFindsLineBreaks`、`TestDriverFindsLineBreaks` |
 | components.5 | 拿來讀的內容（viewer、panel 上的 log、檔案預覽、finder 的預覽）照終端機的樣子畫，見 note 的「viewer 裡的 Tab 與控制字元」；app 自己畫的 body 用 `Reading` | P `[2] LOG`（彩色的等級） | `TestReadingContent`、`TestReadingForAppBodies` |
+| components.5 | 從標記語言畫出來的文件（閱讀器裡的網頁、畫成文件的 Markdown 檔）照瀏覽器畫：一般文字裡的 Tab 與 `\n`（Markdown 的軟換行也是）是空白；程式碼區塊裡 Tab 是 `input_tab_width` 格空白、`\n` 是換行；其他控制字元，包括顏色碼的 ESC，畫成紅色的名字，顏色不從文件來（components-33）。lib 沒有畫這種文件的元件：viewer 與預覽顯示的是 Markdown 檔的原文，照上一列；自己排版文件的 app 把一般文字的 Tab 與 `\n` 換成空白、程式碼區塊的 Tab 換成 `App.InputTabWidth` 格空白並照 `\n` 分列，再用 `Escape` 畫每一段字 | 展示場沒有這種文件；在自己排版文件的 app 裡開一個網頁或 Markdown 檔：段落裡有 Tab 與換行、程式碼區塊用 Tab 縮排、文字裡有 `\x1b[31m` | `TestControlCharsNamesAndShortTexts`（`Escape`） |
 | components.5 | 名字與短字的例外：app 標成「一行文字」的清單欄（原始碼、log 的一行）裡，Tab 畫成 `input_tab_width` 格空白，其他控制字元照舊畫成紅色的名字（lib：`Column.Line`，`Styled` 的字也一樣） | I `[2] FILES` 的 `Lines` 分頁：`main.go` 一行一列，`Text` 欄的縮排 | `TestControlCharsLineColumn` |
 
 ## layout/screen
@@ -322,6 +323,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | panel.10 | 清單上面一列寫目前的位置（要不要由 app 決定）：panel 內第一列、離框一格，在 panel filter 的打字列與表頭上面，固定不捲；Lavender、失焦跟著淡化；太長從前面截；只顯示：cursor 不停、捲動位置不算（lib：`List.Location`）；清單空了、loading 中、出錯時照樣留著，空狀態、loading 的那一句、錯誤的兩句只取代表頭與清單（panel-134）；失焦跟著淡化，Stream 的 panel 也一樣（panel-131）。lib：在 panel 裡由 panel 畫，跟 `Panel.Location` 同一套；兩個都設時是 `Panel.Location` | I `[2] FILES`（假的專案的目錄）；按 `/` 打字列在它下面 | `TestListLocationRow`、`TestListLocationInPanel` |
 | panel.10 | 沒有清單、沒有 cursor 的閱讀用 panel（catu 顯示的檔案、webu 顯示的網頁）也可以有，放在文字上面（要不要由 app 決定）。lib：`Panel.Location`，任何 body 都可以（app 自己的也是）；畫法跟 `List.Location` 一樣（第一列、離框一格、Lavender、從前面截），固定不捲，body 少一列；空狀態、loading 的那一句、錯誤的兩句只取代它的文字，位置列照樣留著（panel-134）；失焦跟著淡化，Stream 的 panel 也一樣（它不是串流的內容，T2） | P `[2] LOG`（log 檔的路徑）：按 `G`、按 `1` 讓它失焦、`Space` 選 `Empty` | `TestPanelLocationRow` |
 | panel.10 | 位置列開頭可以放一個 icon，表示這是哪一種位置（要不要、放哪一個由 app 決定），後面空一格；跟這一列同色、一起淡化；太長時只截後面的文字，icon 留著，`…` 接在它後面（panel-157）。lib：`List.LocationGlyph`、`Panel.LocationGlyph`，各跟著自己的 `Location`；沒設就跟原本一樣 | P `[2] LOG`：開頭是檔案的 icon，把視窗拉窄看 icon 後面接 `…`，按 `1` 讓它失焦；I `[2] FILES` 沒有 icon | `TestLocationGlyph` |
+| panel.10 | 項目裡還有項目時一層一層進，不畫成可以展開、收合的樹：`Enter` 進去，位置列寫到它為止的路徑；清單、panel filter、`N of M` 都只有這一層；`Esc` 先清 filter，再回上一層，cursor 停在剛剛出來的那一個；在最上層 `Esc` 什麼都不做（panel-158）。lib：不另做元件，app 的 `Enter` 動作先 `List.ClearFilter`、再換 `List.SetRows` 與 `List.Location`；`Panel.OnEsc` 回上一層、`List.Select` 剛剛出來的那一個，在最上層設成 nil（`?` 只在有上一層時列 `Esc` 的 one level up） | I `[2] FILES` 按兩次 `l` 到 `Folders`：`Enter` 進 `assets/` 再進 `images/`，按 `/` 打 `zz`，再一直按 `Esc` 到不動；`empty/` 是空的、`locked/` 讀不了，位置列都留著 | `TestPanelItemsInItems` |
 | panel.5 | 排序的群：app 替每一列指定群、群的先後由 app 定，排序只在群裡，群之間不畫標題（lib：`Row.SortGroup`） | I `[2] FILES`：資料夾裡的檔在前、最上層的在後，各自照名稱排 | `TestListSortGroups` |
 | panel.5 | 清單的順序要固定：同一份資料每次排出來都一樣；沒有順序的資料先排（lib：`List.SortBy` 照名稱、數字照數值，排不出先後的照 `Row.ID`） | P `[1] PODS`、I `[2] FILES` 一打開就照名稱排 | `TestListFixedOrder` |
 | panel.5 | 空的照空狀態 | `Empty` | `TestEmptyState` |

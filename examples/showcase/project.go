@@ -165,6 +165,35 @@ func fileRows() []terminu.Row {
 	return rows
 }
 
+// folderRows are one folder of the project, a row each, its folders first
+// and named with a / after them, the hidden ones left out: the Folders tab
+// walks the project a level at a time (tdp panel.10).
+func folderRows(dir string) ([]terminu.Row, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+	var rows []terminu.Row
+	for _, e := range entries {
+		if strings.HasPrefix(e.Name(), ".") {
+			continue
+		}
+		p := filepath.Join(dir, e.Name())
+		st, err := os.Stat(p)
+		if err != nil {
+			continue // a broken link, as in the Files tab
+		}
+		age := time.Since(st.ModTime()).Round(time.Minute)
+		name, size, group := e.Name(), humanSize(int(st.Size())), 1
+		if st.IsDir() {
+			name, size, group = name+"/", "", 0
+		}
+		rows = append(rows, terminu.Row{ID: p, Cells: []string{name, size, shortAge(age)},
+			Sort: []string{name, fmt.Sprint(st.Size()), fmt.Sprint(st.ModTime().Unix())}, SortGroup: group})
+	}
+	return rows, nil
+}
+
 func fileItems() []terminu.FinderItem {
 	var items []terminu.FinderItem
 	for _, p := range projectFiles() {

@@ -102,6 +102,11 @@ program's output — never reaches the terminal as it is:
 - **What is read** (a viewer, a panel's log, previews) is drawn as a terminal would: colour codes colour, `\n` starts
   a line, a progress bar's `\r` leaves its last state, anything else is its name in Red. A body of your own that
   shows a log draws its lines with `Reading`.
+- **A document drawn from markup** (a web page, a Markdown file drawn as a document) is drawn as a browser would, and
+  the library has no component that draws one: its viewer and previews show a Markdown file's text. Laying one out
+  yourself, turn a tab or a `\n` in running text into a space, and in a code block a tab into `App.InputTabWidth`
+  spaces (4 when unset) and a `\n` into a new row; then draw the text with `Escape`, so any other control character, a colour
+  code's ESC too, is its name in Red and no colour comes from the document.
 - **Syntax colours**: a viewer whose `Lang` names a language, and a text file in a preview, are coloured as tdp asks
   (a file's format by its name, and by its directory where formats share a name: a `config` in `.ssh` is SSH's, a `hosts` is the hosts file only in
   `/etc`):
@@ -246,7 +251,7 @@ delete its on-screen code and its E5 code; E1, E3, E6, E7 and its own icon stay.
 
 ## Which terminu design
 
-terminu-go implements **tdp v1.2.1**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
+terminu-go implements **tdp v1.2.2**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
 
 ## Links
 

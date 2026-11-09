@@ -2,6 +2,17 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.2 — tdp v1.2.2
+
+- Items that hold items are walked a level at a time, never folded open as a tree (tdp panel.10), with what the lib
+  already has: the app's `Enter` action clears the filter (`List.ClearFilter`) and sets the level's rows and its
+  `List.Location`; `Panel.OnEsc` goes back up and puts the cursor on the one it came out of (`List.Select`), and is
+  nil at the top, where `Esc` does nothing. The showcase's Files panel has a Folders tab that walks its project this
+  way (from webu)
+- A document drawn from markup (a web page in a reader, a Markdown file drawn as a document) is drawn as a browser
+  would (tdp components.5). No component of the lib draws one: its viewer and previews show a Markdown file's text.
+  The README says how an app laying one out draws it with `Escape` (from webu)
+
 ## v1.2.1 — tdp v1.2.1
 
 - A location row may start with a glyph for the kind of place (tdp panel.10): `List.LocationGlyph` and
