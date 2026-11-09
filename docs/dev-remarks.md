@@ -1,7 +1,7 @@
 # terminu-go 開發者備忘
 
 terminu-go 是 terminu design principle（tdp）的 Go 實作：給 app 呼叫的 lib，加上展示場 `examples/showcase`。遵循 terminu design
-principle，目前對應 tdp v1.2.0。lib 只照 tdp 最新 tag 的文字做；規範沒寫或照做不好用的地方回報給 tdp，不在 lib 裡自己決定。
+principle，目前對應 tdp v1.2.1。lib 只照 tdp 最新 tag 的文字做；規範沒寫或照做不好用的地方回報給 tdp，不在 lib 裡自己決定。
 
 ## 運作方式
 
@@ -120,6 +120,8 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   key reference 也有 `/`（`noteView.search`）：它的列每次量大小時重排（「每一列」那一節照寬度折行），命中的字跟著重找。
   從 Space menu 搜尋時 menu 要收起（tdp T1），lib 自己的搜尋都在 popup 上，碰不到 Space menu；panel 的搜尋是 app 的，
   `Done` 回 `App.CloseAll()`。
+  搜尋的狀態（tdp v1.2.1 的 note.3，`/goroutine 2 of 5`）畫在下框，跟捲動位置一起由 `box` 排：viewer 與 key reference 的是 lib 的，
+  照命中自己畫；panel 的搜尋是 app 的，lib 不知道找了什麼、在第幾筆，所以由 app 交 `Panel.SearchStatus`，lib 只管畫在哪、截、上色。
 - **最低尺寸預設 60×32**（tdp L1；tdp v0.11.0 以前是 80×40）：用 lib 的 app 在比較小的終端機裡會只看到名稱、提示與怎麼離開；
   版面在更小的畫面也畫得下的 app 自己調低
   （`App.MinWidth`、`MinHeight`）。測試的 app 都調到 1×1，各自的測試照樣在小畫面上跑。

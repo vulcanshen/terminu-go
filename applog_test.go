@@ -2,6 +2,7 @@ package terminu
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -130,6 +131,25 @@ func TestAppLogModes(t *testing.T) {
 	tt.settle()
 	if len(tt.logs.entries) != before {
 		t.Errorf("a PTY's selection mode logged %v", tt.logs.entries[before:])
+	}
+}
+
+// TestAppLogSearch: a / search is not recorded, in a viewer or in the key
+// reference; one with no hit only by its Info toast, as every toast is
+// (tdp note.7, note-77).
+func TestAppLogSearch(t *testing.T) {
+	ta, _ := logApp(t)
+	ta.Viewer(&Viewer{Title: "YAML", Lines: []string{"kind: Pod", "name: nginx"}})
+	ta.settle()
+	ta.press("/", "n", "g", "i", "n", "x", "Enter", "n", "N", "/", "z", "z", "z", "Enter", "Esc")
+	ta.press("?", "/", "t", "h", "i", "s", "Enter", "n")
+	ta.settle()
+	var got []string
+	for _, e := range ta.logs.entries {
+		got = append(got, e.text)
+	}
+	if len(got) == 0 || got[0] != "No line has zzz" || slices.ContainsFunc(got, func(e string) bool { return !strings.HasPrefix(e, "No line has ") }) {
+		t.Errorf("logged %q, want only the toasts of the searches with no hit", got)
 	}
 }
 

@@ -103,7 +103,8 @@ func (n *noteView) draw(w, h int, layer Color) []string {
 	if len(n.lines) > n.visible {
 		scroll = scrollText(false, n.top+1, min(n.top+n.visible, len(n.lines)), len(n.lines))
 	}
-	return popupBox{color: color, glyph: n.glyph, title: n.title, hint: n.hint, scroll: scroll}.draw(w, body)
+	found := SearchStatus{Text: n.query, Current: n.current, Count: len(n.hits)}
+	return popupBox{color: color, glyph: n.glyph, title: n.title, hint: n.hint, scroll: scroll, found: found}.draw(w, body)
 }
 
 func (n *noteView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {

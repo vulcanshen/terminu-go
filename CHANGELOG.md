@@ -2,6 +2,22 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.1 — tdp v1.2.1
+
+- A location row may start with a glyph for the kind of place (tdp panel.10): `List.LocationGlyph` and
+  `Panel.LocationGlyph`, each going with its own `Location`. One space follows it; it is in the row's colour and dims
+  with it, and when the row is too long only the text is cut, the glyph staying and the `…` right after it. With none
+  set, the row is as before. The showcase's log has a file's glyph (from webu)
+- A `/` search shows its status on the bottom border while it has hits, left of the scroll position (tdp note.3,
+  panel.1): `/`, the text, then which hit is current and how many there are, `/goroutine 2 of 5 ━ 6-10 of 42 ━┛`, in
+  the scroll position's colour. When the border is short the hint's pairs go first, then the text is cut at its end
+  with `…`, the numbers and the scroll position kept. A viewer's and the key reference's searches draw it themselves;
+  `Viewer.Query` is the text the hits are of, which an app running its own search on a viewer sets with `Hits`. A
+  panel's search is the app's: it gives the panel `Panel.SearchStatus` (a `SearchStatus`: `Text`, `Current` from 0,
+  `Count`) and clears it with the hits (from webu)
+- A `/` search is not recorded in the App Log (tdp note.7), one with no hit only by its Info toast: the lib already
+  did so, and a test now holds it
+
 ## v1.2.0 — tdp v1.2.0
 
 Everything since v1.1.11, the betas v1.2.0-beta.1 to beta.5 included:

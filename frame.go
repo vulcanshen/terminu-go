@@ -236,10 +236,11 @@ type box struct {
 	// and closes from its middle, keeping its room (modelabel.go).
 	modeClosed float64
 	hint       []KeyHint
-	hintOff    []bool // the pairs that cannot be pressed now, in the disabled colour
-	hintKey    Style  // the colour of the hint's keys
-	hintWords  Color  // the colour of its colons and words; Overlay0 when unset
-	scroll     string // the scroll position at the right of the bottom border
+	hintOff    []bool       // the pairs that cannot be pressed now, in the disabled colour
+	hintKey    Style        // the colour of the hint's keys
+	hintWords  Color        // the colour of its colons and words; Overlay0 when unset
+	scroll     string       // the scroll position at the right of the bottom border
+	found      SearchStatus // a search's status, left of the scroll position
 	body       []string
 }
 
@@ -289,28 +290,57 @@ func (b box) draw() []string {
 		out = append(out, frame.Render(ls.v)+Pad(l, inner)+frame.Render(ls.v))
 	}
 
-	// Bottom: corner, one segment, hint, line, scroll position, one segment, corner.
+	// Bottom: corner, one segment, hint, line, the search's status and a
+	// segment, scroll position, one segment, corner.
 	scroll := ""
 	if b.scroll != "" && inner >= Width(b.scroll)+4 {
 		scroll = " " + b.scroll + " "
 	}
+	// The search's status, while there are hits, in the room the scroll
+	// position leaves: a segment from the corner, the spaces either side,
+	// the segment before the scroll position, the last one (tdp note.3).
+	found, gap := "", ""
+	if scroll != "" {
+		gap = ls.h
+	}
+	if s := searchText(b.found, inner-1-2-Width(gap)-Width(scroll)-1); s != "" {
+		found = " " + s + " " + gap
+	}
 	tail := ls.h
-	if scroll == "" {
+	if scroll == "" && found == "" {
 		tail = ""
 	}
 	// A segment, the space either side, at least one segment after it, the
-	// scroll position and its segment. A popup is made wide enough for both
-	// (scrollRoom); pairs go from the end only on a terminal too narrow.
-	hintRoom := inner - 1 - 2 - 1 - Width(scroll) - Width(tail)
+	// search's status, the scroll position and its segment. A popup is made
+	// wide enough for the hint and the scroll position (scrollRoom); pairs
+	// go from the end only on a terminal too narrow, or for the status
+	// (tdp panel.1).
+	hintRoom := inner - 1 - 2 - 1 - Width(found) - Width(scroll) - Width(tail)
 	hint := ""
 	if len(b.hint) > 0 && hintRoom > 0 {
 		if h := renderHintsOff(b.hint, b.hintOff, hintRoom, b.hintKey, b.words()); h != "" {
 			hint = " " + h + " "
 		}
 	}
-	fill := inner - 1 - Width(hint) - Width(scroll) - Width(tail)
-	out = append(out, frame.Render(ls.bl+ls.h)+hint+frame.Render(Repeat(ls.h, fill))+frame.Render(scroll)+frame.Render(tail+ls.br))
+	fill := inner - 1 - Width(hint) - Width(found) - Width(scroll) - Width(tail)
+	out = append(out, frame.Render(ls.bl+ls.h)+hint+frame.Render(Repeat(ls.h, fill))+frame.Render(found)+frame.Render(scroll)+frame.Render(tail+ls.br))
 	return out
+}
+
+// searchText is a search's status in at most room cells (tdp note.3): "/",
+// the text, then the current hit of how many, "/goroutine 2 of 5"; a text
+// too long is cut at its end with …, the numbers kept. It is "" with no
+// hits, or no room for "/…" and the numbers.
+func searchText(s SearchStatus, room int) string {
+	if s.Count <= 0 {
+		return ""
+	}
+	nums := scrollText(true, min(max(s.Current, 0), s.Count-1)+1, 0, s.Count)
+	text := room - 1 - Width(nums)
+	if text < 2 {
+		return ""
+	}
+	return Truncate("/"+Escape(s.Text), text) + " " + nums
 }
 
 // runeCount counts the characters of s.

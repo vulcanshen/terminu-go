@@ -52,6 +52,11 @@ type Viewer struct {
 	// closes (tdp note.3).
 	Hits    []TextMatch
 	Current int
+	// Query is the text the Hits are of, drawn with them as the search's
+	// status on the bottom border, "/", Query, the current hit of how many,
+	// left of the scroll position (tdp note.3). Search sets it; an app
+	// running its own search sets it with Hits.
+	Query string
 	// Search is the viewer's search (tdp note.3): / asks for the text in an
 	// input popup, every place it is becomes a hit, the first scrolled into
 	// sight, and n|N go to the next and the previous, wrapping at the ends;
@@ -124,6 +129,16 @@ func findIn(rows [][]string, q string) []TextMatch {
 	return out
 }
 
+// SearchStatus is a / search's status, which the lib draws on the bottom
+// border left of the scroll position while Count is not 0 (tdp note.3): "/",
+// Text, then the current hit of how many, "/goroutine 2 of 5", in the
+// scroll position's colour; a Text too long is cut at its end with …, the
+// numbers kept. Current counts from 0, as Viewer.Current does.
+type SearchStatus struct {
+	Text           string
+	Current, Count int
+}
+
 // ViewerSearch is the words of a viewer's search, the app's (tdp note.3):
 // the input popup's title ("Search" when unset), glyph and prompt ("Find in
 // the YAML").
@@ -134,7 +149,7 @@ type ViewerSearch struct {
 // find makes the places q is the hits, the first in sight; with none an
 // Info toast says so (tdp note.3).
 func (v *Viewer) find(a *App, q string) tea.Cmd {
-	v.Hits, v.Current = v.FindText(q), 0
+	v.Hits, v.Current, v.Query = v.FindText(q), 0, q
 	if len(v.Hits) == 0 {
 		return a.Toast(Info, "No line has "+q)
 	}
@@ -491,7 +506,8 @@ func (vv *viewerView) draw(w, h int, layer Color) []string {
 			scroll = scrollText(false, v.top+1, last+1, len(v.text))
 		}
 	}
-	box := popupBox{color: layer, glyph: v.Glyph, title: vv.title(), hint: vv.hint(), scroll: scroll, loading: v.Loading}
+	box := popupBox{color: layer, glyph: v.Glyph, title: vv.title(), hint: vv.hint(), scroll: scroll, loading: v.Loading,
+		found: SearchStatus{Text: v.Query, Current: v.Current, Count: len(v.Hits)}}
 	for i, t := range v.Tabs {
 		box.tabs = append(box.tabs, Capsule{Text: Upper(t), Selected: i == v.Tab})
 		box.tabOff = append(box.tabOff, v.tabOff != nil && v.tabOff(i))
@@ -931,8 +947,8 @@ func run2tab(f func(int) tea.Cmd, i int) tea.Cmd {
 	return f(i)
 }
 
-// closed is the viewer gone, its hits with it (tdp note.3).
-func (vv *viewerView) closed() { vv.v.Hits, vv.v.Current = nil, 0 }
+// closed is the viewer gone, its hits and their status with it (tdp note.3).
+func (vv *viewerView) closed() { vv.v.Hits, vv.v.Current, vv.v.Query = nil, 0, "" }
 
 func (vv *viewerView) surface() string  { return vv.title() }
 func (vv *viewerView) refTitle() string { return vv.title() }

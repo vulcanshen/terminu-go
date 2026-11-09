@@ -151,6 +151,12 @@ type Panel struct {
 	// LocationGlyph is the glyph that starts Location's row, drawn as
 	// List.LocationGlyph; a list's own goes with the list's Location.
 	LocationGlyph string
+	// SearchStatus is the status of the app's own / search in the panel
+	// (a panel with no cursor searching its text, a mode's search), drawn
+	// on the bottom border left of the scroll position while its Count is
+	// not 0 (tdp note.3, panel.1). The app sets it as the hits change and
+	// clears it with them (Esc).
+	SearchStatus SearchStatus
 	// Actions are the panel's item and panel operations; a "Enter" key is
 	// what Enter does here (tdp K3).
 	Actions []Action
@@ -392,6 +398,7 @@ func (p *Panel) draw(n, w, h int, focused, pointed bool) []string {
 	if p.Body != nil {
 		b.scroll = p.Body.Scroll()
 	}
+	b.found = p.SearchStatus
 	_, pty := p.Body.(*Terminal)
 	if !focused && !p.Stream && !pty { // a program's screen is live, like a stream (tdp T2)
 		body = DimLines(body)

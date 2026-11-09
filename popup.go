@@ -134,7 +134,8 @@ type popupBox struct {
 	modeW   int     // the cells the title leaves the mode name: the longest one's while a layer moves
 	hint    []KeyHint
 	scroll  string
-	bare    bool // no padding at all (terminal)
+	found   SearchStatus // a search's status, left of scroll (tdp note.3)
+	bare    bool         // no padding at all (terminal)
 }
 
 func (p popupBox) draw(w int, body []string) []string {
@@ -151,7 +152,7 @@ func (p popupBox) draw(w int, body []string) []string {
 	if p.loading {
 		b.after = Fg(p.color).Bolded().Render(loadingFrame())
 	}
-	b.hint, b.scroll = p.hint, p.scroll
+	b.hint, b.scroll, b.found = p.hint, p.scroll, p.found
 	inner := w - 2
 	if p.bare {
 		b.body = body
