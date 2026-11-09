@@ -2065,7 +2065,7 @@ func TestPanelLocationRow(t *testing.T) {
 	ta.resize(40, 14) // [1] in columns 0-19, its rows 1-11 inside the frame
 	row := func(y int) string { return Cut(ta.Frame()[y], 1, 19) }
 	text := func(y int) string { return strings.TrimSpace(StripStyles(row(y))) }
-	want := StripStyles(locationRow(reader.Location, 18))
+	want := StripStyles(locationRow("", reader.Location, 18))
 	if got := StripStyles(row(1)); got != want || !strings.HasPrefix(got, " …") || !strings.HasSuffix(strings.TrimSpace(got), "panel.md") {
 		t.Errorf("the first row, one cell in, cut from the front:\n%q\n%q", got, want)
 	}
@@ -2163,6 +2163,81 @@ func TestListLocationInPanel(t *testing.T) {
 	ta.pods.Location = "/somewhere/else"
 	if got := rows(); len(got) != 0 || !strings.Contains(ta.screenText(), "/somewhere/else") {
 		t.Errorf("Panel.Location set as well, it is the row: %q", got)
+	}
+}
+
+// TestLocationGlyph: a location row may start with a glyph for the kind of
+// place (tdp panel.10, panel-157): one space after it, in the row's
+// colour; a row too long is cut in its text only, the glyph staying and
+// the … right after it, an icon two cells wide too (E5). In a panel it
+// dims with the focus and stays over Loading and Fail, a list's glyph
+// and Panel.Location's alike, each with its own Location.
+func TestLocationGlyph(t *testing.T) {
+	web, folder := "\U000F059F", "\U000F024B"
+	for _, iw := range []int{1, 2} {
+		withWidths(t, iw, 1)
+		l := &List{Columns: []Column{{Title: "Name"}}, Location: "~/a", LocationGlyph: web}
+		l.SetRows([]Row{{ID: "1", Cells: []string{"x"}}})
+		line := l.Draw(30, 4, true)[0]
+		if got := StripStyles(line); got != Pad(" "+web+" ~/a", 30) || Width(line) != 30 {
+			t.Errorf("icon %d: it fits, the glyph, a space, the text: %q", iw, got)
+		}
+		if c := covCAt(line, 1); c.Ch != web || c.St.Fg != Lavender {
+			t.Errorf("icon %d: the glyph in the row's colour: %q %v", iw, c.Ch, c.St.Fg)
+		}
+		l.Location = "https://go.dev/doc/a/very/long/path/to/effective_go"
+		line = l.Draw(30, 4, true)[0]
+		plain := StripStyles(line)
+		if !strings.HasPrefix(plain, " "+web+" …") || !strings.HasSuffix(strings.TrimRight(plain, " "), "/effective_go") || Width(line) != 30 ||
+			Width(strings.TrimRight(plain, " ")) != 30-Width(glyphHard) {
+			t.Errorf("icon %d: too long, the glyph stays, the … follows it, the text up to the arrow's room: %q", iw, plain)
+		}
+		if c := covCAt(line, 1+Width(web)+1); c.Ch != "…" || c.St.Fg != Lavender {
+			t.Errorf("icon %d: the … after the glyph and the space: %q %v", iw, c.Ch, c.St.Fg)
+		}
+		l.LocationGlyph = ""
+		if got := StripStyles(l.Draw(30, 4, true)[0]); !strings.HasPrefix(got, " …") {
+			t.Errorf("icon %d: no glyph, the row as before: %q", iw, got)
+		}
+	}
+
+	ta := newTestApp(t)
+	ta.resize(120, 14)
+	ta.list.Location, ta.list.LocationGlyph = "~/projects/terminu/components", web
+	at := func(g, text string) (covCCell, bool) {
+		for _, l := range ta.Frame() {
+			p := StripStyles(l)
+			if i := strings.Index(p, g+" "+text); i >= 0 {
+				return covCAt(l, Width(p[:i])), true
+			}
+		}
+		return covCCell{}, false
+	}
+	if c, ok := at(web, "~/projects"); !ok || c.St.Fg != Lavender {
+		t.Errorf("a list's glyph, drawn by the panel: %v %v", ok, c.St.Fg)
+	}
+	ta.press("2")
+	if c, ok := at(web, "~/projects"); !ok || c.St.Fg != DimColor(Lavender) {
+		t.Errorf("unfocused, the glyph dims with the row: %v %v", ok, c.St.Fg)
+	}
+	ta.press("1")
+	ta.list.SetRows(nil)
+	ta.pods.Loading, ta.pods.LoadingText = true, "loading pods…"
+	if _, ok := at(web, "~/projects"); !ok || !strings.Contains(ta.screenText(), "loading pods…") {
+		t.Errorf("loading, the glyph stays: %q", ta.screenText())
+	}
+	ta.pods.Loading = false
+	ta.pods.Fail = &Failure{Fact: "Forbidden: pods in kube-system", Hint: "Press [R] to retry"}
+	if _, ok := at(web, "~/projects"); !ok || !strings.Contains(ta.screenText(), "Forbidden") {
+		t.Errorf("failed, the glyph stays: %q", ta.screenText())
+	}
+	ta.pods.Location, ta.pods.LocationGlyph = "/somewhere/else", folder
+	if c, ok := at(folder, "/somewhere/else"); !ok || c.St.Fg != Lavender || strings.Contains(ta.screenText(), web) {
+		t.Errorf("Panel.Location's glyph with it, not the list's: %v %v", ok, c.St.Fg)
+	}
+	ta.pods.LocationGlyph = ""
+	if !strings.Contains(ta.screenText(), "┃ /somewhere/else") || strings.Contains(ta.screenText(), web) {
+		t.Errorf("Panel.Location with no glyph of its own has none: %q", ta.screenText())
 	}
 }
 

@@ -27,6 +27,7 @@ func TestControlCharsNamesAndShortTexts(t *testing.T) {
 			ta.list.SetRows([]Row{{ID: "1", Cells: []string{"first", "1"}}, {ID: "2", Cells: []string{v, "2"}}})
 		}},
 		{"a list's location", func(ta *testApp) { ta.list.Location = v }},
+		{"a location's glyph", func(ta *testApp) { ta.list.Location, ta.list.LocationGlyph = "x", v }},
 		{"a group's title", func(ta *testApp) {
 			ta.list.SetRows([]Row{{ID: "1", Cells: []string{"x"}, Group: v}})
 		}},

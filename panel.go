@@ -148,6 +148,9 @@ type Panel struct {
 	// List.Location is drawn here the same way; with both set, this one is
 	// the row. Whether a panel has one is the app's.
 	Location string
+	// LocationGlyph is the glyph that starts Location's row, drawn as
+	// List.LocationGlyph; a list's own goes with the list's Location.
+	LocationGlyph string
 	// Actions are the panel's item and panel operations; a "Enter" key is
 	// what Enter does here (tdp K3).
 	Actions []Action
@@ -346,14 +349,14 @@ func (p *Panel) draw(n, w, h int, focused, pointed bool) []string {
 	}
 	b.mode, b.modeClosed = mode, 1-lab.shown
 	inner, ih := w-2, h-2
-	where := p.Location
+	where, glyph := p.Location, p.LocationGlyph
 	list, _ := p.Body.(*List)
 	if where == "" && list != nil {
-		where = list.Location
+		where, glyph = list.Location, list.LocationGlyph
 	}
 	var loc []string
 	if where != "" && ih > 0 {
-		loc, ih = []string{locationRow(where, inner)}, ih-1
+		loc, ih = []string{locationRow(glyph, where, inner)}, ih-1
 	}
 	var body []string
 	switch {

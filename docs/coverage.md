@@ -321,6 +321,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | panel.5 | 單欄的清單沒有欄名時不畫表頭 | K `[1] KINDS` | `TestListColumnsGiveWay` |
 | panel.10 | 清單上面一列寫目前的位置（要不要由 app 決定）：panel 內第一列、離框一格，在 panel filter 的打字列與表頭上面，固定不捲；Lavender、失焦跟著淡化；太長從前面截；只顯示：cursor 不停、捲動位置不算（lib：`List.Location`）；清單空了、loading 中、出錯時照樣留著，空狀態、loading 的那一句、錯誤的兩句只取代表頭與清單（panel-134）；失焦跟著淡化，Stream 的 panel 也一樣（panel-131）。lib：在 panel 裡由 panel 畫，跟 `Panel.Location` 同一套；兩個都設時是 `Panel.Location` | I `[2] FILES`（假的專案的目錄）；按 `/` 打字列在它下面 | `TestListLocationRow`、`TestListLocationInPanel` |
 | panel.10 | 沒有清單、沒有 cursor 的閱讀用 panel（catu 顯示的檔案、webu 顯示的網頁）也可以有，放在文字上面（要不要由 app 決定）。lib：`Panel.Location`，任何 body 都可以（app 自己的也是）；畫法跟 `List.Location` 一樣（第一列、離框一格、Lavender、從前面截），固定不捲，body 少一列；空狀態、loading 的那一句、錯誤的兩句只取代它的文字，位置列照樣留著（panel-134）；失焦跟著淡化，Stream 的 panel 也一樣（它不是串流的內容，T2） | P `[2] LOG`（log 檔的路徑）：按 `G`、按 `1` 讓它失焦、`Space` 選 `Empty` | `TestPanelLocationRow` |
+| panel.10 | 位置列開頭可以放一個 icon，表示這是哪一種位置（要不要、放哪一個由 app 決定），後面空一格；跟這一列同色、一起淡化；太長時只截後面的文字，icon 留著，`…` 接在它後面（panel-157）。lib：`List.LocationGlyph`、`Panel.LocationGlyph`，各跟著自己的 `Location`；沒設就跟原本一樣 | P `[2] LOG`：開頭是檔案的 icon，把視窗拉窄看 icon 後面接 `…`，按 `1` 讓它失焦；I `[2] FILES` 沒有 icon | `TestLocationGlyph` |
 | panel.5 | 排序的群：app 替每一列指定群、群的先後由 app 定，排序只在群裡，群之間不畫標題（lib：`Row.SortGroup`） | I `[2] FILES`：資料夾裡的檔在前、最上層的在後，各自照名稱排 | `TestListSortGroups` |
 | panel.5 | 清單的順序要固定：同一份資料每次排出來都一樣；沒有順序的資料先排（lib：`List.SortBy` 照名稱、數字照數值，排不出先後的照 `Row.ID`） | P `[1] PODS`、I `[2] FILES` 一打開就照名稱排 | `TestListFixedOrder` |
 | panel.5 | 空的照空狀態 | `Empty` | `TestEmptyState` |

@@ -114,6 +114,12 @@ type List struct {
 	// panel draws it, as Panel.Location: it stays over Loading and Fail and
 	// dims with the focus, a streaming panel's too.
 	Location string
+	// LocationGlyph, when set, starts the location row: one glyph for the
+	// kind of place, one space after it, in the row's colour, dimming with
+	// it. A row too long is cut in Location only: the glyph stays and the
+	// … comes right after it (tdp panel.10). Whether there is one, and
+	// which, is the app's; it goes with this Location.
+	LocationGlyph string
 	// OnMove runs when the cursor comes to another row, by a key or not, the
 	// first time included: before the frame is drawn, so a details panel
 	// shows that row in the same frame (tdp panel.13). It does not
@@ -439,10 +445,14 @@ func leadingNumber(s string) (float64, error) {
 
 // locationRow is a panel's location row (tdp panel.10) in w cells: one
 // cell from the frame on the left, the arrow's room on the right, in
-// Lavender, cut from the front.
-func locationRow(loc string, w int) string {
+// Lavender, cut from the front; a glyph, when there is one, first with a
+// space after it, staying when the text is cut.
+func locationRow(glyph, loc string, w int) string {
 	room := w - 1 - Width(glyphHard)
-	return " " + Pad(Fg(Lavender).Render(TruncateLeft(Escape(loc), room)), w-1)
+	if glyph != "" {
+		glyph = Escape(glyph) + " "
+	}
+	return " " + Pad(Fg(Lavender).Render(glyph+TruncateLeft(Escape(loc), room-Width(glyph))), w-1)
 }
 
 // Uncover keeps the cursor's row above the rows at the bottom of the list
@@ -459,7 +469,7 @@ func (l *List) Draw(w, h int, focused bool) []string { return l.draw(w, h, focus
 func (l *List) draw(w, h int, focused, own bool) []string {
 	out := make([]string, 0, h)
 	if own && l.Location != "" {
-		out = append(out, locationRow(l.Location, w))
+		out = append(out, locationRow(l.LocationGlyph, l.Location, w))
 	}
 	if l.filter != nil {
 		out = append(out, l.filterRow(w, focused))
