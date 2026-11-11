@@ -76,11 +76,14 @@ func (a *App) NoLongerUsed(paths ...string) {
 }
 
 // asideName is where path goes aside: path.bak, or the first of .bak.1,
-// .bak.2… that is free.
+// .bak.2… that is free. Only a name that is there goes on to the next: one
+// that cannot be looked at (its folder is a file, or cannot be entered) gives
+// every name the same error, so the search ends at it and the rename says
+// why it fails.
 func asideName(path string) string {
 	bak := path + ".bak"
 	for n := 1; ; n++ {
-		if _, err := os.Lstat(bak); os.IsNotExist(err) {
+		if _, err := os.Lstat(bak); err != nil {
 			return bak
 		}
 		bak = path + ".bak." + strconv.Itoa(n)

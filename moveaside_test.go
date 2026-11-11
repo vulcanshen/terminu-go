@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -121,6 +122,35 @@ func TestNoLongerUsed(t *testing.T) {
 	}
 	if _, err := os.Stat(old); err != nil {
 		t.Errorf("the file was deleted: %v", err)
+	}
+}
+
+// TestMoveAsideCannotLook: a file whose folder is a file, or a folder that
+// cannot be entered, gives every .bak name the same error: the search for a
+// free name ends at .bak instead of going round for ever (tgo #6).
+func TestMoveAsideCannotLook(t *testing.T) {
+	dir := t.TempDir()
+	file := filepath.Join(dir, "a-file")
+	writeFile(t, file, []byte("x"), 0o600)
+	shut := filepath.Join(dir, "shut")
+	if err := os.Mkdir(shut, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(shut, 0); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { os.Chmod(shut, 0o700) })
+	for _, path := range []string{filepath.Join(file, "app", "settings.yaml"), filepath.Join(shut, "settings.yaml")} {
+		got := make(chan string, 1)
+		go func() { got <- asideName(path) }()
+		select {
+		case name := <-got:
+			if name != path+".bak" {
+				t.Errorf("%s goes aside as %s, want .bak", path, name)
+			}
+		case <-time.After(5 * time.Second):
+			t.Fatalf("the name for %s is looked for for ever", path)
+		}
 	}
 }
 
