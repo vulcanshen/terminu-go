@@ -74,6 +74,12 @@ type ModeKey struct {
 	// Keys are the keys it takes, Key itself when empty. The lib adds none:
 	// the arrow keys and PgUp|PgDn go in Keys as tdp K12 has them (j|k
 	// takes j, k, ↓, ↑; u|d takes u, d, PgUp, PgDn), Key writing the letters.
+	// A movement key with nothing to move in the mode may do the mode's own
+	// action, its arrow key the same (k turning a piece takes k and ↑: tdp
+	// K12). A key the user sets (tdp K11) is the app's to put in Key and
+	// Keys while the mode is on, and what is shown follows them; one already
+	// in use in the mode is the app's to refuse, with a Warning naming what
+	// has it.
 	Key  string
 	Keys []string
 	Desc string

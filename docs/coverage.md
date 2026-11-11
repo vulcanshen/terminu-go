@@ -1,6 +1,6 @@
-# tdp v1.2.2 coverage
+# tdp v1.2.3 coverage
 
-tdp v1.2.2 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
+tdp v1.2.3 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
 每個元件、規範列的每一種方案、寫到的每一種狀態與疊法，在展示場都按得到。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -105,7 +105,8 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | K11 | 模式可以暫停 `Tab` 與數字鍵，按了要有回應（toast）；toast 在時第一個 `Esc` 先收 toast | Drag 裡按 `Tab`、`2` | `TestK11TabPausedToast`、`TestK11DigitsPausedToast` |
 | K11 | 模式名在框的上框右側、外框換模式色、離開恢復；不只靠顏色 | Drag；D「Note viewer」的 `v`；I 的 `Segments` 按 `D` | `TestK11ModeLabel`、`TestReorderDrag` |
 | K11 | popup 裡的模式（reorder 的 Drag、viewer 的選取模式）也一樣：只有模式的鍵與上表的 core key 作用，app 自己的 core key 也不作用 | I 的 `Segments` 按 `D` 再按 `%`；D「Note viewer」按 `v` 再按 `%` | `TestReorderDragModeKeys`、`TestK11PopupModeCoreKeys` |
-| K12 | 不在打字的地方 `j k u d g G h l` 保留給移動，任何動作都不佔 | lib：登記時拒絕（panel 與 menu；popup 裡數字可以） | `TestK12HotkeyCannotTakeMovement`、`TestK12HotkeyCannotTakeMovementInMenu`、`TestK1DigitsFreeInPopups` |
+| K11 | 要不要讓使用者設定模式自己的鍵、哪些鍵、怎麼設定，app 自行決定；選到這個模式裡已經有作用的鍵（模式的其他鍵、core key）就跳 Warning 寫出被誰用了，不設定；模式的 Space menu、`?` 與提示寫目前作用的鍵（K11-14）。lib：app 改 `ModeKey` 的 `Key`、`Keys`，footer、`?`、模式的 Space menu 畫的時候照當下的鍵；擋下重複的鍵與跳 Warning 是 app 的（`Toast(Warning, …)`） | 展示場沒有讓使用者設定的鍵；在讓使用者改模式鍵的 app 裡，把一個鍵設成模式的另一個鍵、再設成 `Space`，最後設成沒人用的鍵 | `TestK11ModeKeysTheUserSets` |
+| K12 | 不在打字的地方 `j k u d g G h l` 保留給移動，任何動作都不佔（模式裡沒有移動可做的鍵除外，見下面 K12-19 那一列） | lib：登記時拒絕（panel 與 menu；popup 裡數字可以） | `TestK12HotkeyCannotTakeMovement`、`TestK12HotkeyCannotTakeMovementInMenu`、`TestK1DigitsFreeInPopups` |
 | K12 | 有左右結構：`h\|l` 左右（切 tab、跨側、日曆前後一天） | P `[1] PODS` 的 tab；I 的 `Meeting` | `TestK12HLSwitchTabs`、`TestDatetimePicker` |
 | K12 | 一維清單：`h\|k` 往前、`j\|l` 往後；在有 tab 的 panel 裡 `h\|l` 給 tab；reorder 也是（含 Drag）；key reference 照這樣寫（表單、沒有 tab 的一列一個值、menu、reorder 寫 `h\|k`、`j\|l`） | D「Form: New host」；P `[3] SETTINGS`；I `[1] INPUTS`；I 的 `Segments`；各處按 `?` | `TestK12OneDimensional`、`TestReorderOneWay`、`TestKeyReferenceMoveSection`、`TestK6PopupKeysOnly` |
 | K12 | `u\|d` 半頁、`gg\|G` 頭尾；單按 `g` 不作用，後面接沒登記成組合的鍵時當 `g` 沒按過（`g` 然後 `j` 往下一列）；其他 `g` 開頭可當熱鍵；不收 `Ctrl-U\|Ctrl-D` | P `[1] PODS`（40 列）；展示場登記一個 `[go]to` | `TestK12HalfPageAndEnds`、`TestK12SingleGNoop`、`TestK12NoCtrlUD` |
@@ -116,6 +117,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | K12 | `u\|d` 到頭尾停住、不繞；照空間走的不繞：日曆的日子、月與年、左右兩側、一段文字裡的移動 | P `[1] PODS` 在倒數幾列按 `d`；I 的 `Meeting` 日曆；D「Note viewer」的 visual | `TestK12HalfPageStops`、`TestK12SpatialNoWrap` |
 | K12 | 二維內容（一列有好幾個項目，例：webu 網頁內文裡的連結）閱讀時沒有游標，`j\|k`、`u\|d`、`gg\|G` 捲動；一個項目一個項目走是一個模式（K11），模式裡 `j\|k` 照閱讀順序走（同一列從左到右，再到下一列）、到頭尾繞回，`gg\|G` 到第一個、最後一個（K12-17）：app 自己的 body 做，模式用 `Panel.EnterMode` 與 `ModeKey` | lib 不適用；展示場沒有二維內容 | — |
 | K12 | 一段文字裡（viewer 的選取模式、textarea 的移動狀態）加 `w\|b\|e`、`0\|$`；viewer 平常 `h\|l` 給 tab，選取模式裡 `h\|l` 移游標、不切 tab | D「Note viewer」的 visual；D「Popup with tabs」（平常 `h\|l` 切 tab，`v` 之後 `h\|l` 移游標）；I 的 `Comment` 移動狀態 | `TestK12TextMotions`、`TestNoteHotkeysAndMode` |
+| K12 | 模式裡沒有移動可做的移動鍵，可以做模式自己的動作，同一個鍵的方向鍵或 `PgUp\|PgDn` 做一樣的事；跟模式其他的鍵一樣寫在模式的 Space menu、`?` 與提示裡；模式外面、有移動可做的鍵都照舊（K12-19）。lib：模式裡的鍵只給模式自己的鍵與 core key，`ModeKey` 收那個鍵與它的方向鍵（`Keys: k, ↑`） | 展示場沒有這種模式；在落塊遊戲這類 app 的模式裡按 `k`、`↑`，打開 `Space`、`?`，再到模式外面按 `k` | `TestK12FreeKeyInAMode` |
 
 ## Rules — M Menu 與揭露
 

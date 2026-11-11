@@ -2,6 +2,24 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.3 — tdp v1.2.3
+
+- Closing the terminal (SIGHUP) ends `Run` as leaving does. The programs in the lib's Terminals are hung up first, as
+  a closed terminal window does; then `Run` returns nil, so what `main` does after it (saving) runs. Until now the
+  program ended at once and that code never ran. Apps need no change: input read after `Run` ends at once, what is
+  printed is not seen, and a program of the app's that was on the terminal is hung up with it (from tetru)
+- `App.Covered` reports whether something is over the screen: a popup, one that is closing until it is gone, or the
+  splash. A toast does not cover it. A screen that moves on by itself (a game's clock) asks it on each tick, to hold
+  still while the user cannot see the screen (from tetru)
+- In a mode, a movement key with nothing to move may do the mode's own action, its arrow key the same (tdp K12): a
+  `ModeKey` takes it like any other key (`Keys: []string{"k", "↑"}`), and the footer, `?` and the mode's Space menu
+  show it. A key the user sets for a mode (tdp K11) is the app's to put in its `ModeKey`; what is shown follows it,
+  and refusing a key already in use in the mode, with a Warning, is the app's too (from tetru)
+- `MoveAside` no longer looks for a free `.bak` name for ever when the file's folder is a file or cannot be entered:
+  it asks about `.bak`, and `Enter` fails saying why (from tetru)
+- tdptest: an app that quits from its own `App.Confirm` no longer fails with "an animation does not end". Once the app
+  quits nothing more goes to it, as in the program (from tetru)
+
 ## v1.2.2 — tdp v1.2.2
 
 - Items that hold items are walked a level at a time, never folded open as a tree (tdp panel.10), with what the lib
