@@ -124,6 +124,22 @@ type process interface {
 	stop()
 }
 
+// running are the programs started in Terminals that have not ended, the
+// whole process's: closing the terminal hangs them all up (onHangup).
+var running = struct {
+	sync.Mutex
+	procs map[process]bool
+}{procs: map[process]bool{}}
+
+// stopRunning hangs up every program running in a Terminal.
+func stopRunning() {
+	running.Lock()
+	defer running.Unlock()
+	for p := range running.procs {
+		p.stop()
+	}
+}
+
 type termOutput struct{ t *Terminal }
 type termExited struct{ t *Terminal }
 
@@ -192,6 +208,9 @@ func (t *Terminal) Start() tea.Cmd {
 	}
 	t.in, t.proc = pty, proc
 	t.started, t.exited, t.err, t.spoke = true, false, nil, false
+	running.Lock()
+	running.procs[proc] = true
+	running.Unlock()
 	t.out = make(chan struct{}, 1)
 	go t.read(pty, proc)
 	return t.wait()
@@ -224,6 +243,9 @@ func (t *Terminal) read(r io.Reader, proc process) {
 	if w, ok := proc.(interface{ wait() error }); ok {
 		t.err = w.wait()
 	}
+	running.Lock()
+	delete(running.procs, proc)
+	running.Unlock()
 	close(t.out)
 }
 

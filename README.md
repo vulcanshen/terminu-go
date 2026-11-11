@@ -81,6 +81,10 @@ func main() {
 splash, `q` leaves. Every terminu app has a splash with its own mark (tdp S1, S5); `icon.svg` is that mark, and the
 example uses a copy of terminu's.
 
+Closing the terminal window ends `Run` as leaving does: it returns nil, and what `main` does after it (saving, say)
+still runs. The programs running in the app's terminals are hung up first, as a closed terminal window does, so
+nothing after `Run` waits on them for ever. The terminal is gone by then: nothing written to it shows.
+
 To see everything it does, run the showcase, an example app that shows every component on fake data:
 
 ```sh

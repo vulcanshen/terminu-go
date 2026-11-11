@@ -307,6 +307,12 @@ func (a *App) Size() (w, h int) { return a.w, a.h }
 // runs the app in the alternate screen. When the user leaves on MoveAside's
 // Esc it returns the path that cannot be read and why, for main to write to
 // stderr (tdp E3).
+//
+// Closing the terminal (SIGHUP) ends it as leaving does, returning nil, so
+// what main does after Run (saving) still runs. The programs in the app's
+// Terminals are hung up first, as a closed terminal window does, so nothing
+// after Run waits on them for ever. The terminal is gone by then: nothing
+// written to it shows.
 func (a *App) Run() error {
 	if err := a.checkSplash(); err != nil {
 		return err
@@ -316,7 +322,12 @@ func (a *App) Run() error {
 	}
 	Probe(a.Name)
 	tabCells = a.inputTabWidth()
-	_, err := tea.NewProgram(a, tea.WithAltScreen(), tea.WithOutput(screenOutput{os.Stdout})).Run()
+	p := tea.NewProgram(a, tea.WithAltScreen(), tea.WithOutput(screenOutput{os.Stdout}))
+	hungUp := onHangup(p)
+	_, err := p.Run()
+	if hungUp() {
+		err = nil // the input failing as the terminal went, say
+	}
 	if err == nil {
 		err = a.exitErr
 	}

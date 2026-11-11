@@ -188,6 +188,12 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
 - **旗標畫在標記欄**（tdp panel.7，v0.11.4，locku 回報的）：`List.Flags` 保留標記欄，`Row.Flag` 是一列的 glyph 與顏色。
   可以標記的清單同時開 `Flags` 是寫錯程式，跟登記了不能用的鍵一樣在 `AddScreen` panic，不放進 tdptest `Check`：
   `Check` 要等 app 寫了測試、跑起來才報，`AddScreen` 一開 app 就報。
+- **關掉終端機時 `Run` 照樣回來**（tgo #4，terminu 定）：bubbletea 只聽 SIGINT 與 SIGTERM；收到 SIGHUP 時，Go 預設直接結束程式，
+  `Run` 之後的收尾（存檔）跑不到。現在 `Run` 也聽 SIGHUP：先掛斷每個 `Terminal` 裡的程式（`running` 記著整個 process 開過、還沒結束的），
+  再跟 SIGTERM 一樣送 `QuitMsg`，`Run` 回 nil。終端機斷掉時，讀 stdin 可能同時出錯，所以只要掛斷過，就不回那個錯。掛斷之後
+  一直攔著 SIGHUP：shell 被關掉時會把掛斷轉給它底下的程式，這時 main 可能還在存檔。不另給 hook，收尾只放在 `Run` 之後。
+  - 測試在 PTY 裡跑一份測試程式，再關掉 PTY 的 master。測試這邊不能讀 PTY：有 `Read` 在等時，Go 要等它回來才真的關掉檔案，
+    app 就收不到掛斷。
 
 ## 已否決，不要重提
 
