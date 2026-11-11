@@ -197,7 +197,8 @@ func TestFirstLaunch(t *testing.T) {
 - **Commands** run as they do in the program. One that takes long (a file read, a program's output) comes back with a
   later input; `WaitFor` waits for it.
 - **What is on the screen**: `Screen` is the rows as text, `Styled` with their colours, `Has` looks for text, `Quit`
-  reports that the app asked to quit, `Clipboard` is what it copied. A failure says the size, the keys pressed and the
+  reports that the app asked to quit (after that nothing more goes to it, as in the program: a popup closing as it
+  quits stops where it is), `Clipboard` is what it copied. A failure says the size, the keys pressed and the
   screen; `Note` adds more to it (which of `Tricky` the app was given).
 - **`EachIconWidth`** runs a test once with icons and powerline symbols one cell wide, once with icons two, once with
   both two.

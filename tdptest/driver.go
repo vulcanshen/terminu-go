@@ -296,7 +296,8 @@ func (d *Driver) WaitFor(cond func() bool, timeout time.Duration) {
 }
 
 // Quit reports whether the App has asked to quit (tea.Quit). Nothing more
-// goes to it after that.
+// goes to it after that, as in the program: an animation stops where it is
+// (a confirm closing as its Enter quits) and the timers waiting are dropped.
 func (d *Driver) Quit() bool { return d.quit }
 
 // Screen is the screen as it is now, a row a line, without the styles.
@@ -462,7 +463,7 @@ func (d *Driver) deliver(b back) {
 	case panicked:
 		d.t.Fatalf("tdptest: a command panicked: %v\n%s%s", m.value, m.stack, d.where())
 	case tea.QuitMsg:
-		d.quit = true
+		d.quit, d.timers = true, nil
 	case tea.BatchMsg:
 		for _, c := range m {
 			d.launch(c, nil)
@@ -514,7 +515,7 @@ func (d *Driver) settle() {
 	if !d.Auto {
 		return
 	}
-	for n := 0; testhook.Animating(d.app); n++ {
+	for n := 0; !d.quit && testhook.Animating(d.app); n++ {
 		if n == 100000 || len(d.timers) == 0 {
 			d.t.Fatalf("tdptest: an animation does not end%s", d.where())
 		}

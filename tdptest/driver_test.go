@@ -230,6 +230,30 @@ func TestQuitAndAfter(t *testing.T) {
 	}
 }
 
+// TestQuitFromAConfirmOfTheApps: an App.Confirm whose Enter quits closes as
+// it quits; the program draws nothing after tea.Quit, so the test does not
+// wait for the closing either, and what came before the quit has run (tgo #5).
+func TestQuitFromAConfirmOfTheApps(t *testing.T) {
+	ty := newTiny()
+	a := ty.App
+	a.Global = append(a.Global, terminu.Action{Key: "L", Label: "Leave", Desc: "save and leave", Scope: terminu.GlobalScope,
+		Do: func() tea.Cmd {
+			return a.Confirm(terminu.Ask{Title: "Leave", Question: "Leave tiny?", Verb: "leave"},
+				func() tea.Cmd { return tea.Sequence(say("saved"), tea.Quit) })
+		}})
+	ft := &fakeT{T: t}
+	d := Start(ft, a, 80, 24)
+	if catch(func() { d.Press("L", "Enter") }) || len(ft.errs) > 0 {
+		t.Fatalf("Enter on the confirm: %v %v", ft.fatals, ft.errs)
+	}
+	if !d.Quit() || strings.Join(ty.got, " ") != "saved" {
+		t.Errorf("quit %v, ran %v", d.Quit(), ty.got)
+	}
+	if d.Step() {
+		t.Error("a timer fired after the app quit")
+	}
+}
+
 func TestL4ReportedWithWhere(t *testing.T) {
 	ft := &fakeT{T: t}
 	ty := newTiny()
