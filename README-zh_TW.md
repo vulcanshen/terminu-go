@@ -203,6 +203,9 @@ return app.Tick(300*time.Millisecond, func(time.Time) tea.Msg { return searchNow
 在程式裡它就是 `tea.Tick`。在測試裡它等測試的時間，`Advance` 推到了才觸發，不會自己跑。用 `tea.Tick` 做的計時器在測試裡也照
 真的時間跑：測試推不動它，它做的事在時間到的時候才進來。
 
+畫面會自己動的（例如遊戲的時鐘），在使用者看不到畫面時要停住：每次計時器到時問 `app.Covered()`。有 popup 蓋著畫面（正在收起的
+算到它完全不見）、或開著 splash 時，它回 true；toast 不算蓋著。
+
 ## lib 與 app 的分工
 
 tdp E8 對任何共用的 lib 只留三點：用 lib 的 app 不另外做 lib 做到的、畫面測試照誰畫的分、lib 不自己另做。這個 lib 跟用它的 app

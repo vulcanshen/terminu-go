@@ -233,6 +233,10 @@ In the program it is `tea.Tick`. Under a test it waits for the test's time, so `
 its own. A timer made with `tea.Tick` runs on the real clock there too: the test cannot move it, and what it does comes
 in whenever it is due.
 
+A screen that moves on by itself, a game's clock say, holds still while the user cannot see it: on each tick ask
+`app.Covered()`, true while a popup is over the screen (until one that is closing is gone) or the splash is. A toast
+does not cover it.
+
 ## What the lib does and what an app does
 
 tdp E8 keeps three principles for any shared lib: an app does not redo what the lib covers, the screen tests split by

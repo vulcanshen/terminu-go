@@ -303,6 +303,14 @@ func (a *App) Screen() *Screen {
 // Size is the terminal's size.
 func (a *App) Size() (w, h int) { return a.w, a.h }
 
+// Covered reports whether something is over the screen: a popup (a menu, an
+// input, a dialog, a confirm, the key reference, the App Log, a terminal
+// popup, a popup of the app's own), one that is closing until it is gone, or
+// the splash. A toast is not a popup (tdp F1) and does not count. An app whose
+// screen moves on by itself (a game's clock) asks it on each tick and holds
+// still while the user cannot see the screen.
+func (a *App) Covered() bool { return len(a.stack) > 0 || a.splashOn }
+
 // Run asks the terminal how wide an icon is and what its colours are, then
 // runs the app in the alternate screen. When the user leaves on MoveAside's
 // Esc it returns the path that cannot be read and why, for main to write to
