@@ -1586,6 +1586,49 @@ func TestListCursor(t *testing.T) {
 	check(DimColor(Base), DimColor(Subtext1), DimColor(Subtext1)) // the whole block dims (tdp T2)
 }
 
+// TestColor27RowColourCursor: on a row with a colour of its own the cursor
+// block is that colour, the text Base bold, the arrow the same colour; it dims
+// with the panel and once while typing in the filter; it is Subtext1 on the
+// other rows and while the panel is in a mode (tdp color.2: color-27,
+// panel-47, panel-50).
+func TestColor27RowColourCursor(t *testing.T) {
+	ta := newTestApp(t)
+	rows := ta.list.Rows()
+	rows[0].Styled = [][]Span{{{Text: "pod-00", Style: Fg(Peach)}}}
+	rows[0].CursorColor = Peach
+	ta.list.SetRows(rows)
+	check := func(what, row string, text, block Color) {
+		t.Helper()
+		lines := covCCrop(ta.Frame(), 0, 40)
+		r, _ := covCFind(t, lines, row)
+		for _, c := range covCCells(lines[r]) {
+			switch {
+			case c.Col >= 1 && c.Col <= 37:
+				if c.St != (covCStyle{Fg: text, Bg: block, Bold: true}) {
+					t.Errorf("%s: column %d %q: %+v, want %v on %v", what, c.Col, c.Ch, c.St, text, block)
+					return
+				}
+			case c.Col == 38:
+				if c.Ch != glyphHard || c.St.Fg != block || c.St.Bg.Set {
+					t.Errorf("%s: the arrow: %q %+v, want %v", what, c.Ch, c.St, block)
+				}
+			}
+		}
+	}
+	check("its own colour", "pod-00", Base, Peach)
+	ta.press("j")
+	check("a row without one", "pod-01", Base, Subtext1)
+	ta.press("k", "Tab")
+	check("unfocused", "pod-00", DimColor(Base), DimColor(Peach)) // the whole panel dims (tdp T2)
+	ta.press("1", "/")
+	check("typing in the filter", "pod-00", DimColor(Base), DimColor(Peach))
+	ta.press("Esc")
+	ta.pods.EnterMode(&Mode{Name: "Pick", Exit: "leave"})
+	check("in a mode", "pod-00", Base, Subtext1)
+	ta.press("Esc")
+	check("the mode left", "pod-00", Base, Peach)
+}
+
 // TestListAnchor: the row a mode keeps picked (List.Anchor) is Yellow with
 // Base text, not bold, across the row, with no arrow; the cursor on it wins
 // (from kbu).

@@ -2,6 +2,13 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.4-beta.2 — tdp v1.2.3
+
+- tdp's next release lets a panel row whose content has a colour of its own (a ranking's places) give that colour to
+  the cursor resting on it (color.2), and the lib has it already: `Row.CursorColor` colours the block and the arrow on
+  its right, the text still Base bold. It dims with the panel as any cursor does, and while the panel is in a mode the
+  cursor is Subtext1 (from tetru)
+
 ## v1.2.4-beta.1 — tdp v1.2.3
 
 - tdp's next release lets an app choose what the Space menu of a mode of its own lists (K11), and the lib has it

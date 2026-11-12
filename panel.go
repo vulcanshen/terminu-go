@@ -79,8 +79,8 @@ type ModeKey struct {
 	// the arrow keys and PgUp|PgDn go in Keys as tdp K12 has them (j|k
 	// takes j, k, ↓, ↑; u|d takes u, d, PgUp, PgDn), Key writing the letters.
 	// A movement key with nothing to move in the mode may do the mode's own
-	// action, its arrow key the same (k turning a piece takes k and ↑: tdp
-	// K12). A key the user sets (tdp K11) is the app's to put in Key and
+	// action, its arrow key the same (in a mode where nothing moves up, one
+	// ModeKey taking k and ↑: tdp K12). A key the user sets (tdp K11) is the app's to put in Key and
 	// Keys while the mode is on, and what is shown follows them; one already
 	// in use in the mode is the app's to refuse, with a Warning naming what
 	// has it.
@@ -90,8 +90,7 @@ type ModeKey struct {
 	// NoFooter keeps it out of the footer (movement keys): it stays in ?.
 	NoFooter bool
 	// NoMenu keeps it out of the mode's Space menu: what a mode of the app's
-	// own lists there is the app's (a game's Play mode listing only Restart
-	// and Save: tdp K11). It stays in ? and the footer.
+	// own lists there is the app's (tdp K11). It stays in ? and the footer.
 	NoMenu bool
 	// Do runs it, with the key pressed.
 	Do func(key string) tea.Cmd
@@ -383,6 +382,7 @@ func (p *Panel) draw(n, w, h int, focused, pointed bool) []string {
 	case p.Body == nil:
 		body = blankLines(inner, ih)
 	case list != nil:
+		list.inMode = p.mode != nil
 		body = list.draw(inner, ih, focused, false) // its location row is loc
 	default:
 		body = p.Body.Draw(inner, ih, focused)

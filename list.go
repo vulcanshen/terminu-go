@@ -73,6 +73,12 @@ type Row struct {
 	// glyph and colour the app's (locku's Green ● before the active
 	// profile); none leaves the column blank (tdp panel.7).
 	Flag Span
+	// CursorColor, when set, is the cursor block's colour while the cursor
+	// is on the row, the arrow on its right too, its text Base bold as ever:
+	// the colour the row's content has of its own (a ranking's places), and
+	// never another (tdp color.2). Unset it is Subtext1, as it is again while
+	// the panel is in a mode, the mode's Yellow marking what it marks.
+	CursorColor Color
 }
 
 // SortKey is one column the list is sorted by.
@@ -143,6 +149,7 @@ type List struct {
 	cover  int   // rows at the bottom under the inspect toast (Uncover)
 	marked map[string]bool
 	held   bool // the row under the cursor is held in a Drag mode
+	inMode bool // the panel it is on is in a mode: the cursor is Subtext1
 
 	filter *lineEditor
 	typing bool
@@ -552,8 +559,12 @@ func (l *List) draw(w, h int, focused, own bool) []string {
 		}
 		text := l.rowText(r, widths)
 		if vi == l.cursor {
-			cursor := On(Subtext1)
-			arrowStyle := Fg(Subtext1)
+			colour := Subtext1
+			if c := l.rows[r].CursorColor; c.Set && !l.inMode {
+				colour = c // the row's own colour (tdp color.2)
+			}
+			cursor := On(colour)
+			arrowStyle := Fg(colour)
 			if l.held {
 				// The held row: the cursor in the mode's colour, the swap
 				// glyph in its mark column (tdp panel, tdp K11).
@@ -562,8 +573,8 @@ func (l *List) draw(w, h int, focused, own bool) []string {
 			}
 			if l.Typing() {
 				// The focus is on the typing row: the list's cursor is dimmed once (tdp P6).
-				cursor = Style{Fg: DimColor(Base), Bg: DimColor(Subtext1), Bold: true}
-				arrowStyle = Fg(DimColor(Subtext1))
+				cursor = Style{Fg: DimColor(Base), Bg: DimColor(colour), Bold: true}
+				arrowStyle = Fg(DimColor(colour))
 			}
 			// Base on the block, a swatch keeping its colour (tdp color).
 			out = append(out, onBlock(Pad(" "+indent+mark+text, w-arrow), cursor)+arrowStyle.Render(glyphHard))

@@ -89,7 +89,9 @@ go run github.com/vulcanshen/terminu-go/examples/showcase@latest
 
 - **名字與短字**（清單的格子、表單與 panel 上的值、menu 的 label、標題、toast、confirm、選項、statusbar）：每個控制字元都畫成
   紅色的名字，Tab 是 `\t`，顏色碼是 `\x1b` 接著 `[31m`。要自己上色時另外給 span：`Row.Styled`、`Field.Styled`、
-  `FormField.Styled`，`App.Status` 也回 span。在 `Canvas` 或自己的 popup 裡畫外面來的字時，用 `Escape` 照同一套畫。
+  `FormField.Styled`，`App.Status` 也回 span。內容有自己顏色的列（例：排行的名次），可以用 `Row.CursorColor` 讓停在上面的
+  cursor 改用那個顏色當底（tdp color.2）：只能是那一列自己的顏色；模式裡 cursor 照舊是 Subtext1。在 `Canvas` 或自己的
+  popup 裡畫外面來的字時，用 `Escape` 照同一套畫。
   清單裡放一行一行文字的欄（原始碼的一行、log 的一行）標成 `Column.Line`：裡面的 Tab 畫成空白。
   自己寫的字不放換行字元：好幾列的訊息一列一列給，`app.Error(title, row1, row2)`、`app.Toast(kind, row1, row2)`，
   畫面上紅色的 `\n` 就一定是外面來的。

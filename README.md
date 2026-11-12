@@ -99,7 +99,9 @@ program's output — never reaches the terminal as it is:
 - **Names and short texts** (a list's cells, values on forms and panels, menu labels, titles, toasts, confirms,
   options, the statusbar) draw every control character by its name in Red: a tab is `\t`, a colour code is `\x1b`
   then `[31m`. To colour one yourself, give spans: `Row.Styled`, `Field.Styled`, `FormField.Styled`, and
-  `App.Status` returns them. On a `Canvas` or in a popup of your own, `Escape` draws text from outside the same way.
+  `App.Status` returns them. A row whose content has a colour of its own (a ranking's places) may give that colour to
+  the cursor resting on it with `Row.CursorColor` (tdp color.2): only the row's own colour, and in a mode the cursor
+  is Subtext1 as ever. On a `Canvas` or in a popup of your own, `Escape` draws text from outside the same way.
   A list column of lines of text — a line of source code, of a log — is marked `Column.Line`: a tab in it is spaces.
   Your own text has no line break in it: a message of several rows goes a row at a time,
   `app.Error(title, row1, row2)`, `app.Toast(kind, row1, row2)`, so a red `\n` on the screen is from outside.
