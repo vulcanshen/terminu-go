@@ -938,6 +938,87 @@ func (a *App) runAction(act Action, fromMenu bool) tea.Cmd {
 	return then()
 }
 
+// ownAction is p's own action on key, the item's before the panel's: out of a
+// mode, it wins over a global one (tdp M4).
+func (a *App) ownAction(p *Panel, key string) (Action, bool) {
+	for _, scope := range []Scope{ItemScope, PanelScope} {
+		for _, act := range a.panelActions(p, scope) {
+			if act.Key == key && key != "Enter" && !act.hidden() && p.scopeApplies(act) {
+				return act, true
+			}
+		}
+	}
+	return Action{}, false
+}
+
+// globalAction is the global operation on key (tdp M4).
+func (a *App) globalAction(key string) (Action, bool) {
+	for _, act := range a.globalActions() {
+		if act.Key == key && !isDigit(key) {
+			return act, true
+		}
+	}
+	return Action{}, false
+}
+
+// RunAction runs the action key runs on the focused panel out of a mode, as
+// choosing it in a menu does: a key of a popup of the app's own runs one of
+// the app's actions with it (tdp popup.8). It is found as the key is out of a
+// mode (tdp M4): the focused panel's item operations, then its panel
+// operations ("Enter" is its Enter action), then the global ones; q is the
+// quit flow (tdp K9). One that asks opens its confirm over the popup; a
+// disabled or hidden one does nothing, as a key with none does. Done with
+// nothing new open, every popup closes, the one that called too (tdp T1).
+//
+//	func (b *settings) Key(key string, _ tea.KeyMsg) (bool, tea.Cmd) {
+//		if key == "n" { // the panel's [n]ew game
+//			return true, b.app.RunAction("n")
+//		}
+//		...
+//
+// With the focused panel in a mode, the mode is left as the action runs:
+// after the Enter of its confirm, still in it if the confirm is cancelled. It
+// is left as LeaveMode leaves it, every layer, the mode's Space menu and ?
+// with it, and its OnExit is not run: what OnExit would do (a pause), the app
+// does before calling; and when leaving would lose what the user made and
+// keeps (tdp K11), the app asks before calling. Quitting leaves no mode
+// first.
+func (a *App) RunAction(key string) tea.Cmd {
+	if key == "q" {
+		return a.startQuit()
+	}
+	var p *Panel
+	if s := a.Screen(); s != nil {
+		p = s.Focused()
+	}
+	act, ok := Action{}, false
+	switch {
+	case p == nil:
+	case key == "Enter":
+		if e := p.enterAction(); e != nil {
+			act, ok = *e, true
+		}
+	default:
+		act, ok = a.ownAction(p, key)
+	}
+	if !ok {
+		if act, ok = a.globalAction(key); !ok {
+			return nil
+		}
+	}
+	if p != nil && p.mode != nil {
+		do := act.Do
+		act.Do = func() tea.Cmd {
+			p.LeaveMode() // as it runs: a cancelled confirm leaves the mode as it was
+			if do != nil {
+				return do()
+			}
+			return nil
+		}
+	}
+	return a.runAction(act, true)
+}
+
 // --- quitting ----------------------------------------------------------------
 
 func (a *App) quitAction() Action {
@@ -1446,12 +1527,8 @@ func (a *App) panelKey(key string, msg tea.KeyMsg) tea.Cmd {
 		return nil
 	}
 	// The panel's own hotkeys win over the global ones (tdp M4).
-	for _, scope := range []Scope{ItemScope, PanelScope} {
-		for _, act := range a.panelActions(p, scope) {
-			if act.Key == key && key != "Enter" && !act.hidden() && p.scopeApplies(act) {
-				return a.runAction(act, false)
-			}
-		}
+	if act, ok := a.ownAction(p, key); ok {
+		return a.runAction(act, false)
 	}
 	if key == "V" && a.Splash != nil && !p.takesV() {
 		return a.openSplash()
@@ -1461,13 +1538,11 @@ func (a *App) panelKey(key string, msg tea.KeyMsg) tea.Cmd {
 			return cmd
 		}
 	}
-	for _, act := range a.globalActions() {
-		if act.Key == key && !isDigit(key) {
-			if act.Label == "Quit" {
-				return a.startQuit()
-			}
-			return a.runAction(act, false)
+	if act, ok := a.globalAction(key); ok {
+		if act.Label == "Quit" {
+			return a.startQuit()
 		}
+		return a.runAction(act, false)
 	}
 	return nil
 }

@@ -176,6 +176,27 @@ included (tdp K11, screen.2). To write `q:quit` there, give the mode a `ModeKey`
 "quit"}`: `q` still starts the quit flow, as in any mode, and so does its row in the Space menu; `?` lists it once,
 among the core keys.
 
+## An action from a popup of your own
+
+A key on a popup of your own (`App.Popup`) may run one of the app's actions as its menu runs it (tdp popup.8):
+`App.RunAction(key)` runs what `key` runs on the focused panel out of a mode, an item or panel operation, the panel's
+`Enter` action or a global one; `q` is the quit flow. An action that asks first opens its confirm over the popup; a
+disabled or hidden one does nothing, as a key with no action does. Done with nothing new open, every popup closes.
+
+```go
+func (b *settings) Key(key string, _ tea.KeyMsg) (bool, tea.Cmd) {
+	if key == "n" { // the panel's [n]ew game
+		return true, b.app.RunAction("n")
+	}
+	return false, nil
+}
+```
+
+When the popup is over a panel in a mode of your own, the mode is left as the action runs: after `Enter` on its
+confirm, so `Esc` there changes nothing. It is left as `Panel.LeaveMode` leaves it, without `OnExit`: do what `OnExit`
+would do (a pause) before calling, and when leaving would lose something the user made and wants kept, ask before
+calling (tdp K11). `q` leaves no mode; the quit flow asks first.
+
 ## Settings
 
 Two of the user's settings are shared by every terminu app (tdp E3). The library does not read config files: the

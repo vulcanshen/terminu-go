@@ -2,6 +2,17 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.7 — tdp v1.2.6
+
+Still tdp v1.2.6: this release only adds to the API.
+
+- `App.RunAction(key)` runs one of the app's actions from a key of a popup of the app's own, as its menu runs it
+  (tdp popup.8): what `key` runs on the focused panel out of a mode, an item or panel operation, its `Enter` action
+  or a global one, asking first when it asks; `q` is the quit flow. A disabled or hidden action, or a key with none,
+  does nothing; done with nothing new open, every popup closes. Over a panel in a mode of the app's own, the mode is
+  left as the action runs, after `Enter` on its confirm, as `Panel.LeaveMode` leaves it: `OnExit` does not run, so
+  what it would do, and asking before losing what the user made, are the app's to do before calling (from tetru)
+
 ## v1.2.6 — tdp v1.2.6
 
 - A mode that pauses `Tab` and the digits says to leave it first only for a key that would do something out of it

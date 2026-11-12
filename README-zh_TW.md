@@ -151,6 +151,26 @@ app 自己的模式的 footer，在 `Space:menu ?:help` 與 `Esc:<動詞>` 中�
 screen.2）。要寫 `q:quit`，給模式一個沒有 `Do` 的 `ModeKey`：`{Key: "q", Desc: "quit"}`。`q` 照樣進入離開流程，跟在任何
 模式裡一樣，Space menu 裡它那一列也一樣；`?` 只在 core keys 列它一次。
 
+## 從 app 自己的 popup 執行動作
+
+app 自己的 popup（`App.Popup`）上的鍵可以執行 app 的動作，跟從 menu 執行一樣（tdp popup.8）：`App.RunAction(key)` 執行
+在 focus 的 panel 上（模式外）按 `key` 會跑的那個動作，可以是項目或 panel 的操作、panel 的 `Enter` 動作或 global 操作；
+`q` 是離開流程。要先問的動作，confirm 開在 popup 上面；停用或隱藏的動作什麼都不做，跟按了沒有動作的鍵一樣。動作跑完、
+沒有再開 popup 時，所有 popup 一起關掉。
+
+```go
+func (b *settings) Key(key string, _ tea.KeyMsg) (bool, tea.Cmd) {
+	if key == "n" { // the panel's [n]ew game
+		return true, b.app.RunAction("n")
+	}
+	return false, nil
+}
+```
+
+popup 開在 app 自己的模式裡的 panel 上時，動作真的執行時才離開模式：有 confirm 的話是按下 `Enter` 之後，所以在 confirm
+上按 `Esc` 什麼都沒變。離開的方式跟 `Panel.LeaveMode` 一樣，不跑 `OnExit`：`OnExit` 原本會做的事（例：暫停）要在呼叫前
+自己先做；離開模式會丟掉使用者做出來、要留下的東西時，在呼叫前自己先問（tdp K11）。`q` 不離開模式，離開流程會先問。
+
 ## 設定
 
 使用者的設定裡，有兩個是 terminu 家族每個 app 共用的（tdp E3）。函式庫不讀設定檔：由 app 從自己的設定檔讀出來交給它。
