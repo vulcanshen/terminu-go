@@ -2,6 +2,18 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.4 — tdp v1.2.4
+
+Everything since v1.2.3, the betas v1.2.4-beta.1 and beta.2 included (the code is that of beta.2):
+
+- An app chooses what the Space menu of a mode of its own lists (tdp K11, menu.4): `ModeKey.NoMenu` keeps a key out
+  of the menu and `Mode.NoLeaveRow` keeps out the row that leaves the mode. Every key stays in `?` and the footer.
+  `Space` still opens the menu, and a menu left with nothing lists the leaving row all the same (from tetru)
+- A panel row whose content has a colour of its own (a ranking's places) may give that colour to the cursor resting
+  on it (tdp color.2, panel.5): `Row.CursorColor` colours the block and the arrow on its right, the text still Base
+  bold. Only the row's own colour, never another. It dims with the panel as any cursor does, and while the panel is
+  in a mode the cursor is Subtext1 (from tetru)
+
 ## v1.2.4-beta.2 — tdp v1.2.3
 
 - tdp's next release lets a panel row whose content has a colour of its own (a ranking's places) give that colour to

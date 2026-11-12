@@ -8,8 +8,9 @@ import (
 )
 
 // TestK12FreeKeyInAMode: in a mode a movement key with nothing to move may do
-// an action of the mode's own, its arrow key the same, shown as the mode's
-// other keys are; outside the mode the key moves as ever (tdp K12-19).
+// an action of the mode's own, its arrow key the same, shown in ? and the
+// footer, and in the Space menu of a mode that lists it (K11); outside the
+// mode the key moves as ever (tdp K12-19).
 func TestK12FreeKeyInAMode(t *testing.T) {
 	ta := newTestApp(t)
 	turned := 0

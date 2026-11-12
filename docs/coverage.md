@@ -1,6 +1,6 @@
-# tdp v1.2.3 coverage
+# tdp v1.2.4 coverage
 
-tdp v1.2.3 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
+tdp v1.2.4 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
 每個元件、規範列的每一種方案、寫到的每一種狀態與疊法，在展示場都按得到。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -106,6 +106,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | K11 | 模式名在框的上框右側、外框換模式色、離開恢復；不只靠顏色 | Drag；D「Note viewer」的 `v`；I 的 `Segments` 按 `D` | `TestK11ModeLabel`、`TestReorderDrag` |
 | K11 | popup 裡的模式（reorder 的 Drag、viewer 的選取模式）也一樣：只有模式的鍵與上表的 core key 作用，app 自己的 core key 也不作用 | I 的 `Segments` 按 `D` 再按 `%`；D「Note viewer」按 `v` 再按 `%` | `TestReorderDragModeKeys`、`TestK11PopupModeCoreKeys` |
 | K11 | 要不要讓使用者設定模式自己的鍵、哪些鍵、怎麼設定，app 自行決定；選到這個模式裡已經有作用的鍵（模式的其他鍵、core key）就跳 Warning 寫出被誰用了，不設定；模式的 Space menu、`?` 與提示寫目前作用的鍵（K11-14）。lib：app 改 `ModeKey` 的 `Key`、`Keys`，footer、`?`、模式的 Space menu 畫的時候照當下的鍵；擋下重複的鍵與跳 Warning 是 app 的（`Toast(Warning, …)`） | 展示場沒有讓使用者設定的鍵；在讓使用者改模式鍵的 app 裡，把一個鍵設成模式的另一個鍵、再設成 `Space`，最後設成沒人用的鍵 | `TestK11ModeKeysTheUserSets` |
+| K11 | app 自己的模式（tdp 的元件沒有規定的模式；元件裡的 compare、Drag、選取、歷史模式照 menu.4 列）的 Space menu 列什麼、怎麼分區，app 自行決定：`Space` 照樣打開它、至少有一列，標題與樣子跟其他模式的 Space menu 一樣；每個鍵照樣列在 `?`，footer 或提示照舊（K11-15）。lib：照 menu.4 全列，`ModeKey.NoMenu` 把一個鍵拿掉、`Mode.NoLeaveRow` 拿掉離開模式那一列；全拿掉時照樣列離開模式那一列，menu 至少有一列 | lib；展示場的模式都照 menu.4 全列 | `TestK11OwnModeSpaceMenu` |
 | K12 | 不在打字的地方 `j k u d g G h l` 保留給移動，任何動作都不佔（模式裡沒有移動可做的鍵除外，見下面 K12-19 那一列） | lib：登記時拒絕（panel 與 menu；popup 裡數字可以） | `TestK12HotkeyCannotTakeMovement`、`TestK12HotkeyCannotTakeMovementInMenu`、`TestK1DigitsFreeInPopups` |
 | K12 | 有左右結構：`h\|l` 左右（切 tab、跨側、日曆前後一天） | P `[1] PODS` 的 tab；I 的 `Meeting` | `TestK12HLSwitchTabs`、`TestDatetimePicker` |
 | K12 | 一維清單：`h\|k` 往前、`j\|l` 往後；在有 tab 的 panel 裡 `h\|l` 給 tab；reorder 也是（含 Drag）；key reference 照這樣寫（表單、沒有 tab 的一列一個值、menu、reorder 寫 `h\|k`、`j\|l`） | D「Form: New host」；P `[3] SETTINGS`；I `[1] INPUTS`；I 的 `Segments`；各處按 `?` | `TestK12OneDimensional`、`TestReorderOneWay`、`TestKeyReferenceMoveSection`、`TestK6PopupKeysOnly` |
@@ -117,7 +118,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | K12 | `u\|d` 到頭尾停住、不繞；照空間走的不繞：日曆的日子、月與年、左右兩側、一段文字裡的移動 | P `[1] PODS` 在倒數幾列按 `d`；I 的 `Meeting` 日曆；D「Note viewer」的 visual | `TestK12HalfPageStops`、`TestK12SpatialNoWrap` |
 | K12 | 二維內容（一列有好幾個項目，例：webu 網頁內文裡的連結）閱讀時沒有游標，`j\|k`、`u\|d`、`gg\|G` 捲動；一個項目一個項目走是一個模式（K11），模式裡 `j\|k` 照閱讀順序走（同一列從左到右，再到下一列）、到頭尾繞回，`gg\|G` 到第一個、最後一個（K12-17）：app 自己的 body 做，模式用 `Panel.EnterMode` 與 `ModeKey` | lib 不適用；展示場沒有二維內容 | — |
 | K12 | 一段文字裡（viewer 的選取模式、textarea 的移動狀態）加 `w\|b\|e`、`0\|$`；viewer 平常 `h\|l` 給 tab，選取模式裡 `h\|l` 移游標、不切 tab | D「Note viewer」的 visual；D「Popup with tabs」（平常 `h\|l` 切 tab，`v` 之後 `h\|l` 移游標）；I 的 `Comment` 移動狀態 | `TestK12TextMotions`、`TestNoteHotkeysAndMode` |
-| K12 | 模式裡沒有移動可做的移動鍵，可以做模式自己的動作，同一個鍵的方向鍵或 `PgUp\|PgDn` 做一樣的事；跟模式其他的鍵一樣寫在模式的 Space menu、`?` 與提示裡；模式外面、有移動可做的鍵都照舊（K12-19）。lib：模式裡的鍵只給模式自己的鍵與 core key，`ModeKey` 收那個鍵與它的方向鍵（`Keys: k, ↑`） | 展示場沒有這種模式；在落塊遊戲這類 app 的模式裡按 `k`、`↑`，打開 `Space`、`?`，再到模式外面按 `k` | `TestK12FreeKeyInAMode` |
+| K12 | 模式裡沒有移動可做的移動鍵，可以做模式自己的動作，同一個鍵的方向鍵或 `PgUp\|PgDn` 做一樣的事；寫在 `?` 與提示裡，模式的 Space menu 照 K11；模式外面、有移動可做的鍵都照舊（K12-19）。lib：模式裡的鍵只給模式自己的鍵與 core key，`ModeKey` 收那個鍵與它的方向鍵（`Keys: k, ↑`） | 展示場沒有這種模式；在有這種模式的 app 裡，模式裡按那個鍵（例 `k`）與它的方向鍵、打開 `?`，再到模式外面按它 | `TestK12FreeKeyInAMode` |
 
 ## Rules — M Menu 與揭露
 
@@ -254,6 +255,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | color.2 | 模式色 Yellow 也用在 Drag 拿著的那一列 | P `[1] PODS` 的 `[D]rag`；I 的 `Segments` 按 `D` | `TestPanelDragHeldRow`、`TestReorderDrag` |
 | color.2 | 例外是色塊：內容本身就是顏色的格子（`ColorText` 的 `███`）在 cursor 色塊上保留自己的顏色，同一塊上的其他字照樣換成 Base。lib：表單、一列一個值的 panel、一般清單的 cursor | I `[1] INPUTS` 的 `Background` 停在上面 | `TestSwatchOnCursor` |
 | color.2 | cursor 色塊：popup 層色底、panel Subtext1 底，字 Base 粗體；沒 focus 那塊的 cursor 再淡化一次；放在色塊上的字一律 Base | P 的 cursor；I `[/] Find` 的兩塊 | `TestCursorBlock` |
+| color.2 | 自己有顏色的列（內容的顏色，例：排行的名次色）：cursor 停在上面時，app 可以讓 panel 的 cursor 色塊用那個顏色當底，字照樣 Base 粗體，右邊的箭頭同色；只用那一列自己的顏色、不另外挑（app 守）；沒有 focus 時跟其他 cursor 一樣淡化；panel 在模式裡時回到 Subtext1（color-27）。lib：`Row.CursorColor` | lib；展示場沒有自己有顏色的列 | `TestColor27RowColourCursor` |
 | color.4 | `dim(c) = c × 0.45 + t × 0.55`（t `#0c0c13`，Crust 的下一格；v0.9.5 前是 Base），每個通道四捨五入（Blue → `(68,88,123)`、Mantle → Crust、Base → `#14141f`），前景背景都算；256 色的 16–255 照標準值；0–15 用終端機的調色盤（啟動時 OSC 4 問，問不到用 xterm 的值） | F8、T2 的畫面；在 tmux 裡改調色盤看 | `TestDimFormula`、`TestDimPaletteFromOSC4`、`TestDimPaletteFallbackXterm` |
 | color.4 | 絕不變亮（每通道取小）；一律輸出 24-bit；沒指定前景給 `dim(Text)`；bold、reverse、游標移動、文字不動 | 同上 | `TestDimNeverBrighter`、`TestDimTruecolorOut`、`TestDimDefaultFg` |
 
@@ -306,9 +308,9 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | panel.4 | `[N]` 與第一個 tab 都選中時中間的空白跟接縫一樣佔一個 powerline 符號的寬度，換 tab 時字不位移 | P `[1] PODS` 換 tab（`SHOWCASE__POWERLINE_WIDTH=2` 也試一次） | `TestPanelTabSpaceIsAJoin` |
 | panel.4 | 字前後不加空白、大寫；放不下先縮沒選中的成第一個字，再從尾端收成 `…`，選中的永遠留著、不撐寬框；選中的那一段自己就太長時字從尾端截加 `…`，兩端斜角照畫、跟框角之間留一段線 | 縮窄 | `TestCapsuleChainShrink`、`TestPanelModeLabelKeptWhenNarrow` |
 | panel.4 | 失焦時串色換成失焦的框線色、Mantle 不變；被蓋住時照 F8 跟整個畫面一起淡化，Mantle 變成 Crust `#11111b`（panel-137） | P `[1] PODS` 按 `Tab`；再開 Space menu | `TestCapsuleChain`、`TestDimEveryColor` |
-| panel.5 | cursor：Subtext1 底、Base 粗體、佔滿內寬、整列 Base 字；右邊的留白（跟箭頭一樣寬）畫 U+E0B0、Subtext1；失焦跟著淡化 | P `[1] PODS` | `TestListCursor`、`TestCursorArrow` |
+| panel.5 | cursor：Subtext1 底、Base 粗體、佔滿內寬、整列 Base 字；右邊的留白（跟箭頭一樣寬）畫 U+E0B0、跟 cursor 同色；失焦跟著淡化；自己有顏色的列，Subtext1 可以換成那個顏色，箭頭也一樣（color.2 那一列，color-27） | P `[1] PODS` | `TestListCursor`、`TestCursorArrow`、`TestColor27RowColourCursor` |
 | panel.5 | 模式裡先標住、cursor 會離開的那一列（例：Compare 的 anchor，K11）：整列 Yellow 底、Base 字、不加粗、沒有箭頭；cursor 停在上面時 cursor 優先（lib：`List.Anchor`；kbu 回報的，tdp 下一版明寫） | lib；展示場還沒有，tdp 寫進去時補 | `TestListAnchor` |
-| menu.4 | 模式裡（panel、popup 裡、PTY 上）`Space` 開模式的 Space menu：標題是模式所在的地方（panel 的 `[N] label` 或 popup 的標題）；`ITEM OPERATION` 對 cursor 那一項能做的事、能執行、現在不能做的停用（viewer 的選取模式：還沒開始選時 `[v] Select`、開始選之後 `Cop[y]`）；`<模式名> MODE` 模式的鍵，移動鍵只顯示（鍵 Blue、說明 Overlay0、cursor 跳過），`[Esc] Leave` 能執行；panel、item、global 的動作不列；menu 裡 `Esc` 只關 menu；PTY 上的模式不再把 `Space` 送給子程序（lib：`ModeKey.Item`、`Label`、`MenuDesc`；menu-23～27、K5-3、reorder-19） | P `[1] PODS` 按 `C` 或 `[D]rag` 再按 `Space`；D「Note viewer」按 `v` 再按 `Space`；I 的 `Segments` 按 `D` 再按 `Space`；terminal 的 History 裡按 `Space` | `TestModeSpaceMenu`、`TestModeSpaceMenuInPopups`、`TestK11ModeCoreKeys` |
+| menu.4 | 模式裡（panel、popup 裡、PTY 上）`Space` 開模式的 Space menu：tdp 元件規定的模式照下面列，app 自己的模式列什麼由 app 決定（K11 那一列，K11-15），列出來的照下面畫、照下面執行；標題是模式所在的地方（panel 的 `[N] label` 或 popup 的標題）；`ITEM OPERATION` 對 cursor 那一項能做的事、能執行、現在不能做的停用（viewer 的選取模式：還沒開始選時 `[v] Select`、開始選之後 `Cop[y]`）；`<模式名> MODE` 模式的鍵，移動鍵只顯示（鍵 Blue、說明 Overlay0、cursor 跳過），`[Esc] Leave` 能執行（app 自己的模式是 app 有列的時候）；panel、item、global 的動作不列；menu 裡 `Esc` 只關 menu；PTY 上的模式不再把 `Space` 送給子程序（lib：`ModeKey.Item`、`Label`、`MenuDesc`；menu-23～27、K5-3、reorder-19） | P `[1] PODS` 按 `C` 或 `[D]rag` 再按 `Space`；D「Note viewer」按 `v` 再按 `Space`；I 的 `Segments` 按 `D` 再按 `Space`；terminal 的 History 裡按 `Space` | `TestModeSpaceMenu`、`TestModeSpaceMenuInPopups`、`TestK11ModeCoreKeys` |
 | panel.1、popup.1 | `h|l` 會切 tab 的地方 lib 自動寫 `h|l:tab`：兩個以上 tab 的 panel 放在 `Enter` 後面，有兩個以上 tab 的 viewer（比較的 `UNIFIED`／`SPLIT`、有好幾頁的）放最前面；只有一個 tab、模式裡、選取模式裡、`SPLIT` 停用時不寫；放不下照舊從尾端整組捨（panel-17、19，popup-10、11，filu 回報的） | P `[1] PODS`（`PODS`／`EVENTS`）；D「Popup with tabs」 | `TestHintTab`、`TestPanelHint`、`TestPanelHintDrop` |
 | panel.9 | 比較鍵進入 K11 的模式，那一列成為 anchor（`List.Anchor`）；只比文字（`Compare.Can`，不能比的沒有比較的動作）；`j|k`、`u|d`、`gg|G` 移動；比較鍵或 `Enter` 打開比較，cursor 在 anchor 或不能比的列上時停用；兩邊一樣時 Info toast；`Esc` 離開、拿掉 anchor；`Tab` 與數字鍵暫停；anchor 不在了時離開、Warning toast（lib：`App.CompareAction`；panel-138～145） | P `[1] PODS` 按 `C`、移開再按 `Enter` | `TestCompareMode`、`TestCompareAnchorGone`、`TestModeKeyDisabled` |
 | note.8 | 標題 glyph U+F018A、`DIFF — <anchor> ↔ <另一個>`、`UNIFIED`／`SPLIT` 兩個 tab；只顯示有差異的段落、前後 3 行、段落之間 Overlay0 的線；UNIFIED 行號兩欄、`-` Red、`+` Green；SPLIT 左 anchor 右另一個、各自行號、對應不到留空列，兩邊各自在半邊裡折行（折下來的列行號欄空白），左右對應的兩行照長的那邊佔一樣多列、短的補空白列，所以從同一列開始（note-83）；記住選的 tab（`Compare.Split`，app 存進狀態）；不到 96 欄一律 UNIFIED、`SPLIT` 停用（note-80～85） | 同上，按 `h|l`；開著時把終端機縮到 96 以下再拉回來 | `TestCompareMode`、`TestCompareHunks`、`TestCompareSplit`、`TestCompareResize`（開著時縮放：重排、留住捲動位置）、`TestDiffLines` |
