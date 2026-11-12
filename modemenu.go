@@ -64,13 +64,13 @@ func (a *App) panelModeMenu(p *Panel) tea.Cmd {
 			keys = append(keys, moveRow(k.Key, k.Desc))
 			continue
 		}
-		key, do := k.first(), k.Do
+		key := k.first()
 		act := Action{Key: key, Label: cmpOr(k.Label, capital(k.Desc)), Desc: k.MenuDesc, Disabled: k.Disabled,
-			Do: func() tea.Cmd {
-				if do == nil {
+			Do: func() tea.Cmd { // as pressing the key: a core key's row (q:quit) does what that key does
+				if p.mode == nil {
 					return nil
 				}
-				return do(key)
+				return a.modeKey(p, key, tea.KeyMsg{})
 			}}
 		if k.Item {
 			item = append(item, act)

@@ -136,3 +136,108 @@ func TestK11OwnModeSpaceMenu(t *testing.T) {
 		t.Error("[Esc] Pause from the menu does not leave the mode")
 	}
 }
+
+// openPopups counts the popups open, those closing left out.
+func openPopups(ta *testApp) int {
+	n := 0
+	for _, l := range ta.stack {
+		if !l.closing {
+			n++
+		}
+	}
+	return n
+}
+
+// TestK11LeaveOwnModePopup: leaving a mode of the app's own may open one
+// popup (its OnExit): the mode is left by then, Esc on the popup closes it
+// and stays outside, and an action of the popup's may go back into the mode;
+// the Space menu's row leaving the mode does the same (tdp K11-16, K11-3, K4).
+func TestK11LeaveOwnModePopup(t *testing.T) {
+	ta := newTestApp(t)
+	var m *Mode
+	inModeAtExit := false
+	m = &Mode{Name: "Play", Exit: "pause", Keys: []ModeKey{{Key: "r", Desc: "restart", Do: func(string) tea.Cmd { return nil }}},
+		OnExit: func() tea.Cmd {
+			inModeAtExit = ta.pods.InMode() != nil
+			return ta.Confirm(Ask{Title: "Paused", Question: "Go on?", Verb: "go on"},
+				func() tea.Cmd { ta.pods.EnterMode(m); return nil })
+		}}
+	ta.pods.EnterMode(m)
+	ta.press("Esc")
+	if _, ok := ta.topView().(*confirmView); !ok || openPopups(ta) != 1 {
+		t.Fatalf("Esc leaving the mode: %T on top, %d popups", ta.topView(), openPopups(ta))
+	}
+	if inModeAtExit || ta.pods.InMode() != nil {
+		t.Error("the mode is not left when its popup opens")
+	}
+	ta.press("Esc")
+	if ta.top() != nil || ta.pods.InMode() != nil {
+		t.Fatalf("Esc on the popup: %T on top, in the mode %v", ta.topView(), ta.pods.InMode() != nil)
+	}
+	ta.press("Esc")
+	if ta.top() != nil || ta.pods.InMode() != nil {
+		t.Error("Esc again opened something or went back into the mode")
+	}
+	ta.pods.EnterMode(m)
+	ta.press("Esc", "Enter")
+	if ta.top() != nil || ta.pods.InMode() != m {
+		t.Error("the popup's Enter does not go back into the mode")
+	}
+
+	ta.press("Space")
+	if got := menuItems(t, ta); got != "Restart,Pause" {
+		t.Fatalf("the menu lists %s", got)
+	}
+	ta.press("j", "Enter")
+	if _, ok := ta.topView().(*confirmView); !ok || openPopups(ta) != 1 || ta.pods.InMode() != nil {
+		t.Fatalf("[Esc] Pause from the menu: %T on top, %d popups, in the mode %v", ta.topView(), openPopups(ta), ta.pods.InMode() != nil)
+	}
+	ta.press("Esc")
+	if ta.top() != nil || ta.pods.InMode() != nil {
+		t.Error("Esc on the popup opened from the menu does not close it outside the mode")
+	}
+}
+
+// TestScreen36CoreKeyInModeFooter: the footer of a mode of the app's own may
+// write a core key among its keys, a ModeKey with no Do (q:quit); the key does
+// what it does in any mode, q the quit flow, its row in the Space menu too,
+// and ? lists it once, among the core keys (tdp screen-36, screen-8, K11).
+func TestScreen36CoreKeyInModeFooter(t *testing.T) {
+	ta := newTestApp(t)
+	ta.pods.EnterMode(&Mode{Name: "Play", Exit: "pause", Keys: []ModeKey{
+		{Key: "r", Desc: "restart", Do: func(string) tea.Cmd { return nil }},
+		{Key: "q", Desc: "quit"}}})
+	if f := covCFooter(ta); !strings.HasPrefix(f, "Space:menu ?:help r:restart q:quit Esc:pause") {
+		t.Errorf("the footer: %q", f)
+	}
+	ta.press("q")
+	if !covAQuitConfirm(ta) {
+		t.Fatal("q in the mode does not start the quit flow")
+	}
+	ta.press("Esc")
+	if ta.top() != nil || ta.pods.InMode() == nil {
+		t.Fatal("closing the quit confirm left the mode")
+	}
+	ta.press("?")
+	n := 0
+	for _, r := range covARef(t, ta) {
+		if f := strings.Fields(r); len(f) > 0 && (f[0] == "q" || strings.HasPrefix(f[0], "q|")) {
+			n++
+		}
+	}
+	if n != 1 {
+		t.Errorf("? lists q %d times, want once:\n%s", n, strings.Join(covARef(t, ta), "\n"))
+	}
+	ta.press("Esc", "Space")
+	if got := menuItems(t, ta); got != "Restart,Quit,Pause" {
+		t.Fatalf("the menu lists %s", got)
+	}
+	ta.press("j", "Enter")
+	if !covAQuitConfirm(ta) {
+		t.Errorf("Quit from the mode's Space menu: %T on top", ta.topView())
+	}
+	// a key of the mode's own taking a core key too is listed all the same
+	if (ModeKey{Key: "p", Keys: []string{"Esc", "p"}}).coreListed() || !(ModeKey{Key: "q|Ctrl-C"}).coreListed() {
+		t.Error("coreListed: Esc|p is the mode's own, q|Ctrl-C a core key")
+	}
+}

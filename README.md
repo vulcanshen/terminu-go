@@ -165,6 +165,15 @@ K11): `NoMenu` keeps a key out of the menu, and `Mode.NoLeaveRow` keeps out the 
 still in `?`, the footer stays as it is, and `Esc` still leaves. A menu left with nothing lists the leaving row all the
 same, since a mode's Space menu always has a row.
 
+Leaving a mode of your own, its `OnExit` may open one popup saying where things are left, such as a confirm asking
+whether to go on after a pause (tdp K11). The mode is left by the time the popup shows: `Esc` on it closes it, still
+outside the mode, and going back in is the popup's own action (`EnterMode`).
+
+What the footer of a mode of your own writes between `Space:menu ?:help` and `Esc:<verb>` is up to you, core keys
+included (tdp K11, screen.2). To write `q:quit` there, give the mode a `ModeKey` with no `Do`, `{Key: "q", Desc:
+"quit"}`: `q` still starts the quit flow, as in any mode, and so does its row in the Space menu; `?` lists it once,
+among the core keys.
+
 ## Settings
 
 Two of the user's settings are shared by every terminu app (tdp E3). The library does not read config files: the
@@ -267,7 +276,7 @@ delete its on-screen code and its E5 code; E1, E3, E6, E7 and its own icon stay.
 
 ## Which terminu design
 
-terminu-go implements **tdp v1.2.4**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
+terminu-go implements **tdp v1.2.5**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
 
 ## Links
 

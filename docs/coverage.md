@@ -1,6 +1,6 @@
-# tdp v1.2.4 coverage
+# tdp v1.2.5 coverage
 
-tdp v1.2.4 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
+tdp v1.2.5 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
 每個元件、規範列的每一種方案、寫到的每一種狀態與疊法，在展示場都按得到。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -100,13 +100,14 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | K10 | 其他 Alt 出口鍵要不要 confirm、保留哪些鍵、出口後 focus 落點：app 決定（lib 提供選項；落點：`Terminal.OnLeave`，出口鍵被接受、focus 出來之後跑） | T `[2] SESSIONS` 的 `[Alt-t]erm` 隱藏 terminal popup；T `[1] SHELL` 按 `Alt-Esc`、`Enter` 離開後 focus 到 `[2] SESSIONS` 的 `panel` 列 | `TestK10ReservedKeysShown`、`TestTerminalKeyTakesSeveral`（`TerminalKey.Keys`：一組鍵寫一次）、`TestTerminalOnLeave` |
 | K10 | 子程序還沒準備好時可以不轉送一般鍵，但 `Ctrl-C` 照轉、出口鍵照有效照揭露 | T `[1] SHELL` 的 `Slow start`（模擬連線中） | `TestK10NotReadyForwardsCtrlC`、`TestTerminalFirstOutput`（lib：`Terminal.OnFirstOutput`、`Spoke`，app 拿來結束 NotReady 與 loading） |
 | K10 | `Alt-Esc` 與兩次 `Esc` 的 byte 一樣（實作參考：bubbletea v1.3.10 實測會黏）：在真的終端機上驗 | 照 [`walkthrough.md`](walkthrough.md) 的「`Esc` 與 `Alt-Esc`」按 | — |
-| K11 | 模式裡 `!` 不作用（`TestAppLogOnBang`）；`Space` 開模式的 Space menu（見 menu.4）；`?` 開模式的 key reference；`Esc` 離開、回到進入前的狀態；`q`、`Ctrl-C` 照 K9 | P `[1] PODS` 的 `[D]rag` | `TestK11ModeCoreKeys` |
+| K11 | 模式裡 `!` 不作用（`TestAppLogOnBang`）；`Space` 開模式的 Space menu（見 menu.4）；`?` 開模式的 key reference；`Esc` 離開、回到進入前的狀態（離開 app 自己的模式時可以跳出一個 popup，見下面 K11-16 那一列）；`q`、`Ctrl-C` 照 K9 | P `[1] PODS` 的 `[D]rag` | `TestK11ModeCoreKeys` |
 | K11 | 模式裡只有模式自己的鍵與上表的 core key 作用：panel 熱鍵與 global 熱鍵都不作用，按了不出聲 | Drag 裡按 `m`（panel 熱鍵）、`I`（global 熱鍵） | `TestK11HotkeysSilentInMode` |
 | K11 | 模式可以暫停 `Tab` 與數字鍵，按了要有回應（toast）；toast 在時第一個 `Esc` 先收 toast | Drag 裡按 `Tab`、`2` | `TestK11TabPausedToast`、`TestK11DigitsPausedToast` |
 | K11 | 模式名在框的上框右側、外框換模式色、離開恢復；不只靠顏色 | Drag；D「Note viewer」的 `v`；I 的 `Segments` 按 `D` | `TestK11ModeLabel`、`TestReorderDrag` |
 | K11 | popup 裡的模式（reorder 的 Drag、viewer 的選取模式）也一樣：只有模式的鍵與上表的 core key 作用，app 自己的 core key 也不作用 | I 的 `Segments` 按 `D` 再按 `%`；D「Note viewer」按 `v` 再按 `%` | `TestReorderDragModeKeys`、`TestK11PopupModeCoreKeys` |
 | K11 | 要不要讓使用者設定模式自己的鍵、哪些鍵、怎麼設定，app 自行決定；選到這個模式裡已經有作用的鍵（模式的其他鍵、core key）就跳 Warning 寫出被誰用了，不設定；模式的 Space menu、`?` 與提示寫目前作用的鍵（K11-14）。lib：app 改 `ModeKey` 的 `Key`、`Keys`，footer、`?`、模式的 Space menu 畫的時候照當下的鍵；擋下重複的鍵與跳 Warning 是 app 的（`Toast(Warning, …)`） | 展示場沒有讓使用者設定的鍵；在讓使用者改模式鍵的 app 裡，把一個鍵設成模式的另一個鍵、再設成 `Space`，最後設成沒人用的鍵 | `TestK11ModeKeysTheUserSets` |
 | K11 | app 自己的模式（tdp 的元件沒有規定的模式；元件裡的 compare、Drag、選取、歷史模式照 menu.4 列）的 Space menu 列什麼、怎麼分區，app 自行決定：`Space` 照樣打開它、至少有一列，標題與樣子跟其他模式的 Space menu 一樣；每個鍵照樣列在 `?`，footer 或提示照舊（K11-15）。lib：照 menu.4 全列，`ModeKey.NoMenu` 把一個鍵拿掉、`Mode.NoLeaveRow` 拿掉離開模式那一列；全拿掉時照樣列離開模式那一列，menu 至少有一列 | lib；展示場的模式都照 menu.4 全列 | `TestK11OwnModeSpaceMenu` |
+| K11 | 離開 app 自己的模式時，要不要跳出 popup 說離開後的狀態（例：暫停，用 confirm 問要不要繼續），app 自行決定；跳的話只有一個，跳出來時模式已經離開（模式名與外框顏色都恢復），在它上面按 `Esc` 是關掉它、留在模式外面，回到模式是 popup 自己的動作（K11-16、K11-3、K4）。lib：`Mode.OnExit` 在模式離開之後才跑，app 在裡面開 popup（例 `Confirm`）；從 Space menu 離開模式的那一列也一樣 | lib；展示場的模式離開時不跳 popup | `TestK11LeaveOwnModePopup` |
 | K12 | 不在打字的地方 `j k u d g G h l` 保留給移動，任何動作都不佔（模式裡沒有移動可做的鍵除外，見下面 K12-19 那一列） | lib：登記時拒絕（panel 與 menu；popup 裡數字可以） | `TestK12HotkeyCannotTakeMovement`、`TestK12HotkeyCannotTakeMovementInMenu`、`TestK1DigitsFreeInPopups` |
 | K12 | 有左右結構：`h\|l` 左右（切 tab、跨側、日曆前後一天） | P `[1] PODS` 的 tab；I 的 `Meeting` | `TestK12HLSwitchTabs`、`TestDatetimePicker` |
 | K12 | 一維清單：`h\|k` 往前、`j\|l` 往後；在有 tab 的 panel 裡 `h\|l` 給 tab；reorder 也是（含 Drag）；key reference 照這樣寫（表單、沒有 tab 的一列一個值、menu、reorder 寫 `h\|k`、`j\|l`） | D「Form: New host」；P `[3] SETTINGS`；I `[1] INPUTS`；I 的 `Segments`；各處按 `?` | `TestK12OneDimensional`、`TestReorderOneWay`、`TestKeyReferenceMoveSection`、`TestK6PopupKeysOnly` |
@@ -280,7 +281,8 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 |---|---|---|---|
 | screen.1 | 最上面一列（多畫面：chip 列 + 全寬分隔線；單畫面：可有 statusbar）、panel 區、最下面一列 footer；每個畫面的 panel 從 `[1]` 編號 | 每個畫面；lib 的單畫面版本由測試畫 | `TestScreenRows` |
 | screen.2 | 一列、M5 寫法、鍵 Blue 冒號說明 Overlay0；放不下從尾端整組捨 | 縮到 40 欄 | `TestFooterDropsWholePairs` |
-| screen.2 | 一般 `Space:menu ?:help !:log Tab\|1–N:panels q:quit`；單 panel `Space:menu ?:help !:log q:quit`；模式 `Space:menu ?:help` + 模式的鍵 + `Esc:<動詞>`；filter 打字中 `Enter\|Tab:list Esc:clear`，沒有結果時 `Tab:list Esc:clear`；PTY 在 panel 裡：出口鍵 + 保留鍵（互動 terminal 再接 `Alt-v:select PgUp:history`）；popup 開著時照底下畫面的寫、跟著淡化 | P 一般與 Drag；P filter（打 `zz` 沒有結果）；T `[1] SHELL`；任一 popup；lib 的單 panel 版本 | `TestFooterVariants`、`TestFooterUnderPopupDimmed` |
+| screen.2 | 一般 `Space:menu ?:help !:log Tab\|1–N:panels q:quit`；單 panel `Space:menu ?:help !:log q:quit`；模式 `Space:menu ?:help` + 模式的鍵 + `Esc:<動詞>`（app 自己的模式中間寫哪些鍵由 app 決定，見下一列）；filter 打字中 `Enter\|Tab:list Esc:clear`，沒有結果時 `Tab:list Esc:clear`；PTY 在 panel 裡：出口鍵 + 保留鍵（互動 terminal 再接 `Alt-v:select PgUp:history`）；popup 開著時照底下畫面的寫、跟著淡化 | P 一般與 Drag；P filter（打 `zz` 沒有結果）；T `[1] SHELL`；任一 popup；lib 的單 panel 版本 | `TestFooterVariants`、`TestFooterUnderPopupDimmed` |
+| screen.2 | app 自己的模式的 footer，在 `Space:menu ?:help` 與最後的 `Esc:<動詞>` 中間寫哪些鍵由 app 決定，core key 也可以（例：`q:quit`）；寫上去的每個鍵在模式裡都能按、做的事跟寫的一樣，core key 跟在任何模式裡一樣（`q` 進入離開流程，K9）（screen-36、screen-8）。lib：footer 照 `Mode.Keys` 的順序寫；core key 寫成沒有 `Do` 的 `ModeKey`（`{Key: "q", Desc: "quit"}`），按下去照 core key 作用，Space menu 裡它那一列也一樣，`?` 只在 core keys 列一次 | lib；展示場的模式只寫模式自己的鍵 | `TestScreen36CoreKeyInModeFooter` |
 | screen.2 | `!` 的提醒：App Log 有沒看過的錯誤時 `!:N errors`（說明 Red），只有警告時 `!:N warning(s)`（Peach），打開後回到 `!:log` | D「Error popup」關掉後看 footer，按 `!` 再看 | `TestAppLogFooter` |
 | screen.2 | terminal popup 開著時 footer 整列不畫：最後一列兩端是空白，不露出 footer 的字 | T 的 terminal popup | `TestTerminalPopupSize` |
 | screen.3 | 每個畫面一個膠囊、串的顏色 Blue（選中填 Blue 字 Base 粗體、沒選中底 Mantle 字 Blue）；放不下先縮 `[P] [I] [D] [T]` 再收掉沒選中的 | 每個畫面；縮窄 | `TestScreenChips`、`TestScreenChipsShrink` |

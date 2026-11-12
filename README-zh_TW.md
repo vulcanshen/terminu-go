@@ -142,6 +142,13 @@ app 讀不了自己的設定、狀態或資料（格式錯、檔案壞掉、沒�
 menu，`Mode.NoLeaveRow` 不列離開模式那一列。每個鍵照樣列在 `?`，footer 不變，`Esc` 照樣離開。什麼都沒列的 menu 照樣列出
 離開那一列，因為模式的 Space menu 至少要有一列。
 
+離開 app 自己的模式時，`OnExit` 可以跳出一個 popup，說離開後是什麼狀態（例：暫停後用 confirm 問要不要繼續，tdp K11）。
+popup 出現時模式已經離開：在它上面按 `Esc` 是關掉它、留在模式外面；要回到模式，是 popup 自己的動作（`EnterMode`）。
+
+app 自己的模式的 footer，在 `Space:menu ?:help` 與 `Esc:<動詞>` 中間寫哪些鍵由 app 決定，core key 也可以（tdp K11、
+screen.2）。要寫 `q:quit`，給模式一個沒有 `Do` 的 `ModeKey`：`{Key: "q", Desc: "quit"}`。`q` 照樣進入離開流程，跟在任何
+模式裡一樣，Space menu 裡它那一列也一樣；`?` 只在 core keys 列它一次。
+
 ## 設定
 
 使用者的設定裡，有兩個是 terminu 家族每個 app 共用的（tdp E3）。函式庫不讀設定檔：由 app 從自己的設定檔讀出來交給它。
@@ -234,7 +241,7 @@ tdp E8 對任何共用的 lib 只留三點：用 lib 的 app 不另外做 lib �
 
 ## 實作哪一版 terminu design
 
-terminu-go 實作 **tdp v1.2.4**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
+terminu-go 實作 **tdp v1.2.5**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
 
 ## 相關連結
 

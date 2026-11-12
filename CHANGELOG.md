@@ -2,6 +2,17 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.5 — tdp v1.2.5
+
+- Leaving a mode of the app's own may open one popup (tdp K11, K4), and the lib has it already: `Mode.OnExit` runs
+  once the mode is left. A popup opened there, such as a confirm asking whether to go on after a pause, shows with
+  the mode left, and `Esc` on it closes it, still outside the mode. Leaving from the Space menu's row does the same
+  (from tetru)
+- The footer of a mode of the app's own may write core keys among its keys (tdp K11, screen.2), such as `q:quit`: a
+  `ModeKey` with no `Do`, `{Key: "q", Desc: "quit"}`. `q` starts the quit flow, as in any mode. A row of a mode's
+  Space menu now does what pressing its key does, so the row of such a key no longer does nothing, and `?` lists it
+  once, among the core keys, not twice (from tetru)
+
 ## v1.2.4 — tdp v1.2.4
 
 Everything since v1.2.3, the betas v1.2.4-beta.1 and beta.2 included (the code is that of beta.2):

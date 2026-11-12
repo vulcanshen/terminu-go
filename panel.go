@@ -65,6 +65,10 @@ type Mode struct {
 	// to leave the mode first.
 	Pause bool
 	// OnExit runs when Esc leaves the mode, to go back to the state before it.
+	// Leaving a mode of the app's own, it may open one popup saying where
+	// things are left (paused: go on?), the mode left by then; Esc on it
+	// closes it, still outside the mode, and going back in is the popup's
+	// own action, EnterMode (tdp K11).
 	OnExit func() tea.Cmd
 	// Inspect is the inspect toast of the item under the cursor in the mode,
 	// as Panel.Inspect: while the panel is in the mode it is asked instead of
@@ -83,7 +87,10 @@ type ModeKey struct {
 	// ModeKey taking k and ↑: tdp K12). A key the user sets (tdp K11) is the app's to put in Key and
 	// Keys while the mode is on, and what is shown follows them; one already
 	// in use in the mode is the app's to refuse, with a Warning naming what
-	// has it.
+	// has it. A core key a mode of the app's own writes in the footer among
+	// its keys (q:quit, tdp screen.2) is a ModeKey with no Do: the key does
+	// what it does in any mode, its row in the Space menu too, and ? lists
+	// it once, among the core keys.
 	Key  string
 	Keys []string
 	Desc string
@@ -115,6 +122,24 @@ func (k ModeKey) first() string {
 		return k.Keys[0]
 	}
 	return strings.Split(k.Key, "|")[0]
+}
+
+// coreListed reports that every key it takes is a core key the mode's ?
+// lists already, written among the mode's keys in the footer (q:quit, tdp
+// screen.2): ? does not list it twice.
+func (k ModeKey) coreListed() bool {
+	keys := k.Keys
+	if len(keys) == 0 {
+		keys = strings.Split(k.Key, "|")
+	}
+	for _, x := range keys {
+		switch x {
+		case "Space", "?", "Esc", "q", "Ctrl-C":
+		default:
+			return false
+		}
+	}
+	return true
 }
 
 func (k ModeKey) takes(key string) bool {

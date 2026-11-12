@@ -1235,6 +1235,9 @@ func refTitle(v popupView) string {
 func (a *App) modeKeyRef(p *Panel) *noteView {
 	var rows []KeyRow
 	for _, k := range p.mode.Keys {
+		if k.coreListed() { // under core keys below
+			continue
+		}
 		rows = append(rows, KeyRow{Key: k.Key, Desc: k.Desc, Disabled: k.off()})
 	}
 	back := ", back to before " + p.mode.Name
