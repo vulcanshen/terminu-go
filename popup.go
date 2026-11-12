@@ -50,6 +50,9 @@ type layer struct {
 	shade    Color // the layer colour it closes in: the one it had open
 	// below runs when the layer is gone, the one under it on top again.
 	below func() tea.Cmd
+	// mode is the panel whose mode it is the Space menu or ? of: it closes
+	// as the mode is left (tdp K11).
+	mode *Panel
 }
 
 func (l *layer) open() bool { return !l.closing && l.frame >= openFrames }

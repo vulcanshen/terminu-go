@@ -2,6 +2,18 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.6 — tdp v1.2.6
+
+- A mode that pauses `Tab` and the digits says to leave it first only for a key that would do something out of it
+  (tdp K11): `Tab` and `2` on a screen of one panel, a digit with no panel and the focused panel's own digit do
+  nothing, silently, as out of the mode
+- However a mode is left, its Space menu and its `?` close with it, and what is open over them (tdp K11):
+  `Panel.LeaveMode` closes them too, for a mode of the app's own that ends by one of its keys or on its own (a game
+  over). A popup the app opens then is the only one (from tetru)
+- tdp v1.2.6 makes an app's own mode an opening of P5, as an app's own popup is. What the lib cannot hold is the
+  app's to keep: what the mode is for, entering it only by the user's action, its keys and Space menu reaching no
+  further than leaving the mode, every key but the core and movement keys in its Space menu or footer (from tetru)
+
 ## v1.2.5 — tdp v1.2.5
 
 - Leaving a mode of the app's own may open one popup (tdp K11, K4), and the lib has it already: `Mode.OnExit` runs

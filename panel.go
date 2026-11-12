@@ -251,8 +251,16 @@ func (p *Panel) EnterLayer(m *Mode) {
 	p.mode = m
 }
 
-// LeaveMode leaves the whole mode, every layer, without running an OnExit.
-func (p *Panel) LeaveMode() { p.mode, p.under = nil, nil }
+// LeaveMode leaves the whole mode, every layer, without running an OnExit:
+// a mode of the app's own ending by its own key or on its own (a game
+// over). The mode's Space menu and ? close with it, and what is open over
+// them (tdp K11); a popup the app opens then is over the panel.
+func (p *Panel) LeaveMode() {
+	p.mode, p.under = nil, nil
+	if p.app != nil {
+		p.app.closeModePopups(p)
+	}
+}
 
 // InMode reports the mode the panel is in, its innermost layer, or nil.
 func (p *Panel) InMode() *Mode { return p.mode }

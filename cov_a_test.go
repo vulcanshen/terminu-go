@@ -1289,12 +1289,20 @@ func TestK11TabPausedToast(t *testing.T) {
 	if ta.Screen().focus != 1 || ta.toast != nil {
 		t.Error("in a mode that does not pause Tab, Tab goes to the next panel")
 	}
+	// on a screen of one panel Tab does nothing out of the mode, and so
+	// nothing in it, silently (tdp K11-5)
+	ta.press("O")
+	ta.Screen().Focused().EnterMode(&Mode{Name: "Play", Pause: true})
+	ta.press("Tab", "2")
+	if ta.toast != nil || ta.Screen().Focused().InMode() == nil {
+		t.Errorf("Tab and 2 on a screen of one panel: a toast %v", ta.toast != nil)
+	}
 }
 
 func TestK11DigitsPausedToast(t *testing.T) {
 	ta := newTestApp(t)
 	ta.press("D")
-	for _, d := range []string{"2", "3", "9"} {
+	for _, d := range []string{"2", "3"} {
 		ta.press(d)
 		if ta.Screen().focus != 0 || !strings.Contains(ta.screenText(), "Press [Esc] to leave Drag first") {
 			t.Errorf("%s in a paused mode answers with a toast and stays", d)
@@ -1302,6 +1310,14 @@ func TestK11DigitsPausedToast(t *testing.T) {
 		ta.press("Esc")
 		if ta.pods.InMode() == nil {
 			t.Fatalf("%s: the first Esc left the mode, not the toast", d)
+		}
+	}
+	// a digit that does nothing out of the mode either, the focused panel's
+	// or one with no panel, does nothing in it, silently (tdp K11-5)
+	for _, d := range []string{"1", "9"} {
+		ta.press(d)
+		if ta.toast != nil || ta.Screen().focus != 0 || ta.pods.InMode() == nil {
+			t.Errorf("%s in a paused mode: a toast %v, the focus on [%d]", d, ta.toast != nil, ta.Screen().focus+1)
 		}
 	}
 	ta.pods.LeaveMode()

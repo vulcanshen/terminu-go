@@ -167,7 +167,9 @@ same, since a mode's Space menu always has a row.
 
 Leaving a mode of your own, its `OnExit` may open one popup saying where things are left, such as a confirm asking
 whether to go on after a pause (tdp K11). The mode is left by the time the popup shows: `Esc` on it closes it, still
-outside the mode, and going back in is the popup's own action (`EnterMode`).
+outside the mode, and going back in is the popup's own action (`EnterMode`). A mode that ends by one of its keys or on
+its own (a game over) leaves with `Panel.LeaveMode`: the mode's Space menu and `?` close with it, and a popup you open
+then is the only one (tdp K11).
 
 What the footer of a mode of your own writes between `Space:menu ?:help` and `Esc:<verb>` is up to you, core keys
 included (tdp K11, screen.2). To write `q:quit` there, give the mode a `ModeKey` with no `Do`, `{Key: "q", Desc:
@@ -276,7 +278,7 @@ delete its on-screen code and its E5 code; E1, E3, E6, E7 and its own icon stay.
 
 ## Which terminu design
 
-terminu-go implements **tdp v1.2.5**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
+terminu-go implements **tdp v1.2.6**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
 
 ## Links
 

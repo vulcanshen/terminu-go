@@ -1,6 +1,7 @@
 package terminu
 
 import (
+	"slices"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -81,7 +82,32 @@ func (a *App) panelModeMenu(p *Panel) tea.Cmd {
 	if !m.NoLeaveRow || len(item)+len(keys) == 0 {
 		keys = append(keys, leaveRow(cmpOr(m.Exit, "leave"), func() tea.Cmd { return a.leavePanelMode(p) }))
 	}
-	return a.modeMenu(a.modeTitle(), p.modeName(), item, keys)
+	return a.ofMode(p, a.modeMenu(a.modeTitle(), p.modeName(), item, keys))
+}
+
+// ofMode marks the popup just opened as the mode's of p, its Space menu or
+// ?, to close with the mode (closeModePopups); cmd is what opening gave.
+func (a *App) ofMode(p *Panel, cmd tea.Cmd) tea.Cmd {
+	a.stack[len(a.stack)-1].mode = p
+	return cmd
+}
+
+// closeModePopups closes the Space menu and the ? of the mode p was in, and
+// what is open over them: however a mode is left, they go with it (tdp K11).
+func (a *App) closeModePopups(p *Panel) {
+	at := slices.IndexFunc(a.stack, func(l *layer) bool { return l.mode == p && !l.closing })
+	if at < 0 {
+		return
+	}
+	var cmds []tea.Cmd
+	for i := len(a.stack) - 1; i >= at; i-- {
+		if l := a.stack[i]; !l.closing {
+			cmds = append(cmds, a.closeLayer(l))
+		}
+	}
+	if cmd := tea.Batch(cmds...); cmd != nil {
+		a.own(cmd) // sent once the message is done: LeaveMode returns none
+	}
 }
 
 // leavePanelMode leaves the mode p is in, back to before it, as Esc does.
@@ -93,6 +119,8 @@ func (a *App) leavePanelMode(p *Panel) tea.Cmd {
 	p.mode = nil
 	if n := len(p.under); n > 0 { // a layer less (tdp K11)
 		p.mode, p.under = p.under[n-1], p.under[:n-1]
+	} else {
+		a.closeModePopups(p)
 	}
 	return run(m.OnExit)
 }

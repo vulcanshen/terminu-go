@@ -1505,16 +1505,23 @@ func (a *App) modeKey(p *Panel, key string, msg tea.KeyMsg) tea.Cmd {
 	case key == "Space":
 		return a.panelModeMenu(p)
 	case key == "?":
-		return a.open(a.modeKeyRef(p))
+		return a.ofMode(p, a.open(a.modeKeyRef(p)))
 	case key == "Esc":
 		return a.leavePanelMode(p)
 	case key == "q":
 		return a.startQuit()
 	case key == "Tab" || isDigit(key) && key != "0":
+		s := a.Screen()
 		if p.mode.Pause {
+			n := (s.at() + 1) % len(s.Panels)
+			if key != "Tab" {
+				n = int(key[0] - '1')
+			}
+			if n >= len(s.Panels) || n == s.at() { // it does nothing out of the mode either (tdp K11)
+				return nil
+			}
 			return a.Toast(Info, "Press [Esc] to leave "+p.modeName()+" first")
 		}
-		s := a.Screen()
 		if key == "Tab" {
 			return a.focusPanel(s, (s.at()+1)%len(s.Panels))
 		}

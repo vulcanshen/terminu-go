@@ -241,3 +241,35 @@ func TestScreen36CoreKeyInModeFooter(t *testing.T) {
 		t.Error("coreListed: Esc|p is the mode's own, q|Ctrl-C a core key")
 	}
 }
+
+// TestK11LeaveModeClosesItsPopups: however a mode of the app's own is left
+// (here LeaveMode, as a game over does), its Space menu and its ? close with
+// it, and what is open over them; a popup that is not the mode's stays, and
+// one the app opens then is the only one (tdp K11-21, K11-16).
+func TestK11LeaveModeClosesItsPopups(t *testing.T) {
+	ta := newTestApp(t)
+	m := &Mode{Name: "Play", Exit: "pause", Keys: []ModeKey{{Key: "r", Desc: "restart", Do: func(string) tea.Cmd { return nil }}}}
+	for _, keys := range [][]string{{"Space"}, {"?"}, {"Space", "?"}} {
+		ta.pods.EnterMode(m)
+		ta.press(keys...)
+		if openPopups(ta) != len(keys) {
+			t.Fatalf("%v: %d popups open", keys, openPopups(ta))
+		}
+		ta.pods.LeaveMode()
+		if ta.top() != nil || ta.pods.InMode() != nil {
+			t.Errorf("%v then LeaveMode: %T still on top", keys, ta.topView())
+		}
+		ta.Confirm(Ask{Title: "Game over", Question: "Again?", Verb: "play"}, nil)
+		ta.settle() // as when the app opens it in an update
+		if _, ok := ta.topView().(*confirmView); !ok || openPopups(ta) != 1 {
+			t.Errorf("%v: the popup the app opens then: %T, %d popups", keys, ta.topView(), openPopups(ta))
+		}
+		ta.press("Esc")
+	}
+	ta.pods.EnterMode(m)
+	ta.Confirm(Ask{Title: "Hold", Question: "Hold on?", Verb: "hold"}, nil)
+	ta.pods.LeaveMode()
+	if _, ok := ta.topView().(*confirmView); !ok {
+		t.Errorf("a popup not the mode's closed with it: %T", ta.topView())
+	}
+}
