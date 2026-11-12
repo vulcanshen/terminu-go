@@ -50,11 +50,16 @@ func (a *App) modeTitle() string {
 }
 
 // panelModeMenu is the Space menu of the mode p is in: its keys marked Item
-// first, its movement keys (NoFooter) shown, the others to run, then leaving.
+// first, its movement keys (NoFooter) shown, the others to run, then leaving;
+// those the app keeps out (NoMenu, NoLeaveRow) left out, leaving listed still
+// when nothing else is (tdp K11: the menu has a row).
 func (a *App) panelModeMenu(p *Panel) tea.Cmd {
 	m := p.mode
 	var item, keys []Action
 	for _, k := range m.Keys {
+		if k.NoMenu {
+			continue
+		}
 		if k.NoFooter {
 			keys = append(keys, moveRow(k.Key, k.Desc))
 			continue
@@ -73,7 +78,9 @@ func (a *App) panelModeMenu(p *Panel) tea.Cmd {
 			keys = append(keys, act)
 		}
 	}
-	keys = append(keys, leaveRow(cmpOr(m.Exit, "leave"), func() tea.Cmd { return a.leavePanelMode(p) }))
+	if !m.NoLeaveRow || len(item)+len(keys) == 0 {
+		keys = append(keys, leaveRow(cmpOr(m.Exit, "leave"), func() tea.Cmd { return a.leavePanelMode(p) }))
+	}
 	return a.modeMenu(a.modeTitle(), p.modeName(), item, keys)
 }
 

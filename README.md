@@ -158,6 +158,11 @@ write, the letters alone:
 {Key: "u|d", Keys: []string{"u", "d", "PgUp", "PgDn"}, Desc: "half a page up, down", NoFooter: true, Do: move},
 ```
 
+The mode's Space menu lists its keys as tdp menu.4 has them. What a mode of your own lists there is up to you (tdp
+K11): `NoMenu` keeps a key out of the menu, and `Mode.NoLeaveRow` keeps out the row that leaves the mode. Every key is
+still in `?`, the footer stays as it is, and `Esc` still leaves. A menu left with nothing lists the leaving row all the
+same, since a mode's Space menu always has a row.
+
 ## Settings
 
 Two of the user's settings are shared by every terminu app (tdp E3). The library does not read config files: the

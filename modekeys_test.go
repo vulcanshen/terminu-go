@@ -72,3 +72,66 @@ func TestK11ModeKeysTheUserSets(t *testing.T) {
 		t.Errorf("x in the mode's Space menu: dropped %d times", dropped)
 	}
 }
+
+// menuItems is the labels of the rows of the menu on top.
+func menuItems(t *testing.T, ta *testApp) string {
+	t.Helper()
+	var rows []string
+	for _, r := range menuOnTop(t, ta).rows {
+		if r.kind == menuItem {
+			rows = append(rows, r.action.Label)
+		}
+	}
+	return strings.Join(rows, ",")
+}
+
+// TestK11OwnModeSpaceMenu: what the Space menu of a mode of the app's own
+// lists is the app's (NoMenu, NoLeaveRow); Space still opens it, titled as any
+// mode's, and every key stays in ? and the footer; a menu left with nothing
+// lists leaving all the same (tdp K11-15, menu-26).
+func TestK11OwnModeSpaceMenu(t *testing.T) {
+	ta := newTestApp(t)
+	var did []string
+	do := func(what string) func(string) tea.Cmd {
+		return func(string) tea.Cmd { did = append(did, what); return nil }
+	}
+	ta.pods.EnterMode(&Mode{Name: "Play", Exit: "pause", NoLeaveRow: true, Keys: []ModeKey{
+		{Key: "k", Keys: []string{"k", "↑"}, Desc: "turn", NoMenu: true, Do: do("turn")},
+		{Key: "h|l", Keys: []string{"h", "l", "←", "→"}, Desc: "left, right", NoFooter: true, NoMenu: true, Do: do("move")},
+		{Key: "r", Desc: "restart", Do: do("restart")},
+		{Key: "s", Desc: "save", Do: do("save")},
+	}})
+	ta.press("Space")
+	if got := menuItems(t, ta); got != "Restart,Save" {
+		t.Errorf("the menu lists %s, want Restart,Save", got)
+	}
+	if text := ta.screenText(); !strings.Contains(text, "[1] PODS") || !strings.Contains(text, "PLAY MODE") {
+		t.Errorf("the menu is not titled as a mode's:\n%s", text)
+	}
+	ta.press("Enter", "k")
+	if strings.Join(did, ",") != "restart,turn" || ta.pods.InMode() == nil {
+		t.Errorf("Restart from the menu, then k: did %v, in the mode %v", did, ta.pods.InMode() != nil)
+	}
+	if foot := StripStyles(ta.footer(200)); !strings.Contains(foot, "k:turn") || !strings.Contains(foot, "Esc:pause") {
+		t.Errorf("the footer: %q", foot)
+	}
+	ta.press("?")
+	if keys := covAKeys(covARef(t, ta)); !keys["k"] || !keys["h|l"] || !keys["r"] || !keys["Esc"] {
+		t.Errorf("the mode's key reference: %v", keys)
+	}
+	ta.press("Esc", "Esc")
+	if ta.top() != nil || ta.pods.InMode() != nil {
+		t.Fatal("Esc does not leave the mode")
+	}
+
+	ta.pods.EnterMode(&Mode{Name: "Play", Exit: "pause", NoLeaveRow: true, Keys: []ModeKey{
+		{Key: "k", Desc: "turn", NoMenu: true, Do: do("turn")}}})
+	ta.press("Space")
+	if got := menuItems(t, ta); got != "Pause" {
+		t.Errorf("a menu with nothing listed lists %s, want Pause", got)
+	}
+	ta.press("Enter")
+	if ta.top() != nil || ta.pods.InMode() != nil {
+		t.Error("[Esc] Pause from the menu does not leave the mode")
+	}
+}

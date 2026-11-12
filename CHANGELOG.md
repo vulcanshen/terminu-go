@@ -2,6 +2,13 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.4-beta.1 — tdp v1.2.3
+
+- tdp's next release lets an app choose what the Space menu of a mode of its own lists (K11), and the lib has it
+  already: `ModeKey.NoMenu` keeps a key out of the menu and `Mode.NoLeaveRow` keeps out the row that leaves the mode.
+  Every key stays in `?` and the footer. `Space` still opens the menu, and a menu left with nothing lists the leaving
+  row all the same (from tetru)
+
 ## v1.2.3 — tdp v1.2.3
 
 - Closing the terminal (SIGHUP) ends `Run` as leaving does. The programs in the lib's Terminals are hung up first, as

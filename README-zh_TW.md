@@ -136,6 +136,10 @@ app 讀不了自己的設定、狀態或資料（格式錯、檔案壞掉、沒�
 {Key: "u|d", Keys: []string{"u", "d", "PgUp", "PgDn"}, Desc: "half a page up, down", NoFooter: true, Do: move},
 ```
 
+模式的 Space menu 照 tdp menu.4 列出模式的鍵。app 自己的模式在那裡列什麼，由 app 決定（tdp K11）：`NoMenu` 讓一個鍵不列進
+menu，`Mode.NoLeaveRow` 不列離開模式那一列。每個鍵照樣列在 `?`，footer 不變，`Esc` 照樣離開。什麼都沒列的 menu 照樣列出
+離開那一列，因為模式的 Space menu 至少要有一列。
+
 ## 設定
 
 使用者的設定裡，有兩個是 terminu 家族每個 app 共用的（tdp E3）。函式庫不讀設定檔：由 app 從自己的設定檔讀出來交給它。

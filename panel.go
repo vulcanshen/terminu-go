@@ -57,6 +57,10 @@ type Mode struct {
 	Keys []ModeKey
 	// Exit is the verb Esc does in the footer ("cancel" for Esc:cancel).
 	Exit string
+	// NoLeaveRow keeps the row leaving the mode ([Esc] and Exit) out of its
+	// Space menu, as a key's NoMenu does (tdp K11); Esc leaves as ever. A
+	// menu that would list nothing lists it all the same: it has a row.
+	NoLeaveRow bool
 	// Pause suspends Tab and the digits in the mode; pressing them then says
 	// to leave the mode first.
 	Pause bool
@@ -85,6 +89,10 @@ type ModeKey struct {
 	Desc string
 	// NoFooter keeps it out of the footer (movement keys): it stays in ?.
 	NoFooter bool
+	// NoMenu keeps it out of the mode's Space menu: what a mode of the app's
+	// own lists there is the app's (a game's Play mode listing only Restart
+	// and Save: tdp K11). It stays in ? and the footer.
+	NoMenu bool
 	// Do runs it, with the key pressed.
 	Do func(key string) tea.Cmd
 	// Disabled reports that it cannot be pressed now: in the disabled colour
