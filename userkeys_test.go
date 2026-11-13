@@ -148,3 +148,61 @@ func TestK11RefWritesArrowAfterMovedKey(t *testing.T) {
 		t.Errorf("refKey: %q", got)
 	}
 }
+
+// TestK11ModeKeyRefSplitsAPair: a pair whose one half the user set to
+// another key, its arrow key still doing that half, is two rows in the mode's
+// ?, as ModeKey.Ref writes them, in its place: one meaning of | to a row
+// (Enter|PgDn rotate left, k rotate right). The footer writes the pair as
+// one (Enter|k:rotate) and the Space menu its label, as ever; the rows are
+// disabled with the key. Without Ref the key is as before (tdp M5, K11-25,
+// K11-20, K12-19).
+func TestK11ModeKeyRefSplitsAPair(t *testing.T) {
+	ta := newTestApp(t)
+	off, turned := false, ""
+	ta.pods.EnterMode(&Mode{Name: "Play", Exit: "pause", Keys: []ModeKey{
+		{Key: "a|l", Keys: []string{"a", "l", "←", "→"}, Desc: "left, right", NoFooter: true, Do: func(string) tea.Cmd { return nil },
+			Ref: []KeyRow{{Key: "a|←", Desc: "left"}, {Key: "l", Desc: "right"}}},
+		{Key: "Enter|k", Keys: []string{"Enter", "k", "PgDn", "↑"}, Desc: "rotate", Label: "Rotate",
+			Disabled: func() bool { return off },
+			Do:       func(key string) tea.Cmd { turned += key; return nil },
+			Ref:      []KeyRow{{Key: "Enter|PgDn", Desc: "rotate left"}, {Key: "k", Desc: "rotate right"}}},
+		{Key: "x", Desc: "hold", Label: "Hold", Do: func(string) tea.Cmd { return nil }},
+	}})
+	ta.press("PgDn", "↑")
+	if turned != "PgDn↑" {
+		t.Errorf("the keys of the pair: %q", turned)
+	}
+	ta.press("?")
+	ref := covARef(t, ta)
+	var mine []string
+	for _, r := range ref {
+		if f := strings.Fields(r); len(f) > 1 && !strings.HasPrefix(f[0], "\U000F02D8") {
+			mine = append(mine, strings.Join(f, " "))
+		}
+	}
+	want := []string{"a|← left", "l right", "Enter|PgDn rotate left", "k rotate right", "x hold"}
+	if len(mine) < len(want) || !slices.Equal(mine[:len(want)], want) {
+		t.Errorf("the mode's ?:\n%s", strings.Join(ref, "\n"))
+	}
+	lines := strings.Join(ta.topView().(*noteView).lines, "\n")
+	if strings.Contains(lines, Fg(Surface2).Render("rotate right")) {
+		t.Error("an enabled key's row is in the disabled colour")
+	}
+	ta.press("Esc")
+	if f := covCFooter(ta); !strings.Contains(f, "Enter|k:rotate") || strings.Contains(f, "PgDn") {
+		t.Errorf("the footer: %q", f)
+	}
+	ta.press("Space")
+	if items := menuItems(t, ta); items != "a|l,Rotate,Hold,Pause" {
+		t.Errorf("the mode's menu lists %s", items)
+	}
+	ta.press("Esc")
+	off = true
+	ta.press("?")
+	lines = strings.Join(ta.topView().(*noteView).lines, "\n")
+	for _, d := range []string{"rotate left", "rotate right"} {
+		if !strings.Contains(lines, Fg(Surface2).Render(d)) {
+			t.Errorf("%q of a disabled key is not in the disabled colour", d)
+		}
+	}
+}

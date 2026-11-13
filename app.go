@@ -1319,6 +1319,13 @@ func (a *App) modeKeyRef(p *Panel) *noteView {
 		if k.coreListed() { // under core keys below
 			continue
 		}
+		if len(k.Ref) > 0 {
+			for _, r := range k.Ref {
+				r.Disabled = r.Disabled || k.off()
+				rows = append(rows, r)
+			}
+			continue
+		}
 		rows = append(rows, KeyRow{Key: k.refKey(), Desc: k.Desc, Disabled: k.off()})
 	}
 	back := ", back to before " + p.mode.Name

@@ -171,6 +171,17 @@ outside the mode, and going back in is the popup's own action (`EnterMode`). A m
 its own (a game over) leaves with `Panel.LeaveMode`: the mode's Space menu and `?` close with it, and a popup you open
 then is the only one (tdp K11).
 
+Where the user sets the keys of a mode of your own (tdp K11), `Enter` and the movement keys may be set too. Put the key
+the user chose in `Key` and `Keys`, and leave the arrow keys and `PgUp|PgDn` in the `Keys` of the `ModeKey` the mode
+gives them by default. Moving left set to `a` is `{Key: "a", Keys: []string{"a", "←"}}`, and `?` writes `a|←`, the footer
+and the Space menu `a`. A pair, one way each half, whose one half the user moved is two rows in `?` (tdp M5): give them
+in `Ref`, and the footer still writes the pair as one.
+
+```go
+{Key: "Enter|k", Keys: []string{"Enter", "k", "PgDn", "↑"}, Desc: "rotate", Do: rotate,
+	Ref: []terminu.KeyRow{{Key: "Enter|PgDn", Desc: "rotate left"}, {Key: "k", Desc: "rotate right"}}},
+```
+
 What the footer of a mode of your own writes between `Space:menu ?:help` and `Esc:<verb>` is up to you, core keys
 included (tdp K11, screen.2). To write `q:quit` there, give the mode a `ModeKey` with no `Do`, `{Key: "q", Desc:
 "quit"}`: `q` still starts the quit flow, as in any mode, and so does its row in the Space menu; `?` lists it once,

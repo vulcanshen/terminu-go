@@ -108,6 +108,15 @@ type ModeKey struct {
 	// NoMenu keeps it out of the mode's Space menu: what a mode of the app's
 	// own lists there is the app's (tdp K11). It stays in ? and the footer.
 	NoMenu bool
+	// Ref, when set, is what the mode's key reference writes for it, one row
+	// or more in its place, instead of Key, Desc and the arrow keys written
+	// after Key; drawn disabled with it. The footer and the Space menu stay
+	// as they are. A pair (one way each half) whose one half the user set to
+	// another key, its arrow key still doing that half, is two rows there
+	// (rotate left set to Enter: Enter|PgDn rotate left, k rotate right; tdp
+	// M5, K11). Without Ref the arrow key goes after the pair (Enter|k|PgDn):
+	// listed, but not as tdp M5 writes it.
+	Ref []KeyRow
 	// Do runs it, with the key pressed.
 	Do func(key string) tea.Cmd
 	// Disabled reports that it cannot be pressed now: in the disabled colour

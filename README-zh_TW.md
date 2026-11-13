@@ -147,6 +147,16 @@ popup 出現時模式已經離開：在它上面按 `Esc` 是關掉它、留在�
 用模式的鍵、或模式自己結束（例：game over）時，用 `Panel.LeaveMode` 離開：模式的 Space menu 與 `?` 一起關掉，接著 app 開的
 popup 就是唯一的一個（tdp K11）。
 
+讓使用者改 app 自己的模式的鍵時（tdp K11），`Enter` 與移動鍵也可以改。使用者選的鍵放進 `Key` 與 `Keys`，方向鍵與
+`PgUp|PgDn` 留在模式預設給它們的那個 `ModeKey` 的 `Keys` 裡。左移改成 `a` 就是 `{Key: "a", Keys: []string{"a", "←"}}`，
+`?` 寫 `a|←`，footer 與 Space menu 寫 `a`。一對（一個方向一半）的一半被使用者改掉時，`?` 要拆成兩列（tdp M5）：寫在
+`Ref` 裡，footer 照樣把那一對寫成一項。
+
+```go
+{Key: "Enter|k", Keys: []string{"Enter", "k", "PgDn", "↑"}, Desc: "rotate", Do: rotate,
+	Ref: []terminu.KeyRow{{Key: "Enter|PgDn", Desc: "rotate left"}, {Key: "k", Desc: "rotate right"}}},
+```
+
 app 自己的模式的 footer，在 `Space:menu ?:help` 與 `Esc:<動詞>` 中間寫哪些鍵由 app 決定，core key 也可以（tdp K11、
 screen.2）。要寫 `q:quit`，給模式一個沒有 `Do` 的 `ModeKey`：`{Key: "q", Desc: "quit"}`。`q` 照樣進入離開流程，跟在任何
 模式裡一樣，Space menu 裡它那一列也一樣；`?` 只在 core keys 列它一次。
