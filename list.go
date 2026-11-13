@@ -68,6 +68,8 @@ type Row struct {
 	// A group's rows stay together, the groups in the order they first
 	// appear, sorted within; the rows are drawn two cells further in, under
 	// a title the cursor skips. A group with no row shown has no title.
+	// With groups, every row is in one: a row that fits no group goes in a
+	// group of its own ("Other").
 	Group string
 	// Flag is drawn in the mark column of a list with Flags: one sign, its
 	// glyph and colour the app's (locku's Green ● before the active

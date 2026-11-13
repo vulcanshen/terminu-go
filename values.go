@@ -1,6 +1,7 @@
 package terminu
 
 import (
+	"cmp"
 	"slices"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -44,6 +45,13 @@ type Field struct {
 	// two (tdp panel, note). Whether a panel has the
 	// section is the app's: it has it when a field has a Desc.
 	Desc string
+	// Group is the title of the group the field is in (tdp panel.12), drawn
+	// as a List's groups are (Row.Group), the title in Overlay0: a group's
+	// fields stay together, the groups in the order they first appear; the
+	// fields are drawn two cells further in, under a title the cursor
+	// skips. With groups, every field is in one: a field that fits no
+	// group goes in a group of its own ("Other").
+	Group string
 }
 
 func (f *Field) disabled() bool { return f.Disabled != nil && f.Disabled() }
@@ -79,6 +87,8 @@ func (f *Field) allOn() bool { return allChecked(len(f.Options), f.Checked, nil)
 type Values struct {
 	Fields []*Field
 	// Header, when set, is the table header over the labels and the values.
+	// A panel with groups (a field with a Group) draws none: each group's
+	// title says what its rows are (tdp panel.12).
 	Header [2]string
 	// OnMove runs when the cursor comes to another place, by a key or not,
 	// the first time included: the field, and the option in it (-1 for a
@@ -104,7 +114,7 @@ type valueItem struct {
 
 func (v *Values) itemList() []valueItem {
 	var out []valueItem
-	for _, f := range v.Fields {
+	for _, f := range v.fields() {
 		if len(f.Options) > 0 {
 			if f.hasAll() {
 				out = append(out, valueItem{f, optAll})
@@ -116,6 +126,28 @@ func (v *Values) itemList() []valueItem {
 			out = append(out, valueItem{f, -1})
 		}
 	}
+	return out
+}
+
+// grouped reports whether the fields are in groups: one has a Group.
+func (v *Values) grouped() bool {
+	return slices.ContainsFunc(v.Fields, func(f *Field) bool { return f.Group != "" })
+}
+
+// fields are the fields in the order they are drawn: a group's together, the
+// groups in the order they first appear (tdp panel.12, as a List's).
+func (v *Values) fields() []*Field {
+	if !v.grouped() {
+		return v.Fields
+	}
+	rank := map[string]int{}
+	for _, f := range v.Fields {
+		if _, ok := rank[f.Group]; !ok {
+			rank[f.Group] = len(rank)
+		}
+	}
+	out := slices.Clone(v.Fields)
+	slices.SortStableFunc(out, func(a, b *Field) int { return cmp.Compare(rank[a.Group], rank[b.Group]) })
 	return out
 }
 
@@ -157,7 +189,7 @@ func (v *Values) labelWidth() int {
 	for _, f := range v.Fields {
 		w = max(w, Width(Upper(f.Label)))
 	}
-	if v.Header[0] != "" {
+	if v.Header[0] != "" && !v.grouped() {
 		w = max(w, Width(Upper(v.Header[0])))
 	}
 	return w
@@ -168,7 +200,8 @@ func (v *Values) labelWidth() int {
 // Draw.
 func (v *Values) Uncover(rows int) { v.cover = rows }
 
-// Draw draws the fields: labels in upper case in Blue, two cells, the values.
+// Draw draws the fields: labels in upper case in Blue, two cells, the values;
+// in groups, each under its title, two cells further in.
 func (v *Values) Draw(w, h int, focused bool) []string {
 	if len(v.Fields) == 0 {
 		v.scroll = ""
@@ -178,17 +211,31 @@ func (v *Values) Draw(w, h int, focused bool) []string {
 	v.fixCursor(items, 1)
 	lw := v.labelWidth()
 	arrow := Width(glyphHard)
-	valW := w - 1 - lw - 2 - arrow
+	grouped, indent := v.grouped(), ""
+	if grouped {
+		indent = "  "
+	}
+	valW := w - 1 - len(indent) - lw - 2 - arrow
 	var rows []string
 	var itemRow []int // the row each item starts on
-	if v.Header[0] != "" {
+	titleRow := -1    // the title over the cursor's field, the first of its group
+	if v.Header[0] != "" && !grouped {
 		// Dim text: a Blue header would run into the Blue labels under it
 		// (tdp panel).
 		rows = append(rows, " "+Fg(Overlay0).Render(Pad(Upper(v.Header[0]), lw)+"  "+Fit(Upper(v.Header[1]), valW))+Repeat(" ", arrow))
 	}
 	headerRows := len(rows)
 	idx := 0
-	for _, f := range v.Fields {
+	fields := v.fields()
+	for i, f := range fields {
+		title := -1
+		if f.Group != "" && (i == 0 || fields[i-1].Group != f.Group) {
+			// A group title: Overlay0, as the header (the labels under it
+			// are Blue), upper case, not bold, one cell from the frame
+			// (tdp panel.12).
+			title = len(rows) - headerRows
+			rows = append(rows, " "+Pad(Fg(Overlay0).Render(Truncate(Escape(Upper(f.Group)), w-1-arrow)), w-1-arrow)+Repeat(" ", arrow))
+		}
 		labelColor := Blue
 		switch {
 		case f.hasErr():
@@ -205,6 +252,9 @@ func (v *Values) Draw(w, h int, focused bool) []string {
 				lead = label
 			}
 			itemRow = append(itemRow, len(rows))
+			if idx == v.cursor {
+				titleRow = title // a radio's options are one field
+			}
 			value := v.valueText(f, k)
 			ind := "" // an option under Select all, further in, outside the block
 			if f.hasAll() && k > 0 {
@@ -217,13 +267,13 @@ func (v *Values) Draw(w, h int, focused bool) []string {
 				}
 				// A swatch keeps its colour on the block (tdp color);
 				// an option's block starts at its glyph (tdp form).
-				rows = append(rows, " "+lead+"  "+ind+onBlock(fit(value, valW-Width(ind)), On(Subtext1))+Fg(Subtext1).Render(glyphHard))
+				rows = append(rows, " "+indent+lead+"  "+ind+onBlock(fit(value, valW-Width(ind)), On(Subtext1))+Fg(Subtext1).Render(glyphHard))
 			} else {
 				fit := Fit
 				if f.Path {
 					fit = FitLeft
 				}
-				rows = append(rows, " "+lead+"  "+ind+fit(value, valW-Width(ind))+Repeat(" ", arrow))
+				rows = append(rows, " "+indent+lead+"  "+ind+fit(value, valW-Width(ind))+Repeat(" ", arrow))
 			}
 			idx++
 		}
@@ -236,7 +286,11 @@ func (v *Values) Draw(w, h int, focused bool) []string {
 	if v.cursor < len(itemRow) {
 		focusRow = itemRow[v.cursor] - headerRows
 	}
-	v.top = scrollWindow(v.top, focusRow, max(room-v.cover, 1), len(body)) // above the inspect toast (tdp toast.4)
+	seen := max(room-v.cover, 1) // above the inspect toast (tdp toast.4)
+	v.top = scrollWindow(v.top, focusRow, seen, len(body))
+	if titleRow >= 0 && titleRow < v.top && focusRow-titleRow < seen {
+		v.top = titleRow // its group's title stays in sight too (tdp panel.12)
+	}
 	out := append([]string(nil), rows[:headerRows]...)
 	for i := v.top; i < v.top+room; i++ {
 		if i < len(body) {
@@ -247,9 +301,9 @@ func (v *Values) Draw(w, h int, focused bool) []string {
 	}
 	v.scroll = ""
 	if len(body) > room {
-		// Counted in fields, as a form's: a radio's options are one
-		// (tdp panel.12).
-		v.scroll = scrollText(true, slices.Index(v.Fields, items[v.cursor].field)+1, 0, len(v.Fields))
+		// Counted in fields, as a form's: a radio's options are one, a
+		// group title none (tdp panel.12).
+		v.scroll = scrollText(true, slices.Index(fields, items[v.cursor].field)+1, 0, len(v.Fields))
 	}
 	return Pad2(out, w, h)
 }

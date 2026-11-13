@@ -348,6 +348,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | panel.11 | 有標記欄時，記號（勾或旗標）畫在多縮的那兩格裡：記號離框一格、空一格，字離框三格；分組標題那一列不留標記欄（panel-86、87） | K `[1] KINDS` 的旗標；勾：展示場的分組清單不能標記，測試驗 | `TestPanelListGroupsMarks`、`TestPanelListGroupsFlags` |
 | panel.11 | cursor 跳過分組標題：`j\|k` 越過它、`gg\|G` 到第一個與最後一個項目、`N of M` 只算項目；捲到一組的第一個項目時，這組的標題也留在畫面裡 | K `[1] KINDS`（把終端機拉矮再捲） | `TestPanelListGroupsCursor` |
 | panel.11 | 沒有項目的組不畫標題（panel filter 篩掉的組、app 給的空組） | K `[1] KINDS` 按 `/` 打 `sec` | `TestPanelListGroupsFilter` |
+| panel.11 | 每個項目都在某一組裡：第一列是分組標題，歸不進任何一組的自成一組（例：`OTHER`；panel-170）。app 的事：有分組時每個 `Row` 都設 `Group`（`Row.Group` 的註解寫明）；lib 照畫 | K `[1] KINDS`：第一列是 `WORKLOADS` | `TestPanelListGroups` |
 | panel.15 | loading：icon 在整串膠囊後、用框線色（focus Blue、失焦 Surface2）；沒內容時中間寫一句（`󰪞 loading pods…`）；重新載入舊內容留著（panel-75、panel-76） | `Loading`（空的時候與有內容時各一次） | `TestPanelLoading`、`TestPanelLoadingIconAfterChain`（顏色） |
 | panel.15 | PTY 的 panel：還沒 Start、或開了還沒輸出時算空的，`LoadingText` 畫在中間；Start 失敗時畫它的錯誤（lib：`Terminal.Empty`） | T `[1] SHELL` 的 `Slow start` | `TestTerminalEmptyUntilItSpeaks`、`TestPanel15EveryKind` |
 | panel.15 | 錯誤：置中兩句，事實 Red、提示 Overlay0；舊內容在就留著、錯誤用 toast 報（panel-77～80） | `Fail`（空的時候與有內容時各一次） | `TestPanelError` |
@@ -360,6 +361,11 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | panel.12 | 捲動位置照表單以欄位為單位：radio 的幾個選項算同一欄 | P `[3] SETTINGS` 縮矮 | `TestValuePanelScrollByField` |
 | panel.12 | `?` 最前面可以有「每一列」一節（`what each row is`）：設定的名稱用一般字色（Text）、右欄說明，按鍵的節接在後面；要不要有由 app 決定（lib：`Field.Desc`，有一欄有就有這一節） | P `[3] SETTINGS` 按 `?` | `TestKeyReferenceWhatEachRowIs`、`TestKeyReferenceRowsFold`（說明太長在右欄折行、名稱欄不動，按鍵的節照舊截） |
 | panel.12 | 表頭（`PROPERTY  VALUE`）Overlay0，不用 label 的 Blue；panel 失焦時跟著淡化（T2）；一般清單的表頭照舊 Blue | P `[3] SETTINGS` 的 `PROPERTY  VALUE`；I `[1] INPUTS` 的 `INPUT  VALUE` | `TestValuePanelHeader` |
+| panel.12 | 分組：每組前面一列分組標題，大寫、不加粗、沒有 glyph、離框一格，用 Overlay0（label 已經是 Blue）；組裡的列多縮兩格；label 欄寬所有組一起算，值從同一欄開始；組與組之間不空列、不畫分隔線；有分組的 panel 不畫表頭；失焦跟著淡化（panel-161～164、168）。lib：`Field.Group`，同一組的欄位畫在一起、組照第一次出現的順序（跟 `Row.Group` 一樣）；有分組時 `Header` 不畫、label 欄寬也不算它 | P `[3] SETTINGS` 按 `Space` 選 `Group`（表頭不見）；按 `1` 讓它失焦 | `TestPanel12Groups`、`TestPanel12GroupsOrder`、`TestPanel12GroupsKeyReference`（失焦） |
+| panel.12 | 有分組時 focus 跳過分組標題，`N of M` 只算欄位；捲動時 focus 停在一組的第一個欄位，這組的標題也留在畫面裡（panel-165、166）。lib：一組的第一個欄位是 radio 時，focus 在它任何一個選項上都算，標題留著；標題與 focus 放不下時先顯示 focus | P `[3] SETTINGS` 選 `Group` 後把終端機縮矮再捲 | `TestPanel12GroupsCursor`、`TestPanel12GroupsScrollKeepsTitle` |
+| panel.12 | 沒有欄位的組不畫標題（panel-167）。lib：組從欄位的 `Group` 來，沒有欄位就沒有那一組 | 展示場的組不會變空，測試驗 | `TestPanel12GroupsEmptyGroup` |
+| panel.12 | 有分組時，`?` 的「每一列」一節還是一節，照 panel 的順序，不寫分組標題（panel-169） | P `[3] SETTINGS` 選 `Group` 後按 `?` | `TestPanel12GroupsKeyReference` |
+| panel.12 | 有分組時每一列都在某一組裡：第一列是分組標題，歸不進任何一組的自成一組（例：`OTHER`；panel-171）。app 的事：有分組時每個 `Field` 都設 `Group`（`Field.Group` 的註解寫明）；lib 照畫 | P `[3] SETTINGS` 選 `Group`：第一列是 `GENERAL` | `TestPanel12Groups` |
 | panel.14 | `/` 在最上面出現打字列（清單有表頭時在表頭上面）、即時篩選、不開 popup；最前面 U+F105 離框一格（跟 finder 的打字列一樣）、空一格才接打的字，打字時框線色（Blue）、在清單時 Overlay0；右邊 `符合/總數`，Overlay0；打字列按鍵與比對同 finder；篩選後保持 panel 的排序 | P `[1] PODS` 按 `/` | `TestPanelFilter` |
 | panel.14 | 清單上 `Tab` 下一個 panel；清單上 `Esc` 清掉篩選；選了之後清單留著篩選、打字列變灰；清單上 `/` 回打字列接著打 | 同上 | `TestPanelFilterListKeys` |
 | panel.14 | focus 離開篩選留著；回來時直接在打字列上（`Tab` 經過停兩下） | 同上 + `Tab` 繞一圈 | `TestPanelFilterFocusReturn` |

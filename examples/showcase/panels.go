@@ -118,6 +118,20 @@ func newPanelsScreen(s *showcase) *panelsScreen {
 			Do: func() tea.Cmd {
 				return s.app.Toast(terminu.Info, "Settings take effect as soon as they are set")
 			}},
+		// In groups the header goes: each group's title says what its rows
+		// are (tdp panel.12).
+		{Label: "Group", Desc: "the rows into groups, or back", Scope: terminu.PanelScope,
+			Do: func() tea.Cmd {
+				groups := []string{"General", "General", "Display", "Display", "Jobs", "Jobs"}
+				on := ps.values.Fields[0].Group == ""
+				for i, f := range ps.values.Fields {
+					f.Group = ""
+					if on {
+						f.Group = groups[i]
+					}
+				}
+				return nil
+			}},
 	}}
 	ps.settings.Actions = append(ps.settings.Actions, ps.stateActions(ps.settings)...)
 

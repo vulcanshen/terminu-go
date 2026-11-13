@@ -1281,7 +1281,7 @@ func (a *App) panelKeyRef(p *Panel) *noteView {
 	if v, ok := p.Body.(*Values); ok {
 		// What each row is, first, when the app says (tdp panel).
 		var rows []KeyRow
-		for _, f := range v.Fields {
+		for _, f := range v.fields() { // in the panel's order, no group titles
 			if f.Desc != "" {
 				rows = append(rows, KeyRow{Key: Upper(f.Label), Desc: f.Desc})
 			}
