@@ -1,6 +1,7 @@
 package terminu
 
 import (
+	"slices"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -91,12 +92,14 @@ type ModeKey struct {
 	// and the movement keys may be set too: a moved movement key is still
 	// one (NoFooter), the letter it left may take another action, and the
 	// arrow key stays in the Keys it had, the mode's default (moving left
-	// set to a takes a and ←). g alone is a key of the mode where none of
-	// its keys is a pair starting with g (gg); with one, g waits for the key
-	// after it. A core key a mode of the app's own writes in the footer among
-	// its keys (q:quit, tdp screen.2) is a ModeKey with no Do: the key does
-	// what it does in any mode, its row in the Space menu too, and ? lists
-	// it once, among the core keys.
+	// set to a takes a and ←); the key reference then writes it after Key
+	// (a|←), the footer and the Space menu Key alone. An arrow key with its
+	// letter in the same Keys is that letter, not written (tdp K12). g alone
+	// is a key of the mode where none of its keys is a pair starting with g
+	// (gg); with one, g waits for the key after it. A core key a mode of the
+	// app's own writes in the footer among its keys (q:quit, tdp screen.2)
+	// is a ModeKey with no Do: the key does what it does in any mode, its
+	// row in the Space menu too, and ? lists it once, among the core keys.
 	Key  string
 	Keys []string
 	Desc string
@@ -158,6 +161,25 @@ func (k ModeKey) takes(key string) bool {
 		}
 	}
 	return false
+}
+
+// letterOf is the letter each arrow key and PgUp|PgDn is the same key as
+// (tdp K12).
+var letterOf = map[string]string{"←": "h", "↓": "j", "↑": "k", "→": "l", "PgUp": "u", "PgDn": "d"}
+
+// refKey is how the mode's key reference writes k: Key, then each arrow key
+// or PgUp|PgDn it takes without the letter that is the same key, the letter
+// set to something else (a|←, Enter|PgDn; tdp K11). With its letter, it is
+// that letter, not written (tdp K12).
+func (k ModeKey) refKey() string {
+	key, written := k.Key, strings.Split(k.Key, "|")
+	for _, x := range k.Keys {
+		if l, ok := letterOf[x]; ok && !k.takes(l) && !slices.Contains(written, x) {
+			key += "|" + x
+			written = append(written, x)
+		}
+	}
+	return key
 }
 
 // gPair reports whether a key of the mode is a pair starting with g (gg):

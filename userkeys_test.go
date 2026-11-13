@@ -44,7 +44,7 @@ func TestK11UserSetEnterAndMovement(t *testing.T) {
 	}
 	ta.press("?")
 	keys := covAKeys(covARef(t, ta))
-	for _, k := range []string{"a|l", "Enter", "h", "g", "u"} {
+	for _, k := range []string{"a|l|←", "Enter", "h", "g", "u"} {
 		if !keys[k] {
 			t.Errorf("the mode's ? has no %s: %v", k, keys)
 		}
@@ -105,5 +105,46 @@ func TestK12ModeMenuRefMovingKeys(t *testing.T) {
 	ta.press("Esc", "Space", "Enter") // the cursor on Hold, the first row
 	if held != 1 {
 		t.Errorf("Enter on the row: held %d", held)
+	}
+}
+
+// TestK11RefWritesArrowAfterMovedKey: once the user sets the letter an arrow
+// key or PgUp|PgDn is the same key as to something else, the arrow key keeps
+// the mode's default and the mode's ? writes it after the key the user chose,
+// on the row of what it does (a|←, Enter|PgDn); the footer and the Space menu
+// write the chosen key alone. With its letter, the default, ? writes the
+// letter only (tdp K11-25, K11-20, K12-19, K12).
+func TestK11RefWritesArrowAfterMovedKey(t *testing.T) {
+	ta := newTestApp(t)
+	turned := 0
+	none := func(string) tea.Cmd { return nil }
+	ta.pods.EnterMode(&Mode{Name: "Play", Exit: "pause", Keys: []ModeKey{
+		{Key: "a|l", Keys: []string{"a", "l", "←", "→"}, Desc: "left, right", NoFooter: true, Do: none},
+		{Key: "Enter", Keys: []string{"Enter", "PgDn"}, Desc: "turn left", Label: "Turn", Do: func(string) tea.Cmd { turned++; return nil }},
+		{Key: "j|k", Keys: []string{"j", "k", "↓", "↑"}, Desc: "down, up", NoFooter: true, Do: none},
+		{Key: "u", Keys: []string{"u", "PgUp"}, Desc: "hold", Label: "Hold", Do: none},
+	}})
+	ta.press("PgDn")
+	if turned != 1 {
+		t.Errorf("PgDn, kept on turning left: turned %d", turned)
+	}
+	ta.press("?")
+	keys := covAKeys(covARef(t, ta))
+	for _, k := range []string{"a|l|←", "Enter|PgDn", "j|k", "u"} {
+		if !keys[k] {
+			t.Errorf("the mode's ? has no %s: %v", k, keys)
+		}
+	}
+	ta.press("Esc")
+	if f := covCFooter(ta); !strings.Contains(f, "Enter:turn left") || !strings.Contains(f, "u:hold") || strings.ContainsAny(f, "←↑↓") || strings.Contains(f, "Pg") {
+		t.Errorf("the footer: %q", f)
+	}
+	ta.press("Space")
+	if items := menuItems(t, ta); items != "a|l,Turn,j|k,Hold,Pause" {
+		t.Errorf("the mode's menu lists %s", items)
+	}
+	// An arrow key written in Key already is not written twice.
+	if got := (ModeKey{Key: "x|↑", Keys: []string{"x", "↑"}}).refKey(); got != "x|↑" {
+		t.Errorf("refKey: %q", got)
 	}
 }
