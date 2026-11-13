@@ -2,6 +2,18 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.9 — tdp v1.2.8
+
+- Once the user sets the letter of an arrow key or `PgUp|PgDn` to something else in a mode of the app's own, the
+  arrow key keeps the mode's default, and the mode's `?` writes it after the key the user chose, on the row of what
+  it does (tdp K11, K12): moving left set to `a` is `a|←`. The lib tells this from the default by `Keys` alone: an
+  arrow key with its letter in the same `ModeKey`'s `Keys` is that letter and is not written. The footer and the
+  Space menu write the chosen key alone (from tetru)
+- `ModeKey.Ref` gives the rows the mode's `?` writes for a key, in its place, instead of `Key` and `Desc`, drawn
+  disabled with it; the footer and the Space menu stay as they are. One item uses `|` one way only (tdp M5), so a
+  pair, one way each half, whose one half the user moved is two rows there: `Enter|PgDn rotate left` and
+  `k rotate right` in `?`, `Enter|k:rotate` in the footer. Without `Ref` nothing changes (from tetru)
+
 ## v1.2.8 — tdp v1.2.7
 
 - tdp v1.2.7 lets the user set `Enter` and the movement keys too, in a mode of the app's own whose keys the user sets

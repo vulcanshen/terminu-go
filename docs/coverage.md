@@ -1,6 +1,6 @@
-# tdp v1.2.7 coverage
+# tdp v1.2.8 coverage
 
-tdp v1.2.7 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
+tdp v1.2.8 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
 每個元件、規範列的每一種方案、寫到的每一種狀態與疊法，在展示場都按得到。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -151,7 +151,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | M5 | 鍵名：鍵帽名、大駝峰（`Esc` `Tab` `Enter` `Space` `Backspace` `Delete` `Home` `End` `PgUp` `PgDn`、`↑↓←→`）；`Ctrl` 後字母大寫；`-` 連 modifier；幾個鍵做同一件事用 `\|` 並列（不用 `/`）、`–` 範圍 | lib：鍵名由一個函式產生；一次進來的一串字就是字（打得快的 `end` 不是 End 鍵） | `TestM5KeyNames` |
 | M5 | 依位置：label 用括號；句子裡鍵加方括號；hint、footer `鍵:說明`、項目間一格；key reference 兩欄、不加括號冒號 | 空狀態、toast、hint、footer、`?` | `TestM5WritingByPosition` |
 | M5 | hint、footer 的鍵一色（Blue）、冒號與說明一色（Overlay0）；並列的 `\|` 用說明的顏色（Overlay0），key reference 的鍵欄也是 | 每個 hint、footer、`?` | `TestM5HintColors`、`TestM5KeysJoinedWithBar` |
-| M5 | `\|` 接起兩種鍵：幾個鍵做同一件事（`h\|k`）、一對方向相反用一個動詞講的鍵（`j\|k:move`）；一項裡只用一種意思：一對的那一項還要接上做同一件事的鍵時（例：照預設作用的方向鍵，K11），那一對拆成兩項寫 | lib 自己寫的 `\|`（menu、`?`、footer、hint）一項只用一種意思；app 自己的模式裡使用者改了一對的一半時，app 用 `ModeKey.Ref` 把模式 `?` 那一項拆成兩列，footer 那一對照舊一項 | `TestK11ModeKeyRefSplitsAPair` |
+| M5 | `\|` 接起兩種鍵：幾個鍵做同一件事（`h\|k`）、一對方向相反用一個動詞講的鍵（`j\|k:move`）；一項裡只用一種意思：一對的那一項還要接上做同一件事的鍵時（例：照預設作用的方向鍵，K11），那一對拆成兩項寫（M5-31） | lib 自己寫的 `\|`（menu、`?`、footer、hint）一項只用一種意思；app 自己的模式裡使用者改了一對的一半時，app 用 `ModeKey.Ref` 把模式 `?` 那一項拆成兩列，footer 那一對照舊一項。看 footer、hint、key reference：沒有一項像 `Enter\|PgDn\|k` | `TestK11ModeKeyRefSplitsAPair` |
 | M6 | 對象不存在：那一列（區）不出現；存在但現在不能：停用色、說明不變、cursor 跳過、熱鍵不作用 | P `[1] PODS` 的 `Disable` | `TestM6DisabledRow` |
 | M6 | key reference 照同一套（停用的鍵照列、停用色）；hint 與 footer 只列現在按得了的也可以（app 決定），例外是元件規定一定要拿掉的：表單的按鈕還在跑時、finder 沒有結果時、panel 的清單一項都沒有時 | `Disable` 之後按 `?`；hint：P `[1] PODS` 的 `m:mark` 變停用色，I `[2] FILES`（`HintPressableOnly`）的 `V:view` 不列；三個例外見 form.7、finder.9、panel.1 | `TestM6KeyReferenceDisabled`、`TestM6HintListsDisabled`、`TestFormActionWhileRunning`、`TestFinderHintNoResults`、`TestPanelHintNoItems`、`TestFormKeyReferenceFollowsFields`（表單的 `Space` 只在有 checkbox 選項時列、`e` 只在有欄位有問題時列）、`TestM6HiddenGlobalNotInKeyReference`（global 動作的對象不存在時，app-wide 段不列） |
 | M6 | 清單空了沒有東西可以移、內容整個放得下沒有東西可以捲，都算對象不存在：移動鍵、捲動鍵不列（List、Pager、Values、confirm、error popup 與其他 note） | P `[2] LOG` 只有幾行時按 `?`；I `[2] FILES` 的 `Empty` 後按 `?`；D「Confirm」上按 `?` | `TestKeyReferenceMoveSection`、`TestKeyReferenceScrollOnlyWhenItScrolls` |
