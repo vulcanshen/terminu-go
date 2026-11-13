@@ -2,6 +2,14 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.11 — tdp v1.2.10
+
+- In a mode of the app's own, where a popup it opens goes back to when it is cancelled or closed (the mode, or the Space
+  menu it was opened from) is the app's, and so is whether that menu stays under it; the popup itself is drawn and
+  answered as its component (tdp K11, F4, T1, confirm.3, menu.4). The lib does not change: a row of the mode's Space
+  menu closes the menu before `ModeKey.Do` runs, so a popup opened from there goes back to the mode, not to the menu,
+  as the comment on `ModeKey.Do` and the README now say. A test covers it (from tetru)
+
 ## v1.2.10 — tdp v1.2.9
 
 - A panel of one value per row may put its rows in groups (tdp panel.12): `Field.Group` names the group a field is in,

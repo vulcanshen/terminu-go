@@ -142,6 +142,9 @@ app 讀不了自己的設定、狀態或資料（格式錯、檔案壞掉、沒�
 menu，`Mode.NoLeaveRow` 不列離開模式那一列。每個鍵照樣列在 `?`，footer 不變，`Esc` 照樣離開。什麼都沒列的 menu 照樣列出
 離開那一列，因為模式的 Space menu 至少要有一列。
 
+那個 menu 的一列先關掉 menu，再做那個鍵做的事，所以鍵開出來的 popup（例：重新開始前的 confirm）取消或關掉後回到模式，
+不回到 menu（tdp K11）。popup 本身照它的元件畫、照它的元件答：confirm 照樣用 `Enter` 與 `Esc` 回答。
+
 離開 app 自己的模式時，`OnExit` 可以跳出一個 popup，說離開後是什麼狀態（例：暫停後用 confirm 問要不要繼續，tdp K11）。
 popup 出現時模式已經離開：在它上面按 `Esc` 是關掉它、留在模式外面；要回到模式，是 popup 自己的動作（`EnterMode`）。
 用模式的鍵、或模式自己結束（例：game over）時，用 `Panel.LeaveMode` 離開：模式的 Space menu 與 `?` 一起關掉，接著 app 開的
@@ -273,7 +276,7 @@ tdp E8 對任何共用的 lib 只留三點：用 lib 的 app 不另外做 lib �
 
 ## 實作哪一版 terminu design
 
-terminu-go 實作 **tdp v1.2.9**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
+terminu-go 實作 **tdp v1.2.10**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
 
 ## 相關連結
 

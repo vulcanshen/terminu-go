@@ -198,6 +198,45 @@ func TestK11LeaveOwnModePopup(t *testing.T) {
 	}
 }
 
+// TestK11OwnModePopupGoesBack: a popup a key of a mode of the app's own
+// opens, by the key or from the mode's Space menu, is drawn and answered as
+// its component (a confirm: Enter accepts, Esc cancels, y does nothing);
+// where it goes back to is the app's, and the menu's row closes the menu
+// before the key runs: cancelled or accepted, it goes back to the mode, not
+// to the menu (tdp K11-26, F4-2, T1-2).
+func TestK11OwnModePopupGoesBack(t *testing.T) {
+	ta := newTestApp(t)
+	restarts := 0
+	ta.pods.EnterMode(&Mode{Name: "Play", Exit: "pause", Keys: []ModeKey{{Key: "r", Desc: "restart",
+		Do: func(string) tea.Cmd {
+			return ta.Confirm(Ask{Title: "Restart", Question: "Start over?", Verb: "restart"},
+				func() tea.Cmd { restarts++; return nil })
+		}}}})
+	for _, from := range [][]string{{"r"}, {"Space", "Enter"}} {
+		ta.press(from...)
+		if _, ok := ta.topView().(*confirmView); !ok || openPopups(ta) != 1 || ta.pods.InMode() == nil {
+			t.Fatalf("%v: %T on top, %d popups, in the mode %v", from, ta.topView(), openPopups(ta), ta.pods.InMode() != nil)
+		}
+		if !strings.Contains(ta.screenText(), "Enter:restart Esc:cancel") {
+			t.Errorf("%v: the confirm's hint:\n%s", from, ta.screenText())
+		}
+		ta.press("y")
+		if _, ok := ta.topView().(*confirmView); !ok || restarts != 0 {
+			t.Fatalf("%v: y answered the confirm", from)
+		}
+		ta.press("Esc")
+		if ta.top() != nil || ta.pods.InMode() == nil || restarts != 0 {
+			t.Fatalf("%v, Esc: %T on top, in the mode %v, %d restarts", from, ta.topView(), ta.pods.InMode() != nil, restarts)
+		}
+		ta.press(from...)
+		ta.press("Enter")
+		if ta.top() != nil || ta.pods.InMode() == nil || restarts != 1 {
+			t.Fatalf("%v, Enter: %T on top, in the mode %v, %d restarts", from, ta.topView(), ta.pods.InMode() != nil, restarts)
+		}
+		restarts = 0
+	}
+}
+
 // TestScreen36CoreKeyInModeFooter: the footer of a mode of the app's own may
 // write a core key among its keys, a ModeKey with no Do (q:quit); the key does
 // what it does in any mode, q the quit flow, its row in the Space menu too,

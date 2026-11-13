@@ -1,6 +1,6 @@
-# tdp v1.2.9 coverage
+# tdp v1.2.10 coverage
 
-tdp v1.2.9 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
+tdp v1.2.10 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
 每個元件、規範列的每一種方案、寫到的每一種狀態與疊法，在展示場都按得到。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -118,6 +118,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | K11 | 離開會丟掉使用者在模式裡做出來、要留下的東西時（例：還沒存的筆畫；遊戲玩到哪裡不算），由離開時的 popup 來問，回答之前那些東西都留著（K11-23） | lib：`OnExit` 在模式離開後開 confirm，選回到模式時 app 再 `EnterMode`；東西留著是 app 的，靠 app 守 | `TestK11LeaveOwnModePopup` |
 | K11 | 在元件裝不下的內容上，做元件模式的事（選取複製、重排、比較）的模式，沿用家族的名稱與鍵（例：`Visual`、`v`、`y`、`Esc:cancel`）（K11-24） | 靠 app 守：名稱與鍵是 app 給 `Mode`、`ModeKey` 的 | — |
 | K11 | app 自己的模式讓使用者改鍵時，`Enter` 與移動鍵（K12）也可以改：移動改到別的鍵照樣移動、那個鍵算移動鍵，空出來的字母可以做別的動作；方向鍵與 `PgUp\|PgDn` 照這個模式給它們的預設（預設做模式某個動作的 `↑`，照樣做那個動作；使用者在原本沒動作的 `u` 放一個動作，`PgUp` 不跟著），對應的字母改做別的事之後，它們寫在 `?` 裡那個動作的那一列、用 `\|` 接在使用者選的鍵後面（`a\|←`、`Enter\|PgDn`；模式預設沒給它動作的，沒有東西要寫），一對的那一項拆成兩項（M5），不用進 Space menu 或 footer；單獨的 `g` 只在模式裡沒有 `g` 開頭的兩鍵組合作用時才能設；`Space`、`?`、`!`、`Esc`、`q`、`Ctrl-C`、`Tab` 與數字鍵照樣拒絕（K11-25） | lib：模式裡 core key 以外的鍵（`Enter` 與 K12 的字母也是）都交給 `ModeKey`；使用者改了，app 改 `Key`、`Keys`，方向鍵留在 `Keys` 裡就是照預設；模式裡有 `g` 開頭的組合（`gg`、`gt`）作用時 `g` 等下一個鍵，沒有時 `g` 直接交給模式的鍵。`?` 從 `Keys` 看：方向鍵或 `PgUp\|PgDn` 跟它同一個鍵的字母（`←` 是 `h`、`PgDn` 是 `d`）不在同一個 `ModeKey` 的 `Keys` 裡時，寫在 `Key` 後面，footer 與 Space menu 只寫 `Key`；字母在時是預設，照 K12 不寫，app 不用告訴 lib 改過沒有；不在任何 `Keys` 裡的方向鍵（模式沒給它動作）不寫。一對（`Key` 裡有 `\|`、一個方向一半）的一半改掉時，lib 分不出每一半的說明：app 設 `ModeKey.Ref`，`?` 照它寫那幾列（例：`Enter\|PgDn` rotate left、`k` rotate right），footer 照舊一項（`Enter\|k:rotate`）、Space menu 照舊；沒設時 lib 寫成 `Enter\|k\|PgDn`，列出了但不合 M5。拒絕 core key、`gg` 還在時的 `g`、跳 Warning 是 app 的（`Toast(Warning, …)`）。展示場沒有讓使用者改鍵的模式；在讓使用者改鍵的 app 裡，照 K11-25 的做法按（設成 `Esc` 那一步，只在 app 的選項裡有它時才做） | `TestK11UserSetEnterAndMovement`、`TestK11RefWritesArrowAfterMovedKey`、`TestK11ModeKeyRefSplitsAPair` |
+| K11 | app 自己的模式開出來的 popup（用模式的鍵或從它的 Space menu）是 F1 的一類，照那個元件畫、照那個元件答（confirm：`Enter` 接受、`Esc` 取消）；只有取消或關掉後回到模式還是開它的 menu、那個 menu 要不要留在底下，是 app 的（K11-26；F4、T1 的 confirm 是門、confirm.3 與 menu.4 都留給它）。lib：popup 是 app 用 lib 的元件開的（`Confirm` 等），照元件畫、照元件答；模式的 Space menu 的一列先關掉 menu 再跑 `ModeKey.Do`，所以從 menu 開的 popup 取消或關掉後回到模式、不回到 menu（`ModeKey.Do` 的註解寫明）；lib 沒有讓 menu 留在底下的選項 | lib；展示場的模式沒有開 popup 的鍵 | `TestK11OwnModePopupGoesBack` |
 | K12 | 不在打字的地方 `j k u d g G h l` 保留給移動，任何動作都不佔（模式裡沒有移動可做的鍵除外，見下面 K12-19 那一列） | lib：登記時拒絕（panel 與 menu；popup 裡數字可以） | `TestK12HotkeyCannotTakeMovement`、`TestK12HotkeyCannotTakeMovementInMenu`、`TestK1DigitsFreeInPopups` |
 | K12 | 有左右結構：`h\|l` 左右（切 tab、跨側、日曆前後一天） | P `[1] PODS` 的 tab；I 的 `Meeting` | `TestK12HLSwitchTabs`、`TestDatetimePicker` |
 | K12 | 一維清單：`h\|k` 往前、`j\|l` 往後；在有 tab 的 panel 裡 `h\|l` 給 tab；reorder 也是（含 Drag）；key reference 照這樣寫（表單、沒有 tab 的一列一個值、menu、reorder 寫 `h\|k`、`j\|l`） | D「Form: New host」；P `[3] SETTINGS`；I `[1] INPUTS`；I 的 `Segments`；各處按 `?` | `TestK12OneDimensional`、`TestReorderOneWay`、`TestKeyReferenceMoveSection`、`TestK6PopupKeysOnly` |
@@ -193,7 +194,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | F3 | `Esc` 立刻開始關閉任何 popup（含 toast）；關閉照常有動畫；在關的 popup 不再理會 `Esc` 與其他鍵 | 連按兩下 `Esc` 關兩層 | `TestF3EscImmediate`、`TestF3ClosingIgnoresKeys` |
 | F3 | 例外：PTY（toast 只能等時間到）、inspect toast 不收 `Esc`（照底下的意思做）、textarea 寫入狀態、改過的表單、textarea、reorder 與照表單的 app 自己的 popup 先 confirm | T；I 的 `Comment`；D「Form: New host」改過再 `Esc`；I 的 `Segments` 搬過再 `Esc`；D「Popup: the app’s own」畫一格再 `Esc` | `TestF3Exceptions`、`TestReorderEsc`、`TestAppPopupActionsKeys`、`TestToastInspect` |
 | F3 | 內容改過的 app 自己的 popup（有要送出的值）按 `Esc` 先開放棄的 confirm（F3-8）。lib：body 的 `Changed()` 說改過了；`Esc` 不交給 body；`PopupActions.Name` 是 confirm 裡的名字（沒給時用 `Subject`） | D「Popup: the app’s own」畫一格再 `Esc`（`Discard changes to icon?`） | `TestAppPopupActionsKeys` |
-| F4 | 從 A 開 B，A 留著；取消 B 回 A；多層一樣 | D 的疊法情境 | `TestF4KeepSource`、`TestInputSteps`（多步驟的 input：`Stay`，`Esc` 退一步、值都在） |
+| F4 | 從 A 開 B，A 留著；取消 B 回 A；多層一樣；app 自己的模式裡回到哪裡照 app 決定的（F4-2，見上面 K11-26 那一列） | D 的疊法情境 | `TestF4KeepSource`、`TestInputSteps`（多步驟的 input：`Stay`，`Esc` 退一步、值都在） |
 | F5 | 錯誤立刻出現（toast 或 popup）、`Esc` 可關、不阻塞 app；錯誤也記進 App Log，toast 收掉之後照樣查得到（lib：每個 toast 與 error popup 自動記） | P `[1] PODS` 的 `Fail`；D「Error popup」後按 `!` | `TestF5ErrorNonBlocking`、`TestAppLogEntries` |
 | F6 | 要不要 confirm 由 app 決定，決定了每次都問；經 picker 明確選的可算已確認 | lib：動作登記「先問」 | `TestF6ConfirmEveryTime`、`TestF6AskFor`（`Action.AskFor`：問句執行時才產生、回 nil 不問；從 menu 跑時 `Esc` 回 menu）、`TestOnCancel`（`OnCancel`：沒回答就關掉時告訴 app） |
 | F6 | 沒有回答就關掉時讓 app 知道：表單也有 `OnCancel`（`Esc`、捨棄的 confirm、底下的 popup 關掉）；input 沒改值就按 `Enter` 時 app 聽得到（`Unchanged`：多步流程收整串、等回答的 prompt 回答原值），K3 的「不寫回」照舊 | D「Form: New host」按 `Esc`（測試驗 `OnCancel`） | `TestFormOnCancel`、`TestInputUnchangedHeard` |
@@ -216,7 +217,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | X1 | 沒有 mouse 也能完整操作 | 全部用鍵盤走過 | 整份清單的按鍵測試 |
 | X2 | 有 mouse 時每個動作對應一個鍵盤動作 | lib 先不做 mouse；做的時候補 | （做 mouse 時補） |
 | T1 | 預設保留 source；照「確定之後的動作」判：打開來看、選值寫回、用編輯器改保留；讓那一項不在、開 shell、換畫面、drill-down、搜尋底下的畫面清掉。lib：從 menu 跑的動作，打開了 popup 就把 menu 留在底下（`Action.Clear` 讓它清掉 menu 與底下的 popup），什麼都沒打開就關掉 menu；`Action.Stay` 一律留著 | D 的疊法；P `[1] PODS` 的 Space menu 跑 `[V]iew` 類的動作；`[2] SESSIONS` 的 `[Alt-t]erm` 從 Space menu 打開會清掉 menu | `TestT1KeepOrClear`、`TestT1KeepByDefault`、`TestCloseAll`、`TestInputSteps`（lib：`App.CloseAll`、`App.CloseTop`） |
-| T1 | confirm 只是門：在 confirm 上 `Esc` 一律回到 source；接受之後照它後面的動作判；menu 的動作失敗開的 error popup 關掉回到 menu | P `[1] PODS` 的 Space menu 跑 `[x] Delete` 再 `Esc` | `TestT1KeepByDefault` |
+| T1 | confirm 只是門：在 confirm 上 `Esc` 一律回到 source（app 自己的模式裡照 app 決定的，T1-2，見上面 K11-26 那一列）；接受之後照它後面的動作判；menu 的動作失敗開的 error popup 關掉回到 menu | P `[1] PODS` 的 Space menu 跑 `[x] Delete` 再 `Esc` | `TestT1KeepByDefault` |
 | T1 | 搜尋底下的畫面（從 Space menu 執行 viewer 或 panel 的 `/`）：搜尋的 input popup 也是門，真的搜了（`Enter`）menu 才收起，有沒有找到都一樣，input popup 與 menu 一起收（F2）；在 input popup 上按 `Esc` 回到 menu（T1-10）。lib 自己的搜尋（viewer、key reference）都在 popup 上，popup 沒有 Space menu（K5）；panel 的 `/` 搜尋是 app 自己的，`Done` 回 `App.CloseAll()`；List 的篩選什麼都沒打開，menu 照樣收起。menu 留在命中的字上時，一次 `Esc` 只關 menu（K4） | P `[1] PODS` 的 Space menu 跑 `[/] Filter`：menu 收起、在打字列上；展示場沒有 panel 的 `/` 搜尋（`[2] LOG` 沒有） | `TestT1SearchFromMenu` |
 | T1 | 清掉 source 時，target 打開的同時 source 收起，兩段動畫一起播、不等 source 收完；在收的 source 不算一層，target 從第一格就是自己那一層的層色，source 收完時不跳色（layout/popup 的開關動畫、color 的層色） | `[2] SESSIONS` 的 `[Alt-t]erm` 從 Space menu 打開，看 terminal 的框一路都是第 1 層色 | `TestT1SourceClosesWhileTargetOpens`、`TestAppPopupFromFormSubmit` |
 | T2 | 失焦 panel 用 F8 的淡化變暗；串流內容失焦不變暗，但串流 panel（含 PTY）下框的 hint 照樣變暗；popup 蓋上時一律淡化 | P：focus 在 `[1]`，`[2] LOG` 內容不暗、hint 暗，`[3]` 暗 | `TestT2UnfocusedDim`、`TestT2StreamNotDimmed` |

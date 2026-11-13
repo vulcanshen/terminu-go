@@ -165,6 +165,10 @@ K11): `NoMenu` keeps a key out of the menu, and `Mode.NoLeaveRow` keeps out the 
 still in `?`, the footer stays as it is, and `Esc` still leaves. A menu left with nothing lists the leaving row all the
 same, since a mode's Space menu always has a row.
 
+A row of that menu closes the menu before it does what its key does, so a popup the key opens, such as a confirm before
+starting over, goes back to the mode when it is cancelled or closed, not to the menu (tdp K11). The popup itself is
+drawn and answered as its component: a confirm still takes `Enter` and `Esc`.
+
 Leaving a mode of your own, its `OnExit` may open one popup saying where things are left, such as a confirm asking
 whether to go on after a pause (tdp K11). The mode is left by the time the popup shows: `Esc` on it closes it, still
 outside the mode, and going back in is the popup's own action (`EnterMode`). A mode that ends by one of its keys or on
@@ -310,7 +314,7 @@ delete its on-screen code and its E5 code; E1, E3, E6, E7 and its own icon stay.
 
 ## Which terminu design
 
-terminu-go implements **tdp v1.2.9**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
+terminu-go implements **tdp v1.2.10**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
 
 ## Links
 

@@ -117,7 +117,9 @@ type ModeKey struct {
 	// M5, K11). Without Ref the arrow key goes after the pair (Enter|k|PgDn):
 	// listed, but not as tdp M5 writes it.
 	Ref []KeyRow
-	// Do runs it, with the key pressed.
+	// Do runs it, with the key pressed. A row of the mode's Space menu closes
+	// the menu before Do runs, so a popup Do opens goes back to the mode when
+	// it is cancelled or closed, not to the menu (tdp K11).
 	Do func(key string) tea.Cmd
 	// Disabled reports that it cannot be pressed now: in the disabled colour
 	// in the footer and the key reference, pressing it does nothing (tdp M6).
