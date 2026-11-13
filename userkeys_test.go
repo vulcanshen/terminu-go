@@ -12,11 +12,11 @@ import (
 // TestK11UserSetEnterAndMovement: in a mode of the app's own whose keys the
 // user sets, Enter and the movement letters are keys of the mode like any:
 // moving left set to a moves with a and ← alike, the h it left takes another
-// action, Enter another; the footer, ? and the Space menu write the keys as
-// they are, the moved movement key kept out of the footer and only shown in
-// the menu. With no pair starting with g in the mode, g alone is a key at
-// once; with one there (gt, gg), g waits for the key after it (tdp K11-25,
-// K11-20, K12-19).
+// action, Enter another, and PgUp does not follow an action put on u; the
+// footer, ? and the Space menu write the keys as they are, the moved
+// movement key kept out of the footer and only shown in the menu. With no
+// pair starting with g in the mode, g alone is a key at once; with one there
+// (gt, gg), g waits for the key after it (tdp K11-25, K11-20, K12-19).
 func TestK11UserSetEnterAndMovement(t *testing.T) {
 	ta := newTestApp(t)
 	got := map[string]int{}
@@ -28,28 +28,29 @@ func TestK11UserSetEnterAndMovement(t *testing.T) {
 		{Key: "Enter", Desc: "drop", Label: "Drop", Do: do("drop")},
 		{Key: "h", Desc: "hold", Label: "Hold", Do: do("hold")},
 		{Key: "g", Desc: "ghost", Label: "Ghost", Do: do("ghost")},
+		{Key: "u", Desc: "spin", Label: "Spin", Do: do("spin")},
 	}}
 	ta.pods.EnterMode(m)
 	before, _ := ta.list.Current()
-	ta.press("a", "←", "l", "→", "Enter", "h", "g", "g")
-	if want := map[string]int{"move": 4, "drop": 1, "hold": 1, "ghost": 2}; !maps.Equal(got, want) {
+	ta.press("a", "←", "l", "→", "Enter", "h", "g", "g", "u", "PgUp")
+	if want := map[string]int{"move": 4, "drop": 1, "hold": 1, "ghost": 2, "spin": 1}; !maps.Equal(got, want) {
 		t.Errorf("the mode's keys ran %v, want %v", got, want)
 	}
 	if now, _ := ta.list.Current(); now.ID != before.ID || ta.pods.InMode() != m {
 		t.Errorf("something else took a key: the cursor %s then %s, in the mode %v", before.ID, now.ID, ta.pods.InMode() != nil)
 	}
-	if f := covCFooter(ta); !strings.HasPrefix(f, "Space:menu ?:help Enter:drop h:hold g:ghost Esc:pause") {
+	if f := covCFooter(ta); !strings.HasPrefix(f, "Space:menu ?:help Enter:drop h:hold g:ghost u:spin Esc:pause") {
 		t.Errorf("the footer: %q", f)
 	}
 	ta.press("?")
 	keys := covAKeys(covARef(t, ta))
-	for _, k := range []string{"a|l", "Enter", "h", "g"} {
+	for _, k := range []string{"a|l", "Enter", "h", "g", "u"} {
 		if !keys[k] {
 			t.Errorf("the mode's ? has no %s: %v", k, keys)
 		}
 	}
 	ta.press("Esc", "Space")
-	if items := menuItems(t, ta); items != "a|l,Drop,Hold,Ghost,Pause" {
+	if items := menuItems(t, ta); items != "a|l,Drop,Hold,Ghost,Spin,Pause" {
 		t.Errorf("the mode's menu lists %s", items)
 	}
 	ta.press("Esc")

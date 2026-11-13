@@ -2,6 +2,20 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.8 — tdp v1.2.7
+
+- tdp v1.2.7 lets the user set `Enter` and the movement keys too, in a mode of the app's own whose keys the user sets
+  (tdp K11, K12). The lib takes them already: a mode gives every key but the core ones to its `ModeKey`s. A movement
+  moved to another key goes in that `ModeKey`'s `Keys`, still `NoFooter`; the arrow keys and `PgUp|PgDn` stay where
+  the mode put them by default, and do not follow a letter whose action the user moves or sets. `Enter` counts as a
+  core key there whatever it does: listed in `?`, it need not be in the Space menu or the footer. Refusing the keys
+  that stay fixed is the app's, as before (from tetru)
+- `g` alone is a key of a mode where none of its keys is a pair starting with `g` (tdp K11, K12); with one, `g` waits
+  for the key after it, as before. A mode's own pairs other than `gg` now reach it too
+- In a mode's Space menu, a row on a key the menu moves with (`h`, `k`) runs by `Enter`, and the menu's `?` no longer
+  lists that key for the row next to the same key for moving (tdp K12, K6); the row keeps its marker, the key in the
+  mode
+
 ## v1.2.7 — tdp v1.2.6
 
 Still tdp v1.2.6: this release only adds to the API.
