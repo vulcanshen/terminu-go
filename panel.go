@@ -84,10 +84,16 @@ type ModeKey struct {
 	// takes j, k, ↓, ↑; u|d takes u, d, PgUp, PgDn), Key writing the letters.
 	// A movement key with nothing to move in the mode may do the mode's own
 	// action, its arrow key the same (in a mode where nothing moves up, one
-	// ModeKey taking k and ↑: tdp K12). A key the user sets (tdp K11) is the app's to put in Key and
-	// Keys while the mode is on, and what is shown follows them; one already
-	// in use in the mode is the app's to refuse, with a Warning naming what
-	// has it. A core key a mode of the app's own writes in the footer among
+	// ModeKey taking k and ↑: tdp K12). A key the user sets (tdp K11) is the
+	// app's to put in Key and Keys while the mode is on, and what is shown
+	// follows them; one already in use in the mode is the app's to refuse,
+	// with a Warning naming what has it. In a mode of the app's own, Enter
+	// and the movement keys may be set too: a moved movement key is still
+	// one (NoFooter), the letter it left may take another action, and the
+	// arrow key stays in the Keys it had, the mode's default (moving left
+	// set to a takes a and ←). g alone is a key of the mode where none of
+	// its keys is a pair starting with g (gg); with one, g waits for the key
+	// after it. A core key a mode of the app's own writes in the footer among
 	// its keys (q:quit, tdp screen.2) is a ModeKey with no Do: the key does
 	// what it does in any mode, its row in the Space menu too, and ? lists
 	// it once, among the core keys.
@@ -149,6 +155,24 @@ func (k ModeKey) takes(key string) bool {
 	for _, x := range k.Keys {
 		if x == key {
 			return true
+		}
+	}
+	return false
+}
+
+// gPair reports whether a key of the mode is a pair starting with g (gg):
+// g then waits for the key after it; in a mode with none, g is a key of its
+// own (tdp K11).
+func (m *Mode) gPair() bool {
+	for _, k := range m.Keys {
+		keys := k.Keys
+		if len(keys) == 0 {
+			keys = []string{k.Key}
+		}
+		for _, x := range keys {
+			if len(x) > 1 && x[0] == 'g' {
+				return true
+			}
 		}
 	}
 	return false

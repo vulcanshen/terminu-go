@@ -294,6 +294,16 @@ func (m *menuView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 	return true, nil
 }
 
+// menuMoves reports that key moves the cursor in a menu (tdp K12), g as the
+// start of gg.
+func menuMoves(key string) bool {
+	switch key {
+	case "j", "k", "h", "l", "u", "d", "g", "gg", "G", "↓", "↑", "←", "→", "PgUp", "PgDn":
+		return true
+	}
+	return false
+}
+
 // towards is the selectable row nearest i, looking first by dir, then back:
 // u/d and gg/G stop at the ends (tdp K12).
 func (m *menuView) towards(i, dir int) int {
@@ -316,7 +326,9 @@ func (m *menuView) keyRef() []refSection {
 	var rows []KeyRow
 	rows = append(rows, KeyRow{Key: "Enter", Desc: "the row under the cursor"})
 	for _, r := range m.rows {
-		if r.kind == menuItem && r.action.Key != "" && r.action.Key != "Enter" {
+		// A key moving here (a mode's key on h, tdp K12) is not the row's in
+		// the menu: Enter runs it; its marker stays, the key in the mode.
+		if r.kind == menuItem && r.action.Key != "" && r.action.Key != "Enter" && !menuMoves(r.action.Key) {
 			rows = append(rows, KeyRow{Key: r.action.Key, Desc: plainLabel(r.action) + descTail(r.action.Desc), Disabled: r.action.disabled()})
 		}
 	}

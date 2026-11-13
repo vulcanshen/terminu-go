@@ -1467,8 +1467,14 @@ func (a *App) panelKey(key string, msg tea.KeyMsg) tea.Cmd {
 		return cmd
 	}
 	if p.mode != nil {
-		// gg reaches a mode as one key (its movement keys).
-		k, ok := a.prefix(key, func(string) bool { return false })
+		// A pair starting with g reaches a mode as one key (gg); in a mode
+		// with none, g is a key of its own (tdp K11).
+		if key == "g" && !p.mode.gPair() {
+			return a.modeKey(p, key, msg)
+		}
+		k, ok := a.prefix(key, func(pair string) bool {
+			return slices.ContainsFunc(p.mode.Keys, func(m ModeKey) bool { return m.takes(pair) })
+		})
 		if !ok {
 			return nil
 		}
