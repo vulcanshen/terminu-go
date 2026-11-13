@@ -2,6 +2,16 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.10 — tdp v1.2.9
+
+- A panel of one value per row may put its rows in groups (tdp panel.12): `Field.Group` names the group a field is in,
+  as `Row.Group` does for a list. A group's fields stay together, the groups in the order they first appear; each group
+  has a title in Overlay0, its fields two cells further in, and the values start in one column down the panel. A panel
+  with groups draws no header, even with `Header` set; `N of M` counts fields only, and the "what each row is" section
+  of `?` follows the panel's order, with no group titles. With groups every field is in one: a field that fits no group
+  goes in a group of its own (`Other`), and the same goes for `Row.Group` (tdp panel.11). Without `Group` nothing
+  changes (from tetru)
+
 ## v1.2.9 — tdp v1.2.8
 
 - Once the user sets the letter of an arrow key or `PgUp|PgDn` to something else in a mode of the app's own, the
