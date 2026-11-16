@@ -311,6 +311,11 @@ In the program it is `tea.Tick`. Under a test it waits for the test's time, so `
 its own. A timer made with `tea.Tick` runs on the real clock there too: the test cannot move it, and what it does comes
 in whenever it is due.
 
+The test's time also moves on with the animations each input plays, as the time a user waits for them, and a timer
+due inside an `Advance` fires at its own time before the time goes on to the end. So a time the app took when its
+timer fired (when it last read a file, say) is earlier than `d.Now()` after it, by up to that `Advance` and the
+animations since: check that it falls between `d.Now()` before and after, not that it equals the one after.
+
 A screen that moves on by itself, a game's clock say, holds still while the user cannot see it: on each tick ask
 `app.Covered()`, true while a popup is over the screen (until one that is closing is gone) or the splash is. A toast
 does not cover it.

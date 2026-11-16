@@ -153,7 +153,12 @@ func Start(t testing.TB, app *terminu.App, w, h int) *Driver {
 // Tricky the app was given, say.
 func (d *Driver) Note(text string) { d.notes = append(d.notes, text) }
 
-// Now is the test's time, the App's clock.
+// Now is the test's time, the App's clock. It moves on with Advance and
+// Step, and with the animations an input plays (Auto), as the time a user
+// waits for them. A timer due inside an Advance fires at its own time, the
+// clock going on to the Advance's end after it, so a time the app took when
+// its timer fired is earlier than Now then, by up to that Advance and the
+// animations played since.
 func (d *Driver) Now() time.Time {
 	d.mu.Lock()
 	defer d.mu.Unlock()
