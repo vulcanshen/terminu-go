@@ -120,3 +120,29 @@ func TestK11SpaceStaysTheMenu(t *testing.T) {
 		t.Errorf("Space back in the outer layer: %T on top, did %v", ta.topView(), did)
 	}
 }
+
+// TestK11SpaceHalfOfAPair: an action the user put on Space that is half of a
+// pair under one verb goes first in the footer as that pair, written as M5
+// writes it (j|Space:move); Space and its other half both do it, and ? lists
+// the pair among the mode's keys (tdp K11-27, screen.2, M5).
+func TestK11SpaceHalfOfAPair(t *testing.T) {
+	ta := newTestApp(t)
+	var did []string
+	ta.pods.EnterMode(&Mode{Name: "Play", Exit: "pause", Keys: []ModeKey{
+		{Key: "r", Desc: "restart", Do: func(string) tea.Cmd { did = append(did, "restart"); return nil }},
+		{Key: "j|Space", Keys: []string{"j", "Space"}, Desc: "move", Do: func(k string) tea.Cmd { did = append(did, "move "+k); return nil }},
+	}})
+	if f := covCFooter(ta); f != "j|Space:move ?:help r:restart Esc:pause" {
+		t.Errorf("the footer: %q", f)
+	}
+	ta.press("Space")
+	ta.press("j")
+	if ta.top() != nil || strings.Join(did, ",") != "move Space,move j" {
+		t.Fatalf("Space and j: %T on top, did %v", ta.topView(), did)
+	}
+	ta.press("?")
+	_, plain := covEPopup(ta)
+	if keys := covEKeys(plain); !slices.Contains(keys["PLAY"], "j|Space") || slices.Contains(keys["CORE KEYS"], "Space") {
+		t.Errorf("the key reference: %v", keys)
+	}
+}

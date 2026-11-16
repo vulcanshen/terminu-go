@@ -2,6 +2,19 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.13 — tdp v1.2.12
+
+- A panel may show one lasting status of the app's own on its frame (tdp panel.1, color.2): `Panel.FrameStatus` with a
+  `Glyph`, a short `Text`, the `Corner` the app chooses and a `Kind`. It goes on the inner side of what its corner
+  has, a space either side and a segment between: after the capsule chain and the loading icon, left of the mode name,
+  after the hint, or left of a search's status and the scroll position. It is in the frame's colour, Peach or Red with
+  `StatusWarning` or `StatusError`, those dimmed on a panel without the focus, a streaming one too. On a border too
+  narrow it is the first thing to go, whole, and it comes back when there is room. Panels without one draw as before;
+  popups have none (from catu)
+- A `Space` action that is half of a pair under one verb goes first in the footer as that pair (`j|Space:move`, tdp
+  K11, screen.2): the lib writes a `ModeKey`'s `Key` as the app gives it, so nothing changes; a test shows it (from
+  tetru)
+
 ## v1.2.12 — tdp v1.2.11
 
 - In a mode of the app's own, the user may put one of its actions on `Space` (tdp K11, K5, screen.2, menu.4): a
