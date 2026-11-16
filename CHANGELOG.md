@@ -2,6 +2,16 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.12 — tdp v1.2.11
+
+- In a mode of the app's own, the user may put one of its actions on `Space` (tdp K11, K5, screen.2, menu.4): a
+  `ModeKey` with a `Do` taking `Space` is that action. `Space` then does it, nothing while it is disabled, and the mode
+  has no Space menu; the footer writes it first, where `Space:menu` was, `NoFooter` or not; `?` lists it among the
+  mode's keys and no longer lists `Space` among the core keys. A `ModeKey` taking `Space` with no `Do` is still the core
+  key, `Space` opening the menu; in layers the innermost one decides. Never putting one there by default, refusing a
+  second, the Warning saying what `Space` does now, taking `NoFooter` off the keys only the menu listed, and keeping
+  `Space` for the menu in a mode of tdp's are the app's (from tetru)
+
 ## v1.2.11 — tdp v1.2.10
 
 - In a mode of the app's own, where a popup it opens goes back to when it is cancelled or closed (the mode, or the Space
