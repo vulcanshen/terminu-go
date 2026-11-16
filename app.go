@@ -1334,6 +1334,9 @@ func (a *App) modeKeyRef(p *Panel) *noteView {
 	}
 	rows = append(rows, KeyRow{Key: "Esc", Desc: cmpOr(p.mode.Exit, "leave") + back})
 	core := []KeyRow{{Key: "Space", Desc: "what you can do here"}, {Key: "?", Desc: "this list"}, {Key: "q|Ctrl-C", Desc: "quit"}}
+	if p.mode.spaceKey() >= 0 { // Space is the user's action, among the mode's keys (tdp K11)
+		core = core[1:]
+	}
 	return keyReference(Upper(p.modeName()), []refSection{{title: p.modeName(), rows: rows}, {title: "core keys", rows: core}})
 }
 
@@ -1591,6 +1594,12 @@ func (a *App) modeKey(p *Panel, key string, msg tea.KeyMsg) tea.Cmd {
 	case key == "!": // nothing in a mode (tdp K11)
 		return nil
 	case key == "Space":
+		if i := p.mode.spaceKey(); i >= 0 { // the user's action, no menu (tdp K11)
+			if k := p.mode.Keys[i]; !k.off() {
+				return k.Do(key)
+			}
+			return nil
+		}
 		return a.panelModeMenu(p)
 	case key == "?":
 		return a.ofMode(p, a.open(a.modeKeyRef(p)))
@@ -1896,8 +1905,12 @@ func (a *App) footerHints() []KeyHint {
 		return []KeyHint{{"Enter|Tab", "list"}, {"Esc", "clear"}}
 	case p.mode != nil:
 		out := []KeyHint{{"Space", "menu"}, {"?", "help"}}
-		for _, k := range p.mode.Keys {
-			if !k.NoFooter {
+		sp := p.mode.spaceKey()
+		if sp >= 0 { // the user's action on Space, where Space:menu was (tdp K11, screen.2)
+			out[0] = KeyHint{p.mode.Keys[sp].Key, p.mode.Keys[sp].Desc}
+		}
+		for i, k := range p.mode.Keys {
+			if !k.NoFooter && i != sp {
 				out = append(out, KeyHint{k.Key, k.Desc})
 			}
 		}

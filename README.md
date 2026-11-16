@@ -186,6 +186,14 @@ in `Ref`, and the footer still writes the pair as one.
 	Ref: []terminu.KeyRow{{Key: "Enter|PgDn", Desc: "rotate left"}, {Key: "k", Desc: "rotate right"}}},
 ```
 
+The user may put one of the mode's actions on `Space` as well; you never put one there by default (tdp K11). It is a
+`ModeKey` with a `Do` taking `Space`, such as `{Key: "Space", Desc: "drop", Do: drop}`: `Space` then does it, and the
+mode has no Space menu. The footer writes it first, where `Space:menu` was (`Space:drop ?:help …`), and `?` lists it
+among the mode's keys. The keys only that menu listed go in the footer then: take their `NoFooter` off. Refusing
+`Space` when an action has it already, the Warning saying what `Space` does now and to press `Esc` first for the menu,
+and keeping `Space` for the menu in a mode of tdp's (Drag, Compare) are yours. A `ModeKey` taking `Space` with no `Do`
+is still the core key, `Space` opening the menu.
+
 What the footer of a mode of your own writes between `Space:menu ?:help` and `Esc:<verb>` is up to you, core keys
 included (tdp K11, screen.2). To write `q:quit` there, give the mode a `ModeKey` with no `Do`, `{Key: "q", Desc:
 "quit"}`: `q` still starts the quit flow, as in any mode, and so does its row in the Space menu; `?` lists it once,

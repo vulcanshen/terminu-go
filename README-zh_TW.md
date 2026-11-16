@@ -160,6 +160,12 @@ popup 就是唯一的一個（tdp K11）。
 	Ref: []terminu.KeyRow{{Key: "Enter|PgDn", Desc: "rotate left"}, {Key: "k", Desc: "rotate right"}}},
 ```
 
+使用者也可以把模式的一個動作放到 `Space`，但 app 不能預設放上去（tdp K11）。寫法是一個有 `Do`、收 `Space` 的
+`ModeKey`，例：`{Key: "Space", Desc: "drop", Do: drop}`：`Space` 就做那個動作，這個模式沒有 Space menu。footer 把它寫在
+最前面、原本 `Space:menu` 的位置（`Space:drop ?:help …`），`?` 把它列在模式的鍵裡。原本只列在那個 menu 裡的鍵，這時要
+放進 footer：拿掉它們的 `NoFooter`。`Space` 已經有動作時擋下、跳 Warning 說 `Space` 改做什麼與要 menu 先按 `Esc`、
+tdp 的模式（Drag、Compare）不讓放，都是 app 的事。收 `Space` 但沒有 `Do` 的 `ModeKey` 照樣是 core key，`Space` 開 menu。
+
 app 自己的模式的 footer，在 `Space:menu ?:help` 與 `Esc:<動詞>` 中間寫哪些鍵由 app 決定，core key 也可以（tdp K11、
 screen.2）。要寫 `q:quit`，給模式一個沒有 `Do` 的 `ModeKey`：`{Key: "q", Desc: "quit"}`。`q` 照樣進入離開流程，跟在任何
 模式裡一樣，Space menu 裡它那一列也一樣；`?` 只在 core keys 列它一次。

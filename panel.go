@@ -55,6 +55,7 @@ type Mode struct {
 	Name string // shown at the right of the top border: one word
 	// Keys are the mode's own keys: the only ones that work besides the
 	// core keys of K11. They are listed in its key reference and the footer.
+	// Space is one of them only where the user put an action on it (ModeKey).
 	Keys []ModeKey
 	// Exit is the verb Esc does in the footer ("cancel" for Esc:cancel).
 	Exit string
@@ -93,8 +94,18 @@ type ModeKey struct {
 	// one (NoFooter), the letter it left may take another action, and the
 	// arrow key stays in the Keys it had, the mode's default (moving left
 	// set to a takes a and ←); the key reference then writes it after Key
-	// (a|←), the footer and the Space menu Key alone. An arrow key with its
-	// letter in the same Keys is that letter, not written (tdp K12). g alone
+	// (a|←), the footer and the Space menu Key alone. The user may put one
+	// of the mode's actions on Space as well, never the app by default (tdp
+	// K11): a ModeKey with a Do taking Space. Space then does it, nothing
+	// while it is disabled, and the mode has no Space menu; the footer writes
+	// it first, where Space:menu was (Space:drop ?:help), NoFooter or not,
+	// and ? lists it among the mode's keys, no longer among the core keys.
+	// The keys only that menu listed go in the footer then (NoFooter off);
+	// refusing Space when it is taken, the Warning saying what Space does
+	// now, and keeping Space for the menu in a mode of tdp's (Drag, Compare)
+	// are the app's. A ModeKey taking Space with no Do is the core key as
+	// ever, Space opening the menu. An arrow key with its letter in the
+	// same Keys is that letter, not written (tdp K12). g alone
 	// is a key of the mode where none of its keys is a pair starting with g
 	// (gg); with one, g waits for the key after it. A core key a mode of the
 	// app's own writes in the footer among its keys (q:quit, tdp screen.2)
@@ -148,6 +159,9 @@ func (k ModeKey) first() string {
 // lists already, written among the mode's keys in the footer (q:quit, tdp
 // screen.2): ? does not list it twice.
 func (k ModeKey) coreListed() bool {
+	if k.Do != nil && k.takes("Space") { // the user's action on Space (tdp K11)
+		return false
+	}
 	keys := k.Keys
 	if len(keys) == 0 {
 		keys = strings.Split(k.Key, "|")
@@ -191,6 +205,12 @@ func (k ModeKey) refKey() string {
 		}
 	}
 	return key
+}
+
+// spaceKey is the index of the key the user put on Space, -1 when there is
+// none and Space opens the mode's Space menu (tdp K11).
+func (m *Mode) spaceKey() int {
+	return slices.IndexFunc(m.Keys, func(k ModeKey) bool { return k.Do != nil && k.takes("Space") })
 }
 
 // gPair reports whether a key of the mode is a pair starting with g (gg):
