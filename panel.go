@@ -1,6 +1,7 @@
 package terminu
 
 import (
+	"math"
 	"slices"
 	"strings"
 
@@ -272,6 +273,10 @@ type Panel struct {
 	// not 0 (tdp note.3, panel.1). The app sets it as the hits change and
 	// clears it with them (Esc).
 	SearchStatus SearchStatus
+	// FrameStatus is the panel's own lasting status on its frame, a glyph
+	// and a short text in the corner the app chooses (tdp panel.1); the zero
+	// value is none.
+	FrameStatus FrameStatus
 	// Actions are the panel's item and panel operations; a "Enter" key is
 	// what Enter does here (tdp K3).
 	Actions []Action
@@ -472,9 +477,22 @@ func (p *Panel) draw(n, w, h int, focused, pointed bool) []string {
 	mode := lab.name // still there while it closes
 	b := box{width: w, lines: lines, color: color, hintKey: Fg(Blue)}
 	// A line segment stays before the top-right corner (or the mode's name).
-	b.head = drawChain(p.capsules(n), color, max(w-3-modeRoom(mode, lab.room), 1))
+	caps, maxChain := p.capsules(n), max(w-3-modeRoom(mode, lab.room), 1)
+	b.head = drawChain(caps, color, maxChain)
 	if p.Loading {
 		b.after = Fg(color).Render(loadingFrame()) // the frame's colour (tdp popup)
+	}
+	if st := p.FrameStatus.text(); st != "" {
+		b.status, b.statusAt, b.statusStyle = st, p.FrameStatus.Corner, p.FrameStatus.style(color, focused)
+		// On the top border it goes before the chain shrinks or the loading
+		// icon goes (tdp panel.1): a segment, a space either side.
+		need := Width(st) + 3
+		if b.after != "" {
+			need += Width(b.after) + 2
+		}
+		if b.statusAt.top() && Width(drawChain(caps, color, math.MaxInt))+need > maxChain {
+			b.status = ""
+		}
 	}
 	b.mode, b.modeClosed = mode, 1-lab.shown
 	inner, ih := w-2, h-2

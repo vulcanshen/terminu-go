@@ -190,6 +190,20 @@ popup 開在 app 自己的模式裡的 panel 上時，動作真的執行時才�
 上按 `Esc` 什麼都沒變。離開的方式跟 `Panel.LeaveMode` 一樣，不跑 `OnExit`：`OnExit` 原本會做的事（例：暫停）要在呼叫前
 自己先做；離開模式會丟掉使用者做出來、要留下的東西時，在呼叫前自己先問（tdp K11）。`q` 不離開模式，離開流程會先問。
 
+## panel 框上的狀態
+
+panel 可以在框上放一個 app 自己、一直在的狀態：一個 glyph 加一段短字，例如 panel 監看的檔案最後一次讀進來的時間
+（tdp panel.1）。要不要放、寫什麼、放哪個角，由 app 決定：
+
+```go
+logs.FrameStatus = terminu.FrameStatus{Glyph: glyphWatch, Text: "17:43:42", Corner: terminu.BottomRight}
+```
+
+lib 把它畫在那個角原有的東西靠中間的一側：膠囊串和 loading icon 後面、模式名左邊、hint 後面，或搜尋的狀態和捲動位置
+左邊。顏色跟框線一樣；它講的事出了問題時，把 `Kind` 設成 `terminu.StatusWarning`（Peach）或 `terminu.StatusError`
+（Red）。框放不下時它最先拿掉、整個拿掉，有位置了再回來。它講的事變了，就在 update loop 裡改，例如在自己的計時器裡
+（`App.Tick`，訊息進 `OnMsg`）；設成零值就拿掉。popup 沒有這個狀態。
+
 ## 設定
 
 使用者的設定裡，有兩個是 terminu 家族每個 app 共用的（tdp E3）。函式庫不讀設定檔：由 app 從自己的設定檔讀出來交給它。

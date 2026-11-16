@@ -28,6 +28,7 @@ type panelsScreen struct {
 	errors   int // ERROR lines in the log, for the statusbar
 	warnings int // WARN lines
 	dragFrom string
+	lastRead string // when the log file was last read, for [2] LOG's own status
 }
 
 var podNames = []string{
@@ -75,6 +76,16 @@ func newPanelsScreen(s *showcase) *panelsScreen {
 				return s.app.Viewer(&terminu.Viewer{Title: "Log", Subject: "api", Glyph: glyphYaml, Lines: slices.Clone(ps.logText.Lines())})
 			}},
 		{Key: "F", Label: "Freeze", Desc: "stop following new lines until Esc", Scope: terminu.PanelScope, Do: ps.freeze},
+		// Its own status on its frame (tdp panel.1): the file is watched, and
+		// when it was last read; in the next corner each time, then none.
+		{Label: "Status", Desc: "when the file was last read, in the next corner of the frame, or none", Scope: terminu.PanelScope,
+			Do: ps.nextStatus},
+		{Label: "Status trouble", Desc: "what the status tells is fine, worth noticing, or has gone wrong", Scope: terminu.PanelScope,
+			Disabled: func() bool { return ps.log.FrameStatus.Text == "" },
+			Do: func() tea.Cmd {
+				ps.log.FrameStatus.Kind = (ps.log.FrameStatus.Kind + 1) % 3 // StatusFine, StatusWarning, StatusError
+				return nil
+			}},
 	}}
 	for range 12 {
 		ps.appendLog()
@@ -436,7 +447,30 @@ func (ps *panelsScreen) appendLog() {
 	case "DEBUG":
 		color = terminu.Overlay0
 	}
-	line := fmt.Sprintf("%s %s request %d served in %dms", time.Now().Format("15:04:05"),
+	ps.lastRead = time.Now().Format("15:04:05")
+	line := fmt.Sprintf("%s %s request %d served in %dms", ps.lastRead,
 		terminu.Fg(color).Render(fmt.Sprintf("%-5s", lvl)), ps.logN, 3+ps.logN*7%90)
 	ps.logText.Append(line)
+	if ps.log.FrameStatus.Text != "" {
+		ps.log.FrameStatus.Text = ps.lastRead
+	}
+}
+
+// glyphSync is [2] LOG's own status: the file is watched.
+const glyphSync = "\U000F04E6" // nf-md-sync
+
+// nextStatus puts [2] LOG's own status on its frame in the next corner,
+// from the top left round to the bottom right, then takes it off (tdp
+// panel.1).
+func (ps *panelsScreen) nextStatus() tea.Cmd {
+	st := &ps.log.FrameStatus
+	switch {
+	case st.Text == "":
+		*st = terminu.FrameStatus{Glyph: glyphSync, Text: ps.lastRead, Corner: terminu.TopLeft, Kind: st.Kind}
+	case st.Corner == terminu.BottomRight:
+		*st = terminu.FrameStatus{Kind: st.Kind}
+	default:
+		st.Corner++
+	}
+	return nil
 }

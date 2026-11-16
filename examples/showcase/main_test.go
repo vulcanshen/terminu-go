@@ -4,7 +4,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
 	terminu "github.com/vulcanshen/terminu-go"
 	"github.com/vulcanshen/terminu-go/tdptest"
 )
@@ -93,4 +95,54 @@ func TestPanelItemsInItems(t *testing.T) {
 	at(projectDir, assets)
 	d.Press("Esc")
 	at(projectDir, assets)
+}
+
+// [2] LOG has a status of its own on its frame (tdp panel.1): Status puts it
+// in the next corner each time, from the top left round to the bottom right,
+// then takes it off; Status trouble turns it from fine to worth noticing to
+// gone wrong and back, and cannot be chosen with no status; it says when the
+// file was last read, following the log.
+func TestLogFrameStatus(t *testing.T) {
+	s := newShowcase()
+	d := tdptest.Start(t, s.app, 160, 40)
+	ps := s.panels
+	act := func(label string) func() tea.Cmd {
+		for _, a := range ps.log.Actions {
+			if a.Label == label {
+				return a.Do
+			}
+		}
+		t.Fatalf("no %s on [2] LOG", label)
+		return nil
+	}
+	shown := func() bool { return d.Has(glyphSync + " " + ps.log.FrameStatus.Text) }
+	d.Press("P", "2", "Space")
+	if !d.Has("Status trouble") || !d.Has("in the next corner of the frame") {
+		t.Fatal("its Space menu has Status and Status trouble")
+	}
+	d.Press("Esc")
+	if ps.log.FrameStatus != (terminu.FrameStatus{}) || d.Has(glyphSync) {
+		t.Fatal("none to start with")
+	}
+	for _, corner := range []terminu.Corner{terminu.TopLeft, terminu.TopRight, terminu.BottomLeft, terminu.BottomRight} {
+		d.Do(act("Status"))
+		if st := ps.log.FrameStatus; st.Corner != corner || st.Text != ps.lastRead || !shown() {
+			t.Errorf("corner %d: %+v, shown %v", corner, st, shown())
+		}
+	}
+	d.Do(act("Status"))
+	if ps.log.FrameStatus.Text != "" || d.Has(glyphSync) {
+		t.Errorf("after the bottom right, none: %+v", ps.log.FrameStatus)
+	}
+	d.Do(act("Status"))
+	for _, kind := range []terminu.StatusKind{terminu.StatusWarning, terminu.StatusError, terminu.StatusFine} {
+		d.Do(act("Status trouble"))
+		if ps.log.FrameStatus.Kind != kind || !shown() {
+			t.Errorf("trouble: %d, want %d", ps.log.FrameStatus.Kind, kind)
+		}
+	}
+	d.Advance(time.Second)
+	if ps.log.FrameStatus.Text != ps.lastRead || !shown() {
+		t.Errorf("it follows the log: %q, last read %q", ps.log.FrameStatus.Text, ps.lastRead)
+	}
 }

@@ -220,6 +220,22 @@ confirm, so `Esc` there changes nothing. It is left as `Panel.LeaveMode` leaves 
 would do (a pause) before calling, and when leaving would lose something the user made and wants kept, ask before
 calling (tdp K11). `q` leaves no mode; the quit flow asks first.
 
+## A status on a panel's frame
+
+A panel may show one lasting status of the app's own on its frame: a glyph and a short text, such as when a file the
+panel watches was last read (tdp panel.1). Whether a panel has one, what it says and which corner are yours:
+
+```go
+logs.FrameStatus = terminu.FrameStatus{Glyph: glyphWatch, Text: "17:43:42", Corner: terminu.BottomRight}
+```
+
+The lib draws it on the inner side of what that corner already has: after the capsule chain and the loading icon, left
+of the mode name, after the hint, or left of a search's status and the scroll position. It is in the frame's colour;
+when what it tells has gone wrong, set `Kind` to `terminu.StatusWarning` (Peach) or `terminu.StatusError` (Red). On a
+border too narrow it is the first thing to go, whole, and it comes back when there is room. Change it from the update
+loop as what it tells changes, on a timer of yours say (`App.Tick`, its message arriving in `OnMsg`); the zero value
+takes it off. Popups have none.
+
 ## Settings
 
 Two of the user's settings are shared by every terminu app (tdp E3). The library does not read config files: the

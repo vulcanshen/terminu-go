@@ -1,6 +1,7 @@
 package terminu
 
 import (
+	"math"
 	"strings"
 	"unicode/utf8"
 
@@ -241,7 +242,12 @@ type box struct {
 	hintWords  Color        // the colour of its colons and words; Overlay0 when unset
 	scroll     string       // the scroll position at the right of the bottom border
 	found      SearchStatus // a search's status, left of the scroll position
-	body       []string
+	// status is a panel's own status as drawn (FrameStatus), "" none, in
+	// the corner statusAt and the style statusStyle.
+	status      string
+	statusAt    Corner
+	statusStyle Style
+	body        []string
 }
 
 // draw draws the frame around body, every line exactly b.width cells. Text on
@@ -280,7 +286,21 @@ func (b box) draw() []string {
 	if b.after != "" && room-used >= Width(b.after)+2 {
 		put(" " + b.after + " ")
 	}
-	top.WriteString(frame.Render(Repeat(ls.h, inner-used-modeW)))
+	// A panel's own status (tdp panel.1): after the chain and the loading
+	// icon, or left of the mode name, a space either side and a segment
+	// between, a segment of line left over. The panel gives it only with
+	// room for all that and the chain whole: it is the first to go.
+	right := ""
+	if b.status != "" && b.statusAt.top() {
+		st := " " + b.statusStyle.Render(b.status) + " "
+		if b.statusAt == TopLeft {
+			put(frame.Render(ls.h) + st)
+		} else {
+			right = st + frame.Render(ls.h)
+		}
+	}
+	top.WriteString(frame.Render(Repeat(ls.h, inner-used-modeW-Width(right))))
+	top.WriteString(right)
 	if b.mode != "" {
 		top.WriteString(drawLabel(b.mode, b.modeClosed, ls, frame))
 	}
@@ -310,21 +330,63 @@ func (b box) draw() []string {
 	if scroll == "" && found == "" {
 		tail = ""
 	}
+	// A panel's own status (tdp panel.1): after the hint, or left of the
+	// search's status and the scroll position, a space either side and a
+	// segment between; there only while the whole hint, the search's status
+	// uncut and the scroll position fit with it: it is the first to go.
+	left, right := "", ""
+	if b.status != "" && b.statusAt.bottom() && inner >= b.bottomWhole(scroll, gap)+Width(b.status)+2 {
+		st := " " + b.statusStyle.Render(b.status) + " "
+		switch {
+		case b.statusAt == BottomRight && tail == "":
+			right, tail = st, ls.h
+		case b.statusAt == BottomRight:
+			right = st + frame.Render(ls.h)
+		case len(b.hint) > 0:
+			left = frame.Render(ls.h) + st
+		default:
+			left = st
+		}
+	}
 	// A segment, the space either side, at least one segment after it, the
 	// search's status, the scroll position and its segment. A popup is made
 	// wide enough for the hint and the scroll position (scrollRoom); pairs
 	// go from the end only on a terminal too narrow, or for the status
 	// (tdp panel.1).
-	hintRoom := inner - 1 - 2 - 1 - Width(found) - Width(scroll) - Width(tail)
+	sides := Width(left) + Width(found) + Width(scroll) + Width(right) + Width(tail)
+	hintRoom := inner - 1 - 2 - 1 - sides
 	hint := ""
 	if len(b.hint) > 0 && hintRoom > 0 {
 		if h := renderHintsOff(b.hint, b.hintOff, hintRoom, b.hintKey, b.words()); h != "" {
 			hint = " " + h + " "
 		}
 	}
-	fill := inner - 1 - Width(hint) - Width(found) - Width(scroll) - Width(tail)
-	out = append(out, frame.Render(ls.bl+ls.h)+hint+frame.Render(Repeat(ls.h, fill))+frame.Render(found)+frame.Render(scroll)+frame.Render(tail+ls.br))
+	fill := inner - 1 - Width(hint) - sides
+	out = append(out, frame.Render(ls.bl+ls.h)+hint+left+frame.Render(Repeat(ls.h, fill))+right+frame.Render(found)+frame.Render(scroll)+frame.Render(tail+ls.br))
 	return out
+}
+
+// bottomWhole is how wide the bottom border is with everything but a
+// panel's own status whole: the corner's segment, the whole hint, the
+// search's status uncut, the scroll position, a segment at least between,
+// and the segment the status takes (after the hint, or before the corner
+// or what is right of it).
+func (b box) bottomWhole(scroll, gap string) int {
+	right := Width(scroll)
+	if s := searchText(b.found, math.MaxInt); s != "" {
+		right += Width(s) + 2 + Width(gap)
+	}
+	if right > 0 {
+		right++ // the segment before the corner
+	}
+	w := 1 + 1 + right
+	if len(b.hint) > 0 {
+		w += hintWidth(b.hint) + 2
+	}
+	if b.statusAt == BottomRight || len(b.hint) > 0 {
+		w++
+	}
+	return w
 }
 
 // searchText is a search's status in at most room cells (tdp note.3): "/",
