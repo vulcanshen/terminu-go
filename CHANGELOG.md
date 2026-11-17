@@ -2,6 +2,24 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.14 — tdp v1.2.13
+
+- Content read again while it is shown (tdp note.9): `App.ReadAgain(v, lines)` puts a source read again in an open
+  viewer, as if it had just been opened on it. It goes to the new end when its end was in sight (not in the selection
+  mode) or when the lines are fewer; the line numbers' column only widens; the lib's search is found again, the first
+  hit at or after the current one current (the first of all when none is), the view not moved, and with none left the
+  Info toast of a search that finds nothing; the selection mode keeps its positions only: where the selection started
+  gone, back to Visual, the cursor's place gone, out of the mode, each with a Warning toast naming the viewer's subject.
+  `App.CannotReadAgain(v)` leaves the selection mode with no toast of the lib's, for the app's Error toast.
+  `Pager.ReadAgain(lines)` follows the end with `Follow`; `SetLines` stays new content (from catu)
+- The open App Log no longer follows its end in the selection mode (tdp note.9): the view and the cursor stay. When it
+  is full and its oldest entries go, what is in sight, the cursor and where the selection started stay on their entries
+- A `Pager` that takes lines while it is open sets `Follow` (tdp note.9); content read again from a source that
+  changed is not streaming, so `Panel.Stream` stays off for it (tdp T2). Comments only
+- tdptest: a time the app took when its timer fired is earlier than `Driver.Now()` after it, the clock moving on with
+  the animations an input plays and to the end of an `Advance`; `Driver.Now` and the README say so, and to check such
+  a time between `Now` before and after (from catu)
+
 ## v1.2.13 — tdp v1.2.12
 
 - A panel may show one lasting status of the app's own on its frame (tdp panel.1, color.2): `Panel.FrameStatus` with a
