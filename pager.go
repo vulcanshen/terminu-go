@@ -7,7 +7,8 @@ import (
 // Pager is a panel body that shows lines with no cursor: a preview, a log.
 // When Follow is set, new lines keep it at the bottom as long as it was
 // there; scrolled up, it stays where it is. A Pager that takes lines while
-// it is open sets Follow (tdp note.9). Its lines are reading content, drawn
+// it is open (Append, ReadAgain) sets Follow (tdp note.9). Its lines are
+// reading content, drawn
 // as a terminal draws them (components, control characters): \n starts
 // another line, a \r in one leaves its last state, SGR colours it, a tab is
 // spaces, any other control character is its name in Red.
@@ -35,6 +36,18 @@ func (t *Pager) Append(lines ...string) {
 	follow := t.Follow && (t.atEnd || t.top+t.height >= len(t.rows))
 	t.lines = append(t.lines, lines...)
 	t.rows = append(t.rows, readingRows(lines)...)
+	if follow {
+		t.top = max(len(t.rows)-t.height, 0)
+	}
+}
+
+// ReadAgain puts lines in place of the Pager's, its source read again (a
+// file it watches; tdp note.9): with Follow, at the new end when the end was
+// in sight; otherwise where it was, at the new end when the lines are fewer
+// than fill it. SetLines is new content, the view going nowhere.
+func (t *Pager) ReadAgain(lines []string) {
+	follow := t.Follow && (t.atEnd || t.top+t.height >= len(t.rows))
+	t.SetLines(lines)
 	if follow {
 		t.top = max(len(t.rows)-t.height, 0)
 	}

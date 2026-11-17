@@ -122,7 +122,7 @@ func (a *App) syncLog() {
 	if v == nil {
 		return
 	}
-	if !a.logOnScreen(v) {
+	if !a.viewerOpen(v) {
 		l.view, l.open = nil, false
 		return
 	}
@@ -144,8 +144,8 @@ func (a *App) syncLog() {
 	}
 }
 
-// logOnScreen reports whether v is in the stack, not closing.
-func (a *App) logOnScreen(v *Viewer) bool {
+// viewerOpen reports whether v is in the stack, not closing.
+func (a *App) viewerOpen(v *Viewer) bool {
 	for _, layer := range a.stack {
 		if vv, ok := layer.view.(*viewerView); ok && vv.v == v && !layer.closing {
 			return true

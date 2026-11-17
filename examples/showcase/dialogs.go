@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -54,6 +55,9 @@ type dialogsScreen struct {
 	list    *terminu.List
 	loading *terminu.Viewer // the loading popup, while its lines arrive
 	loaded  int
+	watched *terminu.Viewer // the watched file's viewer, read again as it changes
+	version int             // which of its versions it shows
+	watchN  int             // which opening the ticks are of
 }
 
 type scenario struct {
@@ -76,6 +80,9 @@ type toastLater struct {
 }
 
 type loadTick struct{}
+
+// watchTick is when the watched file is read again, for the opening n.
+type watchTick struct{ n int }
 
 func newDialogsScreen(s *showcase) *dialogsScreen {
 	ds := &dialogsScreen{s: s}
@@ -146,6 +153,7 @@ func (ds *dialogsScreen) scenarios() []scenario {
 		{"Popup with tabs", "note", "tabs after the title; [h]|[l] switch", ds.devtools},
 		{"Viewer: a table", "note", "a table the app lays out, no line numbers; a long line folds", ds.table},
 		{"Loading popup", "note", "lines arriving: the loading icon turns", ds.loadingPopup},
+		{"Viewer: a watched file", "note", "read again every 3 seconds as it changes, then gone a while; try [/] and [v]", ds.watchedFile},
 		{"Popup: long title", "note", "a title too long is cut with …", func() tea.Cmd {
 			return a.Viewer(&terminu.Viewer{Title: "File", Glyph: glyphYaml,
 				Subject: "/srv/projects/showcase/assets/images/backgrounds/very-long-directory-name/and-even-longer-sub-directory/landscape-2026.png",
@@ -184,6 +192,8 @@ func (ds *dialogsScreen) onMsg(msg tea.Msg) tea.Cmd {
 		return ds.s.app.Toast(m.kind, m.text)
 	case loadTick:
 		return ds.loadStep()
+	case watchTick:
+		return ds.watchStep(m.n)
 	}
 	return nil
 }
@@ -607,6 +617,69 @@ func (ds *dialogsScreen) loadingPopup() tea.Cmd {
 	ds.loading = &terminu.Viewer{Title: "Log", Subject: "deploy/api", Glyph: glyphYaml, Loading: true}
 	ds.loaded = 0
 	return tea.Batch(ds.s.app.Viewer(ds.loading), ds.s.app.Tick(400*time.Millisecond, func(time.Time) tea.Msg { return loadTick{} }))
+}
+
+// watchedVersion is the watched file's version n, false while it is gone:
+// as it was, longer, shorter, the same length with lines changed, gone, and
+// round again (tdp note.9).
+func watchedVersion(n int) ([]string, bool) {
+	notes := func(count int, needles ...int) []string {
+		out := make([]string, count)
+		for i := range out {
+			out[i] = fmt.Sprintf("Note %d: a line of the file", i+1)
+			if slices.Contains(needles, i) {
+				out[i] += ", with a needle in it"
+			}
+		}
+		return out
+	}
+	switch n % 5 {
+	case 1:
+		return notes(60, 4, 19, 34, 49), true
+	case 2:
+		return notes(15, 4), true
+	case 3:
+		lines := notes(40, 7, 29)
+		for i := 9; i < 12; i++ {
+			lines[i] = strings.ToUpper(lines[i])
+		}
+		return lines, true
+	case 4:
+		return nil, false
+	}
+	return notes(40, 4, 19, 34), true
+}
+
+// watchedFile opens a viewer of a file the showcase pretends to watch: every
+// 3 seconds it is read again (App.ReadAgain), and once in a while it cannot
+// be (App.CannotReadAgain, with the app's own Error toast).
+func (ds *dialogsScreen) watchedFile() tea.Cmd {
+	lines, _ := watchedVersion(0)
+	ds.watched, ds.version = &terminu.Viewer{Title: "File", Subject: "notes.txt", Glyph: glyphYaml, Lines: lines}, 0
+	ds.watchN++
+	n := ds.watchN
+	return tea.Batch(ds.s.app.Viewer(ds.watched), ds.s.app.Tick(3*time.Second, func(time.Time) tea.Msg { return watchTick{n} }))
+}
+
+// watchStep reads the watched file again, until its viewer has gone: then
+// nothing is over the screen.
+func (ds *dialogsScreen) watchStep(n int) tea.Cmd {
+	a := ds.s.app
+	if n != ds.watchN || ds.watched == nil {
+		return nil
+	}
+	if !a.Covered() {
+		ds.watched = nil
+		return nil
+	}
+	ds.version++
+	next := a.Tick(3*time.Second, func(time.Time) tea.Msg { return watchTick{n} })
+	lines, ok := watchedVersion(ds.version)
+	if !ok {
+		a.CannotReadAgain(ds.watched)
+		return tea.Batch(a.Toast(terminu.Error, "Cannot read notes.txt: it is gone"), next)
+	}
+	return tea.Batch(a.ReadAgain(ds.watched, lines), next)
 }
 
 func (ds *dialogsScreen) loadStep() tea.Cmd {

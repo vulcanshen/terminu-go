@@ -146,3 +146,37 @@ func TestLogFrameStatus(t *testing.T) {
 		t.Errorf("it follows the log: %q, last read %q", ps.log.FrameStatus.Text, ps.lastRead)
 	}
 }
+
+// The watched file's viewer is read again every 3 seconds (tdp note.9):
+// longer, shorter, its lines changed, then gone a while with the app's own
+// Error toast, and round again; once the viewer has closed, the reading
+// stops.
+func TestWatchedFile(t *testing.T) {
+	s := newShowcase()
+	d := tdptest.Start(t, s.app, 120, 40)
+	ds := s.dialogs
+	d.Do(ds.watchedFile)
+	v := ds.watched
+	for _, want := range []int{60, 15, 40} {
+		d.Advance(3 * time.Second)
+		if len(v.Lines) != want || !d.Has("notes.txt") {
+			t.Fatalf("read again: %d lines, want %d", len(v.Lines), want)
+		}
+	}
+	d.Advance(3 * time.Second)
+	if !d.Has("Cannot read notes.txt: it is gone") || len(v.Lines) != 40 {
+		t.Errorf("gone: no Error toast, or the lines went: %d", len(v.Lines))
+	}
+	d.Advance(3 * time.Second)
+	if len(v.Lines) != 40 || ds.version != 5 {
+		t.Errorf("round again: %d lines, version %d", len(v.Lines), ds.version)
+	}
+	for i := 0; i < 3 && s.app.Covered(); i++ { // the Error toast, then the viewer
+		d.Press("Esc")
+	}
+	d.Advance(3 * time.Second)
+	d.Advance(3 * time.Second)
+	if ds.watched != nil || ds.version != 5 {
+		t.Errorf("closed, it is still read: version %d", ds.version)
+	}
+}

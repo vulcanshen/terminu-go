@@ -204,6 +204,20 @@ lib 把它畫在那個角原有的東西靠中間的一側：膠囊串和 loadin
 （Red）。框放不下時它最先拿掉、整個拿掉，有位置了再回來。它講的事變了，就在 update loop 裡改，例如在自己的計時器裡
 （`App.Tick`，訊息進 `OnMsg`）；設成零值就拿掉。popup 沒有這個狀態。
 
+## 開著時會變的內容
+
+要不要重新讀來源（例：app 監看的檔案）、什麼時候讀，由 app 決定；顯示它的地方怎麼跟著變照 tdp note.9，lib 會做：
+
+```go
+cmd := app.ReadAgain(viewer, lines) // 開著的 viewer
+pager.ReadAgain(lines)              // panel 的 Pager，要設 Follow
+```
+
+`ReadAgain` 等於在新的內容上重新打開 viewer：原本在結尾就跟到新的結尾（選取模式裡不跟），行號欄只變寬，搜尋重新找，
+選取模式在位置還在的地方留著；回傳的是說明拿掉了什麼的 toast。來源讀不到時呼叫 `app.CannotReadAgain(viewer)`，再跳
+app 自己的 Error toast。開著時會給新的行的 Pager（`Append` 或 `ReadAgain`）要設 `Follow`。重新讀進來的內容不算串流：
+不要設 `Panel.Stream`（tdp T2）。
+
 ## 設定
 
 使用者的設定裡，有兩個是 terminu 家族每個 app 共用的（tdp E3）。函式庫不讀設定檔：由 app 從自己的設定檔讀出來交給它。

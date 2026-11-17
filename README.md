@@ -236,6 +236,22 @@ border too narrow it is the first thing to go, whole, and it comes back when the
 loop as what it tells changes, on a timer of yours say (`App.Tick`, its message arriving in `OnMsg`); the zero value
 takes it off. Popups have none.
 
+## Content that changes while open
+
+Whether and when to read a source again (a file the app watches) are yours; how what shows it changes is tdp
+note.9's, and the lib does it:
+
+```go
+cmd := app.ReadAgain(viewer, lines) // a viewer open on it
+pager.ReadAgain(lines)              // a panel's Pager, with Follow set
+```
+
+`ReadAgain` is as if the viewer had just been opened on the new lines: at the new end when its end was in sight (not in
+the selection mode), the line numbers' column only widening, the search found again, the selection mode kept where its
+positions still are; it returns the toasts that say what went. When the source cannot be read any more, call
+`app.CannotReadAgain(viewer)` and give your own Error toast. A Pager that takes lines while it is open, by `Append` or
+`ReadAgain`, sets `Follow`. Content read again is not streaming: leave `Panel.Stream` off for it (tdp T2).
+
 ## Settings
 
 Two of the user's settings are shared by every terminu app (tdp E3). The library does not read config files: the
