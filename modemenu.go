@@ -94,9 +94,14 @@ func (a *App) ofMode(p *Panel, cmd tea.Cmd) tea.Cmd {
 
 // closeModePopups closes the Space menu and the ? of the mode p was in, and
 // what is open over them: however a mode is left, they go with it (tdp K11).
+// Under a note saying the selection is gone they stay, to close with it
+// (SelectionGone, tdp note.9).
 func (a *App) closeModePopups(p *Panel) {
 	at := slices.IndexFunc(a.stack, func(l *layer) bool { return l.mode == p && !l.closing })
 	if at < 0 {
+		return
+	}
+	if slices.ContainsFunc(a.stack[at:], func(l *layer) bool { n, ok := l.view.(*noteView); return ok && n.down != nil && !l.closing }) {
 		return
 	}
 	var cmds []tea.Cmd
@@ -147,7 +152,9 @@ func (a *App) selectModeMenu(v *Viewer, press func(key string) tea.Cmd) tea.Cmd 
 		verb = "unselect"
 	}
 	keys = append(keys, leaveRow(verb, do("Esc")))
-	return a.modeMenu(a.modeTitle(), v.modeName(), item, keys)
+	cmd := a.modeMenu(a.modeTitle(), v.modeName(), item, keys)
+	a.stack[len(a.stack)-1].viewer = v // the selection mode's Space menu (tdp note.9)
+	return cmd
 }
 
 // reorderModeMenu is the Space menu of a reorder's Drag mode.

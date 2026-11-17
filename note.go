@@ -42,6 +42,11 @@ type noteView struct {
 	query   string
 	hits    []TextMatch
 	current int
+
+	// down, when set, is the lowest popup closing with it on Enter and Esc,
+	// all of them back to the view: a note that a selection mode's
+	// selection is gone, over that mode's Space menu or ? (tdp note.9).
+	down *layer
 }
 
 func (n *noteView) measure(sw, sh int) (int, int) {
@@ -108,6 +113,12 @@ func (n *noteView) draw(w, h int, layer Color) []string {
 }
 
 func (n *noteView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {
+	if n.down != nil && (key == "Enter" || key == "Esc") {
+		if i := slices.Index(a.stack, n.down); i >= 0 {
+			return true, a.closeLayers(a.stack[i:])
+		}
+		return true, a.closeTop()
+	}
 	if n.onlyClose {
 		if key == "Enter" || key == "Esc" {
 			return true, a.closeTop()

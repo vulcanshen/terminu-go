@@ -1,6 +1,11 @@
 package terminu
 
-import tea "github.com/charmbracelet/bubbletea"
+import (
+	"slices"
+	"strings"
+
+	tea "github.com/charmbracelet/bubbletea"
+)
 
 // ReadAgain puts lines in the open viewer v in place of what it shows, its
 // source read again (a file it watches; tdp note.9). Whether and when to
@@ -21,10 +26,14 @@ import tea "github.com/charmbracelet/bubbletea"
 //     the copy is of the new text. Where the selection started gone, the
 //     selection goes, back to the mode's first layer as one Esc; the
 //     cursor's place gone, the mode is left, as Esc to the end; each said
-//     in a Warning toast that names Subject (Title without one).
+//     in a Warning toast that names Subject (Title without one). With the
+//     selection mode's Space menu or key reference open, it is said in a
+//     note over them instead, drawn as an error popup in Peach with the
+//     Warning toast's glyph, READ AGAIN: <Subject>; Enter and Esc close it
+//     and them, back to the viewer (tdp note-99).
 //
-// An open Space menu or key reference stays as it is. It returns the
-// toasts. On a viewer not on the screen it only puts the lines in.
+// Otherwise an open Space menu or key reference stays as it is. It returns
+// the toasts. On a viewer not on the screen it only puts the lines in.
 func (a *App) ReadAgain(v *Viewer, lines []string) tea.Cmd {
 	if !a.viewerOpen(v) {
 		v.Lines = lines
@@ -63,19 +72,79 @@ func (a *App) ReadAgain(v *Viewer, lines []string) tea.Cmd {
 	switch {
 	case v.inMode && !v.there(v.line, v.col):
 		v.inMode, v.selecting = false, false
-		cmds = append(cmds, a.Toast(Warning, subject+" changed under the cursor: "+cmpOr(v.Select.Name, "Select")+" left"))
+		cmds = append(cmds, a.viewerGone(v, Warning, "Read again", subject+" changed under the cursor: "+cmpOr(v.Select.Name, "Select")+" left"))
 	case v.selecting && !v.there(v.fromL, v.fromC):
 		v.selecting = false
-		cmds = append(cmds, a.Toast(Warning, subject+" changed: where the selection started is gone"))
+		cmds = append(cmds, a.viewerGone(v, Warning, "Read again", subject+" changed: where the selection started is gone"))
 	}
 	return tea.Batch(cmds...)
 }
 
 // CannotReadAgain is for v when its source cannot be read any more (a file
-// deleted; tdp note.9): v leaves the selection mode, with no toast of its
-// own, and keeps what it shows; the app's Error toast says why (tdp
-// panel.15).
-func (a *App) CannotReadAgain(v *Viewer) { v.inMode, v.selecting = false, false }
+// deleted; tdp note.9): v leaves the selection mode and keeps what it shows,
+// and message, the app's words, says why (tdp panel.15): an Error toast; with
+// the selection mode's Space menu or key reference open, an error popup over
+// them instead, CANNOT READ: <Subject>, message and "The selection is gone",
+// whose Enter and Esc close it and them, back to the viewer (tdp note-100).
+// With no message it gives no toast. On a viewer not on the screen it says
+// nothing.
+func (a *App) CannotReadAgain(v *Viewer, message ...string) tea.Cmd {
+	in := v.inMode
+	v.inMode, v.selecting = false, false
+	if !a.viewerOpen(v) {
+		return nil
+	}
+	if at := slices.IndexFunc(a.stack, func(l *layer) bool { return l.viewer == v && !l.closing }); in && at >= 0 {
+		rows := append(slices.Clone(message), "The selection is gone")
+		return a.goneNote(a.stack[at], Error, "Cannot read", cmpOr(v.Subject, v.Title), rows...)
+	}
+	if len(message) == 0 {
+		return nil
+	}
+	return a.Toast(Error, message...)
+}
+
+// SelectionGone says that content read again took away the selection of the
+// mode p is in, an app's own selection mode on its own reader (tdp note.9).
+// With that mode's Space menu or key reference open, it is a note over them,
+// drawn as an error popup in kind's colour, Warning in Peach with the Warning
+// toast's glyph, Error in Red, titled title, message its rows; Enter and Esc
+// close it and them, back to the screen (tdp note-99, note-100). With neither
+// open it is a toast of kind with message. Call it before leaving the mode or
+// going back a layer: leaving it then keeps them open under the note, to
+// close with it. Kind is Warning or Error.
+func (a *App) SelectionGone(p *Panel, kind ToastKind, title string, message ...string) tea.Cmd {
+	at := slices.IndexFunc(a.stack, func(l *layer) bool { return l.mode == p && !l.closing })
+	if at < 0 {
+		return a.Toast(kind, message...)
+	}
+	return a.goneNote(a.stack[at], kind, title, "", message...)
+}
+
+// viewerGone says, in kind, that v's selection is gone: a toast, or the note
+// over its selection mode's Space menu or ? (tdp note.9).
+func (a *App) viewerGone(v *Viewer, kind ToastKind, title, message string) tea.Cmd {
+	at := slices.IndexFunc(a.stack, func(l *layer) bool { return l.viewer == v && !l.closing })
+	if at < 0 {
+		return a.Toast(kind, message)
+	}
+	return a.goneNote(a.stack[at], kind, title, cmpOr(v.Subject, v.Title), message)
+}
+
+// goneNote opens the note that a selection is gone over the popups from down
+// up, closing with them (tdp note.9): an error popup, in Peach with the
+// Warning toast's glyph for Warning. It goes in the App Log as the toast it
+// stands for would.
+func (a *App) goneNote(down *layer, kind ToastKind, title, subject string, message ...string) tea.Cmd {
+	a.Log(kind, errorText(title, subject, strings.Join(message, " ")))
+	n := errorPopup(title, subject, message...)
+	if kind == Warning {
+		peach := Peach
+		n.glyph, n.color, n.textStyle = glyphWarning, &peach, Fg(Peach)
+	}
+	n.down = down
+	return a.open(n)
+}
 
 // there reports that the text has line and that line's column col: a
 // position kept only where it still is (tdp note.9). An empty line has its

@@ -248,8 +248,12 @@ pager.ReadAgain(lines)              // a panel's Pager, with Follow set
 
 `ReadAgain` is as if the viewer had just been opened on the new lines: at the new end when its end was in sight (not in
 the selection mode), the line numbers' column only widening, the search found again, the selection mode kept where its
-positions still are; it returns the toasts that say what went. When the source cannot be read any more, call
-`app.CannotReadAgain(viewer)` and give your own Error toast. A Pager that takes lines while it is open, by `Append` or
+positions still are; it returns the toasts that say what went, or, with the selection mode's Space menu or `?` open, a
+note over them that closes with them. When the source cannot be read any more, call
+`app.CannotReadAgain(viewer, "Cannot read notes.txt: it is gone")`: your words go in an Error toast, or in an error
+popup over that menu. A selection mode of your own, on a reader of your own in a panel, says that its selection is gone
+with `app.SelectionGone(panel, terminu.Warning, "Read again", "notes.txt changed: Visual left")` before it leaves the
+mode: a toast, or the note over the mode's Space menu or `?`. A Pager that takes lines while it is open, by `Append` or
 `ReadAgain`, sets `Follow`. Content read again is not streaming: leave `Panel.Stream` off for it (tdp T2).
 
 ## Settings

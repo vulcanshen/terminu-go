@@ -53,6 +53,9 @@ type layer struct {
 	// mode is the panel whose mode it is the Space menu or ? of: it closes
 	// as the mode is left (tdp K11).
 	mode *Panel
+	// viewer is the viewer whose selection mode it is the Space menu or ?
+	// of: a note saying the selection is gone closes it (tdp note.9).
+	viewer *Viewer
 }
 
 func (l *layer) open() bool { return !l.closing && l.frame >= openFrames }

@@ -214,8 +214,11 @@ pager.ReadAgain(lines)              // panel 的 Pager，要設 Follow
 ```
 
 `ReadAgain` 等於在新的內容上重新打開 viewer：原本在結尾就跟到新的結尾（選取模式裡不跟），行號欄只變寬，搜尋重新找，
-選取模式在位置還在的地方留著；回傳的是說明拿掉了什麼的 toast。來源讀不到時呼叫 `app.CannotReadAgain(viewer)`，再跳
-app 自己的 Error toast。開著時會給新的行的 Pager（`Append` 或 `ReadAgain`）要設 `Follow`。重新讀進來的內容不算串流：
+選取模式在位置還在的地方留著；回傳的是說明拿掉了什麼的 toast，選取模式的 Space menu 或 `?` 開著時則是疊在上面、跟它們
+一起關的 note。來源讀不到時呼叫 `app.CannotReadAgain(viewer, "Cannot read notes.txt: it is gone")`：app 的字放進 Error
+toast，或疊在那個 menu 上的 error popup。app 自己的閱讀 panel 有自己的選取模式時，選取失效用
+`app.SelectionGone(panel, terminu.Warning, "Read again", "notes.txt changed: Visual left")` 說，在離開模式之前叫：是 toast，
+或疊在模式的 Space menu、`?` 上的 note。開著時會給新的行的 Pager（`Append` 或 `ReadAgain`）要設 `Follow`。重新讀進來的內容不算串流：
 不要設 `Panel.Stream`（tdp T2）。
 
 ## 設定

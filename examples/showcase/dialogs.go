@@ -652,7 +652,7 @@ func watchedVersion(n int) ([]string, bool) {
 
 // watchedFile opens a viewer of a file the showcase pretends to watch: every
 // 3 seconds it is read again (App.ReadAgain), and once in a while it cannot
-// be (App.CannotReadAgain, with the app's own Error toast).
+// be (App.CannotReadAgain, with the showcase's words).
 func (ds *dialogsScreen) watchedFile() tea.Cmd {
 	lines, _ := watchedVersion(0)
 	ds.watched, ds.version = &terminu.Viewer{Title: "File", Subject: "notes.txt", Glyph: glyphYaml, Lines: lines}, 0
@@ -675,9 +675,8 @@ func (ds *dialogsScreen) watchStep(n int) tea.Cmd {
 	ds.version++
 	next := a.Tick(3*time.Second, func(time.Time) tea.Msg { return watchTick{n} })
 	lines, ok := watchedVersion(ds.version)
-	if !ok {
-		a.CannotReadAgain(ds.watched)
-		return tea.Batch(a.Toast(terminu.Error, "Cannot read notes.txt: it is gone"), next)
+	if !ok { // an Error toast, or an error popup over the selection mode's menu
+		return tea.Batch(a.CannotReadAgain(ds.watched, "Cannot read notes.txt: it is gone"), next)
 	}
 	return tea.Batch(a.ReadAgain(ds.watched, lines), next)
 }

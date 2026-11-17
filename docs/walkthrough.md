@@ -70,7 +70,8 @@ go build -o /tmp/showcase ./examples/showcase
   有 tab 的 popup（也有選取模式：平常 `h|l` 切 tab，`v` 之後 `h|l` 移游標）、loading popup、error popup（短的與長的）、toast、
   好幾層疊在一起。每一列的說明寫了要看什麼。
 - 「Viewer: a watched file」是一個會變的檔案，每 3 秒重新讀一次：變長、變短、同樣長但改了幾行、讀不到一陣子（Error toast），
-  再從頭。捲到結尾時跟著新的結尾；按 `/` 找 `needle`，命中跟著新內容走；按 `v` 兩次選一段，選到的行不見時跳 Warning。
+  再從頭。捲到結尾時跟著新的結尾；按 `/` 找 `needle`，命中跟著新內容走；按 `v` 兩次選一段，選到的行不見時跳 Warning；
+  選的時候按 `Space` 或 `?` 開著，就改疊一個 Peach 的 note，`Enter` 或 `Esc` 連同 menu 一起關。
 - 「Form: with actions」有好幾個按鈕：`Tab` 到動作區先停在右下角的 `Connect`，`j|k` 在按鈕之間走。`Test` 只要 Host：空著按會被擋，
   填了再按要等一下（標題後面轉 loading icon）才跳 toast，Host 打 `bad-1` 會失敗、開 error popup，關掉後再按 `Enter` 就是重試；
   `Scan` 開一個 note，還把 Port 寫成 22，之後 `Esc` 會先問要不要放棄。`Test` 還在跑時，下框的 hint 沒有 `Enter`，再按也不會

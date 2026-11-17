@@ -1427,7 +1427,11 @@ func (a *App) popupKey(l *layer, key string, msg tea.KeyMsg) tea.Cmd {
 	case "Esc":
 		return a.closeTop()
 	case "?":
-		return a.open(keyReference(refTitle(l.view), l.view.keyRef()))
+		cmd := a.open(keyReference(refTitle(l.view), l.view.keyRef()))
+		if vv, ok := l.view.(*viewerView); ok && vv.v.inMode {
+			a.stack[len(a.stack)-1].viewer = vv.v // its selection mode's ? (tdp note.9)
+		}
+		return cmd
 	case "q":
 		return a.startQuit()
 	}
