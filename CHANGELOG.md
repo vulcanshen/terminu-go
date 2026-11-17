@@ -2,6 +2,17 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.15 — tdp v1.2.14
+
+- With a selection mode's Space menu or key reference open, a re-read that takes the selection away says so in a note
+  over them, drawn as an error popup in Peach with the Warning toast's glyph; content that cannot be read, in a Red
+  error popup; Enter and Esc close it and them together, back to the view (tdp note.9, note-99, note-100). A viewer's
+  `ReadAgain` does it itself (`READ AGAIN: <Subject>`). `CannotReadAgain(v, message...)` now takes the app's words and
+  returns a Cmd: an Error toast, or with that menu open `CANNOT READ: <Subject>`, the words and "The selection is
+  gone"; a call with no words still compiles and says nothing. `App.SelectionGone(p, kind, title, message...)` is the
+  same for an app's own selection mode on a reader of its own in a panel, called before it leaves the mode: leaving a
+  mode with such a note over its popups keeps them, to close with the note (from catu)
+
 ## v1.2.14 — tdp v1.2.13
 
 - Content read again while it is shown (tdp note.9): `App.ReadAgain(v, lines)` puts a source read again in an open
