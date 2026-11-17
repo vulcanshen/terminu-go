@@ -112,8 +112,8 @@ func (l *appLog) lines() []string {
 }
 
 // syncLog brings the open App Log up to what was logged, following its end
-// when it was there, as streaming content does; once it has closed, what
-// comes in is unseen again.
+// when it was there, as streaming content does, never in the selection mode
+// (tdp note.9); once it has closed, what comes in is unseen again.
 func (a *App) syncLog() {
 	l := &a.logs
 	l.mu.Lock()
@@ -131,8 +131,15 @@ func (a *App) syncLog() {
 	}
 	line, sub := v.maxTop()
 	atEnd := v.textW == 0 || v.top > line || v.top == line && v.sub >= sub
+	// The oldest entries that went since (logMost) take their lines with
+	// them: what is in sight, the cursor and where the selection started
+	// stay on the entries they were on (tdp note.9).
+	gone := l.logged - len(l.entries) - (l.viewLogged - len(v.Lines))
 	v.Lines, l.viewLogged = l.lines(), l.logged
-	if atEnd {
+	if gone > 0 {
+		v.top, v.line, v.fromL = max(v.top-gone, 0), max(v.line-gone, 0), max(v.fromL-gone, 0)
+	}
+	if atEnd && !v.inMode {
 		v.top = 1 << 30
 	}
 }
