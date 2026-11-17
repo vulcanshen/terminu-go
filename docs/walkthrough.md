@@ -48,7 +48,8 @@ go build -o /tmp/showcase ./examples/showcase
   `s` 排序、`go` 跳到第一個沒在跑的、`D` 拖曳模式（框與模式名變色，拿著的那一列 Yellow、標記欄畫上下箭頭；`j|k` 搬、到頭尾繞回，`Enter` 放下，`Esc` 放回）。
 - `Space` 裡有切狀態的開關：`Empty`、`Loading`、`Fail`、`Disable`，與五種 toast（`Toast success`、`Toast info`、`Toast warning`、`Toast error`、`Toast long`）。
   `Disable` 之後下框 hint 的 `m:mark` 變停用色；I 的 `[2] FILES` 選了只列按得了的，`Disable` 之後 `V:view` 不見。
-- `[2] LOG` 是一直進來的串流：`Enter` 用 viewer 看全部；`F` 是 `Frozen` 模式，這個模式不暫停 `Tab`，換到別的 panel 時看模式名的細線接頭。
+- `[2] LOG` 是一直進來的串流：在結尾時跟著往下，往上捲就停在那裡；`Enter` 用 viewer 看全部。`Space` 裡的 `Status` 把最後一行進來的時間
+  放到框上，每選一次換一個角；`Status trouble` 讓它變 Peach、Red，再變回來。
 - `[3] SETTINGS` 是一列一個值；在它上面 `Space` → `Fail`，`Timeout` 的 label 變 Red。
 
 **I — Inputs**：每一種 input。

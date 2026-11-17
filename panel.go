@@ -285,7 +285,9 @@ type Panel struct {
 	// focus there (Action.ToDetails).
 	Details *Panel
 	// Stream marks streaming content, which is not dimmed when unfocused
-	// (tdp T2).
+	// (tdp T2): what a running program or a connection keeps sending.
+	// Content read again from a source that changed (a watched file, a log
+	// file among them) is not streaming and dims (tdp T2, note.9).
 	Stream bool
 	// Loading puts the loading icon after the capsule chain; LoadingText is
 	// what an empty panel says meanwhile ("loading pods…", tdp panel.15).

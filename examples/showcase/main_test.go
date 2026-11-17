@@ -101,7 +101,7 @@ func TestPanelItemsInItems(t *testing.T) {
 // in the next corner each time, from the top left round to the bottom right,
 // then takes it off; Status trouble turns it from fine to worth noticing to
 // gone wrong and back, and cannot be chosen with no status; it says when the
-// file was last read, following the log.
+// last line came in, following the log.
 func TestLogFrameStatus(t *testing.T) {
 	s := newShowcase()
 	d := tdptest.Start(t, s.app, 160, 40)

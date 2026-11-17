@@ -6,10 +6,11 @@ import (
 
 // Pager is a panel body that shows lines with no cursor: a preview, a log.
 // When Follow is set, new lines keep it at the bottom as long as it was
-// there (streaming content). Its lines are reading content, drawn as a
-// terminal draws them (components, control characters): \n starts another
-// line, a \r in one leaves its last state, SGR colours it, a tab is spaces,
-// any other control character is its name in Red.
+// there; scrolled up, it stays where it is. A Pager that takes lines while
+// it is open sets Follow (tdp note.9). Its lines are reading content, drawn
+// as a terminal draws them (components, control characters): \n starts
+// another line, a \r in one leaves its last state, SGR colours it, a tab is
+// spaces, any other control character is its name in Red.
 type Pager struct {
 	Follow bool
 	// EmptyFact and EmptyHint are what it says with no lines.

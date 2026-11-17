@@ -28,7 +28,7 @@ type panelsScreen struct {
 	errors   int // ERROR lines in the log, for the statusbar
 	warnings int // WARN lines
 	dragFrom string
-	lastRead string // when the log file was last read, for [2] LOG's own status
+	lastRead string // when the last line came in, for [2] LOG's own status
 }
 
 var podNames = []string{
@@ -75,10 +75,9 @@ func newPanelsScreen(s *showcase) *panelsScreen {
 			Do: func() tea.Cmd {
 				return s.app.Viewer(&terminu.Viewer{Title: "Log", Subject: "api", Glyph: glyphYaml, Lines: slices.Clone(ps.logText.Lines())})
 			}},
-		{Key: "F", Label: "Freeze", Desc: "stop following new lines until Esc", Scope: terminu.PanelScope, Do: ps.freeze},
-		// Its own status on its frame (tdp panel.1): the file is watched, and
-		// when it was last read; in the next corner each time, then none.
-		{Label: "Status", Desc: "when the file was last read, in the next corner of the frame, or none", Scope: terminu.PanelScope,
+		// Its own status on its frame (tdp panel.1): the log is followed, and
+		// when its last line came in; in the next corner each time, then none.
+		{Label: "Status", Desc: "when the last line came in, in the next corner of the frame, or none", Scope: terminu.PanelScope,
 			Do: ps.nextStatus},
 		{Label: "Status trouble", Desc: "what the status tells is fine, worth noticing, or has gone wrong", Scope: terminu.PanelScope,
 			Disabled: func() bool { return ps.log.FrameStatus.Text == "" },
@@ -364,17 +363,6 @@ func (ps *panelsScreen) notYet(what string) func() tea.Cmd {
 	return func() tea.Cmd { return ps.s.app.Toast(terminu.Info, "The "+what+" comes with the Inputs screen") }
 }
 
-// freeze is a mode that does not pause Tab: the panel can lose the focus in
-// it, its mode name then between light joints.
-func (ps *panelsScreen) freeze() tea.Cmd {
-	ps.logText.Follow = false
-	ps.log.EnterMode(&terminu.Mode{Name: "Frozen", Exit: "resume", OnExit: func() tea.Cmd {
-		ps.logText.Follow = true
-		return nil
-	}})
-	return nil
-}
-
 // startDrag enters the Drag mode (tdp K11): j|k move the pod, Enter drops
 // it, Esc puts it back.
 func (ps *panelsScreen) startDrag() tea.Cmd {
@@ -456,7 +444,7 @@ func (ps *panelsScreen) appendLog() {
 	}
 }
 
-// glyphSync is [2] LOG's own status: the file is watched.
+// glyphSync is [2] LOG's own status: the log is followed.
 const glyphSync = "\U000F04E6" // nf-md-sync
 
 // nextStatus puts [2] LOG's own status on its frame in the next corner,
