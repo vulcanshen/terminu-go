@@ -271,3 +271,25 @@ func TestProfileGone(t *testing.T) {
 		t.Errorf("back, the label is still Red:\n%s", strings.Join(d.Screen(), "\n"))
 	}
 }
+
+// Several things at one start come as one toast, a row each, its kind the
+// strongest; the App Log has an entry each (tdp E3, E3-37).
+func TestSeveralAtOneStart(t *testing.T) {
+	s := newShowcase()
+	d := tdptest.Start(t, s.app, 160, 40)
+	const gone = `profile "work" in config.yaml is not in profiles.yaml: using the default`
+	d.Do(func() tea.Cmd {
+		return s.dialogs.didNotFit(false, terminu.Notice{Kind: terminu.Warning, Text: gone})
+	})
+	fit := "2 values in config.yaml did not fit: defaults used, yours kept in config.yaml.bak"
+	if !d.Has("WARNING") || !d.Has(fit) || !d.Has(gone) {
+		t.Errorf("not one toast with both rows:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Advance(5 * time.Second)
+	d.Press("!")
+	for _, want := range []string{"WARN " + fit, `WARN config.yaml: color "#zzzzzz" did not fit`, "WARN " + gone} {
+		if !d.Has(want) {
+			t.Errorf("no %q in the App Log:\n%s", want, strings.Join(d.Screen(), "\n"))
+		}
+	}
+}

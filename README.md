@@ -154,6 +154,13 @@ so that is the WARN too, with no `app.Log` beside it (with no screen, write the 
 written with the field's `Err` returning true, so its label is Red; while the entry is gone, its select opens with
 `Selected: -1`.
 
+When one start has more than one of these to say (a location moved, values that don't fit in one file or several, a
+copy that could not be made, a value naming an entry that is not there), they come as one toast. Collect a
+`terminu.Notice{Kind, Text}` for each in the order they happened, `terminu.MisfitNotice(path, copied, misfits...)`
+for a file's misfits in place of `DidNotFit`, and call `app.Notify(notices...)`: a row each, the toast's kind the
+strongest (Error, then Warning, else the first row's), and in the App Log an entry each at its own kind, a file's
+WARNs right after its row. With no screen, write each `Text` that is not empty to stderr, a line each.
+
 ## A success report
 
 A success the user needs to read whole that is too long for a toast (what an export wrote, and where) goes in a

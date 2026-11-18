@@ -2,6 +2,19 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.17-beta.1 — tdp v1.2.15
+
+- tdp's next release (E3) has a value naming an entry of the user's own data that is not there (a setting naming a
+  profile deleted by hand): not a value that does not fit, so no `.bak` and the file left as it is, the default for
+  this run, a Warning toast with its WARN, and the value shown as written, its label Red. The lib has it already:
+  `App.Toast` logs every toast in the same words, `Field.Err` turns the label Red, and the field's select opens with
+  `Selected: -1` while the entry is gone. The showcase's SETTINGS has a Profile row and `Profile gone` in its Space
+  menu (from locku)
+- tdp's next release (E3) joins what one start has to say in one toast, a row each in the order it happened, its kind
+  the strongest, while the App Log has an entry each at its own kind. `Notice`, `MisfitNotice` and `App.Notify` do
+  it; `DidNotFit` is now `Notify(MisfitNotice(...))`, the same for its callers. The showcase's Dialogs has "Several
+  at one start"
+
 ## v1.2.16 — tdp v1.2.15
 
 - A file of the app's own with values it can't use or entries that don't fit is not one it can't read (tdp E3):

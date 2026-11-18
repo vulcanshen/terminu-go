@@ -739,6 +739,11 @@ func (a *App) relayout() {
 // draws the words as they are, not telling a name from a word (tdp toast.2).
 func (a *App) Toast(kind ToastKind, text ...string) tea.Cmd {
 	a.Log(kind, strings.Join(text, " ")) // every toast, the same words (tdp note, App Log)
+	return a.showToast(kind, text)
+}
+
+// showToast shows a toast that is logged already.
+func (a *App) showToast(kind ToastKind, text []string) tea.Cmd {
 	a.toastSeq++
 	v := &toastView{kind: kind, text: text, id: a.toastSeq, most: a.ToastLines}
 	if a.toast != nil && !a.toast.closing {

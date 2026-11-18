@@ -33,8 +33,9 @@ func (ds *dialogsScreen) moveAside() tea.Cmd {
 // use (tdp E3, a value that does not fit): it copies the file aside, writes
 // it again with its defaults and says so; in a folder that cannot be
 // written (readOnly) the copy cannot be made, so the file is left as it was
-// and the defaults hold for this run only.
-func (ds *dialogsScreen) didNotFit(readOnly bool) tea.Cmd {
+// and the defaults hold for this run only. What else the start has to say
+// (also) comes in the same toast, a row each (tdp E3, several at one start).
+func (ds *dialogsScreen) didNotFit(readOnly bool, also ...terminu.Notice) tea.Cmd {
 	a := ds.s.app
 	dir := filepath.Join(dataDir(), "fit")
 	_ = os.Chmod(dir, 0o755)
@@ -47,12 +48,15 @@ func (ds *dialogsScreen) didNotFit(readOnly bool) tea.Cmd {
 		_ = os.Chmod(dir, 0o555)
 		defer os.Chmod(dir, 0o755)
 	}
+	var ns []terminu.Notice
 	copied, err := terminu.KeepAside(path)
 	if err != nil {
-		return tea.Batch(a.Toast(terminu.Error, err.Error()), a.DidNotFit(path, "", misfits...))
+		ns = append(ns, terminu.Notice{Kind: terminu.Error, Text: err.Error()})
+	} else {
+		_ = os.WriteFile(path, []byte("color: \"#89b4fa\"\ntimeout: 30\nname: web\n"), 0o600)
 	}
-	_ = os.WriteFile(path, []byte("color: \"#89b4fa\"\ntimeout: 30\nname: web\n"), 0o600)
-	return a.DidNotFit(path, copied, misfits...)
+	ns = append(ns, terminu.MisfitNotice(path, copied, misfits...))
+	return a.Notify(append(ns, also...)...)
 }
 
 // report is a success too long for a toast that the user needs to read
@@ -213,6 +217,9 @@ func (ds *dialogsScreen) scenarios() []scenario {
 		{"Move aside: a record it can’t read", "confirm", "one record per file, one broken: Enter moves just that one to .bak and reads the rest", ds.moveAsideRecord},
 		{"Values that do not fit", "toast", "a colour and a timeout it can’t use: the file copied to .bak, written again with defaults, a Warning toast; [!] has each", func() tea.Cmd { return ds.didNotFit(false) }},
 		{"Values that do not fit, no copy", "toast", "the same in a folder that can’t be written: no .bak, the file left as it was, an Error toast", func() tea.Cmd { return ds.didNotFit(true) }},
+		{"Several at one start", "toast", "values that do not fit and a profile that is not there: one toast, a row each; [!] has an entry each", func() tea.Cmd {
+			return ds.didNotFit(false, terminu.Notice{Kind: terminu.Warning, Text: `profile "work" in config.yaml is not in profiles.yaml: using the default`})
+		}},
 		{"Success report", "note", "a success too long for a toast: a viewer that [Enter] closes too, in the App Log as OK", ds.report},
 		{"Toast", "toast", "a short message on the third row from the bottom", toast("Copied 3 paths")},
 		{"Toast over a popup", "toast", "a popup, then a toast: Esc takes the toast first", func() tea.Cmd {

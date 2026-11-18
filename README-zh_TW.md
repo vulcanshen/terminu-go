@@ -131,6 +131,11 @@ app 繼續。啟動時先用 `copied, err := terminu.KeepAside(path)` 把檔複�
 那筆 WARN，不用另外叫 `app.Log`（沒有畫面時，把那句寫到 stderr）。畫面上照原本寫的顯示，讓那一列的 `Err` 回傳 true，label
 就是 Red；那一筆不在時，它的 select 用 `Selected: -1` 打開。
 
+同一次啟動要說的不只一件時（位置搬了、一個或好幾個檔有值不合規則、備份做不出來、值指到不在的一筆），合成一個 toast：照發生的
+順序，每一件收成一個 `terminu.Notice{Kind, Text}`，檔案裡不合規則的值改用 `terminu.MisfitNotice(path, copied, misfits...)`
+（不叫 `DidNotFit`），最後叫 `app.Notify(notices...)`。toast 一件一行，種類取最重的（Error，再來 Warning，都不是就照第一行）；
+App Log 一件一筆、用它自己的種類，那個檔的 WARN 緊接在它那一行後面。沒有畫面時，把每個不是空的 `Text` 各寫一行到 stderr。
+
 ## 成功的報告
 
 使用者需要讀完、toast 又放不下的成功報告（例：匯出寫了哪些檔、寫在哪裡），放進唯讀的 viewer：

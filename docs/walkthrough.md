@@ -76,6 +76,8 @@ go build -o /tmp/showcase ./examples/showcase
   選的時候按 `Space` 或 `?` 開著，就改疊一個 Peach 的 note，`Enter` 或 `Esc` 連同 menu 一起關。
 - 「Values that do not fit」：一個有兩個用不了的值的假設定檔，複製成 `config.yaml.bak`、用預設值重寫，跳一個 Warning toast；按 `!`
   看每個值各一筆 WARN。「…, no copy」是同樣的檔放在不能寫的資料夾：沒有 `.bak`、檔案不動，跳 Error toast。
+- 「Several at one start」：同樣的檔，再加上一個不在的 profile：只跳一個 Warning toast，一件一行；按 `!` 看一件一筆，
+  值的 WARN 緊接在它那一行後面。
 - 「Success report」：toast 放不下的成功報告開在 viewer 裡，`Enter` 也能關；按 `!` 看它以 OK 記進 App Log。
 - 「Form: with actions」有好幾個按鈕：`Tab` 到動作區先停在右下角的 `Connect`，`j|k` 在按鈕之間走。`Test` 只要 Host：空著按會被擋，
   填了再按要等一下（標題後面轉 loading icon）才跳 toast，Host 打 `bad-1` 會失敗、開 error popup，關掉後再按 `Enter` 就是重試；

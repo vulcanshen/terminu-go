@@ -76,21 +76,64 @@ type Misfit struct{ Key, Was, Now string }
 // `config.yaml: color "#zzzzzz" did not fit; using "#89b4fa"`, or
 // `hosts.yaml: entry 3 (name "") did not fit; taken out`. With copy ""
 // (the copy could not be made) it only logs the misfits: the app gives
-// KeepAside's error in an Error toast.
+// KeepAside's error in an Error toast. When the start has more to say, the
+// app gives MisfitNotice to Notify with the rest instead.
 func (a *App) DidNotFit(path, copy string, misfits ...Misfit) tea.Cmd {
-	var cmd tea.Cmd
-	if text := DidNotFitText(path, copy, misfits...); text != "" {
-		cmd = a.Toast(Warning, text)
-	}
+	return a.Notify(MisfitNotice(path, copy, misfits...))
+}
+
+// Notice is one row of the toast a start gives, with its own kind (tdp E3,
+// several at one start): a location moved, values that did not fit
+// (MisfitNotice), a copy that could not be made (KeepAside's error), a value
+// naming an entry that is not there. Notify shows them as one toast; with no
+// screen, each Text that is not "" is a line of its own on stderr.
+type Notice struct {
+	Kind ToastKind
+	Text string
+	// warns are the WARNs logged right after the row: a misfit's.
+	warns []string
+}
+
+// MisfitNotice is DidNotFit's row, a Warning in DidNotFitText's words,
+// carrying a WARN for each misfit that Notify logs right after it. With copy
+// "" its Text is "": no row, the WARNs still logged.
+func MisfitNotice(path, copy string, misfits ...Misfit) Notice {
+	n := Notice{Kind: Warning, Text: DidNotFitText(path, copy, misfits...)}
 	file := filepath.Base(path)
 	for _, m := range misfits {
 		if m.Now == "" {
-			a.Log(Warning, file+": "+m.Key+" did not fit; taken out")
+			n.warns = append(n.warns, file+": "+m.Key+" did not fit; taken out")
 			continue
 		}
-		a.Log(Warning, file+": "+m.Key+" "+strconv.Quote(m.Was)+" did not fit; using "+strconv.Quote(m.Now))
+		n.warns = append(n.warns, file+": "+m.Key+" "+strconv.Quote(m.Was)+" did not fit; using "+strconv.Quote(m.Now))
 	}
-	return cmd
+	return n
+}
+
+// Notify shows notices as one toast, a row each in the order given, its kind
+// the strongest: Error, then Warning, else the first row's (tdp E3, several
+// at one start). In the App Log each row is an entry of its own at its own
+// kind, a misfit's WARNs right after its row. A notice with no Text has no
+// row; with no rows there is no toast.
+func (a *App) Notify(notices ...Notice) tea.Cmd {
+	var rows []string
+	kind := Info
+	for _, n := range notices {
+		if n.Text != "" {
+			a.Log(n.Kind, n.Text)
+			if len(rows) == 0 || n.Kind == Error || n.Kind == Warning && kind != Error {
+				kind = n.Kind
+			}
+			rows = append(rows, n.Text)
+		}
+		for _, w := range n.warns {
+			a.Log(Warning, w)
+		}
+	}
+	if len(rows) == 0 {
+		return nil
+	}
+	return a.showToast(kind, rows)
 }
 
 // DidNotFitText is DidNotFit's sentence, for an app with no screen to write
