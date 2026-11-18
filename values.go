@@ -2,6 +2,7 @@ package terminu
 
 import (
 	"cmp"
+	"fmt"
 	"slices"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -21,9 +22,10 @@ type Field struct {
 	Empty  string
 	// Path cuts a value too long from the front: "…/.ssh/id_ed25519".
 	Path bool
-	// Options make the field a radio drawn in place: Selected is the chosen
-	// one. With Multi it is a group of checkboxes: Checked says which. They
-	// are for a fixed set the app defines: options that are the user's own
+	// Options make the field a radio drawn in place, at most five (more is a
+	// mistake in the program: the panel panics as it draws): Selected is the
+	// chosen one. With Multi it is a group of checkboxes: Checked says which.
+	// They are for a fixed set the app defines: options that are the user's own
 	// data, their number changing with use (profiles), always go in a select
 	// or a checkbox popup (Edit), however many there are now (tdp radio.1,
 	// checkbox.1).
@@ -207,6 +209,11 @@ func (v *Values) Uncover(rows int) { v.cover = rows }
 // Draw draws the fields: labels in upper case in Blue, two cells, the values;
 // in groups, each under its title, two cells further in.
 func (v *Values) Draw(w, h int, focused bool) []string {
+	for _, f := range v.Fields {
+		if len(f.Options) > 5 {
+			panic(fmt.Sprintf("terminu: value field %q has %d options; more than five go in a select or a checkbox popup", f.Label, len(f.Options)))
+		}
+	}
 	if len(v.Fields) == 0 {
 		v.scroll = ""
 		return EmptyState(w, h, v.EmptyFact, v.EmptyHint)
