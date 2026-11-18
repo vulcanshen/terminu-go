@@ -20,7 +20,7 @@ func TestE3Notify(t *testing.T) {
 		misfit,
 		Notice{Kind: Error, Text: "hosts.yaml.bak could not be made: permission denied; hosts.yaml left as it was"},
 		Notice{Kind: Warning}, // no row
-		Notice{Kind: Warning, Text: `profile "work" in config.yaml is not in profiles.yaml: using the default`},
+		Notice{Kind: Warning, Text: `Profile "work" in config.yaml is not in profiles.yaml: using the default`},
 	)
 	ta.settle()
 	if ta.toast == nil || ta.toast.view.(*toastView).kind != Error {
@@ -30,7 +30,7 @@ func TestE3Notify(t *testing.T) {
 		"Settings moved from ~/.app to ~/.config/app",
 		"1 value and 1 entry in config.yaml did not fit: defaults used and entries taken out, yours kept in config.yaml.bak",
 		"hosts.yaml.bak could not be made: permission denied; hosts.yaml left as it was",
-		`profile "work" in config.yaml is not in profiles.yaml: using the default`,
+		`Profile "work" in config.yaml is not in profiles.yaml: using the default`,
 	}
 	if got := ta.toast.view.(*toastView).text; !slices.Equal(got, rows) {
 		t.Errorf("the rows:\n%s", strings.Join(got, "\n"))

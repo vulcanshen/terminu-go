@@ -1,6 +1,6 @@
-# tdp v1.2.15 coverage
+# tdp v1.2.16 coverage
 
-tdp v1.2.15 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
+tdp v1.2.16 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
 每個元件、規範列的每一種方案、寫到的每一種狀態與疊法，在展示場都按得到。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -245,7 +245,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | E3 | 讀不了時，資料是一筆一個檔：讀不了的那一筆按 `Enter` 只改名成 `.bak`、不另外建，其他照常讀；問句 `Move it to <檔名>.bak and go on without it?`（lib：`App.MoveAsideRecord`，app 的 `reread` 只是重讀） | D「Move aside: a record it can’t read」 | `TestMoveAsideRecord` |
 | E3 | 值不合規則（app 用不了的值、名字空白或重複的一筆）不算讀不了，app 繼續、不開 MOVE ASIDE：啟動時先把檔案複製成 `<名字>.bak`（已經有就 `.bak.1`……，不蓋掉、權限照原本的），再由 app 重寫：那些值換成預設值、那些筆拿掉；一個 Warning toast 寫出檔案與備份（`3 values in config.yaml did not fit: defaults used, yours kept in config.yaml.bak`；只有筆是 `… entries … did not fit: taken out, …`；兩種都有是 `3 values and 2 entries … : defaults used and entries taken out, …`；一個時 `1 value`、`1 entry`）；每個值或每一筆一筆 WARN（`config.yaml: color "#zzzzzz" did not fit; using "#89b4fa"`、`hosts.yaml: entry 3 (name "") did not fit; taken out`）；沒有畫面時那一句寫到 stderr（E3-28～E3-31）。lib：`KeepAside(path)`、`Misfit`、`App.DidNotFit(path, copy, misfits...)`、`DidNotFitText(...)`；重寫與讀檔是 app 的 | D「Values that do not fit」，再按 `!` | `TestE3KeepAside`、`TestE3DidNotFit`、showcase 的 `TestValuesDidNotFit` |
 | E3 | 值不合規則、`.bak` 又做不出來時（唯讀的資料夾、磁碟滿了）不重寫檔案：預設值只用在這一次，Error toast `config.yaml.bak could not be made: <原因>; config.yaml left as it was`，WARN 照樣記，下次啟動再遇到一次（E3-32）。lib：`KeepAside` 的 error 就是那一句（包著原因，`errors.Is` 認得出），做到一半失敗不留下殘檔；`DidNotFit(path, "", misfits...)` 只記 WARN | D「Values that do not fit, no copy」 | `TestE3KeepAside`、`TestE3DidNotFit`、showcase 的 `TestValuesDidNotFit` |
-| E3 | 值指到使用者自己資料裡不在的一筆（例：設定指向手動刪掉的 profile）不算值不合規則：沒有 `.bak`，檔案不動、值留著；這一次用 app 內建的預設值，啟動時跳 Warning toast（`profile "work" in config.yaml is not in profiles.yaml: using the default`），App Log 有一筆 WARN；畫面上照原本寫的顯示，label 畫 Red；那一筆回來了就又能用，使用者選了別的一筆才改掉（E3-33、E3-34）。lib：`App.Toast(Warning, …)`（每個 toast 都照同樣的字記進 App Log，那就是 WARN，不用再叫 `App.Log`）、`Field.Err`、`Select.Selected` 的 -1；讀檔與預設值是 app 的 | P `[3] SETTINGS`：`Space` → `Profile gone`，再按 `!`；再選一次，`work` 回來 | showcase 的 `TestProfileGone` |
+| E3 | 值指到使用者自己資料裡不在的一筆（例：設定指向手動刪掉的 profile）不算值不合規則：沒有 `.bak`，檔案不動、值留著；這一次用 app 內建的預設值，啟動時跳 Warning toast（`Profile "work" in config.yaml is not in profiles.yaml: using the default`），App Log 有一筆 WARN；畫面上照原本寫的顯示，label 畫 Red；那一筆回來了就又能用，使用者選了別的一筆才改掉（E3-33、E3-34）。lib：`App.Toast(Warning, …)`（每個 toast 都照同樣的字記進 App Log，那就是 WARN，不用再叫 `App.Log`）、`Field.Err`、`Select.Selected` 的 -1；讀檔與預設值是 app 的 | P `[3] SETTINGS`：`Space` → `Profile gone`，再按 `!`；再選一次，`work` 回來 | showcase 的 `TestProfileGone` |
 | E3 | 沒有畫面時，值指到不在的一筆也一樣處理（檔案不動、用預設值、照樣印出結果），toast 那句寫到 stderr（E3-35） | lib 不適用：沒有畫面時 app 不走 `Run`，那一句是 app 寫的；展示場不存設定 | — |
 | E3 | 不在 TUI 裡的畫面（K1）讀不了設定、狀態或資料：不移到 `.bak`、不重寫，畫面上寫出哪個檔、為什麼；怎麼繼續由 app 決定（P5）；下次打開 TUI 時照常開 `MOVE ASIDE`（E3-36） | lib 不適用：不在 TUI 裡的畫面是 app 自己畫的，下次打開 TUI 時用 `App.MoveAside`；展示場沒有這種畫面 | — |
 | E3 | 同一次啟動有不只一個 E3 的 toast（位置搬了、值不合規則、備份做不出來、值指到不在的一筆）時，合成一個 toast，照發生的順序一件一行，種類取其中最重的（Error，再來 Warning，再來其他）；App Log 裡一件一筆、用它自己的種類；沒有畫面時，各自一行寫到 stderr（E3-37）。lib：`Notice{Kind, Text}`、`MisfitNotice(path, copy, misfits...)`（`DidNotFit` 的那一行，帶著每個值的 WARN，緊接在那一行後面記）、`App.Notify(notices...)`（都不是 Error、Warning 時照第一行的種類；沒有 `Text` 的不成一行）；`DidNotFit` 就是 `Notify(MisfitNotice(...))`；stderr 那幾行是 app 寫的 | D「Several at one start」，再按 `!` | `TestE3Notify`、showcase 的 `TestSeveralAtOneStart` |

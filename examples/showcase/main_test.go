@@ -253,7 +253,7 @@ func TestProfileGone(t *testing.T) {
 		t.Fatalf("no Profile row:\n%s", strings.Join(d.Screen(), "\n"))
 	}
 	d.Do(gone.Do)
-	const said = `profile "work" in config.yaml is not in profiles.yaml: using the default`
+	const said = `Profile "work" in config.yaml is not in profiles.yaml: using the default`
 	if !d.Has(said) {
 		t.Errorf("no Warning toast:\n%s", strings.Join(d.Screen(), "\n"))
 	}
@@ -277,7 +277,7 @@ func TestProfileGone(t *testing.T) {
 func TestSeveralAtOneStart(t *testing.T) {
 	s := newShowcase()
 	d := tdptest.Start(t, s.app, 160, 40)
-	const gone = `profile "work" in config.yaml is not in profiles.yaml: using the default`
+	const gone = `Profile "work" in config.yaml is not in profiles.yaml: using the default`
 	d.Do(func() tea.Cmd {
 		return s.dialogs.didNotFit(false, terminu.Notice{Kind: terminu.Warning, Text: gone})
 	})

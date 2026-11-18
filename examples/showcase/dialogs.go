@@ -218,7 +218,7 @@ func (ds *dialogsScreen) scenarios() []scenario {
 		{"Values that do not fit", "toast", "a colour and a timeout it can’t use: the file copied to .bak, written again with defaults, a Warning toast; [!] has each", func() tea.Cmd { return ds.didNotFit(false) }},
 		{"Values that do not fit, no copy", "toast", "the same in a folder that can’t be written: no .bak, the file left as it was, an Error toast", func() tea.Cmd { return ds.didNotFit(true) }},
 		{"Several at one start", "toast", "values that do not fit and a profile that is not there: one toast, a row each; [!] has an entry each", func() tea.Cmd {
-			return ds.didNotFit(false, terminu.Notice{Kind: terminu.Warning, Text: `profile "work" in config.yaml is not in profiles.yaml: using the default`})
+			return ds.didNotFit(false, terminu.Notice{Kind: terminu.Warning, Text: `Profile "work" in config.yaml is not in profiles.yaml: using the default`})
 		}},
 		{"Success report", "note", "a success too long for a toast: a viewer that [Enter] closes too, in the App Log as OK", ds.report},
 		{"Toast", "toast", "a short message on the third row from the bottom", toast("Copied 3 paths")},

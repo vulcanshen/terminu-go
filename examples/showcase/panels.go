@@ -166,7 +166,7 @@ func newPanelsScreen(s *showcase) *panelsScreen {
 				if profile != "work" {
 					return nil
 				}
-				return a.Toast(terminu.Warning, `profile "work" in config.yaml is not in profiles.yaml: using the default`)
+				return a.Toast(terminu.Warning, `Profile "work" in config.yaml is not in profiles.yaml: using the default`)
 			}},
 	}}
 	ps.settings.Actions = append(ps.settings.Actions, ps.stateActions(ps.settings)...)
