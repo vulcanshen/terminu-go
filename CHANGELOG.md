@@ -2,6 +2,21 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.16 — tdp v1.2.15
+
+- A file of the app's own with values it can't use or entries that don't fit is not one it can't read (tdp E3):
+  `KeepAside(path)` copies it to the next free `.bak` (never over another, with its mode), and the app writes it again
+  with its defaults. `App.DidNotFit(path, copy, misfits...)` gives one Warning toast, "3 values in config.yaml did not
+  fit: defaults used, yours kept in config.yaml.bak", and a WARN in the App Log for each `Misfit`;
+  `DidNotFitText` is that sentence for stderr with no screen. When the copy cannot be made, `KeepAside`'s error is the
+  Error toast's words, "config.yaml.bak could not be made: <why>; config.yaml left as it was": the file is not written
+  again, and `DidNotFit(path, "", misfits...)` writes the WARNs alone (from locku)
+- `App.Report(v)` opens a success report too long for a toast in a read-only viewer that `Enter` closes as well as
+  `Esc` (not in the selection mode), and logs it as a Success (tdp toast.2, note.1, note.3; from locku)
+- A one-value-per-row panel draws at most five options in place, as a form does: more panics as it draws (tdp
+  radio.1). Options that are the user's own data always go in a select or a checkbox popup, however many there are;
+  `FormField.Options` and `Field.Options` say so, and it is the app's to keep (tdp radio.1, checkbox.1; from locku)
+
 ## v1.2.15 — tdp v1.2.14
 
 - With a selection mode's Space menu or key reference open, a re-read that takes the selection away says so in a note
