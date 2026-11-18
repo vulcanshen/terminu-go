@@ -94,6 +94,26 @@ type Viewer struct {
 	// relayout lays the lines out again for a terminal sw wide, before it is
 	// measured (the compare, its lines cut to the width).
 	relayout func(sw int)
+	// report is a success report Report opened: Enter closes it too.
+	report bool
+}
+
+// Report opens v as a success report too long for a toast that the user
+// needs to read whole (tdp toast.2, note.1, note.3): a read-only viewer
+// titled with what was done, its lines the whole report, in its layer's
+// colour. It came up by itself, so Enter closes it as well as Esc (not in
+// the selection mode, where Enter does nothing); the hint and ? say
+// Enter|Esc. The report goes in the App Log as a Success, "<Title>: <its
+// lines>". Whether a report is short enough for a Success toast is the
+// app's to tell.
+func (a *App) Report(v *Viewer) tea.Cmd {
+	v.report = true
+	text := make([]string, 0, len(v.Lines))
+	for _, l := range v.Lines {
+		text = append(text, StripStyles(l))
+	}
+	a.Log(Success, v.Title+": "+strings.Join(text, " "))
+	return a.Viewer(v)
 }
 
 // TextMatch is a stretch of a viewer's line: its characters From to To, To
@@ -286,7 +306,15 @@ func (vv *viewerView) hint() []KeyHint {
 	if v.Select != nil {
 		h = append(h, KeyHint{v.Select.Key, strings.ToLower(cmpOr(v.Select.Name, "select"))})
 	}
-	return append(h, KeyHint{"Esc", "close"})
+	return append(h, KeyHint{v.closeKeys(), "close"})
+}
+
+// closeKeys are the keys that close v: Esc, Enter too for a report (Report).
+func (v *Viewer) closeKeys() string {
+	if v.report {
+		return "Enter|Esc"
+	}
+	return "Esc"
 }
 
 // tabsToSwitch reports two tabs or more h|l can switch to now, out of the
@@ -904,7 +932,11 @@ func (vv *viewerView) key(a *App, key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 			return true, run2tab(v.OnTab, v.Tab)
 		}
 	case "Enter", "Space":
-		// A note closes with Esc only (tdp note).
+		// A note closes with Esc only (tdp note); a report, which came up by
+		// itself, with Enter too (Report; tdp note.3, toast.2).
+		if key == "Enter" && v.report {
+			return true, a.closeTop()
+		}
 	default:
 		if s := v.Search; s != nil {
 			switch key {
@@ -986,7 +1018,7 @@ func (vv *viewerView) keyRef() []refSection {
 	if v.Select != nil {
 		rows = append(rows, KeyRow{Key: v.Select.Key, Desc: "select text (" + cmpOr(v.Select.Name, "Select") + ")"})
 	}
-	rows = append(rows, KeyRow{Key: "Esc", Desc: "close"})
+	rows = append(rows, KeyRow{Key: v.closeKeys(), Desc: "close"})
 	move = nil
 	if t, s := v.maxTop(); t > 0 || s > 0 {
 		// Only when it does not all fit (tdp M6).

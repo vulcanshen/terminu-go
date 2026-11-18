@@ -22,7 +22,11 @@ type Field struct {
 	// Path cuts a value too long from the front: "…/.ssh/id_ed25519".
 	Path bool
 	// Options make the field a radio drawn in place: Selected is the chosen
-	// one. With Multi it is a group of checkboxes: Checked says which.
+	// one. With Multi it is a group of checkboxes: Checked says which. They
+	// are for a fixed set the app defines: options that are the user's own
+	// data, their number changing with use (profiles), always go in a select
+	// or a checkbox popup (Edit), however many there are now (tdp radio.1,
+	// checkbox.1).
 	Options  []string
 	Selected int
 	Multi    bool

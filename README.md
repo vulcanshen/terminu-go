@@ -138,6 +138,21 @@ that can't be read: `Enter` only moves that one aside and runs `reread`, which r
 no longer uses are left to the user: call `app.NoLongerUsed(paths...)` at every start, and the App Log names each one
 still there.
 
+A file the app reads but with values it can't use (a colour that is not `#rrggbb`, a negative timeout) or entries that
+don't fit (a blank or repeated name) is not one it can't read: the app goes on. At the start, copy it aside with
+`copied, err := terminu.KeepAside(path)` (to `.bak`, never over another), write the file again with your defaults
+for those values and without those entries, and call `app.DidNotFit(path, copied, misfits...)`: one Warning toast
+naming the file and the copy, and a WARN in the App Log for each `terminu.Misfit{Key, Was, Now}`. With no screen,
+write `terminu.DidNotFitText(path, copied, misfits...)` to stderr. When `KeepAside` fails, don't write the file
+again: use the defaults for this run only, give its error in an Error toast (or on stderr) and call
+`app.DidNotFit(path, "", misfits...)` for the WARNs.
+
+## A success report
+
+A success the user needs to read whole that is too long for a toast (what an export wrote, and where) goes in a
+read-only viewer: `app.Report(&terminu.Viewer{Title: "Exported", Lines: lines})`. It came up by itself, so `Enter`
+closes it as well as `Esc`, and it goes in the App Log as a Success.
+
 ## Raising privileges
 
 To do something as the administrator (copying a temporary file over `/etc/hosts`, say), call

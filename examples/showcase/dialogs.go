@@ -29,6 +29,42 @@ func (ds *dialogsScreen) moveAside() tea.Cmd {
 	})
 }
 
+// didNotFit reads a pretend settings file with two values the showcase can't
+// use (tdp E3, a value that does not fit): it copies the file aside, writes
+// it again with its defaults and says so; in a folder that cannot be
+// written (readOnly) the copy cannot be made, so the file is left as it was
+// and the defaults hold for this run only.
+func (ds *dialogsScreen) didNotFit(readOnly bool) tea.Cmd {
+	a := ds.s.app
+	dir := filepath.Join(dataDir(), "fit")
+	_ = os.Chmod(dir, 0o755)
+	_ = os.RemoveAll(dir) // the pretend file alone, its copies of other runs gone
+	_ = os.MkdirAll(dir, 0o755)
+	path := filepath.Join(dir, "config.yaml")
+	_ = os.WriteFile(path, []byte("color: \"#zzzzzz\"\ntimeout: -5\nname: web\n"), 0o600)
+	misfits := []terminu.Misfit{{Key: "color", Was: "#zzzzzz", Now: "#89b4fa"}, {Key: "timeout", Was: "-5", Now: "30"}}
+	if readOnly {
+		_ = os.Chmod(dir, 0o555)
+		defer os.Chmod(dir, 0o755)
+	}
+	copied, err := terminu.KeepAside(path)
+	if err != nil {
+		return tea.Batch(a.Toast(terminu.Error, err.Error()), a.DidNotFit(path, "", misfits...))
+	}
+	_ = os.WriteFile(path, []byte("color: \"#89b4fa\"\ntimeout: 30\nname: web\n"), 0o600)
+	return a.DidNotFit(path, copied, misfits...)
+}
+
+// report is a success too long for a toast that the user needs to read
+// whole (tdp toast.2): what an export wrote, and where.
+func (ds *dialogsScreen) report() tea.Cmd {
+	lines := []string{"Wrote 4 files to /home/me/Documents/exports/2026-11-18 quarterly review/:"}
+	for _, f := range []string{"summary.md", "pods by namespace.csv", "events since last week.csv", "settings as they were.yaml"} {
+		lines = append(lines, "  "+f)
+	}
+	return ds.s.app.Report(&terminu.Viewer{Title: "Exported", Glyph: glyphYaml, Lines: lines, NoNumbers: true})
+}
+
 // moveAsideRecord breaks one of a few pretend records kept one per file and
 // asks what to do with it: moved aside, the showcase reads the rest (Rules
 // E3).
@@ -175,6 +211,9 @@ func (ds *dialogsScreen) scenarios() []scenario {
 		{"Quit: the app’s own flow", "menu", "the next [q] opens a menu of ways to leave; Ctrl-C again leaves at once", ds.quitFlow},
 		{"Move aside: a file it can’t read", "confirm", "its settings broken: Enter moves the file to .bak and starts as the first time, Esc quits the showcase", ds.moveAside},
 		{"Move aside: a record it can’t read", "confirm", "one record per file, one broken: Enter moves just that one to .bak and reads the rest", ds.moveAsideRecord},
+		{"Values that do not fit", "toast", "a colour and a timeout it can’t use: the file copied to .bak, written again with defaults, a Warning toast; [!] has each", func() tea.Cmd { return ds.didNotFit(false) }},
+		{"Values that do not fit, no copy", "toast", "the same in a folder that can’t be written: no .bak, the file left as it was, an Error toast", func() tea.Cmd { return ds.didNotFit(true) }},
+		{"Success report", "note", "a success too long for a toast: a viewer that [Enter] closes too, in the App Log as OK", ds.report},
 		{"Toast", "toast", "a short message on the third row from the bottom", toast("Copied 3 paths")},
 		{"Toast over a popup", "toast", "a popup, then a toast: Esc takes the toast first", func() tea.Cmd {
 			return tea.Batch(ds.yaml(), ds.s.app.Tick(600*time.Millisecond, func(time.Time) tea.Msg {

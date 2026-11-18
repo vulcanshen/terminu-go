@@ -119,6 +119,19 @@ app 讀不了自己的設定、狀態或資料（格式錯、檔案壞掉、沒�
 `app.MoveAsideRecord(path, err, reread)`：`Enter` 只把那一筆移開，再跑 `reread` 讀其他的。改版後不再用的檔交給使用者處理：
 每次啟動叫 `app.NoLongerUsed(paths...)`，還在的那幾個會在 App Log 各記一筆。
 
+讀得進來、只是有 app 用不了的值（不是 `#rrggbb` 的顏色、負的秒數），或有不合規則的一筆（名字空白或重複）的檔，不算讀不了：
+app 繼續。啟動時先用 `copied, err := terminu.KeepAside(path)` 把檔複製一份（`.bak`，一律不蓋掉別的），再用預設值重寫
+那些值、拿掉那些筆，然後叫 `app.DidNotFit(path, copied, misfits...)`：一個 Warning toast 寫出檔案與備份，每個
+`terminu.Misfit{Key, Was, Now}` 在 App Log 記一筆 WARN。沒有畫面時，把 `terminu.DidNotFitText(path, copied, misfits...)`
+寫到 stderr。`KeepAside` 失敗時不重寫檔案：預設值只用在這一次，把它的 error 用 Error toast（或 stderr）說出來，再叫
+`app.DidNotFit(path, "", misfits...)` 記 WARN。
+
+## 成功的報告
+
+使用者需要讀完、toast 又放不下的成功報告（例：匯出寫了哪些檔、寫在哪裡），放進唯讀的 viewer：
+`app.Report(&terminu.Viewer{Title: "Exported", Lines: lines})`。它是自己跳出來的，所以 `Enter` 跟 `Esc` 都能關；也會以
+Success 記進 App Log。
+
 ## 要提權時
 
 要以管理員身分做事（例：把暫存檔複製到 `/etc/hosts`）時，叫 `app.Elevate(terminu.Elevate{Command: ..., Done: ...})`，只給要跑的

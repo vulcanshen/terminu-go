@@ -1,7 +1,9 @@
 package main
 
 import (
+	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -178,5 +180,53 @@ func TestWatchedFile(t *testing.T) {
 	d.Advance(3 * time.Second)
 	if ds.watched != nil || ds.version != 5 {
 		t.Errorf("closed, it is still read: version %d", ds.version)
+	}
+}
+
+// A pretend settings file with two values it cannot use is copied to .bak
+// and written again with the defaults, said in one Warning toast; in a
+// folder that cannot be written there is no copy, the file is left as it
+// was and an Error toast says so (tdp E3, E3-28 to E3-32).
+func TestValuesDidNotFit(t *testing.T) {
+	s := newShowcase()
+	d := tdptest.Start(t, s.app, 140, 40)
+	path := filepath.Join(dataDir(), "fit", "config.yaml")
+	d.Do(func() tea.Cmd { return s.dialogs.didNotFit(false) })
+	if !d.Has("2 values in config.yaml did not fit: defaults used, yours kept in config.yaml.bak") {
+		t.Errorf("no Warning toast:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	kept, _ := os.ReadFile(path + ".bak")
+	now, _ := os.ReadFile(path)
+	if !strings.Contains(string(kept), "#zzzzzz") || !strings.Contains(string(now), "#89b4fa") {
+		t.Errorf("the copy %q, the file %q", kept, now)
+	}
+	if runtime.GOOS == "windows" || os.Geteuid() == 0 {
+		return // a folder that cannot be written
+	}
+	d.Advance(5 * time.Second)
+	d.Do(func() tea.Cmd { return s.dialogs.didNotFit(true) })
+	if !d.Has("config.yaml.bak could not be made: permission denied; config.yaml left as it was") {
+		t.Errorf("no Error toast:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	if _, err := os.Lstat(path + ".bak"); err == nil {
+		t.Error("a copy was made")
+	}
+	if now, _ := os.ReadFile(path); !strings.Contains(string(now), "#zzzzzz") {
+		t.Errorf("the file was written again: %q", now)
+	}
+}
+
+// A success too long for a toast opens a viewer that Enter closes too
+// (tdp toast.2, toast-28).
+func TestSuccessReport(t *testing.T) {
+	s := newShowcase()
+	d := tdptest.Start(t, s.app, 120, 40)
+	d.Do(s.dialogs.report)
+	if !d.Has("EXPORTED") || !d.Has("Enter|Esc:close") || !d.Has("events since last week.csv") {
+		t.Fatalf("no report:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Press("Enter")
+	if s.app.Covered() {
+		t.Error("Enter did not close it")
 	}
 }

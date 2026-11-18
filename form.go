@@ -30,7 +30,10 @@ type FormField struct {
 	Edit func() Input
 	// Options make the field a radio drawn on the form, at most five
 	// (Selected is the chosen one); with Multi, a group of checkboxes
-	// (Checked says which).
+	// (Checked says which). They are for a fixed set the app defines:
+	// options that are the user's own data, their number changing with use
+	// (profiles), always go in a select or a checkbox popup (Edit), however
+	// many there are now (tdp radio.1, checkbox.1).
 	Options  []string
 	Selected int
 	Multi    bool
