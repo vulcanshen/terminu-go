@@ -230,3 +230,44 @@ func TestSuccessReport(t *testing.T) {
 		t.Error("Enter did not close it")
 	}
 }
+
+// A setting naming one of the user's own profiles that is not there is not a
+// value that does not fit: shown as written, its label Red, a Warning toast
+// that the App Log keeps as a WARN; once it is back, it is used again
+// (tdp E3, E3-33, E3-34).
+func TestProfileGone(t *testing.T) {
+	s := newShowcase()
+	d := tdptest.Start(t, s.app, 140, 40)
+	d.Press("3") // SETTINGS focused, its labels not dimmed
+	var gone terminu.Action
+	for _, act := range s.panels.settings.Actions {
+		if act.Label == "Profile gone" {
+			gone = act
+		}
+	}
+	label := func(c terminu.Color) bool {
+		open, _, _ := strings.Cut(terminu.Fg(c).Render("PROFILE"), "PROFILE") // the label is padded
+		return strings.Contains(strings.Join(d.Styled(), "\n"), open+"PROFILE")
+	}
+	if !label(terminu.Blue) {
+		t.Fatalf("no Profile row:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Do(gone.Do)
+	const said = `profile "work" in config.yaml is not in profiles.yaml: using the default`
+	if !d.Has(said) {
+		t.Errorf("no Warning toast:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	if !label(terminu.Red) {
+		t.Errorf("the label is not Red:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Advance(5 * time.Second)
+	d.Press("!")
+	if !d.Has("WARN " + said) {
+		t.Errorf("no WARN in the App Log:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Press("Esc")
+	d.Do(gone.Do)
+	if !label(terminu.Blue) {
+		t.Errorf("back, the label is still Red:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+}

@@ -92,6 +92,11 @@ func newPanelsScreen(s *showcase) *panelsScreen {
 
 	ps.values = &terminu.Values{Header: [2]string{"Property", "Value"}}
 	name, pin, timeout := "showcase", "", "30"
+	// Profile names one of the user's own profiles (a pretend
+	// profiles.yaml). One taken out by hand is not a value that does not
+	// fit: the value stays as written, its label Red, the default used until
+	// it is back (tdp E3).
+	profiles, profile := []string{"home", "work"}, "work"
 	a := s.app
 	ps.values.Fields = []*terminu.Field{
 		// Each row says what it is in the panel's ? (what each row is).
@@ -122,6 +127,11 @@ func newPanelsScreen(s *showcase) *panelsScreen {
 			return a.Number(terminu.NumberInput{Title: "Timeout", Glyph: glyphTimer, Name: "Timeout", Prompt: "Seconds, 1-3600", Verb: "save",
 				Old: timeout, Min: 1, Max: 3600, Done: func(v string) tea.Cmd { timeout = v; return nil }})
 		}},
+		// The user's own data goes in a popup, never in place (tdp radio.1).
+		{Label: "Profile", Desc: "the profile the jobs run with", Value: func() string { return profile }, Err: func() bool { return !slices.Contains(profiles, profile) }, Edit: func() tea.Cmd {
+			return a.Select(terminu.Select{Title: "Profile", Glyph: glyphProfile, Options: profiles, Selected: slices.Index(profiles, profile),
+				Done: func(i int) tea.Cmd { profile = profiles[i]; return nil }})
+		}},
 	}
 	ps.settings = &terminu.Panel{Label: "Settings", Body: ps.values, Actions: []terminu.Action{
 		{Key: "e", Label: "Explain", Desc: "what this setting does", Scope: terminu.ItemScope, Hint: "explain",
@@ -132,7 +142,7 @@ func newPanelsScreen(s *showcase) *panelsScreen {
 		// are (tdp panel.12).
 		{Label: "Group", Desc: "the rows into groups, or back", Scope: terminu.PanelScope,
 			Do: func() tea.Cmd {
-				groups := []string{"General", "General", "Display", "Display", "Jobs", "Jobs"}
+				groups := []string{"General", "General", "Display", "Display", "Jobs", "Jobs", "Jobs"}
 				on := ps.values.Fields[0].Group == ""
 				for i, f := range ps.values.Fields {
 					f.Group = ""
@@ -141,6 +151,22 @@ func newPanelsScreen(s *showcase) *panelsScreen {
 					}
 				}
 				return nil
+			}},
+		// work taken out of the profiles by hand, as if before a start: the
+		// file is left as it is, a Warning toast (in the App Log as a WARN);
+		// again, it is back and used (tdp E3).
+		{Label: "Profile gone", Desc: "work out of the profiles, as if deleted by hand before a start, or back", Scope: terminu.PanelScope,
+			Do: func() tea.Cmd {
+				i := slices.Index(profiles, "work")
+				if i < 0 {
+					profiles = append(profiles, "work")
+					return nil
+				}
+				profiles = slices.Delete(profiles, i, i+1)
+				if profile != "work" {
+					return nil
+				}
+				return a.Toast(terminu.Warning, `profile "work" in config.yaml is not in profiles.yaml: using the default`)
 			}},
 	}}
 	ps.settings.Actions = append(ps.settings.Actions, ps.stateActions(ps.settings)...)

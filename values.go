@@ -38,7 +38,9 @@ type Field struct {
 	// other (tdp checkbox).
 	OptionUnavailable func(i int) bool
 	Disabled          func() bool
-	// Err marks the field's value as wrong: its label turns Red.
+	// Err marks the field's value as wrong, or as naming an entry of the
+	// user's own data that is not there, shown as written (tdp E3): its label
+	// turns Red.
 	Err func() bool
 	// Edit is what Enter does on a field that is not drawn in place: open its
 	// input popup.

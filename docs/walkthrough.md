@@ -50,7 +50,9 @@ go build -o /tmp/showcase ./examples/showcase
   `Disable` 之後下框 hint 的 `m:mark` 變停用色；I 的 `[2] FILES` 選了只列按得了的，`Disable` 之後 `V:view` 不見。
 - `[2] LOG` 是一直進來的串流：在結尾時跟著往下，往上捲就停在那裡；`Enter` 用 viewer 看全部。`Space` 裡的 `Status` 把最後一行進來的時間
   放到框上，每選一次換一個角；`Status trouble` 讓它變 Peach、Red，再變回來。
-- `[3] SETTINGS` 是一列一個值；在它上面 `Space` → `Fail`，`Timeout` 的 label 變 Red。
+- `[3] SETTINGS` 是一列一個值；在它上面 `Space` → `Fail`，`Timeout` 的 label 變 Red。`Space` → `Profile gone` 把使用者自己的 profile `work`
+  拿掉，像手動刪掉後再啟動：跳 Warning toast（`!` 裡是一筆 WARN），`Profile` 照樣寫 `work`、label 變 Red；再選一次，它回來了，又能用。
+  `Profile` 上按 `Enter` 開 select（使用者自己的資料一律開 popup）。
 
 **I — Inputs**：每一種 input。
 - `[1] INPUTS` 每一列 `Enter` 打開它的 popup：文字、密碼、PIN、數字、select、checkbox、textarea、日期、顏色、slider、檔案。

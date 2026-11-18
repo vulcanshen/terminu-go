@@ -147,6 +147,13 @@ write `terminu.DidNotFitText(path, copied, misfits...)` to stderr. When `KeepAsi
 again: use the defaults for this run only, give its error in an Error toast (or on stderr) and call
 `app.DidNotFit(path, "", misfits...)` for the WARNs.
 
+A value naming an entry of the user's own data that is not there (a setting naming a profile deleted by hand) is not
+a value that doesn't fit: no `KeepAside`, the file left as it is, the value kept. Use your built-in default for this
+run and say so with `app.Toast(terminu.Warning, …)` at the start; every toast goes in the App Log in the same words,
+so that is the WARN too, with no `app.Log` beside it (with no screen, write the sentence to stderr). Show the value as
+written with the field's `Err` returning true, so its label is Red; while the entry is gone, its select opens with
+`Selected: -1`.
+
 ## A success report
 
 A success the user needs to read whole that is too long for a toast (what an export wrote, and where) goes in a

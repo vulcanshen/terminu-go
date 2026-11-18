@@ -126,6 +126,11 @@ app 繼續。啟動時先用 `copied, err := terminu.KeepAside(path)` 把檔複�
 寫到 stderr。`KeepAside` 失敗時不重寫檔案：預設值只用在這一次，把它的 error 用 Error toast（或 stderr）說出來，再叫
 `app.DidNotFit(path, "", misfits...)` 記 WARN。
 
+值指到使用者自己資料裡不在的一筆（例：某個設定指向手動刪掉的 profile），不算值不合規則：不叫 `KeepAside`，檔案不動、值留著。
+這一次用 app 內建的預設值，啟動時用 `app.Toast(terminu.Warning, …)` 說出來；每個 toast 都照同樣的字記進 App Log，那就是
+那筆 WARN，不用另外叫 `app.Log`（沒有畫面時，把那句寫到 stderr）。畫面上照原本寫的顯示，讓那一列的 `Err` 回傳 true，label
+就是 Red；那一筆不在時，它的 select 用 `Selected: -1` 打開。
+
 ## 成功的報告
 
 使用者需要讀完、toast 又放不下的成功報告（例：匯出寫了哪些檔、寫在哪裡），放進唯讀的 viewer：
