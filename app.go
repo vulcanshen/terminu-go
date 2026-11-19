@@ -160,6 +160,7 @@ type App struct {
 	anim        bool
 	timers      []tea.Cmd          // the lib's own timers started while a message is handled (sendTimers)
 	comparings  []*comparing       // the compare modes under way (compare.go)
+	diffSplit   bool               // SPLIT chosen in an OpenDiff comparison (compare.go)
 	labels      map[any]*labelAnim // the mode names opening and closing, by frame (modelabel.go)
 	labelTick   bool               // a tick for them on its way
 	spin        bool
@@ -405,7 +406,7 @@ func (a *App) moved() tea.Cmd {
 	}
 	var cmds []tea.Cmd
 	for _, p := range s.Panels {
-		if b, ok := p.Body.(interface{ moved() tea.Cmd }); ok {
+		if b, ok := p.body().(interface{ moved() tea.Cmd }); ok {
 			cmds = append(cmds, b.moved())
 		}
 	}
@@ -805,7 +806,7 @@ func (a *App) inspectText() []string {
 		return nil
 	}
 	p := s.Focused()
-	if p == nil {
+	if p == nil || p.level() != nil { // the app's inspect is about its own rows
 		return nil
 	}
 	if p.mode != nil {
@@ -826,7 +827,7 @@ func (a *App) inspectText() []string {
 // row top, how many rows at the bottom of its inside the inspect toast covers
 // (tdp toast.4): the focused panel's alone, the toast being about its cursor.
 func (a *App) uncover(p *Panel, r Rect, top int, focused bool) {
-	b, ok := p.Body.(interface{ Uncover(rows int) })
+	b, ok := p.body().(interface{ Uncover(rows int) })
 	if !ok {
 		return
 	}
@@ -1116,14 +1117,14 @@ func cmpOr(s, def string) string {
 func (a *App) panelActions(p *Panel, scope Scope) []Action {
 	var out []Action
 	own := map[string]bool{}
-	for _, act := range p.Actions {
+	for _, act := range p.actions() {
 		own[act.Key] = true
 		if act.Scope == scope {
 			out = append(out, act)
 		}
 	}
 	// The body's own come after; a key the app registered itself is the app's.
-	if b, ok := p.Body.(interface{ Actions() []Action }); ok {
+	if b, ok := p.body().(interface{ Actions() []Action }); ok {
 		for _, act := range b.Actions() {
 			if act.Scope == scope && (act.Key == "" || !own[act.Key]) {
 				out = append(out, act)
@@ -1138,7 +1139,7 @@ func (a *App) openSpaceMenu() tea.Cmd {
 	s := a.Screen()
 	p := s.Focused()
 	var sections []MenuSection
-	if p.Body != nil && p.Body.HasItem() {
+	if b := p.body(); b != nil && b.HasItem() {
 		sections = append(sections, MenuSection{Title: "item operation", Actions: a.panelActions(p, ItemScope)})
 	}
 	sections = append(sections, MenuSection{Title: "panel operation", Actions: a.panelActions(p, PanelScope)})
@@ -1231,7 +1232,8 @@ func (a *App) panelKeyRef(p *Panel) *noteView {
 	}
 	var item, panel []KeyRow
 	own := map[string]bool{}
-	if p.Body != nil && p.Body.HasItem() {
+	pb := p.body()
+	if pb != nil && pb.HasItem() {
 		for _, act := range a.panelActions(p, ItemScope) {
 			if act.Key != "" && !act.hidden() {
 				item = append(item, row(act))
@@ -1246,9 +1248,9 @@ func (a *App) panelKeyRef(p *Panel) *noteView {
 		}
 	}
 	var move []KeyRow
-	if p.Body != nil {
-		keys := p.Body.MoveKeys()
-		if b, ok := p.Body.(interface{ tabMoveKeys() []KeyRow }); ok && len(p.Tabs) > 0 {
+	if pb != nil {
+		keys := pb.MoveKeys()
+		if b, ok := pb.(interface{ tabMoveKeys() []KeyRow }); ok && len(p.Tabs) > 0 {
 			keys = b.tabMoveKeys() // h|l go to the tabs (tdp K12)
 		}
 		move = append(move, keys...)
@@ -1264,9 +1266,9 @@ func (a *App) panelKeyRef(p *Panel) *noteView {
 		}
 		core = append(core, tab, KeyRow{Key: "1–" + itoa(len(s.Panels)), Desc: "jump to panel N"})
 	}
-	if l, ok := p.Body.(*List); ok && l.Filtering() {
+	if l, ok := pb.(*List); ok && l.Filtering() {
 		core = append(core, KeyRow{Key: "Esc", Desc: "clear the filter"})
-	} else if p.OnEsc != nil {
+	} else if p.level() != nil || p.OnEsc != nil {
 		core = append(core, KeyRow{Key: "Esc", Desc: "one level up"})
 	}
 	for _, ck := range a.CoreKeys {
@@ -1283,7 +1285,7 @@ func (a *App) panelKeyRef(p *Panel) *noteView {
 		app = append(app, row(act))
 	}
 	var sections []refSection
-	if v, ok := p.Body.(*Values); ok {
+	if v, ok := pb.(*Values); ok {
 		// What each row is, first, when the app says (tdp panel).
 		var rows []KeyRow
 		for _, f := range v.fields() { // in the panel's order, no group titles
@@ -1300,8 +1302,12 @@ func (a *App) panelKeyRef(p *Panel) *noteView {
 		{title: "core keys", rows: core},
 		{title: "app-wide", rows: app},
 	}...)
-	// A section about another surface goes last (tdp note).
+	// A section about another surface goes last (tdp note); none is shown in
+	// a list of the items that differ.
 	for _, o := range p.OtherKeys {
+		if p.level() != nil {
+			break
+		}
 		sections = append(sections, refSection{title: o.Title, rows: o.Rows})
 	}
 	return keyReference(p.title(s.at()+1), sections)
@@ -1337,7 +1343,11 @@ func (a *App) modeKeyRef(p *Panel) *noteView {
 	if l := p.modeLayers(); len(l) > 1 {
 		back = ", back to " + strings.Join(l[:len(l)-1], ">")
 	}
-	rows = append(rows, KeyRow{Key: "Esc", Desc: cmpOr(p.mode.Exit, "leave") + back})
+	if p.inDiff() {
+		rows = append(rows, KeyRow{Key: "Esc", Desc: "one level up"})
+	} else {
+		rows = append(rows, KeyRow{Key: "Esc", Desc: cmpOr(p.mode.Exit, "leave") + back})
+	}
 	core := []KeyRow{{Key: "Space", Desc: "what you can do here"}, {Key: "?", Desc: "this list"}, {Key: "q|Ctrl-C", Desc: "quit"}}
 	if p.mode.spaceKey() >= 0 { // Space is the user's action, among the mode's keys (tdp K11)
 		core = core[1:]
@@ -1477,12 +1487,12 @@ func (a *App) panelKey(key string, msg tea.KeyMsg) tea.Cmd {
 	}
 	if p.typing() {
 		if key == "Esc" {
-			if l, ok := p.Body.(*List); ok {
+			if l, ok := p.body().(*List); ok {
 				l.ClearFilter()
 			}
 			return nil
 		}
-		_, cmd := p.Body.Key(key, msg)
+		_, cmd := p.body().Key(key, msg)
 		return cmd
 	}
 	if p.mode != nil {
@@ -1520,8 +1530,12 @@ func (a *App) panelKey(key string, msg tea.KeyMsg) tea.Cmd {
 			return a.focusPanel(s, (s.at()-1+len(s.Panels))%len(s.Panels))
 		}
 	case "Esc":
-		if l, ok := p.Body.(*List); ok && l.Filtering() {
+		if l, ok := p.body().(*List); ok && l.Filtering() {
 			l.ClearFilter()
+			return nil
+		}
+		if p.level() != nil { // a level up (tdp panel.9)
+			p.upDiff()
 			return nil
 		}
 		if p.OnEsc != nil {
@@ -1558,8 +1572,8 @@ func (a *App) panelKey(key string, msg tea.KeyMsg) tea.Cmd {
 	if key == "V" && a.Splash != nil && !p.takesV() {
 		return a.openSplash()
 	}
-	if p.Body != nil {
-		if done, cmd := p.Body.Key(key, msg); done {
+	if b := p.body(); b != nil {
+		if done, cmd := b.Key(key, msg); done {
 			return cmd
 		}
 	}
@@ -1670,7 +1684,7 @@ func (a *App) focusPanel(s *Screen, i int) tea.Cmd {
 
 func (a *App) focusChanged() {
 	if p := a.Screen().Focused(); p != nil {
-		if f, ok := p.Body.(interface{ Focus() }); ok {
+		if f, ok := p.body().(interface{ Focus() }); ok {
 			f.Focus()
 		}
 	}
@@ -1853,7 +1867,7 @@ func (a *App) panelArea(w, top, h int) []string {
 // nil when the focus is on no such list, the row stands for none, or its
 // panel is not among the first shown the layout has room for.
 func (s *Screen) pointed(shown int) *Panel {
-	l, ok := s.Focused().Body.(*List)
+	l, ok := s.Focused().body().(*List)
 	if !ok || l.Points == nil {
 		return nil
 	}
@@ -1903,12 +1917,12 @@ func (a *App) footerHints() []KeyHint {
 		return []KeyHint{{"q", "quit"}}
 	}
 	p := s.Focused()
-	if t, ok := p.Body.(*Terminal); ok && t.inside {
+	if t, ok := p.body().(*Terminal); ok && t.inside {
 		return t.hint() // the exit key and the app's own (tdp screen)
 	}
 	switch {
 	case p.typing():
-		if !p.Body.HasItem() { // nothing matches: Enter does nothing (tdp screen)
+		if !p.body().HasItem() { // nothing matches: Enter does nothing (tdp screen)
 			return []KeyHint{{"Tab", "list"}, {"Esc", "clear"}}
 		}
 		return []KeyHint{{"Enter|Tab", "list"}, {"Esc", "clear"}}
@@ -1923,7 +1937,7 @@ func (a *App) footerHints() []KeyHint {
 				out = append(out, KeyHint{k.Key, k.Desc})
 			}
 		}
-		return append(out, KeyHint{"Esc", cmpOr(p.mode.Exit, "leave")})
+		return append(out, KeyHint{"Esc", modeExit(p)})
 	case len(s.Panels) == 1:
 		return []KeyHint{{"Space", "menu"}, {"?", "help"}, a.logHint(), {"q", "quit"}}
 	}

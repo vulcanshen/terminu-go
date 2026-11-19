@@ -1,7 +1,9 @@
 package terminu
 
 import (
+	"errors"
 	"slices"
+	"strconv"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -17,9 +19,10 @@ type Compare struct {
 	// the mode with that row as the anchor; in the mode it compares, as
 	// Enter does.
 	Key string
-	// Can reports a row that can be compared: text, or shown as text. A row
-	// it says no to has no Compare action, and in the mode the compare keys
-	// are off on it (tdp M2, M6). Nil: every row.
+	// Can reports a row that can be compared: text, shown as text, or one
+	// that holds many (Many). A row it says no to has no Compare action,
+	// and in the mode the compare keys are off on it (tdp M2, M6). Nil:
+	// every row.
 	Can func(Row) bool
 	// Name is the row as the title names it; its first cell when nil.
 	Name func(Row) string
@@ -29,9 +32,22 @@ type Compare struct {
 	// and sets it as the user switches, for the app to keep with its state
 	// (tdp E3). Nil: kept while the app runs.
 	Split *bool
+	// Many reports a row that holds many (a directory, a namespace, a
+	// commit). Two such rows are not compared as text: the mode goes in to
+	// the list of the items that differ between them, which Items gives, as
+	// OpenDiff goes in (tdp panel.9), the location row <anchor> ↔ <the
+	// other> as Name names them. A row that holds many and one that does
+	// not are not compared: the compare keys are off (tdp M6). Nil: no row
+	// holds many.
+	Many func(Row) bool
+	// Items gives the items that differ between two rows Many says yes to,
+	// the anchor first, in the order they are listed, the ones the same on
+	// both sides left out (DiffItem).
+	Items func(anchor, other Row) ([]DiffItem, error)
 }
 
-func (c Compare) can(r Row) bool { return c.Can == nil || c.Can(r) }
+func (c Compare) can(r Row) bool  { return c.Can == nil || c.Can(r) }
+func (c Compare) many(r Row) bool { return c.Many != nil && c.Many(r) }
 
 func (c Compare) name(r Row) string {
 	if c.Name != nil {
@@ -42,6 +58,56 @@ func (c Compare) name(r Row) string {
 	}
 	return r.ID
 }
+
+// DiffMark is how an item differs, the anchor being the base (tdp
+// panel.9): drawn before its name, in its colour.
+type DiffMark byte
+
+const (
+	DiffAdded   DiffMark = '+' // only the other has it: Green
+	DiffRemoved DiffMark = '-' // only the anchor has it: Red
+	DiffChanged DiffMark = '~' // both have it, changed: Peach; a rename the app knows of too
+)
+
+func (m DiffMark) span() Span {
+	switch m {
+	case DiffAdded:
+		return Span{"+", Fg(Green)}
+	case DiffRemoved:
+		return Span{"-", Fg(Red)}
+	}
+	return Span{"~", Fg(Peach)}
+}
+
+// DiffItem is an item that differs between two things that hold many (two
+// directories, two namespaces, a commit and the one before it), or one
+// item's two versions (tdp panel.9, note.8). The app names it and its two
+// sides and gives what is in them; the lib draws the rest.
+type DiffItem struct {
+	// Mark is how the item differs. OpenDiff does not use it.
+	Mark DiffMark
+	// Name is the item as the list shows it after its mark, named as the
+	// app names it (a path, internal/ui/ui.go); one the app knows was
+	// renamed or moved is DiffChanged, named "<old> → <new>".
+	Name string
+	// Anchor and Other name the item's two sides as the app names them, so
+	// that they say where, the older one the anchor (ui.go @ 1a2b3c4,
+	// ui.go @ 5d6e7f8): its comparison is titled DIFF — <Anchor> ↔ <Other>,
+	// the same however it is reached, and the list it goes into has
+	// <Anchor> ↔ <Other> for its location row, in place of the panel's own
+	// (tdp panel.9).
+	Anchor, Other string
+	// Text gives the item's text on each side, "" on a side it is not on:
+	// opening it opens its comparison, UNIFIED and SPLIT (tdp note.8).
+	Text func() (anchor, other string, err error)
+	// Items, for an item that holds many itself, gives the items that
+	// differ in it: opening it goes in to them, as Compare.Items.
+	Items func() ([]DiffItem, error)
+	// With neither the item is not text: it has no comparison, Enter off on
+	// it (tdp M6).
+}
+
+func (d DiffItem) opens() bool { return d.Text != nil || d.Items != nil }
 
 // splitMin is the narrowest terminal SPLIT is drawn on, as the finder's
 // side by side (tdp note.8).
@@ -59,12 +125,17 @@ type comparing struct {
 // CompareAction is l's Compare item action, for p's Actions: on a row c can
 // compare it enters the compare mode (tdp K11), that row the anchor
 // (List.Anchor). In the mode j|k, u|d and gg|G move; c.Key or Enter
-// compares the row under the cursor with the anchor, off on the anchor and
-// on a row c cannot compare (tdp M6); the same text on both sides is an
-// Info toast, not a popup. Esc leaves it, the anchor gone; Tab and the
-// digits wait; an anchor no longer in the list ends it with a Warning toast.
-// The rows need their IDs. The mode does not go in the App Log; its toasts
-// do, as every toast (tdp note.7).
+// compares the row under the cursor with the anchor, off on the anchor, on
+// a row c cannot compare and on a row that holds many against one that
+// does not (tdp M6); the same text on both sides is an Info toast, not a
+// popup. Two rows that hold many go in to the list of the items that
+// differ, as OpenDiff does, the panel staying in the mode: its keys work
+// there, on the item under the cursor, and Esc goes back up a level, the
+// last back to the mode with the anchor kept. Esc leaves it, the anchor
+// gone; Tab and the digits wait; an anchor no longer in the list ends it
+// with a Warning toast, the lists gone into closed. The rows need their
+// IDs. The mode does not go in the App Log; its toasts do, as every toast
+// (tdp note.7).
 func (a *App) CompareAction(p *Panel, l *List, c Compare) Action {
 	if c.Split == nil {
 		c.Split = new(bool)
@@ -82,40 +153,210 @@ func (a *App) CompareAction(p *Panel, l *List, c Compare) Action {
 func (a *App) startCompare(p *Panel, l *List, c Compare, anchor Row) {
 	l.Anchor = anchor.ID
 	cm := &comparing{p: p, l: l, c: c, name: c.name(anchor)}
-	move := func(key string) tea.Cmd { _, cmd := l.Key(key, tea.KeyMsg{}); return cmd }
-	off := func() bool { r, ok := l.Current(); return !ok || r.ID == l.Anchor || !c.can(r) }
+	// in is the list of the items that differ gone into in the mode, nil
+	// while in none: the mode's keys work on it.
+	in := func() *diffLevel {
+		if d := p.level(); d != nil && d.mode == cm.mode {
+			return d
+		}
+		return nil
+	}
+	move := func(key string) tea.Cmd {
+		if d := in(); d != nil {
+			_, cmd := d.list.Key(key, tea.KeyMsg{})
+			return cmd
+		}
+		_, cmd := l.Key(key, tea.KeyMsg{})
+		return cmd
+	}
+	off := func() bool {
+		if d := in(); d != nil {
+			it, ok := d.current()
+			return !ok || !it.opens()
+		}
+		r, ok := l.Current()
+		an, found := l.rowByID(l.Anchor)
+		return !ok || r.ID == l.Anchor || !c.can(r) || found && c.many(r) != c.many(an)
+	}
+	compare := ModeKey{Key: c.Key + "|Enter", Keys: []string{c.Key, "Enter"}, Desc: "compare", Disabled: off,
+		Item: true, Label: "Compare", MenuDesc: "with " + cm.name,
+		Do: func(string) tea.Cmd {
+			if d := in(); d != nil {
+				if it, ok := d.current(); ok {
+					return a.openDiff(p, it, c.Split)
+				}
+				return nil
+			}
+			return a.compareWith(cm)
+		}}
+	compare.menuDesc = func() string {
+		if d := in(); d != nil {
+			if it, _ := d.current(); it.Items != nil {
+				return "the items that differ in it"
+			}
+			return "its two sides"
+		}
+		return "with " + cm.name
+	}
 	cm.mode = &Mode{Name: "Compare", Exit: "leave", Pause: true, Keys: []ModeKey{
 		{Key: "j|k", Keys: []string{"j", "k", "↓", "↑"}, Desc: "down, up", NoFooter: true, Do: move},
 		{Key: "u|d", Keys: []string{"u", "d", "PgUp", "PgDn"}, Desc: "half a page up, down", NoFooter: true, Do: move},
 		{Key: "gg|G", Keys: []string{"gg", "G"}, Desc: "to the top, the bottom", NoFooter: true, Do: move},
-		{Key: c.Key + "|Enter", Keys: []string{c.Key, "Enter"}, Desc: "compare", Disabled: off,
-			Item: true, Label: "Compare", MenuDesc: "with " + cm.name,
-			Do: func(string) tea.Cmd { return a.compareWith(cm) }},
+		compare,
 	}, OnExit: func() tea.Cmd { l.Anchor = ""; return nil }}
 	p.EnterMode(cm.mode)
 	a.comparings = append(a.comparings, cm)
 }
 
-// compareWith opens the compare of the anchor with the row under the cursor.
+// sideErr is an error reading one side, named as the error popup names it.
+type sideErr struct {
+	name string
+	err  error
+}
+
+func (e sideErr) Error() string { return e.err.Error() }
+
+// compareWith compares the anchor with the row under the cursor: their
+// comparison, or the list of the items that differ when both hold many.
 func (a *App) compareWith(cm *comparing) tea.Cmd {
 	l, c := cm.l, cm.c
 	other, ok := l.Current()
 	anchor, found := l.rowByID(l.Anchor)
-	if !ok || !found || other.ID == anchor.ID || !c.can(other) {
+	if !ok || !found || other.ID == anchor.ID || !c.can(other) || c.many(anchor) != c.many(other) {
 		return nil
 	}
-	an, bn := c.name(anchor), c.name(other)
-	at, err := c.Text(anchor)
-	if err != nil {
-		return a.ErrorAbout("Compare", an, err.Error())
+	item := DiffItem{Anchor: c.name(anchor), Other: c.name(other)}
+	if c.many(anchor) {
+		item.Items = func() ([]DiffItem, error) {
+			if c.Items == nil {
+				return nil, nil
+			}
+			return c.Items(anchor, other)
+		}
+	} else {
+		item.Text = func() (string, string, error) {
+			at, err := c.Text(anchor)
+			if err != nil {
+				return "", "", sideErr{item.Anchor, err}
+			}
+			bt, err := c.Text(other)
+			if err != nil {
+				return "", "", sideErr{item.Other, err}
+			}
+			return at, bt, nil
+		}
 	}
-	bt, err := c.Text(other)
-	if err != nil {
-		return a.ErrorAbout("Compare", bn, err.Error())
+	return a.openDiff(cm.p, item, c.Split)
+}
+
+// OpenDiff opens item as Enter does on it in a list of the items that
+// differ (tdp note.8, panel.9), for an action of the app's own showing two
+// versions of one item (a file in a commit against the commit before it, a
+// file being edited against its last commit) or going into what changed in
+// one (a commit against the one before it):
+//   - with Text, its comparison, titled DIFF — <Anchor> ↔ <Other>, or the
+//     Info toast "No differences between <Anchor> and <Other>" when the
+//     two are the same;
+//   - with Items, the list of the items that differ in it, in p in place
+//     of p's body as panel.10 goes into an item, its location row
+//     <Anchor> ↔ <Other> in place of p's own, or that toast when there is
+//     none. Each item is its mark in its colour, then its name. j|k, u|d
+//     and gg|G move, Enter opens the item under the cursor the same way
+//     (off on one with neither Text nor Items), Esc goes back up a level,
+//     the cursor on the item it came out of, the last back to p as it was;
+//     the Space menu and ? have the list's keys, not p's actions, and Tab
+//     and the digits go to the other panels as ever, the list kept.
+//
+// An error from Text or Items is an error popup. Mark is not used. p is out
+// of a mode: a compare mode goes in so itself (CompareAction). UNIFIED or
+// SPLIT is kept while the app runs.
+func (a *App) OpenDiff(p *Panel, item DiffItem) tea.Cmd {
+	return a.openDiff(p, item, &a.diffSplit)
+}
+
+func (a *App) openDiff(p *Panel, item DiffItem, split *bool) tea.Cmd {
+	subject := item.Name
+	if subject == "" {
+		subject = item.Anchor + " ↔ " + item.Other
 	}
-	if at == bt {
-		return a.Toast(Info, "No differences between "+an+" and "+bn)
+	fail := func(err error) tea.Cmd {
+		if se := (sideErr{}); errors.As(err, &se) {
+			return a.ErrorAbout("Compare", se.name, se.err.Error())
+		}
+		return a.ErrorAbout("Compare", subject, err.Error())
 	}
+	same := func() tea.Cmd { return a.Toast(Info, "No differences between "+item.Anchor+" and "+item.Other) }
+	switch {
+	case item.Items != nil:
+		items, err := item.Items()
+		if err != nil {
+			return fail(err)
+		}
+		if len(items) == 0 {
+			return same()
+		}
+		a.goInDiff(p, item, items, split)
+	case item.Text != nil:
+		at, bt, err := item.Text()
+		if err != nil {
+			return fail(err)
+		}
+		if at == bt {
+			return same()
+		}
+		return a.diffViewer(item.Anchor, item.Other, at, bt, split)
+	}
+	return nil
+}
+
+// diffLevel is a list of the items that differ gone into in a panel, in
+// place of its body (tdp panel.9): mode is the mode the panel was in, nil
+// for none.
+type diffLevel struct {
+	list  *List
+	items []DiffItem
+	mode  *Mode
+	acts  []Action
+}
+
+// current is the item under the list's cursor.
+func (d *diffLevel) current() (DiffItem, bool) {
+	r, ok := d.list.Current()
+	if !ok {
+		return DiffItem{}, false
+	}
+	i, _ := strconv.Atoi(r.ID)
+	return d.items[i], true
+}
+
+// goInDiff goes into items, the items that differ in item, in p.
+func (a *App) goInDiff(p *Panel, item DiffItem, items []DiffItem, split *bool) {
+	d := &diffLevel{items: items, mode: p.mode,
+		list: &List{Columns: []Column{{Shrink: true, Path: true}}, Flags: true, Location: item.Anchor + " ↔ " + item.Other}}
+	rows := make([]Row, len(items))
+	for i, it := range items {
+		rows[i] = Row{ID: strconv.Itoa(i), Cells: []string{it.Name}, Flag: it.Mark.span()}
+	}
+	d.list.SetRows(rows)
+	open := func() tea.Cmd {
+		if it, ok := d.current(); ok {
+			return a.openDiff(p, it, split)
+		}
+		return nil
+	}
+	notText := func() bool { it, ok := d.current(); return !ok || it.Text == nil }
+	notMany := func() bool { it, ok := d.current(); return !ok || it.Items == nil }
+	d.acts = []Action{
+		{Key: "Enter", Label: "Compare", Desc: "its two sides", Hint: "compare", Scope: ItemScope, Hidden: notText, Do: open},
+		{Key: "Enter", Label: "Open", Desc: "the items that differ in it", Hint: "open", Scope: ItemScope, Hidden: notMany, Do: open},
+	}
+	p.levels = append(p.levels, d)
+}
+
+// diffViewer is the comparison of at, an's text, with bt, bn's (tdp
+// note.8), UNIFIED or SPLIT as split says, which it sets as the user
+// switches.
+func (a *App) diffViewer(an, bn, at, bt string, split *bool) tea.Cmd {
 	x, y := textLines(at), textLines(bt)
 	ops := diffLines(x, y)
 	v := &Viewer{Title: "Diff", Subject: an + " ↔ " + bn, Glyph: glyphCompare, Tabs: []string{"Unified", "Split"}, NoNumbers: true}
@@ -127,7 +368,7 @@ func (a *App) compareWith(cm *comparing) tea.Cmd {
 	lastW, lastTab := -1, -1
 	layout := func(sw int) {
 		tab := 0
-		if *c.Split && sw >= splitMin {
+		if *split && sw >= splitMin {
 			tab = 1
 		}
 		w := popupWidth(sw, 0, false) - 4 // the viewer's text, numbers left out
@@ -154,13 +395,14 @@ func (a *App) compareWith(cm *comparing) tea.Cmd {
 		lastW, lastTab = w, tab
 	}
 	v.relayout = layout
-	v.OnTab = func(tab int) tea.Cmd { *c.Split = tab == 1; layout(a.w); return nil }
+	v.OnTab = func(tab int) tea.Cmd { *split = tab == 1; layout(a.w); return nil }
 	layout(a.w)
 	return a.Viewer(v)
 }
 
 // checkCompares ends a compare mode whose anchor is no longer in its list,
-// with a Warning toast, and forgets the ones left.
+// with a Warning toast, the lists gone into in it closed, and forgets the
+// ones left.
 func (a *App) checkCompares() tea.Cmd {
 	var cmds []tea.Cmd
 	kept := a.comparings[:0]

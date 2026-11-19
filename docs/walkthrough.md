@@ -66,6 +66,12 @@ go build -o /tmp/showcase ./examples/showcase
 - `[2] FILES`：`/` 開有預覽的 finder，每一種檔各一個（文字、圖、超過 1 MB 的圖、PDF、沒有文字的 PDF、壓縮檔、二進位、symlink、讀不到的檔）；
   `S` 是結果慢慢進來的搜尋；`V` 用 viewer 開檔案（這個 panel 把 `V` 拿去用了）。`h|l` 換到 `LINES` tab：`main.go` 一行一列，
   `Text` 欄是一行一行的文字，`fmt.Println` 那行的 Tab 畫成空白的縮排，不是紅色的 `\t`。
+  - 同一項的兩個版本（note.8）：在 `FILES` tab 的檔上按 `H`，跟它最後一次 commit 比（`main.go`、`README.md` 有改，其他檔沒變，
+    跳 Info toast）；按 `K` 進到最後一次 commit 改了的檔：改名的 `~ docs/NOTES.md → docs/notes.md`、新增、刪掉、不是文字的圖
+    （`Enter` 停用）、裡面還有東西的 `themes/`（再進一層）；`Esc` 一層一層退回原本的檔案清單。
+  - 比兩個資料夾（panel.9）：`FOLDERS` tab 進 `releases/`，在 `v1/` 按 `C`、移到 `v2/` 按 `Enter`：位置列 `releases/v1 ↔ releases/v2`，
+    只列兩邊不一樣的項目（`+ NEWS.md`、`~ conf/`、`~ logo.png`、`~ main.go`、`- old-notes.txt`，一樣的 `README.md`、`docs/` 不列）；
+    `conf/` 再進一層；`Esc` 一層一層退回，最後回到比較模式、anchor 還在。
 
 **D — Dialogs**：每一種 dialog 與疊法。
 - `[1] DIALOGS` 每一列是一個情境，`Enter` 打開：各種 menu（分組、兩步、工作清單、很長）、confirm、表單、viewer（選取模式按 `v` 兩次）、

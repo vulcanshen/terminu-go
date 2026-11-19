@@ -293,3 +293,101 @@ func TestSeveralAtOneStart(t *testing.T) {
 		}
 	}
 }
+
+// The Folders tab compares two folders as rows that hold many (tdp panel.9,
+// panel-176 to panel-179): the items that differ, each with its mark, the
+// location row the two sides; Enter goes into a folder that differs inside
+// or opens a file's comparison, titled with its two sides; Esc goes back up
+// a level at a time, the last back to the mode with the anchor kept.
+func TestCompareFolders(t *testing.T) {
+	s := newShowcase()
+	d := tdptest.Start(t, s.app, 140, 40)
+	is := s.inputs
+	d.Press("I", "2", "l", "l", "/")
+	d.Type("rel")
+	d.Press("Enter", "Enter") // into releases/
+	if is.dir != filepath.Join(projectDir, "releases") {
+		t.Fatalf("in %q", is.dir)
+	}
+	d.Press("C", "j", "Enter") // v1/ against v2/
+	if is.files.InMode() == nil || !d.Has("releases/v1 ↔ releases/v2") {
+		t.Fatalf("did not go in:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	for _, want := range []string{"+ NEWS.md", "~ conf/", "~ logo.png", "~ main.go", "- old-notes.txt"} {
+		if !d.Has(want) {
+			t.Errorf("no %q:\n%s", want, strings.Join(d.Screen(), "\n"))
+		}
+	}
+	if d.Has("README.md") || d.Has("docs/") {
+		t.Error("an item the same on both sides is listed")
+	}
+	if styled := strings.Join(d.Styled(), "\n"); !strings.Contains(styled, terminu.Fg(terminu.Red).Render("-")) || !strings.Contains(styled, terminu.Fg(terminu.Peach).Render("~")) {
+		t.Error("the marks are not in their colours")
+	}
+	d.Press("j", "Enter") // conf/
+	if !d.Has("releases/v1/conf ↔ releases/v2/conf") || !d.Has("~ app.toml") || !d.Has("+ extra.toml") || d.Has("same.toml") {
+		t.Fatalf("conf/:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Press("Enter")
+	if !d.Has("DIFF — releases/v1/conf/app.toml ↔ releases/v2/conf/app.toml") || !d.Has("+port = 9090") {
+		t.Errorf("app.toml's comparison:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Press("Esc", "Esc", "j", "Enter") // up to conf/, then logo.png: not text
+	if d.Has("DIFF") {
+		t.Error("an image was compared")
+	}
+	d.Press("Esc")
+	if !d.Has("C|Enter:compare") || d.Has("↔") || is.fileList.Anchor == "" {
+		t.Errorf("not back in the mode with the anchor kept:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Press("Esc")
+	if is.files.InMode() != nil {
+		t.Error("Esc did not leave the mode")
+	}
+}
+
+// An action showing two versions of one item opens the same comparison, the
+// older the anchor, titled with the two as the app names them; the last
+// commit, which holds many, goes in to the items that differ (tdp note.8,
+// note-101, note-102).
+func TestTwoVersions(t *testing.T) {
+	s := newShowcase()
+	d := tdptest.Start(t, s.app, 140, 40)
+	is := s.inputs
+	d.Press("I", "2")
+	if !is.fileList.Select(filepath.Join(projectDir, "main.go")) {
+		t.Fatal("no main.go")
+	}
+	d.Press("H")
+	if !d.Has("DIFF — main.go @ 5d6e7f8 ↔ main.go") || !d.Has("UNIFIED") || !d.Has(`+	fmt.Println("showcase", 42)`) && !d.Has(`+    fmt.Println("showcase", 42)`) {
+		t.Errorf("main.go against its last commit:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Press("Esc")
+	is.fileList.Select(filepath.Join(projectDir, "docs", "notes.md"))
+	d.Press("H")
+	if !d.Has("No differences between docs/notes.md @ 5d6e7f8 and docs/notes.md") {
+		t.Errorf("a file as committed:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Advance(10 * time.Second) // the toast gone: Esc is the list's
+	d.Press("K")
+	for _, want := range []string{"1a2b3c4 ↔ 5d6e7f8", "~ docs/NOTES.md → docs/notes.md", "+ config/build.toml", "- TODO.md", "~ themes/"} {
+		if !d.Has(want) {
+			t.Errorf("no %q:\n%s", want, strings.Join(d.Screen(), "\n"))
+		}
+	}
+	if is.files.InMode() != nil || d.Has("README-zh_TW.md") {
+		t.Error("the commit is in a mode, or shows the panel's own list")
+	}
+	d.Press("j", "j", "Enter") // the rename
+	if !d.Has("DIFF — docs/NOTES.md @ 1a2b3c4 ↔ docs/notes.md @ 5d6e7f8") {
+		t.Errorf("the rename's comparison:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Press("Esc", "j", "j", "Enter") // themes/
+	if !d.Has("themes @ 1a2b3c4 ↔ themes @ 5d6e7f8") || !d.Has("+ latte.toml") {
+		t.Errorf("into themes/:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Press("Esc", "Esc")
+	if d.Has("↔") || !d.Has("README-zh_TW.md") {
+		t.Errorf("Esc did not go back to the files:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+}

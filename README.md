@@ -177,6 +177,25 @@ anywhere. `Done` gets how the command ended: an `*terminu.ElevateError` when it 
 error popup; `OnCancel` runs when the user cancels. With doas and no sudo, set `Tool: terminu.Doas`: doas asks for the
 password itself in a terminal popup. Not for Windows: use gsudo or the sudo Windows has there, the system asking with UAC.
 
+## Comparing
+
+`app.CompareAction(panel, list, terminu.Compare{Key: "C", Text: ...})` gives a list the compare mode: the user picks
+two rows and sees what differs, UNIFIED or SPLIT. Two rows that hold many (two directories, two namespaces, two
+commits) go in instead, to a list of the items that differ: `Many` says which rows hold many, and `Items` gives the
+items that differ between two of them, each a `terminu.DiffItem`. The lib draws that list in the panel, each item's
+mark (`DiffAdded` +, `DiffRemoved` -, `DiffChanged` ~), and does `Enter`, `Esc` and the location row.
+
+A `DiffItem` names its two sides in `Anchor` and `Other`, the older one the anchor, so that they say where
+(`ui.go @ 1a2b3c4`): its comparison is titled with them however it is reached, and the list it goes into has them for
+its location row. It has `Text`, each side's text ("" on a side it is not on), or `Items` when it holds many itself,
+or neither when it is not text and has no comparison. A rename you know of is `DiffChanged`, named `old → new`. Leave
+out what is the same on both sides, and read a text only when it is asked for.
+
+An action of your own that shows two versions of one item (a file in a commit against the commit before it, a file
+being edited against its last commit) opens the same comparison with `app.OpenDiff(panel, item)`: with `Text`, the
+comparison; with `Items`, the list of what differs in it, in the panel in place of its rows until `Esc` brings them
+back.
+
 ## Modes of your own
 
 `panel.EnterMode(&terminu.Mode{...})` puts a panel in a mode of the app's own (tdp K11): only the mode's `Keys` and the

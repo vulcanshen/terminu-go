@@ -2,6 +2,23 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.18-beta.1 — tdp v1.2.16
+
+- tdp's next release (panel.9) has comparing two rows that hold many (two directories, two namespaces, two
+  commits) go in to a list of the items that differ instead: each item's mark first, `+` Green for one only the other
+  has, `-` Red for one only the anchor has, `~` Peach for one both have, changed, the same ones left out; the location
+  row the two sides as the app names them; `Enter` opening an item's comparison, titled with its two sides, or going
+  in again, `Esc` back up a level at a time to the mode with the anchor kept. `Compare.Many` says which rows hold
+  many and `Compare.Items` gives the items, each a `DiffItem` (`Mark`, `Name`, `Anchor`, `Other`, `Text` or `Items`)
+  with its `DiffMark` (`DiffAdded`, `DiffRemoved`, `DiffChanged`). A row that holds many and one that does not are
+  not compared (from gitreu)
+- tdp's next release (note.8) has an action of the app's own that shows two versions of one item open the same
+  comparison, the older the anchor, and one whose change holds many (a commit against the one before it) go in to
+  the same list. `App.OpenDiff(panel, item)` does it, out of a mode, the list in the panel in place of its rows until
+  `Esc` brings them back; UNIFIED or SPLIT is kept while the app runs. The compare mode goes through it too
+- The showcase's Inputs `[2] FILES`: `H` compares a file with its last commit, `K` goes into the last commit, and `C`
+  on the `FOLDERS` tab compares `releases/v1/` with `releases/v2/`
+
 ## v1.2.17 — tdp v1.2.16
 
 Everything since v1.2.16, the beta v1.2.17-beta.1 included (the lib's code is that of beta.1; the showcase's toast

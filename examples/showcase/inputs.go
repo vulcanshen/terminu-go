@@ -274,7 +274,27 @@ func newInputsScreen(s *showcase) *inputsScreen {
 		// here (tdp S1).
 		{Key: "V", Label: "View", Desc: "the file's text", Scope: terminu.ItemScope, Hint: "view", Do: is.view,
 			Disabled: func() bool { return is.disabled || is.onFolder() }},
+		// Two versions of one item open the same comparison (tdp note.8): a
+		// file being edited against its last commit, the last commit against
+		// the one before it, which holds many.
+		{Key: "H", Label: "Changes", Desc: "the file against its last commit", Scope: terminu.ItemScope, Do: is.changes,
+			Hidden: func() bool { return is.tab != 0 }, Disabled: func() bool { r, ok := is.fileList.Current(); return !ok || !textFile(r.ID) }},
+		{Key: "K", Label: "Last commit", Desc: "what " + lastCommit + " changed, file by file", Scope: terminu.PanelScope,
+			Hidden: func() bool { return is.tab != 0 },
+			Do: func() tea.Cmd {
+				return a.OpenDiff(is.files, terminu.DiffItem{Anchor: parentCommit, Other: lastCommit, Items: lastCommitItems})
+			}},
 	}, is.stateActions(is.files)...)
+	// On the Folders tab two folders compare as two rows that hold many: the
+	// items that differ, a level at a time (tdp panel.9); two text files as
+	// text.
+	is.files.Actions = append(is.files.Actions, a.CompareAction(is.files, is.fileList, terminu.Compare{Key: "C",
+		Can:   func(r terminu.Row) bool { return is.tab == 2 && (folderRow(r) || textFile(r.ID)) },
+		Many:  folderRow,
+		Name:  func(r terminu.Row) string { return relPath(r.ID) },
+		Text:  func(r terminu.Row) (string, error) { b, err := os.ReadFile(r.ID); return string(b), err },
+		Items: func(x, y terminu.Row) ([]terminu.DiffItem, error) { return dirDiff(x.ID, y.ID) },
+	}))
 
 	is.screen = &terminu.Screen{Name: "Inputs", Key: "I", Desc: "every kind of input",
 		Panels: []*terminu.Panel{is.inputs, is.files}, NarrowBelow: 60, Layout: halves}
@@ -349,7 +369,25 @@ func (is *inputsScreen) up() tea.Cmd {
 // onFolder reports whether the cursor is on a folder of the Folders tab.
 func (is *inputsScreen) onFolder() bool {
 	row, ok := is.fileList.Current()
-	return ok && is.tab == 2 && strings.HasSuffix(row.Cells[0], "/")
+	return ok && is.tab == 2 && folderRow(row)
+}
+
+// folderRow reports a folder's row of the Folders tab, named with a / after.
+func folderRow(r terminu.Row) bool { return len(r.Cells) > 0 && strings.HasSuffix(r.Cells[0], "/") }
+
+// changes opens the file under the cursor against its last commit, the
+// older the anchor (tdp note.8).
+func (is *inputsScreen) changes() tea.Cmd {
+	row, ok := is.fileList.Current()
+	if !ok {
+		return nil
+	}
+	rel := relPath(row.ID)
+	return is.s.app.OpenDiff(is.files, terminu.DiffItem{Anchor: rel + " @ " + lastCommit, Other: rel,
+		Text: func() (string, string, error) {
+			b, err := os.ReadFile(row.ID)
+			return committed(rel, string(b)), string(b), err
+		}})
 }
 
 // rows are the rows of the Files panel's tab.

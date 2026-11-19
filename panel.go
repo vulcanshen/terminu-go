@@ -144,6 +144,8 @@ type ModeKey struct {
 	Item     bool
 	Label    string
 	MenuDesc string
+
+	menuDesc func() string // MenuDesc as it is now, when it changes (the lib's own modes)
 }
 
 func (k ModeKey) off() bool { return k.Disabled != nil && k.Disabled() }
@@ -316,10 +318,47 @@ type Panel struct {
 	// gone. Which items have one and what it says are the app's.
 	Inspect func() []string
 
-	mode  *Mode
-	under []*Mode // the layers mode is in, outermost first
-	app   *App
+	mode   *Mode
+	under  []*Mode      // the layers mode is in, outermost first
+	levels []*diffLevel // the lists of the items that differ gone into, the last shown (compare.go)
+	app    *App
 }
+
+// level is the list of the items that differ the panel shows, nil for none.
+func (p *Panel) level() *diffLevel {
+	if n := len(p.levels); n > 0 {
+		return p.levels[n-1]
+	}
+	return nil
+}
+
+// body is what the panel shows: the list of the items that differ it went
+// into (tdp panel.9), or its Body.
+func (p *Panel) body() Body {
+	if d := p.level(); d != nil {
+		return d.list
+	}
+	return p.Body
+}
+
+// actions are the panel's actions as they are now: those of the list of the
+// items that differ it went into, or its Actions.
+func (p *Panel) actions() []Action {
+	if d := p.level(); d != nil {
+		return d.acts
+	}
+	return p.Actions
+}
+
+// inDiff reports that the panel shows a list of the items that differ gone
+// into in the mode it is in: Esc goes up a level, not out of the mode.
+func (p *Panel) inDiff() bool {
+	d := p.level()
+	return d != nil && p.mode != nil && d.mode == p.mode
+}
+
+// upDiff goes up a level of the items that differ (tdp panel.9).
+func (p *Panel) upDiff() { p.levels = p.levels[:len(p.levels)-1] }
 
 // EnterMode puts the panel in m; Esc leaves it (tdp K11).
 func (p *Panel) EnterMode(m *Mode) { p.mode, p.under = m, nil }
@@ -341,6 +380,7 @@ func (p *Panel) EnterLayer(m *Mode) {
 // them (tdp K11); a popup the app opens then is over the panel.
 func (p *Panel) LeaveMode() {
 	p.mode, p.under = nil, nil
+	p.levels = slices.DeleteFunc(p.levels, func(d *diffLevel) bool { return d.mode != nil })
 	if p.app != nil {
 		p.app.closeModePopups(p)
 	}
@@ -364,22 +404,24 @@ type typer interface {
 }
 
 func (p *Panel) typing() bool {
-	t, ok := p.Body.(typer)
+	t, ok := p.body().(typer)
 	return ok && t.Typing()
 }
 
 // enterAction is the action Enter runs here, if any.
 func (p *Panel) enterAction() *Action {
-	for i := range p.Actions {
-		if p.Actions[i].Key == "Enter" && !p.Actions[i].hidden() && p.scopeApplies(p.Actions[i]) {
-			return &p.Actions[i]
+	acts := p.actions()
+	for i := range acts {
+		if acts[i].Key == "Enter" && !acts[i].hidden() && p.scopeApplies(acts[i]) {
+			return &acts[i]
 		}
 	}
 	return nil
 }
 
 func (p *Panel) scopeApplies(a Action) bool {
-	return a.Scope != ItemScope || (p.Body != nil && p.Body.HasItem())
+	b := p.body()
+	return a.Scope != ItemScope || (b != nil && b.HasItem())
 }
 
 // hint is the panel's bottom-border hint: what Enter does, then the actions
@@ -391,7 +433,7 @@ func (p *Panel) hint() (out []KeyHint, off []bool) {
 	}
 	// In its PTY the panel's keys go to the program: no hint, as on a filter's
 	// typing row; the footer has the exit key (tdp panel).
-	if t, ok := p.Body.(*Terminal); ok && t.inside {
+	if t, ok := p.body().(*Terminal); ok && t.inside {
 		return nil, nil
 	}
 	add := func(key, desc string, disabled bool) {
@@ -403,7 +445,7 @@ func (p *Panel) hint() (out []KeyHint, off []bool) {
 	}
 	if a := p.enterAction(); a != nil && a.Hint != "" && (!a.disabled() || !p.HintPressableOnly) {
 		add("Enter", a.Hint, a.disabled())
-	} else if h, ok := p.Body.(interface{ EnterHint() string }); ok && h.EnterHint() != "" {
+	} else if h, ok := p.body().(interface{ EnterHint() string }); ok && h.EnterHint() != "" {
 		add("Enter", h.EnterHint(), false)
 	}
 	// h|l switch tabs: written after Enter while they do, two tabs or more
@@ -411,7 +453,7 @@ func (p *Panel) hint() (out []KeyHint, off []bool) {
 	if len(p.Tabs) > 0 && p.mode == nil {
 		add("h|l", "tab", false)
 	}
-	for _, a := range p.Actions {
+	for _, a := range p.actions() {
 		if a.Key == "Enter" || a.Hint == "" || a.hidden() || !p.scopeApplies(a) {
 			continue
 		}
@@ -499,8 +541,9 @@ func (p *Panel) draw(n, w, h int, focused, pointed bool) []string {
 	b.mode, b.modeClosed = mode, 1-lab.shown
 	inner, ih := w-2, h-2
 	where, glyph := p.Location, p.LocationGlyph
-	list, _ := p.Body.(*List)
-	if where == "" && list != nil {
+	pb := p.body()
+	list, _ := pb.(*List)
+	if (where == "" || p.level() != nil) && list != nil { // a list of the items that differ: its own (tdp panel.9)
 		where, glyph = list.Location, list.LocationGlyph
 	}
 	var loc []string
@@ -509,20 +552,20 @@ func (p *Panel) draw(n, w, h int, focused, pointed bool) []string {
 	}
 	var body []string
 	switch {
-	case p.Body == nil:
+	case pb == nil:
 		body = blankLines(inner, ih)
 	case list != nil:
 		list.inMode = p.mode != nil
 		body = list.draw(inner, ih, focused, false) // its location row is loc
 	default:
-		body = p.Body.Draw(inner, ih, focused)
+		body = pb.Draw(inner, ih, focused)
 	}
-	empty := p.Body == nil // every kind of panel (tdp panel.15)
-	if e, ok := p.Body.(interface{ Empty() bool }); ok {
+	empty := pb == nil // every kind of panel (tdp panel.15)
+	if e, ok := pb.(interface{ Empty() bool }); ok {
 		empty = e.Empty()
 	}
 	fail := p.Fail
-	if f, ok := p.Body.(interface{ Failure() *Failure }); ok {
+	if f, ok := pb.(interface{ Failure() *Failure }); ok {
 		if bf := f.Failure(); bf != nil { // known as it drew, just now
 			empty = true
 			if fail == nil {
@@ -539,11 +582,11 @@ func (p *Panel) draw(n, w, h int, focused, pointed bool) []string {
 		}
 	}
 	b.hint, b.hintOff = p.hint()
-	if p.Body != nil {
-		b.scroll = p.Body.Scroll()
+	if pb != nil {
+		b.scroll = pb.Scroll()
 	}
 	b.found = p.SearchStatus
-	_, pty := p.Body.(*Terminal)
+	_, pty := pb.(*Terminal)
 	if !focused && !p.Stream && !pty { // a program's screen is live, like a stream (tdp T2)
 		body = DimLines(body)
 	}
@@ -564,10 +607,20 @@ func (p *Panel) modeName() string {
 	if p.mode != nil {
 		return strings.Join(p.modeLayers(), ">")
 	}
-	if t, ok := p.Body.(*Terminal); ok {
+	if t, ok := p.body().(*Terminal); ok {
 		return t.modeName()
 	}
 	return ""
+}
+
+// modeExit is what Esc does in the mode p is in, as the footer and the
+// Space menu write it: a level up in a list of the items that differ gone
+// into in it (tdp panel.9), else the mode's Exit.
+func modeExit(p *Panel) string {
+	if p.inDiff() {
+		return "up"
+	}
+	return cmpOr(p.mode.Exit, "leave")
 }
 
 // modeRoom is how much of the top border a mode name takes, in room cells

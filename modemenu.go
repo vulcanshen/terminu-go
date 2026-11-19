@@ -66,7 +66,11 @@ func (a *App) panelModeMenu(p *Panel) tea.Cmd {
 			continue
 		}
 		key := k.first()
-		act := Action{Key: key, Label: cmpOr(k.Label, capital(k.Desc)), Desc: k.MenuDesc, Disabled: k.Disabled,
+		desc := k.MenuDesc
+		if k.menuDesc != nil {
+			desc = k.menuDesc()
+		}
+		act := Action{Key: key, Label: cmpOr(k.Label, capital(k.Desc)), Desc: desc, Disabled: k.Disabled,
 			Do: func() tea.Cmd { // as pressing the key: a core key's row (q:quit) does what that key does
 				if p.mode == nil {
 					return nil
@@ -80,7 +84,7 @@ func (a *App) panelModeMenu(p *Panel) tea.Cmd {
 		}
 	}
 	if !m.NoLeaveRow || len(item)+len(keys) == 0 {
-		keys = append(keys, leaveRow(cmpOr(m.Exit, "leave"), func() tea.Cmd { return a.leavePanelMode(p) }))
+		keys = append(keys, leaveRow(modeExit(p), func() tea.Cmd { return a.leavePanelMode(p) }))
 	}
 	return a.ofMode(p, a.modeMenu(a.modeTitle(), p.modeName(), item, keys))
 }
@@ -119,6 +123,10 @@ func (a *App) closeModePopups(p *Panel) {
 func (a *App) leavePanelMode(p *Panel) tea.Cmd {
 	m := p.mode
 	if m == nil {
+		return nil
+	}
+	if p.inDiff() { // a level up first (tdp panel.9)
+		p.upDiff()
 		return nil
 	}
 	p.mode = nil

@@ -194,6 +194,14 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   一直攔著 SIGHUP：shell 被關掉時會把掛斷轉給它底下的程式，這時 main 可能還在存檔。不另給 hook，收尾只放在 `Run` 之後。
   - 測試在 PTY 裡跑一份測試程式，再關掉 PTY 的 master。測試這邊不能讀 PTY：有 `Read` 在等時，Go 要等它回來才真的關掉檔案，
     app 就收不到掛斷。
+- **差異清單疊在 panel 上，不換掉它的 Body**（tdp panel.9、note.8，v1.2.18-beta.1，gitreu 來的）：比較模式比兩個裝著許多項目的列、
+  或 `OpenDiff` 進到一個 commit 時，panel 多一層 `levels`（一層一個 lib 自己的 `List`，標記放在 `Flags` 的標記欄，名字欄從前面截），
+  `Body`、`Actions`、`Location` 都不動。lib 讀 panel 的內容與動作一律走 `p.body()`、`p.actions()`，畫位置列時有清單就用清單的：
+  app 在清單開著時換了自己的 `Body`（例：`OnTab` 換 tab）或改了列，`Esc` 退回時看到的就是 app 現在的樣子，不會被 lib 存著的舊值蓋掉。
+  清單裡 panel 自己的 inspect 與 `OtherKeys` 不出現，它們講的是 app 自己的列。比較模式裡進去的清單記著那個模式：模式不變，
+  它的鍵改作用在清單上，`Esc` 先退一層（`leavePanelMode`），模式結束時一起關掉（`LeaveMode`）。
+  - `OpenDiff` 選的 UNIFIED／SPLIT 只在 app 開著時記住：tdp note.8 說要記進狀態，但 `OpenDiff` 沒有讓 app 存它的欄位；
+    `Compare.Split` 只管比較模式。
 
 ## 已否決，不要重提
 

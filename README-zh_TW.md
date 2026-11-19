@@ -150,6 +150,22 @@ Success 記進 App Log。
 （指令印出來的每一列），交給 error popup；使用者取消時跑 `OnCancel`。沒有 sudo 只有 doas 時設 `Tool: terminu.Doas`，doas
 在 terminal popup 裡自己問密碼。Windows 不用這個，照舊用 gsudo 或 Windows 的 sudo（系統跳 UAC）。
 
+## 比較
+
+`app.CompareAction(panel, list, terminu.Compare{Key: "C", Text: ...})` 讓清單有比較模式：使用者挑兩列，看哪裡不一樣，
+UNIFIED 或 SPLIT。兩列都裝著許多項目時（兩個資料夾、兩個 namespace、兩個 commit），改成進到一層「有差異的項目」清單：
+`Many` 說哪些列裝著許多項目，`Items` 給出兩列之間有差異的項目，一項一個 `terminu.DiffItem`。那層清單由 lib 畫在 panel 裡，
+每一項前面的標記（`DiffAdded` +、`DiffRemoved` -、`DiffChanged` ~）、`Enter`、`Esc` 與位置列也都是 lib 的。
+
+`DiffItem` 用 `Anchor` 與 `Other` 寫出兩邊的名字，舊的那邊當 anchor，名字要看得出在哪裡（`ui.go @ 1a2b3c4`）：不管從哪裡
+打開，它的比較標題都用這兩個名字，它進去的那一層清單也用它們當位置列。它有 `Text`（兩邊的文字，沒有的那邊給 ""），或是它
+自己也裝著許多項目時的 `Items`；兩個都沒有，就是不是文字、沒有比較的項目。app 知道是改名的，用 `DiffChanged`，名字寫
+`舊 → 新`。兩邊一樣的不要列，文字等到要比時才讀。
+
+app 自己的動作要顯示同一項的兩個版本時（commit 裡的一個檔對它前一個 commit、正在改的檔對它最後一次 commit），用
+`app.OpenDiff(panel, item)` 打開同一種比較：有 `Text` 就是那個比較；有 `Items` 就是它裡面有差異的項目清單，畫在 panel 裡
+取代原本的列，按 `Esc` 回到原本的列。
+
 ## app 自己的模式
 
 `panel.EnterMode(&terminu.Mode{...})` 讓 panel 進入 app 自己的模式（tdp K11）：只有模式的 `Keys` 與 core key 作用，`Esc` 離開。

@@ -288,12 +288,12 @@ func parseMark(icon []byte) (frame []markCell, letters [][]markCell, err error) 
 // takesV reports that p gave V to an action of its own: the splash does not
 // open there (tdp S1).
 func (p *Panel) takesV() bool {
-	for _, act := range p.Actions {
+	for _, act := range p.actions() {
 		if act.Key == "V" {
 			return true
 		}
 	}
-	if b, ok := p.Body.(interface{ Actions() []Action }); ok {
+	if b, ok := p.body().(interface{ Actions() []Action }); ok {
 		for _, act := range b.Actions() {
 			if act.Key == "V" {
 				return true

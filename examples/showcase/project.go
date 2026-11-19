@@ -50,6 +50,31 @@ func fakeProject() string {
 	_ = os.Symlink("docs/guide.pdf", filepath.Join(dir, "latest.pdf"))
 	_ = os.Symlink("docs/gone.pdf", filepath.Join(dir, "broken.pdf"))
 	_ = os.MkdirAll(filepath.Join(dir, "empty"), 0o755)
+	// Two releases to compare on the Folders tab (tdp panel.9): a file
+	// changed, one added, one taken out, an image that is not text, a folder
+	// that differs inside, and what is the same left out.
+	for _, f := range []struct {
+		name   string
+		v1, v2 string
+	}{
+		{"README.md", "# showcase\n\nOn fake data.\n", "# showcase\n\nOn fake data.\n"},
+		{"main.go", "package main\n\nfunc main() {\n\tprintln(\"v1\")\n}\n", "package main\n\nfunc main() {\n\tprintln(\"v2\")\n\tprintln(\"faster\")\n}\n"},
+		{"old-notes.txt", "Notes v2 no longer has.\n", ""},
+		{"NEWS.md", "", "# News\n\n- v2 is faster\n"},
+		{"conf/app.toml", "port = 8080\nworkers = 2\n", "port = 9090\nworkers = 2\n"},
+		{"conf/extra.toml", "", "debug = false\n"},
+		{"conf/same.toml", "x = 1\n", "x = 1\n"},
+		{"docs/guide.md", "Read me first.\n", "Read me first.\n"}, // a folder the same inside
+	} {
+		if f.v1 != "" {
+			put("releases/v1/"+f.name, []byte(f.v1), 0o644)
+		}
+		if f.v2 != "" {
+			put("releases/v2/"+f.name, []byte(f.v2), 0o644)
+		}
+	}
+	put("releases/v1/logo.png", tinyPNG(), 0o644)
+	put("releases/v2/logo.png", append(tinyPNG(), 0), 0o644)
 	// Kept empty, so that rm -rf still removes it.
 	_ = os.MkdirAll(filepath.Join(dir, "locked"), 0o755)
 	_ = os.Chmod(filepath.Join(dir, "locked"), 0o000)
