@@ -161,6 +161,18 @@ for a file's misfits in place of `DidNotFit`, and call `app.Notify(notices...)`:
 strongest (Error, then Warning, else the first row's), and in the App Log an entry each at its own kind, a file's
 WARNs right after its row. With no screen, write each `Text` that is not empty to stderr, a line each.
 
+A key in a settings file that the app doesn't read is kept, whether it is one the app no longer reads or one it never
+did (a typo, `refesh`), also when the app writes the file again: no toast, no copy, no `Notice`. At every start, log
+an INFO entry for each with `app.Log(terminu.Info, …)`: `No longer used: measure in ~/.config/app/config.yaml; delete
+it if you don't need it` for a key you know the app used to read, `Not read: refesh in ~/.config/app/config.yaml;
+delete it if you don't need it` for any other.
+
+Outside the TUI — a screen of your own that is not part of it, or output printed for another program to show (a
+status line) — none of the above runs: no `MoveAside`, `KeepAside`, `DidNotFit` or `Notify`, and no file is touched
+(nothing moved to `.bak`, nothing written again). Use your defaults for this run (with a file that can't be read, how
+the app goes on is yours) and show the user there which file has what wrong, as you see fit (a mark at the end of the
+status line, a line on a sidebar): nobody reads stderr there. The next time the TUI opens, it goes as above.
+
 ## A success report
 
 A success the user needs to read whole that is too long for a toast (what an export wrote, and where) goes in a

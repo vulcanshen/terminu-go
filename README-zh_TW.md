@@ -136,6 +136,16 @@ app 繼續。啟動時先用 `copied, err := terminu.KeepAside(path)` 把檔複�
 （不叫 `DidNotFit`），最後叫 `app.Notify(notices...)`。toast 一件一行，種類取最重的（Error，再來 Warning，都不是就照第一行）；
 App Log 一件一筆、用它自己的種類，那個檔的 WARN 緊接在它那一行後面。沒有畫面時，把每個不是空的 `Text` 各寫一行到 stderr。
 
+設定檔裡 app 不讀的 key 一律留著，不管是改版後不再讀的，還是從來沒讀過的（例：打錯字的 `refesh`），app 重寫那個檔時也留著：
+不跳 toast、不備份、不收成 `Notice`。每次啟動用 `app.Log(terminu.Info, …)` 各記一筆 INFO：app 知道自己以前讀過的寫
+`No longer used: measure in ~/.config/app/config.yaml; delete it if you don't need it`，其他的寫
+`Not read: refesh in ~/.config/app/config.yaml; delete it if you don't need it`。
+
+TUI 以外（app 自己畫、不在 TUI 裡的畫面，或印給別的程式顯示的輸出，例：狀態列），上面這些都不做：不叫 `MoveAside`、
+`KeepAside`、`DidNotFit`、`Notify`，也不動任何檔案（不移到 `.bak`、不重寫）。這一次用預設值（讀不了的檔要怎麼繼續由 app
+決定），並在那裡讓使用者看到哪個檔有什麼問題，怎麼呈現由 app 決定（例：狀態列最後加一個標記、側邊欄多一行）：那裡沒有人看
+stderr。下次打開 TUI 時，照上面做。
+
 ## 成功的報告
 
 使用者需要讀完、toast 又放不下的成功報告（例：匯出寫了哪些檔、寫在哪裡），放進唯讀的 viewer：
