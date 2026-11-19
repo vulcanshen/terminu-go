@@ -536,3 +536,60 @@ func TestCompareFirstRow(t *testing.T) {
 		}
 	}
 }
+
+// The command line (tdp E1, E1-3 to E1-8; E3-40): results on stdout, errors
+// and warnings on stderr a line each after "showcase: ", in the TUI's words;
+// exit 0 done, 1 not done, 2 used wrong. iconwidth prints each width with
+// where it came from; settings, with no screen, says on stderr what the TUI
+// says in its toast and App Log, the settings alone on stdout.
+func TestCommandLine(t *testing.T) {
+	run := func(args ...string) (string, string, int) {
+		var out, errs strings.Builder
+		code := command(args, &out, &errs)
+		return out.String(), errs.String(), code
+	}
+	if out, errs, code := run("version"); out != "showcase "+version+"\n" || errs != "" || code != 0 {
+		t.Errorf("version: %q %q %d", out, errs, code)
+	}
+	if out, errs, code := run("help"); out != usage || errs != "" || code != 0 {
+		t.Errorf("help: %q %q %d", out, errs, code)
+	}
+	if out, errs, code := run("x"); out != "" || errs != "showcase: Unknown command \"x\"\n\n"+usage || code != 2 {
+		t.Errorf("used wrong: %q %q %d", out, errs, code)
+	}
+
+	icon, powerline := terminu.IconWidth(), terminu.PowerlineWidth()
+	t.Cleanup(func() { terminu.SetIconWidth(icon, powerline) })
+	t.Setenv("SHOWCASE__ICON_WIDTH", "2")
+	t.Setenv("SHOWCASE__POWERLINE_WIDTH", "1")
+	if out, errs, code := run("iconwidth"); out != "icon 2 (SHOWCASE__ICON_WIDTH)\npowerline 1 (SHOWCASE__POWERLINE_WIDTH)\n" || errs != "" || code != 0 {
+		t.Errorf("iconwidth: %q %q %d", out, errs, code)
+	}
+
+	out, errs, code := run("settings")
+	if code != 0 || !strings.Contains(out, `color: "#89b4fa"`) || strings.Contains(out, "showcase:") {
+		t.Errorf("settings, stdout %q, exit %d", out, code)
+	}
+	for _, want := range []string{
+		"showcase: 2 values in config.yaml did not fit: defaults used, yours kept in config.yaml.bak",
+		`showcase: config.yaml: color "#zzzzzz" did not fit; using "#89b4fa"`,
+		`showcase: config.yaml: timeout "-5" did not fit; using "30"`,
+		"showcase: No longer used: " + filepath.Join(dataDir(), "layout.yaml") + "; delete it if you don't need it",
+	} {
+		if !strings.Contains(errs, want+"\n") {
+			t.Errorf("settings, no %q on stderr:\n%s", want, errs)
+		}
+	}
+	if strings.Count(errs, "\n") != 4 {
+		t.Errorf("settings: %d lines on stderr, want 4:\n%s", strings.Count(errs, "\n"), errs)
+	}
+	out, errs, code = run("settings", "broken")
+	want := "showcase: " + filepath.Join(dataDir(), "settings.yaml") + " can't be read: line 1: did not find expected ',' or ']'\n" +
+		"showcase: Open showcase to move it aside and start fresh\n"
+	if out != "" || errs != want || code != 1 {
+		t.Errorf("a file it can't read: %q %q %d", out, errs, code)
+	}
+	if _, _, code := run("settings", "x"); code != 2 {
+		t.Errorf("settings used wrong: exit %d", code)
+	}
+}

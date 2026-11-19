@@ -182,3 +182,74 @@ func TestE3DidNotFit(t *testing.T) {
 		t.Error("no copy: a sentence")
 	}
 }
+
+// TestE3NoScreenLines: with no screen, what the TUI says goes to stderr in
+// the same words, none of it needing an App (tdp E3, E3-40, E1-8): a
+// notice's lines are its row, then the WARNs Notify logs for it, a misfit
+// notice with no copy only its WARNs; NoLongerUsedLines are NoLongerUsed's
+// entries, the home folder written ~; CannotReadText is what MoveAside's Esc
+// leaves Run with.
+func TestE3NoScreenLines(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home)
+	path := filepath.Join(home, ".config", "app", "config.yaml")
+	misfits := []Misfit{{Key: "color", Was: "#zzzzzz", Now: "#89b4fa"}, {Key: "entry 3 (name \"\")", Was: "", Now: ""}}
+	n := MisfitNotice(path, path+".bak", misfits...)
+	ta := newTestApp(t)
+	ta.Notify(n, Notice{Kind: Warning, Text: `Profile "work" is not in profiles.yaml: using the default`})
+	var logged []string
+	for _, e := range ta.logs.entries {
+		logged = append(logged, e.text)
+	}
+	want := []string{DidNotFitText(path, path+".bak", misfits...),
+		`config.yaml: color "#zzzzzz" did not fit; using "#89b4fa"`, `config.yaml: entry 3 (name "") did not fit; taken out`}
+	if got := n.Lines(); strings.Join(got, "|") != strings.Join(want, "|") || strings.Join(logged[:3], "|") != strings.Join(want, "|") {
+		t.Errorf("a misfit notice's lines %q, the App Log %q", got, logged)
+	}
+	if got := (Notice{Kind: Warning, Text: logged[3]}).Lines(); len(got) != 1 || got[0] != logged[3] {
+		t.Errorf("a notice of the app's own: %q", got)
+	}
+	if got := MisfitNotice(path, "", misfits...).Lines(); len(got) != 2 || got[0] != want[1] {
+		t.Errorf("no copy: only the WARNs: %q", got)
+	}
+
+	old, gone := filepath.Join(home, ".config", "app", "layout.yaml"), filepath.Join(home, "theme.yaml")
+	writeFile(t, old, []byte("x"), 0o600)
+	got := NoLongerUsedLines(old, gone)
+	if len(got) != 1 || got[0] != "No longer used: ~/.config/app/layout.yaml; delete it if you don't need it" {
+		t.Errorf("NoLongerUsedLines: %q", got)
+	}
+	tb := newTestApp(t)
+	tb.NoLongerUsed(old, gone)
+	if len(tb.logs.entries) != 1 || tb.logs.entries[0].text != got[0] {
+		t.Errorf("NoLongerUsed logs other words: %v", tb.logs.entries)
+	}
+
+	why := errors.New("line 1: did not find expected ',' or ']'")
+	text := CannotReadText(path, why)
+	if text != "~/.config/app/config.yaml can't be read: "+why.Error() {
+		t.Errorf("CannotReadText: %q", text)
+	}
+	tc := newTestApp(t)
+	tc.MoveAside(path, why, nil)
+	tc.settle()
+	if cmd := tc.press("Esc"); cmd == nil {
+		t.Fatal("Esc did not quit")
+	}
+	if tc.exitErr == nil || tc.exitErr.Error() != text {
+		t.Errorf("MoveAside's Esc: %v, want %q", tc.exitErr, text)
+	}
+}
+
+// TestE1ProbeLines: <app> iconwidth prints two lines, each width with where
+// it came from (tdp E1, E1-3).
+func TestE1ProbeLines(t *testing.T) {
+	r := ProbeResult{IconCells: 2, IconFrom: "probe", PowerlineCells: 1, PowerlineFrom: FamilyPowerlineWidth}
+	if got := r.Lines(); len(got) != 2 || got[0] != "icon 2 (probe)" || got[1] != "powerline 1 (TERMINU__POWERLINE_WIDTH)" {
+		t.Errorf("the lines: %q", got)
+	}
+	if got := (ProbeResult{IconCells: 1, IconFrom: "default", PowerlineCells: 2, PowerlineFrom: "FILU__POWERLINE_WIDTH"}).Lines(); got[0] != "icon 1 (default)" || got[1] != "powerline 2 (FILU__POWERLINE_WIDTH)" {
+		t.Errorf("default and a variable: %q", got)
+	}
+}

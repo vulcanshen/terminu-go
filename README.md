@@ -46,7 +46,8 @@ package main
 
 import (
 	_ "embed"
-	"log"
+	"fmt"
+	"os"
 	"slices"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -69,10 +70,12 @@ func main() {
 	app.AddScreen(&terminu.Screen{Name: "Tasks", Panels: []*terminu.Panel{{Label: "Tasks", Body: list, Actions: []terminu.Action{done}}}})
 	var err error
 	if app.Splash, err = terminu.NewSplash(icon, "todo", "v0.1.0", "Things to do"); err != nil {
-		log.Fatal(err)
+		fmt.Fprintln(os.Stderr, "todo:", err) // errors on stderr after "<app>: " (tdp E1)
+		os.Exit(1)
 	}
 	if err := app.Run(); err != nil {
-		log.Fatal(err)
+		fmt.Fprintln(os.Stderr, "todo:", err)
+		os.Exit(1)
 	}
 }
 ```
@@ -138,12 +141,19 @@ that can't be read: `Enter` only moves that one aside and runs `reread`, which r
 no longer uses are left to the user: call `app.NoLongerUsed(paths...)` at every start, and the App Log names each one
 still there.
 
+With no screen (a command printing to a pipe), everything below and above goes to stderr, a line each after
+`<app>: `, in the TUI's words; where the TUI goes on, the command goes on, its exit status saying whether its own job
+was done (tdp E3, E1). A file it can't read is as `Esc`: touch no file, write `terminu.CannotReadText(path, err)` (the
+words `Run` returns, `~/.config/catu/settings.yaml can't be read: …`), a line saying what to do if you like (`Open catu
+to move it aside and start fresh`), and exit 1. `terminu.NoLongerUsedLines(paths...)` are `NoLongerUsed`'s lines.
+
 A file the app reads but with values it can't use (a colour that is not `#rrggbb`, a negative timeout) or entries that
 don't fit (a blank or repeated name) is not one it can't read: the app goes on. At the start, copy it aside with
 `copied, err := terminu.KeepAside(path)` (to `.bak`, never over another), write the file again with your defaults
 for those values and without those entries, and call `app.DidNotFit(path, copied, misfits...)`: one Warning toast
 naming the file and the copy, and a WARN in the App Log for each `terminu.Misfit{Key, Was, Now}`. With no screen,
-write `terminu.DidNotFitText(path, copied, misfits...)` to stderr. When `KeepAside` fails, don't write the file
+write `terminu.MisfitNotice(path, copied, misfits...).Lines()` to stderr: the toast's row, then each WARN. When
+`KeepAside` fails, don't write the file
 again: use the defaults for this run only, give its error in an Error toast (or on stderr) and call
 `app.DidNotFit(path, "", misfits...)` for the WARNs.
 
@@ -159,13 +169,13 @@ copy that could not be made, a value naming an entry that is not there), they co
 `terminu.Notice{Kind, Text}` for each in the order they happened, `terminu.MisfitNotice(path, copied, misfits...)`
 for a file's misfits in place of `DidNotFit`, and call `app.Notify(notices...)`: a row each, the toast's kind the
 strongest (Error, then Warning, else the first row's), and in the App Log an entry each at its own kind, a file's
-WARNs right after its row. With no screen, write each `Text` that is not empty to stderr, a line each.
+WARNs right after its row. With no screen, write each notice's `Lines()` to stderr instead, a line each.
 
 A key in a settings file that the app doesn't read is kept, whether it is one the app no longer reads or one it never
 did (a typo, `refesh`), also when the app writes the file again: no toast, no copy, no `Notice`. At every start, log
 an INFO entry for each with `app.Log(terminu.Info, …)`: `No longer used: measure in ~/.config/app/config.yaml; delete
 it if you don't need it` for a key you know the app used to read, `Not read: refesh in ~/.config/app/config.yaml;
-delete it if you don't need it` for any other.
+delete it if you don't need it` for any other. With no screen, those lines go to stderr.
 
 Outside the TUI — a screen of your own that is not part of it, or output printed for another program to show (a
 status line) — none of the above runs: no `MoveAside`, `KeepAside`, `DidNotFit` or `Notify`, and no file is touched
@@ -339,6 +349,15 @@ nothing. When it fails, the first failure is the Error toast, which records itse
 words) shows and records nothing, so give `CannotReadAgain` no words then; a different one toasts again. A read that
 works again is one `app.Log(terminu.Info, "The repository can be read again")`, with no toast. Updates that keep coming
 in by themselves (streaming, a list a connection keeps up to date) are not recorded one by one.
+
+## The command line
+
+What a command prints takes one form in every app (tdp E1): its results on stdout; its errors and warnings on
+stderr, a line each after `<app>: `, worded as the toast for the same thing; a wrong use (an unknown command, a missing
+argument) on stderr, `<app>: ` and what is wrong (`Unknown command "x"`), a blank line, then the usage, exit 2; exit 0
+when it is done, 1 when it is not. `<app> iconwidth`, where an app has it, prints `terminu.Probe(name).Lines()` on
+stdout: how many cells an icon and a powerline symbol take, each with where it came from (`icon 2 (probe)`,
+`powerline 1 (TERMINU__POWERLINE_WIDTH)`).
 
 ## Settings
 

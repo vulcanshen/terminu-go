@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"time"
 
@@ -15,17 +16,7 @@ const version = "0.0.0-dev"
 
 func main() {
 	if len(os.Args) > 1 {
-		switch os.Args[1] {
-		case "version", "--version", "-v":
-			fmt.Println("showcase " + version)
-			return
-		case "help", "--help", "-h":
-			fmt.Print(usage)
-			return
-		default:
-			fmt.Fprintf(os.Stderr, "showcase: unknown command %q\n\n%s", os.Args[1], usage)
-			os.Exit(2)
-		}
+		os.Exit(command(os.Args[1:], os.Stdout, os.Stderr))
 	}
 	if err := newShowcase().app.Run(); err != nil {
 		fmt.Fprintln(os.Stderr, "showcase:", err)
@@ -33,12 +24,73 @@ func main() {
 	}
 }
 
+// command runs the command args (tdp E1): what it prints on stdout, its
+// errors and warnings on stderr, a line each after "showcase: ", worded as
+// the TUI's toasts are; it gives the exit status, 0 done, 1 not done, 2 used
+// wrong.
+func command(args []string, stdout, stderr io.Writer) int {
+	switch args[0] {
+	case "version", "--version", "-v":
+		fmt.Fprintln(stdout, "showcase "+version)
+	case "help", "--help", "-h":
+		fmt.Fprint(stdout, usage)
+	case "iconwidth":
+		for _, l := range terminu.Probe("showcase").Lines() {
+			fmt.Fprintln(stdout, l)
+		}
+	case "settings":
+		return settings(args[1:], stdout, stderr)
+	default:
+		fmt.Fprintf(stderr, "showcase: Unknown command %q\n\n%s", args[0], usage)
+		return 2
+	}
+	return 0
+}
+
+// settings prints the pretend settings the showcase uses, with no screen
+// (tdp E3, E3-40): the two values that do not fit made to fit as at a start,
+// and the old layout file it no longer uses, each a line on stderr in the
+// words of its toast and App Log, the settings alone on stdout. "broken" is a
+// settings file it cannot read: the path and why on stderr, no file touched,
+// exit 1.
+func settings(args []string, stdout, stderr io.Writer) int {
+	say := func(lines ...string) {
+		for _, l := range lines {
+			fmt.Fprintln(stderr, "showcase: "+l)
+		}
+	}
+	switch {
+	case len(args) == 1 && args[0] == "broken":
+		path, why := brokenSettings()
+		say(terminu.CannotReadText(path, why), "Open showcase to move it aside and start fresh")
+		return 1
+	case len(args) > 0:
+		fmt.Fprintf(stderr, "showcase: Unknown settings %q\n\n%s", args[0], usage)
+		return 2
+	}
+	path, notices := fitSettings(false)
+	for _, n := range notices {
+		say(n.Lines()...)
+	}
+	say(terminu.NoLongerUsedLines(oldLayout())...)
+	b, err := os.ReadFile(path)
+	if err != nil {
+		say(terminu.CannotReadText(path, err))
+		return 1
+	}
+	fmt.Fprint(stdout, string(b))
+	return 0
+}
+
 const usage = `showcase — every component of terminu design, on fake data
 
 Usage:
-  showcase            run it
-  showcase version    print the version (also --version, -v)
-  showcase help       print this (also --help, -h)
+  showcase                    run it
+  showcase version            print the version (also --version, -v)
+  showcase help               print this (also --help, -h)
+  showcase iconwidth          print how many cells an icon and a powerline symbol take
+  showcase settings           print the pretend settings, made to fit; what it says on stderr
+  showcase settings broken    the same with a settings file it can't read
 
 Environment:
   SHOWCASE__ICON_WIDTH        1 or 2: how many cells a Nerd Font icon takes,

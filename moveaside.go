@@ -1,7 +1,7 @@
 package terminu
 
 import (
-	"fmt"
+	"errors"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -55,10 +55,20 @@ func (a *App) moveAside(path string, err error, fresh func() tea.Cmd, then strin
 		return tea.Batch(a.closeTop(), run(fresh))
 	}
 	c.quit = func() tea.Cmd {
-		a.exitErr = fmt.Errorf("%s can't be read: %v", shown, err)
+		a.exitErr = errors.New(CannotReadText(path, err))
 		return tea.Quit
 	}
 	return a.open(c)
+}
+
+// CannotReadText is what MoveAside's Esc leaves the app with for a file of
+// its own it cannot read, "<path> can't be read: <why>", the home folder
+// written ~. With no screen the app does as Esc does: it touches no file,
+// writes this to stderr after "<app>: " (a line saying what to do may
+// follow, "Open catu to move it aside and start fresh") and exits 1 (tdp E3,
+// E1). It needs no App.
+func CannotReadText(path string, err error) string {
+	return homeShort(path) + " can't be read: " + err.Error()
 }
 
 // NoLongerUsed notes each file of the app's own that a newer version no
@@ -68,11 +78,22 @@ func (a *App) moveAside(path string, err error, fresh func() tea.Cmd, then strin
 // with it is the user's. Call it at every start; the App Log starts empty
 // (tdp E3, files no longer used).
 func (a *App) NoLongerUsed(paths ...string) {
+	for _, l := range NoLongerUsedLines(paths...) {
+		a.Log(Info, l)
+	}
+}
+
+// NoLongerUsedLines are NoLongerUsed's INFO entries, one for each of paths
+// still there, in its words, for an app with no screen to write to stderr
+// after "<app>: " (tdp E3). It needs no App.
+func NoLongerUsedLines(paths ...string) []string {
+	var out []string
 	for _, p := range paths {
 		if _, err := os.Lstat(p); err == nil {
-			a.Log(Info, "No longer used: "+homeShort(p)+"; delete it if you don't need it")
+			out = append(out, "No longer used: "+homeShort(p)+"; delete it if you don't need it")
 		}
 	}
+	return out
 }
 
 // asideName is where path goes aside: path.bak, or the first of .bak.1,

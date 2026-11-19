@@ -23,6 +23,18 @@ go build -o /tmp/showcase ./examples/showcase
 
 拉大拉小視窗都試：全螢幕、半螢幕、很窄（59 欄以下一次只畫一個 panel）。
 
+## 命令列
+
+不打開畫面、直接印出來的指令（E1、E3）：結果在 stdout，說的話在 stderr，一行一件、開頭 `showcase: `。每個後面都 `echo $?` 看一下。
+
+- `/tmp/showcase version > /tmp/v`：版號在 `/tmp/v` 裡，畫面上什麼都沒有；exit 0。
+- `/tmp/showcase iconwidth`：兩行 `icon N (來源)`、`powerline N (來源)`；`SHOWCASE__ICON_WIDTH=2 /tmp/showcase iconwidth` 的來源寫
+  那個變數（E1-3）。
+- `/tmp/showcase settings | cat`：pipe 只收到設定；終端機上四行，跟 D「Values that do not fit」的 toast 與 App Log 同一句話
+  （toast 那一行、兩筆 WARN），再加 `No longer used`（E3-40）；exit 0。
+- `/tmp/showcase settings broken`：`… can't be read: …` 與一行 `Open showcase to move it aside and start fresh`，什麼檔都不動；exit 1。
+- `/tmp/showcase x`：`showcase: Unknown command "x"`、空一行、用法；exit 2。
+
 ## 在每個畫面都能按的
 
 | 鍵 | 做什麼 |

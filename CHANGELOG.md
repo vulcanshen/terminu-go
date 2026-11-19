@@ -2,6 +2,20 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.19-beta.4 — tdp v1.2.17
+
+- With no screen, what E3 says goes to stderr a line each after `<app>: `, in the TUI's words (tdp's next release,
+  E3-40; tdp #24). Three of those sentences were the lib's own and out of reach; now each comes from a function that
+  needs no App, the TUI using it too: `Notice.Lines()` (its row, then each WARN Notify logs for it, a misfit's
+  included), `NoLongerUsedLines(paths...)` (`NoLongerUsed`'s entries) and `CannotReadText(path, err)` (what
+  `MoveAside`'s `Esc` leaves `Run` with, the home folder written `~`)
+- `ProbeResult.Lines()` is what `<app> iconwidth` prints: `icon 2 (probe)`, `powerline 1 (TERMINU__POWERLINE_WIDTH)`,
+  each width with where it came from (tdp's next release, E1-3; tdp #24)
+- The README's quick start and `examples/minimal` write `Run`'s error to stderr after `<app>: ` and exit 1, not
+  `log.Fatal` (tdp E1); the README has a section on the command line. The showcase's command line follows E1:
+  `Unknown command "x"`, `showcase iconwidth`, and `showcase settings`, which says on stderr what the TUI says at a
+  start, the settings alone on stdout (`settings broken`: a file it can't read, exit 1)
+
 ## v1.2.19-beta.3 — tdp v1.2.17
 
 - The comparison is titled only `DIFF`, its `UNIFIED` and `SPLIT` tabs after it, so the tabs always show (tdp's next

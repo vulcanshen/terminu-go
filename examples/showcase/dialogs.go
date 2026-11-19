@@ -18,15 +18,22 @@ import (
 // an app does when it cannot read a file of its own (tdp E3).
 func (ds *dialogsScreen) moveAside() tea.Cmd {
 	a := ds.s.app
-	path := filepath.Join(dataDir(), "settings.yaml")
-	if err := os.MkdirAll(dataDir(), 0o755); err == nil {
-		err = os.WriteFile(path, []byte("theme: [dark\n"), 0o600)
-	}
+	path, why := brokenSettings()
 	// Moved aside, the showcase goes on as on its first start, which makes
 	// no settings file: the next one comes with the first save.
-	return a.MoveAside(path, errors.New("line 1: did not find expected ',' or ']'"), func() tea.Cmd {
+	return a.MoveAside(path, why, func() tea.Cmd {
 		return a.Toast(terminu.Info, "Settings back to their defaults, settings.yaml moved aside")
 	})
+}
+
+// brokenSettings writes a pretend settings file the showcase cannot read,
+// and why.
+func brokenSettings() (string, error) {
+	path := filepath.Join(dataDir(), "settings.yaml")
+	if err := os.MkdirAll(dataDir(), 0o755); err == nil {
+		_ = os.WriteFile(path, []byte("theme: [dark\n"), 0o600)
+	}
+	return path, errors.New("line 1: did not find expected ',' or ']'")
 }
 
 // didNotFit reads a pretend settings file with two values the showcase can't
@@ -36,7 +43,16 @@ func (ds *dialogsScreen) moveAside() tea.Cmd {
 // and the defaults hold for this run only. What else the start has to say
 // (also) comes in the same toast, a row each (tdp E3, several at one start).
 func (ds *dialogsScreen) didNotFit(readOnly bool, also ...terminu.Notice) tea.Cmd {
-	a := ds.s.app
+	_, notices := fitSettings(readOnly)
+	return ds.s.app.Notify(append(notices, also...)...)
+}
+
+// fitSettings writes the pretend settings file with two values the showcase
+// can't use and makes them fit as a start does (tdp E3): copied aside,
+// written again with the defaults; in a folder that cannot be written
+// (readOnly) the copy cannot be made and the file is left as it was. It
+// gives the file and what to say about it.
+func fitSettings(readOnly bool) (string, []terminu.Notice) {
 	dir := filepath.Join(dataDir(), "fit")
 	_ = os.Chmod(dir, 0o755)
 	_ = os.RemoveAll(dir) // the pretend file alone, its copies of other runs gone
@@ -55,8 +71,7 @@ func (ds *dialogsScreen) didNotFit(readOnly bool, also ...terminu.Notice) tea.Cm
 	} else {
 		_ = os.WriteFile(path, []byte("color: \"#89b4fa\"\ntimeout: 30\nname: web\n"), 0o600)
 	}
-	ns = append(ns, terminu.MisfitNotice(path, copied, misfits...))
-	return a.Notify(append(ns, also...)...)
+	return path, append(ns, terminu.MisfitNotice(path, copied, misfits...))
 }
 
 // report is a success too long for a toast that the user needs to read

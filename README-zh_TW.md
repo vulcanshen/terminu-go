@@ -40,7 +40,8 @@ package main
 
 import (
 	_ "embed"
-	"log"
+	"fmt"
+	"os"
 	"slices"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -63,10 +64,12 @@ func main() {
 	app.AddScreen(&terminu.Screen{Name: "Tasks", Panels: []*terminu.Panel{{Label: "Tasks", Body: list, Actions: []terminu.Action{done}}}})
 	var err error
 	if app.Splash, err = terminu.NewSplash(icon, "todo", "v0.1.0", "Things to do"); err != nil {
-		log.Fatal(err)
+		fmt.Fprintln(os.Stderr, "todo:", err) // errors on stderr after "<app>: " (tdp E1)
+		os.Exit(1)
 	}
 	if err := app.Run(); err != nil {
-		log.Fatal(err)
+		fmt.Fprintln(os.Stderr, "todo:", err)
+		os.Exit(1)
 	}
 }
 ```
@@ -119,11 +122,17 @@ app 讀不了自己的設定、狀態或資料（格式錯、檔案壞掉、沒�
 `app.MoveAsideRecord(path, err, reread)`：`Enter` 只把那一筆移開，再跑 `reread` 讀其他的。改版後不再用的檔交給使用者處理：
 每次啟動叫 `app.NoLongerUsed(paths...)`，還在的那幾個會在 App Log 各記一筆。
 
+沒有畫面時（例：印到 pipe 的指令），這一節說的每一件都寫到 stderr，一件一行，開頭 `<app>: `，跟 TUI 同一句話；TUI 會繼續的
+地方，指令也繼續，exit status 看指令自己的事有沒有做完（tdp E3、E1）。讀不了的檔照 `Esc` 做：不動任何檔案，寫出
+`terminu.CannotReadText(path, err)`（跟 `Run` 回傳的同一句：`~/.config/catu/settings.yaml can't be read: …`），想說怎麼辦可以
+多一行（例：`Open catu to move it aside and start fresh`），以 exit status 1 結束。`terminu.NoLongerUsedLines(paths...)` 是
+`NoLongerUsed` 記的那幾行。
+
 讀得進來、只是有 app 用不了的值（不是 `#rrggbb` 的顏色、負的秒數），或有不合規則的一筆（名字空白或重複）的檔，不算讀不了：
 app 繼續。啟動時先用 `copied, err := terminu.KeepAside(path)` 把檔複製一份（`.bak`，一律不蓋掉別的），再用預設值重寫
 那些值、拿掉那些筆，然後叫 `app.DidNotFit(path, copied, misfits...)`：一個 Warning toast 寫出檔案與備份，每個
-`terminu.Misfit{Key, Was, Now}` 在 App Log 記一筆 WARN。沒有畫面時，把 `terminu.DidNotFitText(path, copied, misfits...)`
-寫到 stderr。`KeepAside` 失敗時不重寫檔案：預設值只用在這一次，把它的 error 用 Error toast（或 stderr）說出來，再叫
+`terminu.Misfit{Key, Was, Now}` 在 App Log 記一筆 WARN。沒有畫面時，把
+`terminu.MisfitNotice(path, copied, misfits...).Lines()` 寫到 stderr：toast 那一行，再接每一筆 WARN。`KeepAside` 失敗時不重寫檔案：預設值只用在這一次，把它的 error 用 Error toast（或 stderr）說出來，再叫
 `app.DidNotFit(path, "", misfits...)` 記 WARN。
 
 值指到使用者自己資料裡不在的一筆（例：某個設定指向手動刪掉的 profile），不算值不合規則：不叫 `KeepAside`，檔案不動、值留著。
@@ -134,12 +143,12 @@ app 繼續。啟動時先用 `copied, err := terminu.KeepAside(path)` 把檔複�
 同一次啟動要說的不只一件時（位置搬了、一個或好幾個檔有值不合規則、備份做不出來、值指到不在的一筆），合成一個 toast：照發生的
 順序，每一件收成一個 `terminu.Notice{Kind, Text}`，檔案裡不合規則的值改用 `terminu.MisfitNotice(path, copied, misfits...)`
 （不叫 `DidNotFit`），最後叫 `app.Notify(notices...)`。toast 一件一行，種類取最重的（Error，再來 Warning，都不是就照第一行）；
-App Log 一件一筆、用它自己的種類，那個檔的 WARN 緊接在它那一行後面。沒有畫面時，把每個不是空的 `Text` 各寫一行到 stderr。
+App Log 一件一筆、用它自己的種類，那個檔的 WARN 緊接在它那一行後面。沒有畫面時，改把每個 notice 的 `Lines()` 寫到 stderr，一行一行。
 
 設定檔裡 app 不讀的 key 一律留著，不管是改版後不再讀的，還是從來沒讀過的（例：打錯字的 `refesh`），app 重寫那個檔時也留著：
 不跳 toast、不備份、不收成 `Notice`。每次啟動用 `app.Log(terminu.Info, …)` 各記一筆 INFO：app 知道自己以前讀過的寫
 `No longer used: measure in ~/.config/app/config.yaml; delete it if you don't need it`，其他的寫
-`Not read: refesh in ~/.config/app/config.yaml; delete it if you don't need it`。
+`Not read: refesh in ~/.config/app/config.yaml; delete it if you don't need it`。沒有畫面時，這幾行寫到 stderr。
 
 TUI 以外（app 自己畫、不在 TUI 裡的畫面，或印給別的程式顯示的輸出，例：狀態列），上面這些都不做：不叫 `MoveAside`、
 `KeepAside`、`DidNotFit`、`Notify`，也不動任何檔案（不移到 `.bak`、不重寫）。這一次用預設值（讀不了的檔要怎麼繼續由 app
@@ -288,6 +297,13 @@ toast，或疊在那個 menu 上的 error popup。app 自己的閱讀 panel 有�
 寫出改了什麼；讀到沒變什麼都不記。讀不到時，第一次跳 Error toast（toast 自己會記）；之後還是同一個失敗（同一句話），不跳也不記，
 這時叫 `CannotReadAgain` 不要給字；換了一個失敗，再跳一次。又讀得到時記一筆 `app.Log(terminu.Info, "The repository can be read again")`，
 不跳 toast。自己一直進來的更新（串流、連線一直保持最新的清單）不一筆一筆記。
+
+## 命令列
+
+每個 app 的指令印出來的東西都照同一種格式（tdp E1）：結果寫到 stdout；錯誤、警告寫到 stderr，一件一行，開頭 `<app>: `，
+跟同一件事的 toast 同一句話；用錯（不認得的指令、少了參數）寫到 stderr：`<app>: ` 接哪裡錯（`Unknown command "x"`）、空一行、
+再接用法，exit status 2；做完 0、沒做完 1。有 `<app> iconwidth` 的 app，把 `terminu.Probe(name).Lines()` 印到 stdout：
+一個 icon 和一個 powerline 符號各占幾格，後面寫數字從哪來（`icon 2 (probe)`、`powerline 1 (TERMINU__POWERLINE_WIDTH)`）。
 
 ## 設定
 

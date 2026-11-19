@@ -86,12 +86,23 @@ func (a *App) DidNotFit(path, copy string, misfits ...Misfit) tea.Cmd {
 // several at one start): a location moved, values that did not fit
 // (MisfitNotice), a copy that could not be made (KeepAside's error), a value
 // naming an entry that is not there. Notify shows them as one toast; with no
-// screen, each Text that is not "" is a line of its own on stderr.
+// screen, its Lines go to stderr.
 type Notice struct {
 	Kind ToastKind
 	Text string
 	// warns are the WARNs logged right after the row: a misfit's.
 	warns []string
+}
+
+// Lines are what n says with no screen, for stderr a line each after
+// "<app>: " (tdp E3, E1): its Text, when it has one, then each WARN Notify
+// logs for it, in the words the TUI gives them. It needs no App.
+func (n Notice) Lines() []string {
+	var out []string
+	if n.Text != "" {
+		out = append(out, n.Text)
+	}
+	return append(out, n.warns...)
 }
 
 // MisfitNotice is DidNotFit's row, a Warning in DidNotFitText's words,

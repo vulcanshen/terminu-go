@@ -3,7 +3,8 @@ package main
 
 import (
 	_ "embed"
-	"log"
+	"fmt"
+	"os"
 	"slices"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -26,9 +27,11 @@ func main() {
 	app.AddScreen(&terminu.Screen{Name: "Tasks", Panels: []*terminu.Panel{{Label: "Tasks", Body: list, Actions: []terminu.Action{done}}}})
 	var err error
 	if app.Splash, err = terminu.NewSplash(icon, "todo", "v0.1.0", "Things to do"); err != nil {
-		log.Fatal(err)
+		fmt.Fprintln(os.Stderr, "todo:", err) // errors on stderr after "<app>: " (tdp E1)
+		os.Exit(1)
 	}
 	if err := app.Run(); err != nil {
-		log.Fatal(err)
+		fmt.Fprintln(os.Stderr, "todo:", err)
+		os.Exit(1)
 	}
 }

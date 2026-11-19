@@ -42,6 +42,16 @@ type ProbeResult struct {
 	Palette                 int // how many of the 16 colours the terminal reported (OSC 4)
 }
 
+// Lines are what `<app> iconwidth` prints, for stdout a line each (tdp E1):
+// how many cells an icon and a powerline symbol take, each with where it came
+// from, "icon 2 (probe)", "powerline 1 (TERMINU__POWERLINE_WIDTH)".
+func (r ProbeResult) Lines() []string {
+	return []string{
+		"icon " + strconv.Itoa(r.IconCells) + " (" + r.IconFrom + ")",
+		"powerline " + strconv.Itoa(r.PowerlineCells) + " (" + r.PowerlineFrom + ")",
+	}
+}
+
 // Probe finds out, before Bubble Tea takes the terminal, how many cells an icon
 // and a powerline symbol take (tdp E5) and the terminal's 16 colours
 // (tdp color.4). Each width comes from the app's variable
