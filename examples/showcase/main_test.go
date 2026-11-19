@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"testing"
@@ -387,7 +388,7 @@ func TestTwoVersions(t *testing.T) {
 		t.Errorf("into themes/:\n%s", strings.Join(d.Screen(), "\n"))
 	}
 	d.Press("Esc", "Esc")
-	if d.Has("↔") || !d.Has("README-zh_TW.md") {
+	if d.Has("↔") || !d.Has("MODIFIED") { // the files' own header
 		t.Errorf("Esc did not go back to the files:\n%s", strings.Join(d.Screen(), "\n"))
 	}
 }
@@ -409,5 +410,45 @@ func TestShowMainLeavesDiff(t *testing.T) {
 	}
 	if d.Press("Esc"); d.Has("↔") {
 		t.Error("Esc found a list of the items that differ left behind")
+	}
+}
+
+// A panel showing a difference draws it as UNIFIED does, not as git prints
+// a patch, and Enter opens the comparison (tdp note.8 "In a panel",
+// note-103): [3] CHANGES follows [2]'s cursor, the file under it against its
+// last commit; a file as committed is the empty state, Enter off.
+func TestChangesPanel(t *testing.T) {
+	s := newShowcase()
+	d := tdptest.Start(t, s.app, 140, 40)
+	is := s.inputs
+	show := func(rel string) {
+		t.Helper()
+		d.Press("2")
+		if !is.fileList.Select(filepath.Join(projectDir, rel)) {
+			t.Fatalf("no %s", rel)
+		}
+		d.Press("3")
+	}
+	d.Press("I")
+	show("main.go")
+	screen := strings.Join(d.Screen(), "\n")
+	if !regexp.MustCompile(`\+ +fmt\.Println\("showcase", 42\)`).MatchString(screen) || !regexp.MustCompile(`- +fmt\.Println\("showcase"\)`).MatchString(screen) {
+		t.Errorf("main.go's changes are not drawn as UNIFIED:\n%s", screen)
+	}
+	if d.Has("@@") || d.Has("diff --git") || !d.Has("Enter:compare") {
+		t.Errorf("a patch's own lines, or no Enter:compare:\n%s", screen)
+	}
+	d.Press("Enter")
+	if !d.Has("DIFF — main.go @ 5d6e7f8 ↔ main.go") || !d.Has("UNIFIED") || !d.Has("SPLIT") {
+		t.Errorf("Enter did not open the comparison:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Press("Esc")
+	show("docs/notes.md")
+	if d.Press("Enter"); !d.Has("No changes since 5d6e7f8") || d.Has("DIFF —") {
+		t.Errorf("a file as committed:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	show("assets/logo.png")
+	if !d.Has("Not a text file") {
+		t.Errorf("an image:\n%s", strings.Join(d.Screen(), "\n"))
 	}
 }

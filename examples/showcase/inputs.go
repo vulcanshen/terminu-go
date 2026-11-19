@@ -23,6 +23,8 @@ type inputsScreen struct {
 	inputs   *terminu.Panel
 	files    *terminu.Panel
 	fileList *terminu.List
+	changes  *terminu.Panel // [3]: the file under [2]'s cursor against its last commit
+	changed  *terminu.Pager
 	tab      int    // the Files panel's: its files, main.go's lines, or its folders
 	dir      string // the folder the Folders tab is in
 	disabled bool
@@ -281,7 +283,7 @@ func newInputsScreen(s *showcase) *inputsScreen {
 		// Two versions of one item open the same comparison (tdp note.8): a
 		// file being edited against its last commit, the last commit against
 		// the one before it, which holds many.
-		{Key: "H", Label: "Changes", Desc: "the file against its last commit", Scope: terminu.ItemScope, Do: is.changes,
+		{Key: "H", Label: "Changes", Desc: "the file against its last commit", Scope: terminu.ItemScope, Do: is.compareLastCommit,
 			Hidden: func() bool { return is.tab != 0 }, Disabled: func() bool { r, ok := is.fileList.Current(); return !ok || !textFile(r.ID) }},
 		{Key: "K", Label: "Last commit", Desc: "what " + lastCommit + " changed, file by file", Scope: terminu.PanelScope,
 			Hidden: func() bool { return is.tab != 0 },
@@ -300,8 +302,25 @@ func newInputsScreen(s *showcase) *inputsScreen {
 		Items: func(x, y terminu.Row) ([]terminu.DiffItem, error) { return dirDiff(x.ID, y.ID) },
 	}))
 
+	// [3] CHANGES follows [2]'s cursor: the file under it against its last
+	// commit, drawn as UNIFIED is (tdp note.8 "In a panel"), not as git
+	// prints a patch; Enter opens the comparison.
+	is.changed = &terminu.Pager{}
+	is.changes = &terminu.Panel{Label: "Changes", Body: is.changed, Actions: []terminu.Action{
+		{Key: "Enter", Label: "Compare", Desc: "the file against its last commit, UNIFIED and SPLIT", Hint: "compare",
+			Scope: terminu.PanelScope, Disabled: func() bool { return is.changed.Empty() },
+			Do: func() tea.Cmd {
+				if it, ok := is.lastCommitItem(); ok {
+					return a.OpenDiff(is.changes, it)
+				}
+				return nil
+			}},
+	}}
+	is.files.Details = is.changes
+	is.fileList.OnMove = func(terminu.Row) tea.Cmd { is.showChanges(); return nil }
+
 	is.screen = &terminu.Screen{Name: "Inputs", Key: "I", Desc: "every kind of input",
-		Panels: []*terminu.Panel{is.inputs, is.files}, NarrowBelow: 60, Layout: halves}
+		Panels: []*terminu.Panel{is.inputs, is.files, is.changes}, NarrowBelow: 60, Layout: inputsLayout}
 	return is
 }
 
@@ -379,19 +398,49 @@ func (is *inputsScreen) onFolder() bool {
 // folderRow reports a folder's row of the Folders tab, named with a / after.
 func folderRow(r terminu.Row) bool { return len(r.Cells) > 0 && strings.HasSuffix(r.Cells[0], "/") }
 
-// changes opens the file under the cursor against its last commit, the
-// older the anchor (tdp note.8).
-func (is *inputsScreen) changes() tea.Cmd {
+// lastCommitItem is the text file under [2]'s cursor against its last
+// commit, the older the anchor (tdp note.8); none on what is not a text
+// file.
+func (is *inputsScreen) lastCommitItem() (terminu.DiffItem, bool) {
 	row, ok := is.fileList.Current()
-	if !ok {
-		return nil
+	if !ok || !textFile(row.ID) {
+		return terminu.DiffItem{}, false
 	}
 	rel := relPath(row.ID)
-	return is.s.app.OpenDiff(is.files, terminu.DiffItem{Anchor: rel + " @ " + lastCommit, Other: rel,
+	return terminu.DiffItem{Anchor: rel + " @ " + lastCommit, Other: rel,
 		Text: func() (string, string, error) {
 			b, err := os.ReadFile(row.ID)
 			return committed(rel, string(b)), string(b), err
-		}})
+		}}, true
+}
+
+// compareLastCommit opens the file under the cursor against its last commit.
+func (is *inputsScreen) compareLastCommit() tea.Cmd {
+	if it, ok := is.lastCommitItem(); ok {
+		return is.s.app.OpenDiff(is.files, it)
+	}
+	return nil
+}
+
+// showChanges shows in [3] the file under [2]'s cursor against its last
+// commit, its location row naming the file.
+func (is *inputsScreen) showChanges() {
+	is.changes.Location, is.changes.Fail = "", nil
+	it, ok := is.lastCommitItem()
+	if !ok {
+		is.changed.EmptyFact = "Not a text file"
+		is.changed.SetLines(nil)
+		return
+	}
+	is.changes.Location = it.Other
+	was, now, err := it.Text()
+	if err != nil {
+		is.changes.Fail = &terminu.Failure{Fact: "Cannot read " + it.Other}
+		is.changed.SetLines(nil)
+		return
+	}
+	is.changed.EmptyFact = "No changes since " + lastCommit
+	is.changed.SetDiff(was, now)
 }
 
 // showMain shows main.go in [2] FILES: out of every list of the items that
@@ -425,10 +474,11 @@ func (is *inputsScreen) rows() []terminu.Row {
 	return rows
 }
 
-// halves puts two panels side by side.
-func halves(w, h int) []terminu.Rect {
-	left := w / 2
-	return []terminu.Rect{{X: 0, Y: 0, W: left, H: h}, {X: left, Y: 0, W: w - left, H: h}}
+// inputsLayout puts [1] on the left half, and [2] over [3] on the right:
+// [3], the changes of the file under [2]'s cursor, a third of the height.
+func inputsLayout(w, h int) []terminu.Rect {
+	left, top := w/2, h-max(h/3, 6)
+	return []terminu.Rect{{X: 0, Y: 0, W: left, H: h}, {X: left, Y: 0, W: w - left, H: top}, {X: left, Y: top, W: w - left, H: h - top}}
 }
 
 func dots(set bool) string {

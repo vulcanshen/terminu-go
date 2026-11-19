@@ -21,18 +21,56 @@ type Pager struct {
 	rows   []string // the lines as read (readingRows)
 	top    int
 	height int
+	width  int // the text's, at the last Draw
 	scroll string
 	atEnd  bool
+	diff   *pagerDiff // what SetDiff showed, laid out again as the width changes
+}
+
+// pagerDiff is a difference a Pager shows (SetDiff): its ops and the two
+// texts' lines, laid out for w cells.
+type pagerDiff struct {
+	ops  []diffOp
+	x, y []string
+	w    int
 }
 
 // SetLines replaces the lines.
 func (t *Pager) SetLines(lines []string) {
+	t.diff = nil
 	t.lines, t.rows = lines, readingRows(lines)
 	t.clamp()
 }
 
+// SetDiff shows a difference as UNIFIED does (tdp note.8 "In a panel"):
+// anchor's text against other's, only the parts that differ with 3 lines
+// around, an Overlay0 line between them as wide as the panel, both line
+// numbers in Overlay0, - in Red and + in Green; never a tool's own output.
+// The same text on both sides shows the empty state (EmptyFact). Lines are
+// cut at the panel's edge, as every Pager line is; the comparison folds
+// them. The view stays where it was, as with SetLines; SetLines, Append and
+// ReadAgain go back to plain lines. Enter is the panel's own action,
+// App.OpenDiff opening the comparison of the same two (tdp note.8).
+func (t *Pager) SetDiff(anchor, other string) {
+	x, y := textLines(anchor), textLines(other)
+	t.diff = &pagerDiff{ops: diffLines(x, y), x: x, y: y, w: -1}
+	t.layDiff(t.width)
+	t.clamp()
+}
+
+// layDiff lays the difference out for a text w cells wide.
+func (t *Pager) layDiff(w int) {
+	d := t.diff
+	if d == nil || d.w == w {
+		return
+	}
+	lines, _ := diffUnified(d.ops, d.x, d.y, max(w, 0))
+	t.lines, t.rows, d.w = lines, readingRows(lines), w
+}
+
 // Append adds lines at the end.
 func (t *Pager) Append(lines ...string) {
+	t.diff = nil
 	follow := t.Follow && (t.atEnd || t.top+t.height >= len(t.rows))
 	t.lines = append(t.lines, lines...)
 	t.rows = append(t.rows, readingRows(lines)...)
@@ -68,7 +106,8 @@ func (t *Pager) HasItem() bool { return false }
 
 // Draw draws the lines seen from the top, one cell from the frame.
 func (t *Pager) Draw(w, h int, focused bool) []string {
-	t.height = h
+	t.height, t.width = h, w-2
+	t.layDiff(w - 2)
 	if len(t.rows) == 0 {
 		t.scroll = ""
 		return EmptyState(w, h, t.EmptyFact, t.EmptyHint)

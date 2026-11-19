@@ -177,6 +177,10 @@ app 自己的動作要顯示同一項的兩個版本時（commit 裡的一個檔
 取代原本的列，按 `Esc` 回到原本的列。app 自己的動作要在那個 panel 顯示別的東西時（例：在分支上按 `Enter`，把它的 commit
 放到 cursor 下），先叫 `panel.LeaveDiff()`：離開每一層這種清單，像一直按 `Esc` 到原本的列回來為止；沒有清單時什麼都不做。
 
+顯示差異的 panel（例：跟著 cursor 的明細，顯示 cursor 上那個檔改了什麼）畫法跟 UNIFIED 一樣，不照工具印的樣子（`git diff`
+的標頭與 `@@` 那幾行）：app 自己讀兩邊的文字，在它的 `Pager` 上叫 `pager.SetDiff(anchor, other)`，再給 panel 一個 `Enter`
+動作，用 `app.OpenDiff(panel, item)` 打開比較。兩邊一樣時，顯示 Pager 的 `EmptyFact`。
+
 ## app 自己的模式
 
 `panel.EnterMode(&terminu.Mode{...})` 讓 panel 進入 app 自己的模式（tdp K11）：只有模式的 `Keys` 與 core key 作用，`Esc` 離開。

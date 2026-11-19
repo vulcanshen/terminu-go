@@ -210,6 +210,11 @@ back. An action of yours that shows something else in that panel (Enter on a bra
 cursor) calls `panel.LeaveDiff()` first: it leaves every such list, as if `Esc` were pressed until the panel's rows
 are back, and does nothing when there is none.
 
+A panel that shows a difference (a details panel showing what changed in the file under the cursor) draws it as
+UNIFIED does, never as a tool prints it (`git diff`'s headers and `@@` lines): read the two texts and call
+`pager.SetDiff(anchor, other)` on its `Pager`, and give the panel an `Enter` action that opens the comparison with
+`app.OpenDiff(panel, item)`. The same text on both sides shows the Pager's `EmptyFact`.
+
 ## Modes of your own
 
 `panel.EnterMode(&terminu.Mode{...})` puts a panel in a mode of the app's own (tdp K11): only the mode's `Keys` and the

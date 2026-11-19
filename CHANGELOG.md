@@ -2,6 +2,17 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.19-beta.1 — tdp v1.2.17
+
+- tdp's next release (note.8, "In a panel") has a panel that shows a difference draw it as UNIFIED does: only the
+  parts that differ with 3 lines around, the separators, both line numbers, `-` Red, `+` Green, never a tool's own
+  output (`git diff`'s headers and `@@` lines), and `Enter` on it opening the comparison. `Pager.SetDiff(anchor,
+  other)` draws it, laid out again as the panel's width changes; the same text on both sides is the Pager's empty
+  state; `Enter` is the panel's own action, `App.OpenDiff` (from gitreu). The showcase's Inputs has `[3] CHANGES`,
+  the file under `[2]`'s cursor against its last commit
+- The README's section on a file the app can't read has a key the app doesn't read (kept, its INFO entry `Not read`
+  or `No longer used`) and outside the TUI (no file touched, the problem shown there), from tdp v1.2.17's E3
+
 ## v1.2.18 — tdp v1.2.17
 
 Everything since v1.2.17, the beta v1.2.18-beta.1 included:
