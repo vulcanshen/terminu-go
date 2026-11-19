@@ -1732,3 +1732,59 @@ func TestPasswordPause(t *testing.T) {
 		t.Errorf("paused from the start: %q", covFLine(ta).err)
 	}
 }
+
+// TestTextareaUnchanged: Enter takes a textarea's text as a one-line input
+// takes its value (tdp K3, K3-7): one that may not be empty and opened empty
+// is an error with nothing typed, the popup kept; one that opened empty and
+// may be closes; the text it opened with closes with nothing written back,
+// Unchanged running, Done not; a changed one is checked and written (tgo #7,
+// from gittu).
+func TestTextareaUnchanged(t *testing.T) {
+	ta := newTestApp(t)
+	done, same := 0, 0
+	notEmpty := func(v string) error {
+		if strings.TrimSpace(v) == "" {
+			return ErrEmpty
+		}
+		return nil
+	}
+	ta.Textarea(Textarea{Title: "Commit", Name: "The message", Check: notEmpty,
+		Done: func(string) tea.Cmd { done++; return nil }, Unchanged: func() tea.Cmd { same++; return nil }})
+	ta.settle()
+	ta.press("Esc", "Enter") // nothing typed
+	tv, ok := ta.topView().(*textareaView)
+	if !ok || tv.err != "The message can't be empty" || done != 0 || same != 0 {
+		t.Fatalf("empty, untouched: closed, or no error %q, Done %d, Unchanged %d", tv.err, done, same)
+	}
+	ta.covBCloseAll()
+	ta.Textarea(Textarea{Title: "Notes", Unchanged: func() tea.Cmd { same++; return nil }})
+	ta.settle()
+	if ta.press("Esc", "Enter"); ta.top() != nil || same != 1 {
+		t.Errorf("empty, may be empty: open %v, Unchanged %d", ta.top() != nil, same)
+	}
+	same = 0
+	// Opened with a text ready: Enter with no change goes on with it.
+	ta.Textarea(Textarea{Title: "Commit", Old: "Merge branch feat", Check: notEmpty,
+		Done: func(string) tea.Cmd { done++; return nil }, Unchanged: func() tea.Cmd { same++; return nil }})
+	ta.settle()
+	ta.press("Esc", "Enter")
+	if ta.top() != nil || same != 1 || done != 0 {
+		t.Errorf("unchanged: open %v, Unchanged %d, Done %d", ta.top() != nil, same, done)
+	}
+	// With no Unchanged it just closes, as before.
+	ta.Textarea(Textarea{Title: "Commit", Old: "Merge branch feat", Check: notEmpty})
+	ta.settle()
+	if ta.press("Esc", "Enter"); ta.top() != nil {
+		t.Error("unchanged with no Unchanged: still open")
+	}
+	ta.Textarea(Textarea{Title: "Commit", Old: "x", Check: notEmpty, Done: func(string) tea.Cmd { done++; return nil }})
+	ta.settle()
+	ta.press("Backspace", "Esc", "Enter")
+	if tv, ok := ta.topView().(*textareaView); !ok || tv.err != "Commit can't be empty" || done != 0 {
+		t.Errorf("emptied: closed, or error %q, Done %d", tv.err, done)
+	}
+	ta.press("i", "y", "Esc", "Enter")
+	if ta.top() != nil || done != 1 {
+		t.Errorf("changed: open %v, Done %d", ta.top() != nil, done)
+	}
+}

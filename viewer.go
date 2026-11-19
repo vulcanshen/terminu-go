@@ -96,6 +96,14 @@ type Viewer struct {
 	relayout func(sw int)
 	// report is a success report Report opened: Enter closes it too.
 	report bool
+	// head, when set, is the rows fixed over the lines for a text w cells
+	// wide, in Lavender, never scrolled (the compare's two sides, tdp
+	// note.8); heads is them as last laid out.
+	head  func(w int) []string
+	heads []string
+	// wide is as wide as the terminal but 2, with no 120-column cap (the
+	// compare, tdp F7).
+	wide bool
 }
 
 // Report opens v as a success report too long for a toast that the user
@@ -335,19 +343,38 @@ func (vv *viewerView) measure(sw, sh int) (int, int) {
 		v.relayout(sw)
 	}
 	v.sync()
-	w := popupWidth(sw, 0, false)
+	w := v.width(sw)
 	v.readLines()
 	v.textW = v.textWidth(w - 2)
+	v.layHead(w)
 	most := max(sh-2, 3)
-	rows := 0 // the rows its lines fold onto, counted as far as the most
+	rows := len(v.heads) // the rows its lines fold onto, counted as far as the most
 	for i := range v.text {
 		if rows += len(v.wrap(i)); rows+4 >= most {
 			break
 		}
 	}
 	h := min(rows+4, most)
-	v.visible = max(h-4, 1)
+	v.visible = max(h-4-len(v.heads), 1)
 	return w, h
+}
+
+// width is how wide v is on a terminal sw wide (tdp F7): at most 120, the
+// compare as wide as the terminal but 2.
+func (v *Viewer) width(sw int) int {
+	if v.wide {
+		return max(sw-2, 1)
+	}
+	return popupWidth(sw, 0, false)
+}
+
+// layHead lays the rows fixed over the lines out for a viewer w wide, one
+// cell of padding either side.
+func (v *Viewer) layHead(w int) {
+	v.heads = nil
+	if v.head != nil {
+		v.heads = v.head(max(w-4, 1))
+	}
 }
 
 // numWidth is the line numbers' column (tdp note): at least
@@ -480,7 +507,8 @@ func (vv *viewerView) draw(w, h int, layer Color) []string {
 	v := vv.v
 	v.sync()
 	inner := w - 2
-	v.visible = max(h-4, 1)
+	v.layHead(w)
+	v.visible = max(h-4-len(v.heads), 1)
 	v.readLines()
 	v.textW = v.textWidth(inner)
 	numW := v.numWidth()
@@ -492,16 +520,21 @@ func (vv *viewerView) draw(w, h int, layer Color) []string {
 	// Each line's first row has its number, right-aligned, a space after it;
 	// the rows it folds onto leave the column blank. Numbers in Overlay0, the
 	// cursor's line in Text (tdp note).
-	body := make([]string, 0, v.visible)
+	// The rows fixed over the lines, Lavender as a location row (tdp
+	// panel.10), never scrolled.
+	body := make([]string, 0, len(v.heads)+v.visible)
+	for _, r := range v.heads {
+		body = append(body, " "+Pad(Fg(Lavender).Render(r), inner-2)+" ")
+	}
 	last, whole := v.top-1, true // the line of the last row in sight, and whether all of it is
-	for i := v.top; i < len(v.text) && len(body) < v.visible; i++ {
+	for i := v.top; i < len(v.text) && len(body)-len(v.heads) < v.visible; i++ {
 		rows := v.rowsOf(i, vv.lineView(i, layer))
 		first := 0
 		if i == v.top {
 			first = v.sub // the rows of the top line scrolled past
 		}
 		for r := first; r < len(rows); r++ {
-			if len(body) == v.visible {
+			if len(body)-len(v.heads) == v.visible {
 				whole = false
 				break
 			}
@@ -520,7 +553,7 @@ func (vv *viewerView) draw(w, h int, layer Color) []string {
 		}
 		last = i
 	}
-	for len(body) < v.visible {
+	for len(body)-len(v.heads) < v.visible {
 		body = append(body, Repeat(" ", inner))
 	}
 	// The scroll position, in lines, the numbers on the left: the lines the

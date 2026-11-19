@@ -2,6 +2,19 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.19-beta.3 — tdp v1.2.17
+
+- The comparison is titled only `DIFF`, its `UNIFIED` and `SPLIT` tabs after it, so the tabs always show (tdp's next
+  release, note.8). Its first row names the two sides, `<anchor> ↔ <the other>` as the app names them, in Lavender as
+  a location row is, fixed at the top as the lines scroll; too long, it folds before `↔` and then after a `/`, never
+  cut with `…`. The list gone into keeps `<anchor> ↔ <the other>` for its location row (from gittu)
+- The comparison is as wide as the terminal but 2, with no 120-column cap, SPLIT's two sides sharing it; its height
+  is as F7 has it, and other viewers keep the cap (tdp's next release, F7; from gittu)
+- A textarea takes Enter as a one-line input does (tdp K3): one that may not be empty and opened empty is an error
+  with nothing typed, the popup kept open, never a silent close; new `Textarea.Unchanged` runs when Enter takes the
+  text it opened with, as `TextInput`'s does, so an action opened with a text ready goes on with it (tgo #7, from
+  gittu)
+
 ## v1.2.19-beta.2 — tdp v1.2.17
 
 - tdp's next release (panel.14) has an action of the app's own that changes what a panel lists, or puts its cursor on

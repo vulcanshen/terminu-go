@@ -24,7 +24,8 @@ type Compare struct {
 	// and in the mode the compare keys are off on it (tdp M2, M6). Nil:
 	// every row.
 	Can func(Row) bool
-	// Name is the row as the title names it; its first cell when nil.
+	// Name is the row as the comparison's first row names it; its first
+	// cell when nil.
 	Name func(Row) string
 	// Text is the row's text, compared line by line.
 	Text func(Row) (string, error)
@@ -94,10 +95,10 @@ type DiffItem struct {
 	Name string
 	// Anchor and Other name the item's two sides as the app names them, so
 	// that they say where, the older one the anchor (ui.go @ 1a2b3c4,
-	// ui.go @ 5d6e7f8): its comparison is titled DIFF — <Anchor> ↔ <Other>,
-	// the same however it is reached, and the list it goes into has
-	// <Anchor> ↔ <Other> for its location row, in place of the panel's own
-	// (tdp panel.9).
+	// ui.go @ 5d6e7f8): its comparison, titled DIFF, has <Anchor> ↔ <Other>
+	// for its first row, the same however it is reached, and the list it
+	// goes into has <Anchor> ↔ <Other> for its location row, in place of
+	// the panel's own (tdp panel.9).
 	Anchor, Other string
 	// Text gives the item's text on each side, "" on a side it is not on:
 	// opening it opens its comparison, UNIFIED and SPLIT (tdp note.8).
@@ -253,9 +254,9 @@ func (a *App) compareWith(cm *comparing) tea.Cmd {
 // versions of one item (a file in a commit against the commit before it, a
 // file being edited against its last commit) or going into what changed in
 // one (a commit against the one before it):
-//   - with Text, its comparison, titled DIFF — <Anchor> ↔ <Other>, or the
-//     Info toast "No differences between <Anchor> and <Other>" when the
-//     two are the same;
+//   - with Text, its comparison, titled DIFF, its first row <Anchor> ↔
+//     <Other>, folded and never cut (tdp note.8), or the Info toast "No
+//     differences between <Anchor> and <Other>" when the two are the same;
 //   - with Items, the list of the items that differ in it, in p in place
 //     of p's body as panel.10 goes into an item, its location row
 //     <Anchor> ↔ <Other> in place of p's own, or that toast when there is
@@ -268,7 +269,8 @@ func (a *App) compareWith(cm *comparing) tea.Cmd {
 //     the list kept. A filter on p is cleared before going in, as Esc
 //     clears it (tdp panel.14).
 //
-// A comparison opens on UNIFIED; SPLIT is off narrower than 96 columns. An
+// A comparison is as wide as the terminal but 2 (tdp F7) and opens on
+// UNIFIED; SPLIT is off narrower than 96 columns. An
 // error from Text or Items is an error popup. Mark is not used. p is out of
 // a mode: a compare mode goes in so itself (CompareAction).
 func (a *App) OpenDiff(p *Panel, item DiffItem) tea.Cmd { return a.openDiff(p, item) }
@@ -365,7 +367,10 @@ func (a *App) diffViewer(an, bn, at, bt string) tea.Cmd {
 	split := false
 	x, y := textLines(at), textLines(bt)
 	ops := diffLines(x, y)
-	v := &Viewer{Title: "Diff", Subject: an + " ↔ " + bn, Glyph: glyphCompare, Tabs: []string{"Unified", "Split"}, NoNumbers: true}
+	// Titled DIFF, its tabs after it; its first row the two sides, folded
+	// and never cut; as wide as the terminal but 2 (tdp note.8, F7).
+	v := &Viewer{Title: "Diff", Glyph: glyphCompare, Tabs: []string{"Unified", "Split"}, NoNumbers: true, wide: true,
+		head: func(w int) []string { return diffHead(an, bn, w) }}
 	v.tabOff = func(i int) bool { return i == 1 && a.w < splitMin }
 	// layout lays the lines out for a terminal sw wide, as it opens and
 	// whenever its size changes: SPLIT when it is chosen and there is room,
@@ -377,7 +382,7 @@ func (a *App) diffViewer(an, bn, at, bt string) tea.Cmd {
 		if split && sw >= splitMin {
 			tab = 1
 		}
-		w := popupWidth(sw, 0, false) - 4 // the viewer's text, numbers left out
+		w := v.width(sw) - 4 // the viewer's text, numbers left out
 		if w == lastW && tab == lastTab {
 			return
 		}
@@ -404,6 +409,44 @@ func (a *App) diffViewer(an, bn, at, bt string) tea.Cmd {
 	v.OnTab = func(tab int) tea.Cmd { split = tab == 1; layout(a.w); return nil }
 	layout(a.w)
 	return a.Viewer(v)
+}
+
+// diffHead is the comparison's first row, <an> ↔ <bn>, for w cells (tdp
+// note.8): folded when it does not fit, never cut, before ↔ into two rows,
+// the second starting with ↔, and a side still too wide on into the rows
+// under it, after a / where it can be.
+func diffHead(an, bn string, w int) []string {
+	if one := an + " ↔ " + bn; Width(one) <= w {
+		return []string{one}
+	}
+	return append(foldPath(an, w), foldPath("↔ "+bn, w)...)
+}
+
+// foldPath folds s into rows of w cells: each after the last / that fits,
+// or where the row is full when none does.
+func foldPath(s string, w int) []string {
+	var rows []string
+	for Width(s) > w {
+		g := graphemes(s)
+		fit, used := 0, 0
+		for _, c := range g {
+			if used+Width(c) > w {
+				break
+			}
+			used += Width(c)
+			fit++
+		}
+		for k := fit - 1; k > 0; k-- {
+			if g[k] == "/" {
+				fit = k + 1
+				break
+			}
+		}
+		fit = max(fit, 1) // a character wider than the row: a row of its own
+		rows = append(rows, strings.Join(g[:fit], ""))
+		s = strings.Join(g[fit:], "")
+	}
+	return append(rows, s)
 }
 
 // checkCompares ends a compare mode whose anchor is no longer in its list,

@@ -198,8 +198,8 @@ items that differ between two of them, each a `terminu.DiffItem`. The lib draws 
 mark (`DiffAdded` +, `DiffRemoved` -, `DiffChanged` ~), and does `Enter`, `Esc` and the location row.
 
 A `DiffItem` names its two sides in `Anchor` and `Other`, the older one the anchor, so that they say where
-(`ui.go @ 1a2b3c4`): its comparison is titled with them however it is reached, and the list it goes into has them for
-its location row. It has `Text`, each side's text ("" on a side it is not on), or `Items` when it holds many itself,
+(`ui.go @ 1a2b3c4`): its comparison, titled `DIFF`, has them for its first row however it is reached, folded and never
+cut when they are long, and the list it goes into has them for its location row. It has `Text`, each side's text ("" on a side it is not on), or `Items` when it holds many itself,
 or neither when it is not text and has no comparison. A rename you know of is `DiffChanged`, named `old → new`. Leave
 out what is the same on both sides, and read a text only when it is asked for.
 

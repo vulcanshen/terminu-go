@@ -120,10 +120,12 @@ func dirDiff(a, b string) ([]terminu.DiffItem, error) {
 }
 
 // The pretend history of the project: 5d6e7f8 its last commit, 1a2b3c4 the
-// one before it.
+// one before it; deepPath a file it added, its path longer than a row of the
+// comparison on the narrowest terminal.
 const (
 	lastCommit   = "5d6e7f8"
 	parentCommit = "1a2b3c4"
+	deepPath     = "installation/docker-compose/production/env.example"
 )
 
 // newFolder is new since the last commit: not in it yet.
@@ -187,7 +189,8 @@ func sinceCommit(dir string) ([]terminu.DiffItem, error) {
 
 // lastCommitItems are what the last commit changed, file by file, as git
 // names them (tdp note.8): a rename both sides have, a submodule that holds
-// many, an image that is not text.
+// many, an image that is not text, and a path long enough that the
+// comparison's first row folds after a / on a narrow terminal.
 func lastCommitItems() ([]terminu.DiffItem, error) {
 	side := func(path, commit string) string { return path + " @ " + commit }
 	text := func(a, b string) func() (string, string, error) {
@@ -214,5 +217,7 @@ func lastCommitItems() ([]terminu.DiffItem, error) {
 		latte.Text = text("", "base = \"#eff1f5\"\n")
 		return []terminu.DiffItem{latte, mocha}, nil
 	}
-	return []terminu.DiffItem{logo, build, notes, main, theme, todo}, nil
+	env := item(terminu.DiffAdded, deepPath, deepPath, deepPath)
+	env.Text = text("", "POSTGRES_PASSWORD=not-a-real-password\n")
+	return []terminu.DiffItem{logo, build, notes, main, theme, todo, env}, nil
 }

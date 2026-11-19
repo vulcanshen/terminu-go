@@ -21,11 +21,19 @@ type Textarea struct {
 	// on an "Edit"); left unset, the title names it (tdp input).
 	Name string
 	Old  string
-	// Check, when set, judges a changed text on Enter: an error keeps it
-	// open and is written in the error row, as on a one-line input (tdp K3).
+	// Check, when set, judges a changed text on Enter, and an empty one it
+	// opened with: an error keeps it open and is written in the error row,
+	// as on a one-line input (tdp K3). So a text that may not be empty and
+	// opened empty is an error on Enter with nothing typed, never a silent
+	// close; a text it opened with that is not empty closes unchecked.
 	Check func(string) error
 	// Done gets the new text. It is not called when it did not change.
 	Done func(string) tea.Cmd
+	// Unchanged, when set, runs when Enter takes the text it opened with, so
+	// nothing is written back and Done is not called: a step of a flow ends
+	// the flow, an action opened with a text ready (a merge's message) goes
+	// on with it (tdp K3, F6).
+	Unchanged func() tea.Cmd
 	// Commit, when set, writes a changed value back when Enter takes it, on
 	// the update loop, before Done: an error keeps the popup open with the
 	// value in it and opens an error popup over it, "RENAME FAILED"
@@ -513,9 +521,12 @@ func (tv *textareaView) moveKey(a *App, key string) (bool, tea.Cmd) {
 			tv.err = name + " can't have control characters"
 			return true, nil
 		}
+		// The text it opened with closes with nothing written back, as on a
+		// one-line input; one that opened empty is checked first, so a text
+		// that may not be empty is an error with nothing typed (tdp K3).
 		v := tv.value()
-		if v == tv.old {
-			return true, a.answer()
+		if v == tv.old && v != "" {
+			return true, tea.Batch(a.answer(), run(tv.t.Unchanged))
 		}
 		if tv.t.Check != nil {
 			if err := tv.t.Check(v); err != nil {
@@ -524,6 +535,9 @@ func (tv *textareaView) moveKey(a *App, key string) (bool, tea.Cmd) {
 			}
 		}
 		tv.err = ""
+		if v == tv.old {
+			return true, tea.Batch(a.answer(), run(tv.t.Unchanged))
+		}
 		if err := runCommit(tv.t.Commit, v); err != nil {
 			return true, a.commitFailed(tv.t.Title, tv.t.Subject, err)
 		}

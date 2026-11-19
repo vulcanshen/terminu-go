@@ -53,7 +53,7 @@ func TestModeSpaceMenu(t *testing.T) {
 		t.Fatalf("off the anchor the cursor is on %q", cursorLabel(m))
 	}
 	ta.press("Enter")
-	if _, ok := ta.topView().(*viewerView); !ok || !strings.Contains(ta.screenText(), "DIFF — pod-00 ↔ pod-01") {
+	if _, ok := ta.topView().(*viewerView); !ok || !strings.Contains(ta.screenText(), "pod-00 ↔ pod-01") {
 		t.Fatalf("[C]ompare from the menu did not compare: %T", ta.topView())
 	}
 	ta.press("Esc", "Space")

@@ -356,7 +356,7 @@ func TestCompareFolders(t *testing.T) {
 		t.Fatalf("conf/:\n%s", strings.Join(d.Screen(), "\n"))
 	}
 	d.Press("Enter")
-	if !d.Has("DIFF — releases/v1/conf/app.toml ↔ releases/v2/conf/app.toml") || !d.Has("+port = 9090") {
+	if !d.Has("releases/v1/conf/app.toml ↔ releases/v2/conf/app.toml") || !d.Has("+port = 9090") {
 		t.Errorf("app.toml's comparison:\n%s", strings.Join(d.Screen(), "\n"))
 	}
 	d.Press("Esc", "Esc", "j", "Enter") // up to conf/, then logo.png: not text
@@ -386,7 +386,7 @@ func TestTwoVersions(t *testing.T) {
 		t.Fatal("no main.go")
 	}
 	d.Press("H")
-	if !d.Has("DIFF — main.go @ 5d6e7f8 ↔ main.go") || !d.Has("UNIFIED") || !d.Has(`+	fmt.Println("showcase", 42)`) && !d.Has(`+    fmt.Println("showcase", 42)`) {
+	if !d.Has("main.go @ 5d6e7f8 ↔ main.go") || !d.Has("UNIFIED") || !d.Has(`+	fmt.Println("showcase", 42)`) && !d.Has(`+    fmt.Println("showcase", 42)`) {
 		t.Errorf("main.go against its last commit:\n%s", strings.Join(d.Screen(), "\n"))
 	}
 	d.Press("Esc")
@@ -406,7 +406,7 @@ func TestTwoVersions(t *testing.T) {
 		t.Error("the commit is in a mode, or shows the panel's own list")
 	}
 	d.Press("j", "j", "Enter") // the rename
-	if !d.Has("DIFF — docs/NOTES.md @ 1a2b3c4 ↔ docs/notes.md @ 5d6e7f8") {
+	if !d.Has("docs/NOTES.md @ 1a2b3c4 ↔ docs/notes.md @ 5d6e7f8") {
 		t.Errorf("the rename's comparison:\n%s", strings.Join(d.Screen(), "\n"))
 	}
 	d.Press("Esc", "j", "j", "Enter") // themes/
@@ -465,12 +465,12 @@ func TestChangesPanel(t *testing.T) {
 		t.Errorf("a patch's own lines, or no Enter:compare:\n%s", screen)
 	}
 	d.Press("Enter")
-	if !d.Has("DIFF — main.go @ 5d6e7f8 ↔ main.go") || !d.Has("UNIFIED") || !d.Has("SPLIT") {
+	if !d.Has("main.go @ 5d6e7f8 ↔ main.go") || !d.Has("UNIFIED") || !d.Has("SPLIT") {
 		t.Errorf("Enter did not open the comparison:\n%s", strings.Join(d.Screen(), "\n"))
 	}
 	d.Press("Esc")
 	show("docs/notes.md")
-	if d.Press("Enter"); !d.Has("No changes since 5d6e7f8") || d.Has("DIFF —") {
+	if d.Press("Enter"); !d.Has("No changes since 5d6e7f8") || d.Has("UNIFIED") {
 		t.Errorf("a file as committed:\n%s", strings.Join(d.Screen(), "\n"))
 	}
 	show("assets/logo.png")
@@ -510,11 +510,29 @@ func TestNewFolderChanges(t *testing.T) {
 		t.Fatalf("Enter did not go in:\n%s", strings.Join(d.Screen(), "\n"))
 	}
 	d.Press("Enter") // NEWS.md
-	if !d.Has("DIFF — releases/v2/NEWS.md @ 5d6e7f8 ↔ releases/v2/NEWS.md") || !d.Has("+# News") {
+	if !d.Has("releases/v2/NEWS.md @ 5d6e7f8 ↔ releases/v2/NEWS.md") || !d.Has("+# News") {
 		t.Fatalf("an item's comparison:\n%s", strings.Join(d.Screen(), "\n"))
 	}
 	d.Press("Esc", "2", "k")
 	if d.Has("↔") || !d.Has("No changes since 5d6e7f8") {
 		t.Errorf("[2]'s cursor moving on kept the list:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+}
+
+// The comparison's first row names its two sides, folded and never cut
+// (tdp note.8, note-107, from gittu): on 100 columns before ↔, on 60 a side
+// too wide on after a /; it stays as the lines scroll.
+func TestCompareFirstRow(t *testing.T) {
+	s := newShowcase()
+	d := tdptest.Start(t, s.app, 100, 30)
+	d.Press("I", "2", "K", "G", "Enter") // the last item, a long path
+	if !d.Has(deepPath+" @ 1a2b3c4") || !d.Has("↔ "+deepPath+" @ 5d6e7f8") || !d.Has("UNIFIED") || !d.Has("SPLIT") {
+		t.Fatalf("not folded before ↔:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Resize(60, 30)
+	for _, want := range []string{"installation/docker-compose/production/", "env.example @ 1a2b3c4", "↔ installation/docker-compose/production/", "env.example @ 5d6e7f8"} {
+		if !d.Has(want) {
+			t.Errorf("no row %q:\n%s", want, strings.Join(d.Screen(), "\n"))
+		}
 	}
 }

@@ -99,7 +99,7 @@ func TestCompareMany(t *testing.T) {
 	// Enter: the comparison, titled with the item's two sides.
 	ta.press("Enter")
 	v, ok := ta.topView().(*viewerView)
-	if !ok || !strings.Contains(ta.screenText(), "DIFF — pod-03/main.go ↔ pod-04/main.go") || !slicesContain(v.v.Lines, Fg(Green).Render("+v2")) {
+	if !ok || !strings.Contains(ta.screenText(), "pod-03/main.go ↔ pod-04/main.go") || !slicesContain(v.v.Lines, Fg(Green).Render("+v2")) {
 		t.Fatalf("the item's comparison:\n%s", ta.screenText())
 	}
 	ta.press("Esc")
@@ -120,7 +120,7 @@ func TestCompareMany(t *testing.T) {
 		t.Fatalf("did not go in again:\n%s", ta.screenText())
 	}
 	ta.press("Enter")
-	if !strings.Contains(ta.screenText(), "DIFF — pod-03/src/util.go ↔ pod-04/src/util.go") {
+	if !strings.Contains(ta.screenText(), "pod-03/src/util.go ↔ pod-04/src/util.go") {
 		t.Errorf("a nested item's title:\n%s", ta.screenText())
 	}
 	ta.press("Esc", "Esc")
@@ -172,7 +172,7 @@ func TestOpenDiff(t *testing.T) {
 	item := DiffItem{Anchor: "ui.go @ 1a2b3c4", Other: "ui.go", Text: func() (string, string, error) { return "x\n", "y\n", nil }}
 	ta.OpenDiff(ta.pods, item)
 	ta.settle()
-	if text := ta.screenText(); !strings.Contains(text, "DIFF — ui.go @ 1a2b3c4 ↔ ui.go") || !strings.Contains(text, "UNIFIED") || !strings.Contains(text, "SPLIT") {
+	if text := ta.screenText(); !strings.Contains(text, "ui.go @ 1a2b3c4 ↔ ui.go") || !strings.Contains(text, "UNIFIED") || !strings.Contains(text, "SPLIT") {
 		t.Fatalf("two versions of one item:\n%s", text)
 	}
 	// It opens on UNIFIED every time, the tab chosen not kept (note-84).
@@ -226,7 +226,7 @@ func TestOpenDiff(t *testing.T) {
 		t.Error("the panel's own action ran in the list")
 	}
 	ta.press("Enter")
-	if !strings.Contains(ta.screenText(), "DIFF — old.go @ 1a2b3c4 ↔ new.go @ 5d6e7f8") {
+	if !strings.Contains(ta.screenText(), "old.go @ 1a2b3c4 ↔ new.go @ 5d6e7f8") {
 		t.Errorf("a renamed item's comparison:\n%s", ta.screenText())
 	}
 	ta.press("Esc", "Tab", "1")

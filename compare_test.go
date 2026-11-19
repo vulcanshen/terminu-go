@@ -74,7 +74,7 @@ func TestCompareMode(t *testing.T) {
 	if !ok {
 		t.Fatalf("no compare popup: %T", ta.topView())
 	}
-	if text := ta.screenText(); !strings.Contains(text, "DIFF — pod-00 ↔ pod-01") || !strings.Contains(text, "UNIFIED") {
+	if text := ta.screenText(); !strings.Contains(text, "pod-00 ↔ pod-01") || !strings.Contains(text, "UNIFIED") {
 		t.Errorf("the popup's title:\n%s", text)
 	}
 	if !slicesContain(v.v.Lines, Fg(Red).Render("-age: 0")) || !slicesContain(v.v.Lines, Fg(Green).Render("+age: 1")) {
@@ -241,7 +241,7 @@ func TestCompareResize(t *testing.T) {
 			}
 			return b.String(), nil
 		}}))
-	ta.resize(120, 16)
+	ta.resize(120, 17)
 	ta.press("C", "j", "Enter", "l")
 	v := ta.topView().(*viewerView).v
 	if v.Tab != 1 {
@@ -259,14 +259,14 @@ func TestCompareResize(t *testing.T) {
 	if want == "" || v.top == 0 {
 		t.Fatalf("not scrolled: %d %q", v.top, StripStyles(v.Lines[v.top]))
 	}
-	ta.resize(90, 16)
+	ta.resize(90, 17)
 	if v.Tab != 0 || !strings.Contains(StripStyles(v.Lines[v.top]), want) {
 		t.Errorf("under 96: tab %d, on top %q, want %q", v.Tab, StripStyles(v.Lines[v.top]), want)
 	}
 	if !strings.Contains(ta.screenText(), want) {
 		t.Errorf("%q is not in sight:\n%s", want, ta.screenText())
 	}
-	ta.resize(120, 16)
+	ta.resize(120, 17)
 	if v.Tab != 1 || !strings.Contains(ta.screenText(), want) {
 		t.Errorf("back over 96: tab %d, %q in sight:\n%s", v.Tab, want, ta.screenText())
 	}
@@ -326,5 +326,104 @@ func TestHintTab(t *testing.T) {
 	tc.press("Enter")
 	if h := tc.topView().(*viewerView).hint(); h[0].Key == "h|l" {
 		t.Errorf("SPLIT off, h|l switch nothing: %v", h)
+	}
+}
+
+// TestCompareHead: a comparison is titled DIFF, its two tabs after it; its
+// first row names the two sides as the app names them, in Lavender, fixed
+// over the lines as they scroll; too long, it folds before ↔, then after a
+// /, never cut (note-107, note-80, note-101, from gittu).
+func TestCompareHead(t *testing.T) {
+	ta := newTestApp(t)
+	ta.resize(60, 20)
+	an, bn := "installation/docker-compose/env.example @ 1ba6d81", "installation/docker-compose/env.example @ b8a7e3b"
+	var a, b strings.Builder
+	for i := range 60 {
+		fmt.Fprintf(&a, "old %d\n", i)
+		fmt.Fprintf(&b, "new %d\n", i)
+	}
+	ta.OpenDiff(ta.pods, DiffItem{Anchor: an, Other: bn, Text: func() (string, string, error) { return a.String(), b.String(), nil }})
+	ta.settle()
+	vv, ok := ta.topView().(*viewerView)
+	if !ok {
+		t.Fatalf("no comparison: %T", ta.topView())
+	}
+	if got := vv.v.heads; len(got) != 2 || got[0] != an || got[1] != "↔ "+bn {
+		t.Errorf("folded before ↔: %q", got)
+	}
+	rowOf := func(s string) int {
+		for i, l := range ta.Frame() {
+			if strings.Contains(StripStyles(l), s) {
+				return i
+			}
+		}
+		return -1
+	}
+	text, frame := ta.screenText(), frameText(ta)
+	title := ta.Frame()[rowOf("DIFF")]
+	if plain := StripStyles(title); !strings.Contains(plain, "UNIFIED") || !strings.Contains(plain, "SPLIT") || strings.Contains(plain, "↔") || strings.Contains(plain, "…") {
+		t.Errorf("the title row: %q", plain)
+	}
+	if !strings.Contains(frame, Fg(Lavender).Render(an)) || !strings.Contains(frame, Fg(Lavender).Render("↔ "+bn)) {
+		t.Errorf("the first row is not Lavender:\n%s", text)
+	}
+	if _, h := vv.measure(60, 20); rowOf("of 120")-rowOf("DIFF")+1 != h {
+		t.Errorf("the popup is %d rows, measured %d:\n%s", rowOf("of 120")-rowOf("DIFF")+1, h, text)
+	}
+	first, second := rowOf(an), rowOf("↔ "+bn)
+	if first != rowOf("DIFF")+2 || second != first+1 || rowOf("old 0") != first+2 { // a blank row under the title, as in every popup
+		t.Fatalf("the sides at %d and %d, the lines at %d:\n%s", first, second, rowOf("old 0"), text)
+	}
+	ta.press("d", "d")
+	if rowOf(an) != first || rowOf("↔ "+bn) != second || rowOf("old 0") >= 0 {
+		t.Errorf("scrolled, the sides moved or the lines did not:\n%s", ta.screenText())
+	}
+	if ta.press("G"); rowOf("new 59") < 0 || rowOf("of 120") != rowOf("new 59")+2 {
+		t.Errorf("at the end, the last line is not in sight:\n%s", ta.screenText())
+	}
+	// Narrower: a side too wide goes on after a /.
+	ta.resize(40, 20)
+	want := []string{"installation/docker-compose/", "env.example @ 1ba6d81", "↔ installation/docker-compose/", "env.example @ b8a7e3b"}
+	if got := vv.v.heads; strings.Join(got, "|") != strings.Join(want, "|") {
+		t.Errorf("folded after a /: %q", got)
+	}
+	if strings.Contains(ta.screenText(), "…") {
+		t.Errorf("cut with …:\n%s", ta.screenText())
+	}
+	// Short enough: one row; no / to fold after: where the row is full.
+	if got := diffHead("a", "b", 10); len(got) != 1 || got[0] != "a ↔ b" {
+		t.Errorf("one row: %q", got)
+	}
+	if got := diffHead("abcdefghij", "x", 6); strings.Join(got, "|") != "abcdef|ghij|↔ x" {
+		t.Errorf("no /: %q", got)
+	}
+}
+
+// TestCompareWidth: the comparison is as wide as the terminal but 2, with
+// no 120-column cap, SPLIT's two sides sharing it; another viewer keeps the
+// cap (F7-17, from gittu).
+func TestCompareWidth(t *testing.T) {
+	ta := newTestApp(t)
+	ta.resize(200, 40)
+	ta.OpenDiff(ta.pods, DiffItem{Anchor: "a", Other: "b", Text: func() (string, string, error) { return "left\n", "right\n", nil }})
+	ta.settle()
+	vv := ta.topView().(*viewerView)
+	if w, _ := vv.measure(200, 40); w != 198 {
+		t.Errorf("the comparison is %d wide on 200 columns, want 198", w)
+	}
+	if w, _ := (&viewerView{v: &Viewer{Lines: []string{"x"}}}).measure(200, 40); w != 120 {
+		t.Errorf("another viewer is %d wide, want 120", w)
+	}
+	if text := ta.screenText(); !strings.Contains(text, "left") || !strings.Contains(text, "right") {
+		t.Errorf("a short comparison does not show all its lines:\n%s", text)
+	}
+	ta.press("l") // SPLIT
+	for _, l := range vv.v.Lines {
+		if p := StripStyles(l); strings.Contains(p, "right") && strings.Index(p, "right") < 90 {
+			t.Errorf("the other side starts at %d, in 120 columns: %q", strings.Index(p, "right"), p)
+		}
+	}
+	if !strings.Contains(ta.screenText(), "right") {
+		t.Errorf("no other side:\n%s", ta.screenText())
 	}
 }
