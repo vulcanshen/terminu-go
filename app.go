@@ -160,7 +160,6 @@ type App struct {
 	anim        bool
 	timers      []tea.Cmd          // the lib's own timers started while a message is handled (sendTimers)
 	comparings  []*comparing       // the compare modes under way (compare.go)
-	diffSplit   bool               // SPLIT chosen in an OpenDiff comparison (compare.go)
 	labels      map[any]*labelAnim // the mode names opening and closing, by frame (modelabel.go)
 	labelTick   bool               // a tick for them on its way
 	spin        bool

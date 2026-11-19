@@ -200,8 +200,8 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   app 在清單開著時換了自己的 `Body`（例：`OnTab` 換 tab）或改了列，`Esc` 退回時看到的就是 app 現在的樣子，不會被 lib 存著的舊值蓋掉。
   清單裡 panel 自己的 inspect 與 `OtherKeys` 不出現，它們講的是 app 自己的列。比較模式裡進去的清單記著那個模式：模式不變，
   它的鍵改作用在清單上，`Esc` 先退一層（`leavePanelMode`），模式結束時一起關掉（`LeaveMode`）。
-  - `OpenDiff` 選的 UNIFIED／SPLIT 只在 app 開著時記住：tdp note.8 說要記進狀態，但 `OpenDiff` 沒有讓 app 存它的欄位；
-    `Compare.Split` 只管比較模式。
+  - 比較每次都在 UNIFIED 打開，選的 tab 只在那一個比較開著時有效（縮到 96 以下再拉回來，回到這次選的 SPLIT），不記（tdp e7c5b13：
+    兩個 tab 只差一個鍵，不值得存）。`Compare.Split` 因此沒有作用，標成 Deprecated、留著讓 kbu 照樣編得過，之後的 minor 版拿掉。
 
 ## 已否決，不要重提
 

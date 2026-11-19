@@ -25,7 +25,7 @@ func TestDiffLines(t *testing.T) {
 }
 
 // compareApp is the test app with a Compare action on its pods: rows of the
-// same age have the same text.
+// same age have the same text. Its Split is set, and does nothing.
 func compareApp(t *testing.T) (*testApp, *bool) {
 	ta := newTestApp(t)
 	split := new(bool)
@@ -138,14 +138,17 @@ func TestCompareHunks(t *testing.T) {
 }
 
 // TestCompareSplit: SPLIT puts the anchor on the left, each half numbered,
-// cut with …; it is remembered; under 96 columns it is off and UNIFIED is
-// shown (note-83 to 85).
+// cut with …; every comparison opens on UNIFIED, the tab chosen not kept,
+// Compare.Split doing nothing; under 96 columns SPLIT is off (note-83 to 85).
 func TestCompareSplit(t *testing.T) {
 	ta, split := compareApp(t)
-	ta.press("C", "j", "Enter", "l")
+	ta.press("C", "j", "Enter")
 	v := ta.topView().(*viewerView).v
-	if v.Tab != 1 || !*split {
-		t.Fatalf("l did not switch to SPLIT: tab %d, split %v", v.Tab, *split)
+	if v.Tab != 0 {
+		t.Fatalf("opened on tab %d, not UNIFIED", v.Tab)
+	}
+	if ta.press("l"); v.Tab != 1 || *split {
+		t.Fatalf("l did not switch to SPLIT, or Split was set: tab %d, split %v", v.Tab, *split)
 	}
 	if !slicesContain(v.Lines, Fg(Red).Render("age: 0")) || !slicesContain(v.Lines, Fg(Green).Render("age: 1")) {
 		t.Errorf("SPLIT: %q", v.Lines)
@@ -169,15 +172,21 @@ func TestCompareSplit(t *testing.T) {
 		}
 	}
 	ta.press("Esc", "Enter")
-	if v := ta.topView().(*viewerView).v; v.Tab != 1 {
-		t.Error("SPLIT is not remembered")
+	if v := ta.topView().(*viewerView).v; v.Tab != 0 {
+		t.Error("SPLIT was kept: the next comparison did not open on UNIFIED")
+	}
+	ta.press("Esc")
+	*split = true // the old way to open on SPLIT: nothing now
+	ta.press("Enter")
+	if v := ta.topView().(*viewerView).v; v.Tab != 0 {
+		t.Error("Compare.Split opened it on SPLIT")
 	}
 	ta.press("Esc")
 	ta.resize(90, 30)
 	ta.press("Enter")
 	v = ta.topView().(*viewerView).v
-	if ta.press("l"); v.Tab != 0 || !*split {
-		t.Errorf("under 96 columns: tab %d, remembered %v", v.Tab, *split)
+	if ta.press("l"); v.Tab != 0 {
+		t.Errorf("under 96 columns: tab %d", v.Tab)
 	}
 	if !strings.Contains(strings.Join(ta.Frame(), "\n"), Style{Fg: Surface2, Bg: Mantle}.Render("SPLIT")) {
 		t.Error("SPLIT is not drawn off")
@@ -214,8 +223,8 @@ func TestModeKeyDisabled(t *testing.T) {
 }
 
 // TestCompareResize: the compare lays itself out again as the terminal
-// changes size: under 96 columns UNIFIED, back over it the remembered
-// SPLIT, the stretch on top kept in sight (note-85).
+// changes size: under 96 columns UNIFIED, back over it the SPLIT chosen
+// while it is open, the stretch on top kept in sight (note-85).
 func TestCompareResize(t *testing.T) {
 	ta := newTestApp(t)
 	split := new(bool)
@@ -233,10 +242,10 @@ func TestCompareResize(t *testing.T) {
 			return b.String(), nil
 		}}))
 	ta.resize(120, 16)
-	ta.press("C", "j", "Enter")
+	ta.press("C", "j", "Enter", "l")
 	v := ta.topView().(*viewerView).v
 	if v.Tab != 1 {
-		t.Fatalf("opened on tab %d, want the remembered SPLIT", v.Tab)
+		t.Fatalf("on tab %d, want SPLIT", v.Tab)
 	}
 	sep := -1
 	for i, l := range v.Lines {
@@ -258,7 +267,7 @@ func TestCompareResize(t *testing.T) {
 		t.Errorf("%q is not in sight:\n%s", want, ta.screenText())
 	}
 	ta.resize(120, 16)
-	if v.Tab != 1 || !*split || !strings.Contains(ta.screenText(), want) {
+	if v.Tab != 1 || !strings.Contains(ta.screenText(), want) {
 		t.Errorf("back over 96: tab %d, %q in sight:\n%s", v.Tab, want, ta.screenText())
 	}
 	for i, l := range ta.Frame() {

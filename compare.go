@@ -28,9 +28,11 @@ type Compare struct {
 	Name func(Row) string
 	// Text is the row's text, compared line by line.
 	Text func(Row) (string, error)
-	// Split is which the compare shows, UNIFIED or SPLIT: the lib reads it
-	// and sets it as the user switches, for the app to keep with its state
-	// (tdp E3). Nil: kept while the app runs.
+	// Split does nothing.
+	//
+	// Deprecated: every comparison opens on UNIFIED and the tab chosen is
+	// not kept (tdp note.8). The field stays so that code setting it still
+	// builds; a later minor version takes it away.
 	Split *bool
 	// Many reports a row that holds many (a directory, a namespace, a
 	// commit). Two such rows are not compared as text: the mode goes in to
@@ -137,9 +139,6 @@ type comparing struct {
 // IDs. The mode does not go in the App Log; its toasts do, as every toast
 // (tdp note.7).
 func (a *App) CompareAction(p *Panel, l *List, c Compare) Action {
-	if c.Split == nil {
-		c.Split = new(bool)
-	}
 	return Action{Key: c.Key, Label: "Compare", Desc: "with another row, picked next", Scope: ItemScope,
 		Hidden: func() bool { r, ok := l.Current(); return !ok || !c.can(r) },
 		Do: func() tea.Cmd {
@@ -183,7 +182,7 @@ func (a *App) startCompare(p *Panel, l *List, c Compare, anchor Row) {
 		Do: func(string) tea.Cmd {
 			if d := in(); d != nil {
 				if it, ok := d.current(); ok {
-					return a.openDiff(p, it, c.Split)
+					return a.openDiff(p, it)
 				}
 				return nil
 			}
@@ -246,7 +245,7 @@ func (a *App) compareWith(cm *comparing) tea.Cmd {
 			return at, bt, nil
 		}
 	}
-	return a.openDiff(cm.p, item, c.Split)
+	return a.openDiff(cm.p, item)
 }
 
 // OpenDiff opens item as Enter does on it in a list of the items that
@@ -267,14 +266,12 @@ func (a *App) compareWith(cm *comparing) tea.Cmd {
 //     the Space menu and ? have the list's keys, not p's actions, and Tab
 //     and the digits go to the other panels as ever, the list kept.
 //
-// An error from Text or Items is an error popup. Mark is not used. p is out
-// of a mode: a compare mode goes in so itself (CompareAction). UNIFIED or
-// SPLIT is kept while the app runs.
-func (a *App) OpenDiff(p *Panel, item DiffItem) tea.Cmd {
-	return a.openDiff(p, item, &a.diffSplit)
-}
+// A comparison opens on UNIFIED; SPLIT is off narrower than 96 columns. An
+// error from Text or Items is an error popup. Mark is not used. p is out of
+// a mode: a compare mode goes in so itself (CompareAction).
+func (a *App) OpenDiff(p *Panel, item DiffItem) tea.Cmd { return a.openDiff(p, item) }
 
-func (a *App) openDiff(p *Panel, item DiffItem, split *bool) tea.Cmd {
+func (a *App) openDiff(p *Panel, item DiffItem) tea.Cmd {
 	subject := item.Name
 	if subject == "" {
 		subject = item.Anchor + " ↔ " + item.Other
@@ -295,7 +292,7 @@ func (a *App) openDiff(p *Panel, item DiffItem, split *bool) tea.Cmd {
 		if len(items) == 0 {
 			return same()
 		}
-		a.goInDiff(p, item, items, split)
+		a.goInDiff(p, item, items)
 	case item.Text != nil:
 		at, bt, err := item.Text()
 		if err != nil {
@@ -304,7 +301,7 @@ func (a *App) openDiff(p *Panel, item DiffItem, split *bool) tea.Cmd {
 		if at == bt {
 			return same()
 		}
-		return a.diffViewer(item.Anchor, item.Other, at, bt, split)
+		return a.diffViewer(item.Anchor, item.Other, at, bt)
 	}
 	return nil
 }
@@ -330,7 +327,7 @@ func (d *diffLevel) current() (DiffItem, bool) {
 }
 
 // goInDiff goes into items, the items that differ in item, in p.
-func (a *App) goInDiff(p *Panel, item DiffItem, items []DiffItem, split *bool) {
+func (a *App) goInDiff(p *Panel, item DiffItem, items []DiffItem) {
 	d := &diffLevel{items: items, mode: p.mode,
 		list: &List{Columns: []Column{{Shrink: true, Path: true}}, Flags: true, Location: item.Anchor + " ↔ " + item.Other}}
 	rows := make([]Row, len(items))
@@ -340,7 +337,7 @@ func (a *App) goInDiff(p *Panel, item DiffItem, items []DiffItem, split *bool) {
 	d.list.SetRows(rows)
 	open := func() tea.Cmd {
 		if it, ok := d.current(); ok {
-			return a.openDiff(p, it, split)
+			return a.openDiff(p, it)
 		}
 		return nil
 	}
@@ -354,9 +351,10 @@ func (a *App) goInDiff(p *Panel, item DiffItem, items []DiffItem, split *bool) {
 }
 
 // diffViewer is the comparison of at, an's text, with bt, bn's (tdp
-// note.8), UNIFIED or SPLIT as split says, which it sets as the user
-// switches.
-func (a *App) diffViewer(an, bn, at, bt string, split *bool) tea.Cmd {
+// note.8): on UNIFIED as it opens, the tab the user switches to kept while
+// it is open only, SPLIT shown while there is room for it.
+func (a *App) diffViewer(an, bn, at, bt string) tea.Cmd {
+	split := false
 	x, y := textLines(at), textLines(bt)
 	ops := diffLines(x, y)
 	v := &Viewer{Title: "Diff", Subject: an + " ↔ " + bn, Glyph: glyphCompare, Tabs: []string{"Unified", "Split"}, NoNumbers: true}
@@ -368,7 +366,7 @@ func (a *App) diffViewer(an, bn, at, bt string, split *bool) tea.Cmd {
 	lastW, lastTab := -1, -1
 	layout := func(sw int) {
 		tab := 0
-		if *split && sw >= splitMin {
+		if split && sw >= splitMin {
 			tab = 1
 		}
 		w := popupWidth(sw, 0, false) - 4 // the viewer's text, numbers left out
@@ -395,7 +393,7 @@ func (a *App) diffViewer(an, bn, at, bt string, split *bool) tea.Cmd {
 		lastW, lastTab = w, tab
 	}
 	v.relayout = layout
-	v.OnTab = func(tab int) tea.Cmd { *split = tab == 1; layout(a.w); return nil }
+	v.OnTab = func(tab int) tea.Cmd { split = tab == 1; layout(a.w); return nil }
 	layout(a.w)
 	return a.Viewer(v)
 }

@@ -175,6 +175,13 @@ func TestOpenDiff(t *testing.T) {
 	if text := ta.screenText(); !strings.Contains(text, "DIFF — ui.go @ 1a2b3c4 ↔ ui.go") || !strings.Contains(text, "UNIFIED") || !strings.Contains(text, "SPLIT") {
 		t.Fatalf("two versions of one item:\n%s", text)
 	}
+	// It opens on UNIFIED every time, the tab chosen not kept (note-84).
+	ta.press("l", "Esc")
+	ta.OpenDiff(ta.pods, item)
+	ta.settle()
+	if v, ok := ta.topView().(*viewerView); !ok || v.v.Tab != 0 {
+		t.Error("the next comparison did not open on UNIFIED")
+	}
 	ta.press("Esc")
 	item.Text = func() (string, string, error) { return "x\n", "x\n", nil }
 	ta.OpenDiff(ta.pods, item)
