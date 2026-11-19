@@ -298,3 +298,45 @@ func TestLeaveDiff(t *testing.T) {
 		t.Error("LeaveDiff left the compare mode, or its anchor")
 	}
 }
+
+// TestDiffClearsFilter: going into a list of the items that differ changes
+// what the panel lists, so its filter is cleared first, whether a compare
+// mode goes in or OpenDiff does; back up, every row is there, the cursor on
+// the one it was on. Nothing that differs goes nowhere and keeps the filter
+// (panel-180).
+func TestDiffClearsFilter(t *testing.T) {
+	ta := manyApp(t)
+	ta.press("/", "p", "o", "d", "-", "0", "Enter") // pod-00 to pod-09; pod-39 hidden
+	if len(ta.list.view) != 10 {
+		t.Fatalf("the filter kept %d rows, want 10", len(ta.list.view))
+	}
+	ta.press("j", "j", "j", "C", "j", "j", "Enter") // pod-03 with pod-05: nothing differs
+	if ta.pods.level() != nil || !ta.list.Filtering() {
+		t.Fatal("nothing that differs cleared the filter")
+	}
+	ta.toast = nil
+	ta.press("k", "Enter") // pod-04: in
+	if ta.pods.level() == nil || ta.list.Filtering() {
+		t.Fatalf("going in from the compare mode kept the filter:\n%s", ta.screenText())
+	}
+	ta.press("Esc")
+	if r, _ := ta.list.Current(); ta.pods.level() != nil || len(ta.list.view) != 40 || r.ID != "4" {
+		t.Errorf("back up: %d rows, the cursor on %q", len(ta.list.view), r.ID)
+	}
+
+	tb := newTestApp(t)
+	tb.press("/", "p", "o", "d", "-", "0", "Enter", "j", "j")
+	commit := DiffItem{Anchor: "1a2b3c4", Other: "5d6e7f8", Items: func() ([]DiffItem, error) {
+		return []DiffItem{{Mark: DiffAdded, Name: "x.go", Anchor: "x.go @ 1a2b3c4", Other: "x.go @ 5d6e7f8",
+			Text: func() (string, string, error) { return "", "x\n", nil }}}, nil
+	}}
+	tb.OpenDiff(tb.pods, commit)
+	tb.settle()
+	if tb.pods.level() == nil || tb.list.Filtering() {
+		t.Fatalf("OpenDiff going in kept the filter:\n%s", tb.screenText())
+	}
+	tb.press("Esc")
+	if r, _ := tb.list.Current(); len(tb.list.view) != 40 || r.ID != "2" {
+		t.Errorf("back up after OpenDiff: %d rows, the cursor on %q", len(tb.list.view), r.ID)
+	}
+}

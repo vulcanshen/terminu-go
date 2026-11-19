@@ -98,6 +98,7 @@ type dialogsScreen struct {
 	watched *terminu.Viewer // the watched file's viewer, read again as it changes
 	version int             // which of its versions it shows
 	watchN  int             // which opening the ticks are of
+	failed  string          // why the last read of it failed, "" when it worked
 }
 
 type scenario struct {
@@ -193,7 +194,7 @@ func (ds *dialogsScreen) scenarios() []scenario {
 		{"Popup with tabs", "note", "tabs after the title; [h]|[l] switch", ds.devtools},
 		{"Viewer: a table", "note", "a table the app lays out, no line numbers; a long line folds", ds.table},
 		{"Loading popup", "note", "lines arriving: the loading icon turns", ds.loadingPopup},
-		{"Viewer: a watched file", "note", "read again every 3 seconds as it changes, then gone a while; try [/] and [v]", ds.watchedFile},
+		{"Viewer: a watched file", "note", "read again every 3 seconds as it changes, then gone a while; try [/], [v] and [!]", ds.watchedFile},
 		{"Popup: long title", "note", "a title too long is cut with …", func() tea.Cmd {
 			return a.Viewer(&terminu.Viewer{Title: "File", Glyph: glyphYaml,
 				Subject: "/srv/projects/showcase/assets/images/backgrounds/very-long-directory-name/and-even-longer-sub-directory/landscape-2026.png",
@@ -665,10 +666,11 @@ func (ds *dialogsScreen) loadingPopup() tea.Cmd {
 	return tea.Batch(ds.s.app.Viewer(ds.loading), ds.s.app.Tick(400*time.Millisecond, func(time.Time) tea.Msg { return loadTick{} }))
 }
 
-// watchedVersion is the watched file's version n, false while it is gone:
-// as it was, longer, shorter, the same length with lines changed, gone, and
-// round again (tdp note.9).
-func watchedVersion(n int) ([]string, bool) {
+// watchedVersion is the watched file's version n, or why it cannot be
+// read: as it was, longer, shorter, the same length with lines changed, the
+// same again, gone, still gone, unreadable another way, as it was again, and
+// round again (tdp note.7, note.9).
+func watchedVersion(n int) ([]string, string) {
 	notes := func(count int, needles ...int) []string {
 		out := make([]string, count)
 		for i := range out {
@@ -679,21 +681,44 @@ func watchedVersion(n int) ([]string, bool) {
 		}
 		return out
 	}
-	switch n % 5 {
+	switch n % 9 {
 	case 1:
-		return notes(60, 4, 19, 34, 49), true
+		return notes(60, 4, 19, 34, 49), ""
 	case 2:
-		return notes(15, 4), true
-	case 3:
+		return notes(15, 4), ""
+	case 3, 4:
 		lines := notes(40, 7, 29)
 		for i := 9; i < 12; i++ {
 			lines[i] = strings.ToUpper(lines[i])
 		}
-		return lines, true
-	case 4:
-		return nil, false
+		return lines, ""
+	case 5, 6:
+		return nil, "Cannot read notes.txt: it is gone"
+	case 7:
+		return nil, "Cannot read notes.txt: permission denied"
 	}
-	return notes(40, 4, 19, 34), true
+	return notes(40, 4, 19, 34), ""
+}
+
+// watchedChange says what changed in the watched file from was to now, ""
+// when nothing did (tdp note.7).
+func watchedChange(was, now []string) string {
+	if len(was) != len(now) {
+		return fmt.Sprintf("notes.txt went from %d lines to %d", len(was), len(now))
+	}
+	n := 0
+	for i := range was {
+		if was[i] != now[i] {
+			n++
+		}
+	}
+	switch n {
+	case 0:
+		return ""
+	case 1:
+		return "1 line of notes.txt"
+	}
+	return fmt.Sprintf("%d lines of notes.txt", n)
 }
 
 // watchedFile opens a viewer of a file the showcase pretends to watch: every
@@ -701,7 +726,7 @@ func watchedVersion(n int) ([]string, bool) {
 // be (App.CannotReadAgain, with the showcase's words).
 func (ds *dialogsScreen) watchedFile() tea.Cmd {
 	lines, _ := watchedVersion(0)
-	ds.watched, ds.version = &terminu.Viewer{Title: "File", Subject: "notes.txt", Glyph: glyphYaml, Lines: lines}, 0
+	ds.watched, ds.version, ds.failed = &terminu.Viewer{Title: "File", Subject: "notes.txt", Glyph: glyphYaml, Lines: lines}, 0, ""
 	ds.watchN++
 	n := ds.watchN
 	return tea.Batch(ds.s.app.Viewer(ds.watched), ds.s.app.Tick(3*time.Second, func(time.Time) tea.Msg { return watchTick{n} }))
@@ -720,9 +745,24 @@ func (ds *dialogsScreen) watchStep(n int) tea.Cmd {
 	}
 	ds.version++
 	next := a.Tick(3*time.Second, func(time.Time) tea.Msg { return watchTick{n} })
-	lines, ok := watchedVersion(ds.version)
-	if !ok { // an Error toast, or an error popup over the selection mode's menu
-		return tea.Batch(a.CannotReadAgain(ds.watched, "Cannot read notes.txt: it is gone"), next)
+	// What a read finds goes in the App Log once (tdp note.7): a change is
+	// an INFO entry saying what, nothing new nothing; a failure an Error
+	// toast and its ERR entry the first time, the same one again nothing; a
+	// read that works again an INFO entry, no toast.
+	lines, failed := watchedVersion(ds.version)
+	switch {
+	case failed != "" && failed == ds.failed:
+		return next
+	case failed != "": // an Error toast, or an error popup over the selection mode's menu
+		ds.failed = failed
+		return tea.Batch(a.CannotReadAgain(ds.watched, failed), next)
+	case ds.failed != "":
+		ds.failed = ""
+		a.Log(terminu.Info, "notes.txt can be read again")
+	default:
+		if c := watchedChange(ds.watched.Lines, lines); c != "" {
+			a.Log(terminu.Info, "Changed outside the app: "+c)
+		}
 	}
 	return tea.Batch(a.ReadAgain(ds.watched, lines), next)
 }

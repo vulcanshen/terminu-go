@@ -306,15 +306,20 @@ func newInputsScreen(s *showcase) *inputsScreen {
 	// commit, drawn as UNIFIED is (tdp note.8 "In a panel"), not as git
 	// prints a patch; Enter opens the comparison.
 	is.changed = &terminu.Pager{}
+	// A folder holds many: [3] lists the items that differ in it with their
+	// marks, a new one's all +, and Enter goes into that list (note.8).
+	openChanges := func() tea.Cmd {
+		if it, ok := is.lastCommitItem(); ok {
+			return a.OpenDiff(is.changes, it)
+		}
+		return nil
+	}
+	many := func() bool { it, ok := is.lastCommitItem(); return ok && it.Items != nil }
 	is.changes = &terminu.Panel{Label: "Changes", Body: is.changed, Actions: []terminu.Action{
 		{Key: "Enter", Label: "Compare", Desc: "the file against its last commit, UNIFIED and SPLIT", Hint: "compare",
-			Scope: terminu.PanelScope, Disabled: func() bool { return is.changed.Empty() },
-			Do: func() tea.Cmd {
-				if it, ok := is.lastCommitItem(); ok {
-					return a.OpenDiff(is.changes, it)
-				}
-				return nil
-			}},
+			Scope: terminu.PanelScope, Hidden: many, Disabled: func() bool { return is.changed.Empty() }, Do: openChanges},
+		{Key: "Enter", Label: "Open", Desc: "the items that differ in the folder since its last commit", Hint: "open",
+			Scope: terminu.PanelScope, Hidden: func() bool { return !many() }, Disabled: func() bool { return is.changed.Empty() }, Do: openChanges},
 	}}
 	is.files.Details = is.changes
 	is.fileList.OnMove = func(terminu.Row) tea.Cmd { is.showChanges(); return nil }
@@ -398,20 +403,28 @@ func (is *inputsScreen) onFolder() bool {
 // folderRow reports a folder's row of the Folders tab, named with a / after.
 func folderRow(r terminu.Row) bool { return len(r.Cells) > 0 && strings.HasSuffix(r.Cells[0], "/") }
 
-// lastCommitItem is the text file under [2]'s cursor against its last
-// commit, the older the anchor (tdp note.8); none on what is not a text
-// file.
+// lastCommitItem is the text file or the folder under [2]'s cursor
+// against its last commit, the older the anchor (tdp note.8); none on what
+// is neither.
 func (is *inputsScreen) lastCommitItem() (terminu.DiffItem, bool) {
 	row, ok := is.fileList.Current()
-	if !ok || !textFile(row.ID) {
+	if !ok {
 		return terminu.DiffItem{}, false
 	}
 	rel := relPath(row.ID)
-	return terminu.DiffItem{Anchor: rel + " @ " + lastCommit, Other: rel,
-		Text: func() (string, string, error) {
+	it := terminu.DiffItem{Anchor: rel + " @ " + lastCommit, Other: rel}
+	switch {
+	case folderRow(row):
+		it.Items = func() ([]terminu.DiffItem, error) { return sinceCommit(row.ID) }
+	case textFile(row.ID):
+		it.Text = func() (string, string, error) {
 			b, err := os.ReadFile(row.ID)
 			return committed(rel, string(b)), string(b), err
-		}}, true
+		}
+	default:
+		return terminu.DiffItem{}, false
+	}
+	return it, true
 }
 
 // compareLastCommit opens the file under the cursor against its last commit.
@@ -422,9 +435,12 @@ func (is *inputsScreen) compareLastCommit() tea.Cmd {
 	return nil
 }
 
-// showChanges shows in [3] the file under [2]'s cursor against its last
-// commit, its location row naming the file.
+// showChanges shows in [3] the file or the folder under [2]'s cursor
+// against its last commit, its location row naming it: a file's
+// difference, a folder's items that differ with their marks (tdp note.8).
+// It leaves the list [3] went into first, that list the last row's.
 func (is *inputsScreen) showChanges() {
+	is.changes.LeaveDiff()
 	is.changes.Location, is.changes.Fail = "", nil
 	it, ok := is.lastCommitItem()
 	if !ok {
@@ -433,14 +449,23 @@ func (is *inputsScreen) showChanges() {
 		return
 	}
 	is.changes.Location = it.Other
-	was, now, err := it.Text()
+	is.changed.EmptyFact = "No changes since " + lastCommit
+	var err error
+	if it.Items != nil {
+		var items []terminu.DiffItem
+		if items, err = it.Items(); err == nil {
+			is.changed.SetDiffItems(items)
+		}
+	} else {
+		var was, now string
+		if was, now, err = it.Text(); err == nil {
+			is.changed.SetDiff(was, now)
+		}
+	}
 	if err != nil {
 		is.changes.Fail = &terminu.Failure{Fact: "Cannot read " + it.Other}
 		is.changed.SetLines(nil)
-		return
 	}
-	is.changed.EmptyFact = "No changes since " + lastCommit
-	is.changed.SetDiff(was, now)
 }
 
 // showMain shows main.go in [2] FILES: out of every list of the items that

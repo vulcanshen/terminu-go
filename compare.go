@@ -262,9 +262,11 @@ func (a *App) compareWith(cm *comparing) tea.Cmd {
 //     none. Each item is its mark in its colour, then its name. j|k, u|d
 //     and gg|G move, Enter opens the item under the cursor the same way
 //     (off on one with neither Text nor Items), Esc goes back up a level,
-//     the cursor on the item it came out of, the last back to p as it was;
-//     the Space menu and ? have the list's keys, not p's actions, and Tab
-//     and the digits go to the other panels as ever, the list kept.
+//     the cursor on the item it came out of, the last back to p, its
+//     cursor where it was; the Space menu and ? have the list's keys, not
+//     p's actions, and Tab and the digits go to the other panels as ever,
+//     the list kept. A filter on p is cleared before going in, as Esc
+//     clears it (tdp panel.14).
 //
 // A comparison opens on UNIFIED; SPLIT is off narrower than 96 columns. An
 // error from Text or Items is an error popup. Mark is not used. p is out of
@@ -326,8 +328,14 @@ func (d *diffLevel) current() (DiffItem, bool) {
 	return d.items[i], true
 }
 
-// goInDiff goes into items, the items that differ in item, in p.
+// goInDiff goes into items, the items that differ in item, in p. It
+// changes what p lists, so p's filter is cleared first, whether or not it
+// hides the item (tdp panel.14): from OpenDiff and from a compare mode
+// alike, the app having no way to clear it before.
 func (a *App) goInDiff(p *Panel, item DiffItem, items []DiffItem) {
+	if l, ok := p.body().(*List); ok && l.Filtering() {
+		l.ClearFilter()
+	}
 	d := &diffLevel{items: items, mode: p.mode,
 		list: &List{Columns: []Column{{Shrink: true, Path: true}}, Flags: true, Location: item.Anchor + " ↔ " + item.Other}}
 	rows := make([]Row, len(items))

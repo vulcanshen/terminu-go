@@ -75,3 +75,70 @@ func TestPagerDiff(t *testing.T) {
 		t.Errorf("SetLines did not go back to plain lines:\n%s", text)
 	}
 }
+
+// TestPagerDiffItems: a panel showing what holds many lists the items that
+// differ, each with its mark in its colour, drawn as the list OpenDiff goes
+// into draws them, a long name cut from the front, laid out again as the
+// panel's width changes; none is the empty state; SetLines goes back to
+// plain lines (note-106, from gittu).
+func TestPagerDiffItems(t *testing.T) {
+	ta := newTestApp(t)
+	pg := ta.Screen().Panels[1].Body.(*Pager)
+	pg.EmptyFact = "No changes"
+	long := "internal/very/long/path/to/some/deeply/nested/file.go"
+	items := []DiffItem{
+		{Mark: DiffAdded, Name: "new.go"},
+		{Mark: DiffRemoved, Name: "old.txt"},
+		{Mark: DiffChanged, Name: "src/", Items: func() ([]DiffItem, error) { return nil, nil }},
+		{Mark: DiffAdded, Name: long},
+	}
+	pg.SetDiffItems(items)
+	frame, text := frameText(ta), ta.screenText()
+	for _, m := range []string{Fg(Green).Render("+"), Fg(Red).Render("-"), Fg(Peach).Render("~")} {
+		if !strings.Contains(frame, m) {
+			t.Errorf("no %q in its colour:\n%s", m, text)
+		}
+	}
+	for _, n := range []string{"new.go", "old.txt", "src/"} {
+		if !strings.Contains(text, n) {
+			t.Errorf("no %s:\n%s", n, text)
+		}
+	}
+	// Drawn as the list going in draws them, the first row aside (the
+	// cursor's).
+	ta.OpenDiff(ta.pods, DiffItem{Anchor: "a", Other: "b", Items: func() ([]DiffItem, error) { return items, nil }})
+	in := ta.pods.level().list.Draw(40, 12, false)
+	ta.pods.LeaveDiff()
+	got := pg.Draw(40, 10, false)
+	line := func(lines []string, name string) string {
+		for _, l := range lines {
+			if s := StripStyles(l); strings.Contains(s, name) {
+				return strings.TrimRight(s, " ")
+			}
+		}
+		return ""
+	}
+	for _, n := range []string{"old.txt", "src/", "file.go"} {
+		if a, b := line(got, n), line(in, n); a == "" || a != b {
+			t.Errorf("%s: %q in the panel, %q in the list", n, a, b)
+		}
+	}
+	if l := line(got, "file.go"); !strings.Contains(l, "…") || strings.Contains(l, "internal") {
+		t.Errorf("a long name is not cut from the front: %q", l)
+	}
+	if l := line(pg.Draw(80, 10, false), "file.go"); !strings.Contains(l, long) {
+		t.Errorf("wider, the long name is not laid out again: %q", l)
+	}
+
+	pg.SetDiffItems(nil)
+	ta.Frame()
+	if !pg.Empty() || !strings.Contains(ta.screenText(), "No changes") {
+		t.Errorf("none:\n%s", ta.screenText())
+	}
+	pg.SetDiffItems(items)
+	pg.SetLines([]string{"plain"})
+	ta.resize(120, 40)
+	if text := ta.screenText(); !strings.Contains(text, "plain") || strings.Contains(text, "new.go") {
+		t.Errorf("SetLines did not go back to plain lines:\n%s", text)
+	}
+}

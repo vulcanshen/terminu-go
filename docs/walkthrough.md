@@ -75,15 +75,21 @@ go build -o /tmp/showcase ./examples/showcase
     `conf/` 再進一層；`Esc` 一層一層退回，最後回到比較模式、anchor 還在。
 - `[3] CHANGES` 跟著 `[2]` 的 cursor（note.8 的 In a panel）：cursor 上那個檔跟它最後一次 commit 的差異，畫法跟 UNIFIED 一樣（只有改的段落、
   兩欄行號、`-` Red、`+` Green），不是 git 印的 patch；位置列是那個檔。在 `main.go` 上看得到改的那一行，按 `3` 再按 `Enter` 打開比較；
-  沒改的檔寫 `No changes since 5d6e7f8`（`Enter` 停用），圖寫 `Not a text file`。
+  沒改的檔寫 `No changes since 5d6e7f8`（`Enter` 停用），圖寫 `Not a text file`。在 `FOLDERS` tab 的 `releases/` 裡移到 `v2/`
+  （最後一次 commit 之後新增的資料夾）：`[3]` 列出它有差異的項目、每一項帶標記，全部是 Green 的 `+`（note-106）；按 `3` 再按 `Enter`
+  進到這份清單；`[2]` 的 cursor 一動，`[3]` 就離開清單、換成新的那一列。
+- 篩選遇到 app 自己的動作（panel-180）：在 `releases/` 裡按 `/` 打 `v`、`Enter` 回清單，用 `C` 比 `v1/` 與 `v2/`：進去之前篩選先清掉，
+  `Esc` 退回來時是整份清單、cursor 在原本那一列。
 
 **D — Dialogs**：每一種 dialog 與疊法。
 - `[1] DIALOGS` 每一列是一個情境，`Enter` 打開：各種 menu（分組、兩步、工作清單、很長）、confirm、表單、viewer（選取模式按 `v` 兩次）、
   有 tab 的 popup（也有選取模式：平常 `h|l` 切 tab，`v` 之後 `h|l` 移游標）、loading popup、error popup（短的與長的）、toast、
   好幾層疊在一起。每一列的說明寫了要看什麼。
-- 「Viewer: a watched file」是一個會變的檔案，每 3 秒重新讀一次：變長、變短、同樣長但改了幾行、讀不到一陣子（Error toast），
-  再從頭。捲到結尾時跟著新的結尾；按 `/` 找 `needle`，命中跟著新內容走；按 `v` 兩次選一段，選到的行不見時跳 Warning；
-  選的時候按 `Space` 或 `?` 開著，就改疊一個 Peach 的 note，`Enter` 或 `Esc` 連同 menu 一起關。
+- 「Viewer: a watched file」是一個會變的檔案，每 3 秒重新讀一次：變長、變短、同樣長但改了幾行、跟上一次一樣、讀不到兩輪（Error toast
+  只跳第一輪）、換一種讀不到（再跳一次）、又讀得到，再從頭。捲到結尾時跟著新的結尾；按 `/` 找 `needle`，命中跟著新內容走；按 `v`
+  兩次選一段，選到的行不見時跳 Warning；選的時候按 `Space` 或 `?` 開著，就改疊一個 Peach 的 note，`Enter` 或 `Esc` 連同 menu 一起關。
+  關掉後按 `!`（note-104、note-105）：每一次變了一筆 INFO（`Changed outside the app: …`），一樣的那幾輪沒有；每一種讀不到一筆 ERR；
+  又讀得到一筆 INFO，沒有 toast。
 - 「Values that do not fit」：一個有兩個用不了的值的假設定檔，複製成 `config.yaml.bak`、用預設值重寫，跳一個 Warning toast；按 `!`
   看每個值各一筆 WARN。「…, no copy」是同樣的檔放在不能寫的資料夾：沒有 `.bak`、檔案不動，跳 Error toast。
 - 「Several at one start」：同樣的檔，再加上一個不在的 profile：只跳一個 Warning toast，一件一行；按 `!` 看一件一筆，

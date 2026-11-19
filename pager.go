@@ -24,15 +24,15 @@ type Pager struct {
 	width  int // the text's, at the last Draw
 	scroll string
 	atEnd  bool
-	diff   *pagerDiff // what SetDiff showed, laid out again as the width changes
+	diff   *pagerDiff // what SetDiff or SetDiffItems showed, laid out again as the width changes
 }
 
-// pagerDiff is a difference a Pager shows (SetDiff): its ops and the two
-// texts' lines, laid out for w cells.
+// pagerDiff is a difference a Pager shows (SetDiff, SetDiffItems): lay
+// lays it out for a text w cells wide; w and icon are what it was last laid
+// out for.
 type pagerDiff struct {
-	ops  []diffOp
-	x, y []string
-	w    int
+	lay     func(w int) []string
+	w, icon int
 }
 
 // SetLines replaces the lines.
@@ -53,7 +53,36 @@ func (t *Pager) SetLines(lines []string) {
 // App.OpenDiff opening the comparison of the same two (tdp note.8).
 func (t *Pager) SetDiff(anchor, other string) {
 	x, y := textLines(anchor), textLines(other)
-	t.diff = &pagerDiff{ops: diffLines(x, y), x: x, y: y, w: -1}
+	ops := diffLines(x, y)
+	t.setDiff(func(w int) []string {
+		lines, _ := diffUnified(ops, x, y, w)
+		return lines
+	})
+}
+
+// SetDiffItems shows the items that differ in what holds many (tdp note.8
+// "In a panel": a folder that is new, a commit), never their bare names:
+// each item's mark in its colour in the mark column, then its name, a long
+// one cut from the front, as the list App.OpenDiff goes into draws them
+// (tdp panel.9; a new folder's items all DiffAdded, + in Green). None is
+// the empty state (EmptyFact). The view stays where it was, as with
+// SetLines; SetLines, Append and ReadAgain go back to plain lines. Enter is
+// the panel's own action, App.OpenDiff with Items giving the same items
+// going into that list in the panel.
+func (t *Pager) SetDiffItems(items []DiffItem) {
+	t.setDiff(func(w int) []string {
+		markW := IconWidth() + 1
+		lines := make([]string, len(items))
+		for i, it := range items {
+			m := it.Mark.span()
+			lines[i] = Pad(m.Style.Render(m.Text), markW) + FitLeft(Escape(it.Name), w-markW)
+		}
+		return lines
+	})
+}
+
+func (t *Pager) setDiff(lay func(w int) []string) {
+	t.diff = &pagerDiff{lay: lay, w: -1}
 	t.layDiff(t.width)
 	t.clamp()
 }
@@ -61,11 +90,11 @@ func (t *Pager) SetDiff(anchor, other string) {
 // layDiff lays the difference out for a text w cells wide.
 func (t *Pager) layDiff(w int) {
 	d := t.diff
-	if d == nil || d.w == w {
+	if d == nil || d.w == w && d.icon == IconWidth() {
 		return
 	}
-	lines, _ := diffUnified(d.ops, d.x, d.y, max(w, 0))
-	t.lines, t.rows, d.w = lines, readingRows(lines), w
+	lines := d.lay(max(w, 0))
+	t.lines, t.rows, d.w, d.icon = lines, readingRows(lines), w, IconWidth()
 }
 
 // Append adds lines at the end.

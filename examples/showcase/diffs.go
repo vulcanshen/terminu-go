@@ -126,16 +126,63 @@ const (
 	parentCommit = "1a2b3c4"
 )
 
+// newFolder is new since the last commit: not in it yet.
+const newFolder = "releases/v2"
+
+// isNew reports whether rel is newFolder or in it.
+func isNew(rel string) bool { return rel == newFolder || strings.HasPrefix(rel, newFolder+"/") }
+
 // committed is the file at rel as its last commit has it: README.md and
-// main.go are being edited, the others are as committed.
+// main.go are being edited, what is in newFolder is not there (""), the
+// others are as committed.
 func committed(rel, now string) string {
-	switch rel {
-	case "README.md":
+	switch {
+	case rel == "README.md":
 		return strings.Replace(now, "- Terminal\n", "", 1)
-	case "main.go":
+	case rel == "main.go":
 		return strings.Replace(now, `, 42`, "", 1)
+	case isNew(rel):
+		return ""
 	}
 	return now
+}
+
+// sinceCommit are the items that differ in the folder at dir since the
+// last commit, by name (tdp note.8): what is in newFolder added, a file
+// being edited changed, a folder holding either holding many; the rest left
+// out.
+func sinceCommit(dir string) ([]terminu.DiffItem, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+	var out []terminu.DiffItem
+	for _, e := range entries {
+		p := filepath.Join(dir, e.Name())
+		rel := relPath(p)
+		it := terminu.DiffItem{Mark: terminu.DiffChanged, Name: e.Name(), Anchor: rel + " @ " + lastCommit, Other: rel}
+		if isNew(rel) {
+			it.Mark = terminu.DiffAdded
+		}
+		if e.IsDir() {
+			if in, err := sinceCommit(p); err != nil || len(in) == 0 {
+				continue
+			}
+			it.Name += "/"
+			it.Items = func() ([]terminu.DiffItem, error) { return sinceCommit(p) }
+			out = append(out, it)
+			continue
+		}
+		now := readOr(p)
+		if committed(rel, now) == now && !isNew(rel) {
+			continue
+		}
+		if isText(now) {
+			it.Text = func() (string, string, error) { now := readOr(p); return committed(rel, now), now, nil }
+		}
+		out = append(out, it)
+	}
+	return out, nil
 }
 
 // lastCommitItems are what the last commit changed, file by file, as git

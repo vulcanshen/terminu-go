@@ -86,8 +86,10 @@ func (a *App) ReadAgain(v *Viewer, lines []string) tea.Cmd {
 // the selection mode's Space menu or key reference open, an error popup over
 // them instead, CANNOT READ: <Subject>, message and "The selection is gone",
 // whose Enter and Esc close it and them, back to the viewer (tdp note-100).
-// With no message it gives no toast. On a viewer not on the screen it says
-// nothing.
+// With no message it gives no toast: a read the app repeats on its own that
+// fails the same way again (the same words) shows and records nothing, a
+// different failure toasting again (tdp note.7). On a viewer not on the
+// screen it says nothing.
 func (a *App) CannotReadAgain(v *Viewer, message ...string) tea.Cmd {
 	in := v.inMode
 	v.inMode, v.selecting = false, false

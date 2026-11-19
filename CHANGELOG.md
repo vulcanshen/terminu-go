@@ -2,6 +2,22 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.19-beta.2 — tdp v1.2.17
+
+- tdp's next release (panel.14) has an action of the app's own that changes what a panel lists, or puts its cursor on
+  an item, clear the panel's filter first, whether or not it hides the item; the focus leaving still keeps it. The
+  lib's own two do it: the compare mode going into the list of the items that differ, and `App.OpenDiff` going into
+  one; back up, the panel lists every row, the cursor where it was. An app's own action calls `List.ClearFilter()`
+  first (from gittu)
+- A panel showing the change of what holds many (a folder that is new, a commit) lists the items that differ with
+  their marks, never their bare names, and `Enter` goes into that list (tdp's next release, note.8): new
+  `Pager.SetDiffItems(items)` draws each item's mark in its colour and its name as the list going in draws them;
+  `Enter` is the panel's own action, `App.OpenDiff` with the same items (from gittu). The showcase's `[3] CHANGES`
+  lists `releases/v2/`, new since the last commit, all `+`
+- The showcase's watched file follows tdp's next note.7 for what a read the app repeats on its own records: a change
+  is one INFO entry saying what, nothing new nothing, a failure toasts and records the first time only, a different
+  one again, and a read that works again is one INFO entry with no toast; the README says so
+
 ## v1.2.19-beta.1 — tdp v1.2.17
 
 - tdp's next release (note.8, "In a panel") has a panel that shows a difference draw it as UNIFIED does: only the

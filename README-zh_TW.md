@@ -177,9 +177,18 @@ app 自己的動作要顯示同一項的兩個版本時（commit 裡的一個檔
 取代原本的列，按 `Esc` 回到原本的列。app 自己的動作要在那個 panel 顯示別的東西時（例：在分支上按 `Enter`，把它的 commit
 放到 cursor 下），先叫 `panel.LeaveDiff()`：離開每一層這種清單，像一直按 `Esc` 到原本的列回來為止；沒有清單時什麼都不做。
 
+進到這種清單會換掉 panel 列的東西，所以 `OpenDiff` 與比較模式進去之前會先清掉 panel 的篩選（tdp panel.14）。app 自己的動作要換掉
+panel 列的東西，或把它的 cursor 放到某一項上時（例：在別的 panel 移動 cursor，把這個 panel 帶到那一項；進到一項裡面），也一樣
+先叫 `list.ClearFilter()`，不管篩選有沒有藏住那一項。只是 focus 離開 panel，篩選留著。
+
 顯示差異的 panel（例：跟著 cursor 的明細，顯示 cursor 上那個檔改了什麼）畫法跟 UNIFIED 一樣，不照工具印的樣子（`git diff`
 的標頭與 `@@` 那幾行）：app 自己讀兩邊的文字，在它的 `Pager` 上叫 `pager.SetDiff(anchor, other)`，再給 panel 一個 `Enter`
 動作，用 `app.OpenDiff(panel, item)` 打開比較。兩邊一樣時，顯示 Pager 的 `EmptyFact`。
+
+顯示的東西裝著許多項目時（例：新的資料夾、一個 commit），要列出有差異的項目，不能只寫名字：`pager.SetDiffItems(items)` 每一項
+先畫它的標記與顏色、再畫名字，跟 `OpenDiff` 進去的清單一樣（新資料夾的項目全部是 `DiffAdded`）。它的 `Enter` 在這個 panel 裡
+進到那份清單：`app.OpenDiff(panel, terminu.DiffItem{Anchor: ..., Other: ..., Items: ...})`，給同樣的項目。一項都沒有時，顯示
+Pager 的 `EmptyFact`。
 
 ## app 自己的模式
 
@@ -274,6 +283,11 @@ toast，或疊在那個 menu 上的 error popup。app 自己的閱讀 panel 有�
 `app.SelectionGone(panel, terminu.Warning, "Read again", "notes.txt changed: Visual left")` 說，在離開模式之前叫：是 toast，
 或疊在模式的 Space menu、`?` 上的 note。開著時會給新的行的 Pager（`Append` 或 `ReadAgain`）要設 `Follow`。重新讀進來的內容不算串流：
 不要設 `Panel.Stream`（tdp T2）。
+
+這種重讀讀到什麼，App Log 只記一次（tdp note.7）。讀到變了，記一筆 `app.Log(terminu.Info, "Changed outside the app: branch feat deleted")`
+寫出改了什麼；讀到沒變什麼都不記。讀不到時，第一次跳 Error toast（toast 自己會記）；之後還是同一個失敗（同一句話），不跳也不記，
+這時叫 `CannotReadAgain` 不要給字；換了一個失敗，再跳一次。又讀得到時記一筆 `app.Log(terminu.Info, "The repository can be read again")`，
+不跳 toast。自己一直進來的更新（串流、連線一直保持最新的清單）不一筆一筆記。
 
 ## 設定
 

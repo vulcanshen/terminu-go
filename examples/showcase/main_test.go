@@ -160,7 +160,7 @@ func TestWatchedFile(t *testing.T) {
 	ds := s.dialogs
 	d.Do(ds.watchedFile)
 	v := ds.watched
-	for _, want := range []int{60, 15, 40} {
+	for _, want := range []int{60, 15, 40, 40} {
 		d.Advance(3 * time.Second)
 		if len(v.Lines) != want || !d.Has("notes.txt") {
 			t.Fatalf("read again: %d lines, want %d", len(v.Lines), want)
@@ -170,17 +170,41 @@ func TestWatchedFile(t *testing.T) {
 	if !d.Has("Cannot read notes.txt: it is gone") || len(v.Lines) != 40 {
 		t.Errorf("gone: no Error toast, or the lines went: %d", len(v.Lines))
 	}
+	d.Advance(3 * time.Second) // still gone
 	d.Advance(3 * time.Second)
-	if len(v.Lines) != 40 || ds.version != 5 {
+	if !d.Has("Cannot read notes.txt: permission denied") {
+		t.Errorf("another failure, no Error toast:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Advance(3 * time.Second) // as it was again
+	d.Advance(3 * time.Second) // the same
+	if len(v.Lines) != 40 || ds.version != 9 {
 		t.Errorf("round again: %d lines, version %d", len(v.Lines), ds.version)
 	}
-	for i := 0; i < 3 && s.app.Covered(); i++ { // the Error toast, then the viewer
+	for i := 0; i < 4 && s.app.Covered(); i++ { // the Error toast, then the viewer
 		d.Press("Esc")
 	}
 	d.Advance(3 * time.Second)
 	d.Advance(3 * time.Second)
-	if ds.watched != nil || ds.version != 5 {
+	if ds.watched != nil || ds.version != 9 {
 		t.Errorf("closed, it is still read: version %d", ds.version)
+	}
+	// Each change one INFO entry, nothing new none; each failure one ERR
+	// entry, the same again none; working again one INFO entry (note-104,
+	// note-105, from gittu).
+	d.Press("!")
+	log := strings.Join(d.Screen(), "\n")
+	for want, n := range map[string]int{
+		"INFO Changed outside the app: notes.txt went from 40 lines to 60": 1,
+		"INFO Changed outside the app: notes.txt went from 60 lines to 15": 1,
+		"INFO Changed outside the app: notes.txt went from 15 lines to 40": 1,
+		"Changed outside the app":                       3,
+		"ERR  Cannot read notes.txt: it is gone":        1,
+		"ERR  Cannot read notes.txt: permission denied": 1,
+		"INFO notes.txt can be read again":              1,
+	} {
+		if got := strings.Count(log, want); got != n {
+			t.Errorf("%d of %q in the App Log, want %d:\n%s", got, want, n, log)
+		}
 	}
 }
 
@@ -319,7 +343,9 @@ func TestCompareFolders(t *testing.T) {
 			t.Errorf("no %q:\n%s", want, strings.Join(d.Screen(), "\n"))
 		}
 	}
-	if d.Has("README.md") || d.Has("docs/") {
+	// [3] lists v2/ under the cursor, new since the last commit, all +: one
+	// listed here would be ~.
+	if d.Has("~ README.md") || d.Has("~ docs/") {
 		t.Error("an item the same on both sides is listed")
 	}
 	if styled := strings.Join(d.Styled(), "\n"); !strings.Contains(styled, terminu.Fg(terminu.Red).Render("-")) || !strings.Contains(styled, terminu.Fg(terminu.Peach).Render("~")) {
@@ -450,5 +476,45 @@ func TestChangesPanel(t *testing.T) {
 	show("assets/logo.png")
 	if !d.Has("Not a text file") {
 		t.Errorf("an image:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+}
+
+// A panel showing the changes of what holds many lists the items that
+// differ with their marks, a new folder's all + in Green, not bare names;
+// Enter goes into that list (tdp note.8, note-106, from gittu): [3] CHANGES
+// on releases/v2/, new since the last commit. [2]'s cursor moving on leaves
+// that list.
+func TestNewFolderChanges(t *testing.T) {
+	s := newShowcase()
+	d := tdptest.Start(t, s.app, 140, 40)
+	d.Press("I", "2", "l", "l", "/")
+	d.Type("rel")
+	d.Press("Enter", "Enter") // into releases/, the cursor on v1/
+	if !d.Has("No changes since 5d6e7f8") {
+		t.Fatalf("v1/, as committed:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Press("j") // v2/
+	for _, want := range []string{"+ NEWS.md", "+ README.md", "+ conf/", "+ docs/", "+ logo.png", "+ main.go"} {
+		if !d.Has(want) {
+			t.Errorf("no %q:\n%s", want, strings.Join(d.Screen(), "\n"))
+		}
+	}
+	if d.Press("3"); !d.Has("Enter:open") || d.Has("Enter:compare") {
+		t.Errorf("no Enter:open on [3]:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	if styled := strings.Join(d.Styled(), "\n"); !strings.Contains(styled, terminu.Fg(terminu.Green).Render("+")) {
+		t.Error("the marks are not in Green")
+	}
+	d.Press("Enter")
+	if !d.Has("releases/v2 @ 5d6e7f8 ↔ releases/v2") {
+		t.Fatalf("Enter did not go in:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Press("Enter") // NEWS.md
+	if !d.Has("DIFF — releases/v2/NEWS.md @ 5d6e7f8 ↔ releases/v2/NEWS.md") || !d.Has("+# News") {
+		t.Fatalf("an item's comparison:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Press("Esc", "2", "k")
+	if d.Has("↔") || !d.Has("No changes since 5d6e7f8") {
+		t.Errorf("[2]'s cursor moving on kept the list:\n%s", strings.Join(d.Screen(), "\n"))
 	}
 }

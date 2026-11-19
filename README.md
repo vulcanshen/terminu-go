@@ -210,10 +210,20 @@ back. An action of yours that shows something else in that panel (Enter on a bra
 cursor) calls `panel.LeaveDiff()` first: it leaves every such list, as if `Esc` were pressed until the panel's rows
 are back, and does nothing when there is none.
 
+Going into such a list changes what the panel lists, so `OpenDiff` and the compare mode clear the panel's filter first
+(tdp panel.14). Do the same in an action of yours that changes what a panel lists or puts its cursor on a particular
+item (the cursor in another panel taking this one to an item, going into an item): call `list.ClearFilter()` first,
+whether or not the filter hides that item. The focus merely leaving the panel keeps the filter.
+
 A panel that shows a difference (a details panel showing what changed in the file under the cursor) draws it as
 UNIFIED does, never as a tool prints it (`git diff`'s headers and `@@` lines): read the two texts and call
 `pager.SetDiff(anchor, other)` on its `Pager`, and give the panel an `Enter` action that opens the comparison with
 `app.OpenDiff(panel, item)`. The same text on both sides shows the Pager's `EmptyFact`.
+
+When what it shows holds many (a folder that is new, a commit), list the items that differ, never their bare names:
+`pager.SetDiffItems(items)` draws each item's mark in its colour, then its name, as the list `OpenDiff` goes into draws
+them (a new folder's items are all `DiffAdded`). Its `Enter` goes into that list in the panel: `app.OpenDiff(panel,
+terminu.DiffItem{Anchor: ..., Other: ..., Items: ...})` with the same items. None shows the Pager's `EmptyFact`.
 
 ## Modes of your own
 
@@ -322,6 +332,13 @@ popup over that menu. A selection mode of your own, on a reader of your own in a
 with `app.SelectionGone(panel, terminu.Warning, "Read again", "notes.txt changed: Visual left")` before it leaves the
 mode: a toast, or the note over the mode's Space menu or `?`. A Pager that takes lines while it is open, by `Append` or
 `ReadAgain`, sets `Follow`. Content read again is not streaming: leave `Panel.Stream` off for it (tdp T2).
+
+What such a read finds goes in the App Log once (tdp note.7). A read that finds something changed is one
+`app.Log(terminu.Info, "Changed outside the app: branch feat deleted")` saying what; one that finds nothing new records
+nothing. When it fails, the first failure is the Error toast, which records itself; the same failure again (the same
+words) shows and records nothing, so give `CannotReadAgain` no words then; a different one toasts again. A read that
+works again is one `app.Log(terminu.Info, "The repository can be read again")`, with no toast. Updates that keep coming
+in by themselves (streaming, a list a connection keeps up to date) are not recorded one by one.
 
 ## Settings
 
