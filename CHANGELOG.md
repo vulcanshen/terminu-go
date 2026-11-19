@@ -15,6 +15,12 @@ Each release names the version of terminu design (tdp) it implements.
   `log.Fatal` (tdp E1); the README has a section on the command line. The showcase's command line follows E1:
   `Unknown command "x"`, `showcase iconwidth`, and `showcase settings`, which says on stderr what the TUI says at a
   start, the settings alone on stdout (`settings broken`: a file it can't read, exit 1)
+- A list item can take rows under its first (tdp's next release, panel.5, an item of several rows; from gittu): new
+  `Row.Below []BelowRow`, each a row of cells under the columns, its last cell with text running on to the row's end.
+  The first row keeps the columns, the header and the tick; the cursor is drawn on it, the rows below lit with it,
+  Surface1 across, their text in its own colours, no arrow. Moving, `N of M` and scrolling count items, a page moving
+  by the items its rows hold, the item under the cursor always in sight whole; the filter matches an item by any of
+  its rows. The showcase's `[1] PODS` has its events' messages under them on the `EVENTS` tab
 
 ## v1.2.19-beta.3 — tdp v1.2.17
 

@@ -235,6 +235,15 @@ When what it shows holds many (a folder that is new, a commit), list the items t
 them (a new folder's items are all `DiffAdded`). Its `Enter` goes into that list in the panel: `app.OpenDiff(panel,
 terminu.DiffItem{Anchor: ..., Other: ..., Items: ...})` with the same items. None shows the Pager's `EmptyFact`.
 
+## An item of several rows
+
+A list item can take rows under its first, on the items that need them (a commit's branches and tags under it):
+`Row.Below` is a `[]terminu.BelowRow`, each a row of `Cells` under the list's columns, `Styled` to colour them as
+`Row.Styled` does. Leave a cell `""` to leave its column blank, so a row's text starts where you put it; its last cell
+with text runs on to the row's end. The first row keeps the columns, the header and the tick. The cursor is drawn on
+it, and the rows below are lit with it. Moving, `N of M` and scrolling count items, and the filter matches an item by
+any of its rows (tdp panel.5).
+
 ## Modes of your own
 
 `panel.EnterMode(&terminu.Mode{...})` puts a panel in a mode of the app's own (tdp K11): only the mode's `Keys` and the

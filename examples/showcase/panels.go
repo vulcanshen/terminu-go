@@ -250,9 +250,17 @@ func shortAge(d time.Duration) string {
 	return fmt.Sprintf("%dm", int(d.Minutes()))
 }
 
+// eventRows are the Events tab's: an event's message on the rows under it,
+// starting under REASON, as many as it takes, none on the last (tdp panel.5,
+// an item of several rows).
 var eventRows = []terminu.Row{
-	{ID: "e1", Cells: []string{"web-a8k2", "Warning", "BackOff", "12", "2m"}},
-	{ID: "e2", Cells: []string{"prometheus-server-0", "Normal", "Pulled", "1", "5m"}},
+	{ID: "e1", Cells: []string{"web-a8k2", "Warning", "BackOff", "12", "2m"}, Below: []terminu.BelowRow{
+		{Cells: []string{"", "", "Back-off restarting failed container web"}},
+		{Cells: []string{"", "", "Last seen on node worker-2"}, Styled: [][]terminu.Span{nil, nil, {{Text: "Last seen on node ", Style: terminu.Fg(terminu.Overlay0)}, {Text: "worker-2", Style: terminu.Fg(terminu.Lavender)}}}},
+	}},
+	{ID: "e2", Cells: []string{"prometheus-server-0", "Normal", "Pulled", "1", "5m"}, Below: []terminu.BelowRow{
+		{Cells: []string{"", "", "Pulled image prom/prometheus:v2.51 in 1.2s"}},
+	}},
 	{ID: "e3", Cells: []string{"postgres-0", "Normal", "Started", "1", "9m"}},
 }
 

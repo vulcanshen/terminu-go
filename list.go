@@ -71,6 +71,17 @@ type Row struct {
 	// With groups, every row is in one: a row that fits no group goes in a
 	// group of its own ("Other").
 	Group string
+	// Below are the rows the item takes under its first, as many as it needs,
+	// on the items that need them (tdp panel.5, an item of several rows: a
+	// commit's branches and tags under it). Each is a row of cells under the
+	// list's columns: a cell left "" leaves its column blank, so what the
+	// row holds starts where the app puts it, and its last cell with text
+	// runs on to the row's end. The first row keeps the columns, the header
+	// and the tick; the cursor is drawn on it, the rows below lit with it,
+	// Surface1 across, their text in its own colours. Moving, N of M and
+	// scrolling count items, the item under the cursor always in sight whole;
+	// the filter matches an item by the text of any of its rows.
+	Below []BelowRow
 	// Flag is drawn in the mark column of a list with Flags: one sign, its
 	// glyph and colour the app's (locku's Green ● before the active
 	// profile); none leaves the column blank (tdp panel.7).
@@ -374,7 +385,7 @@ func (l *List) rebuild() {
 		q := l.filter.value()
 		kept := idx[:0]
 		for _, i := range idx {
-			if Matches(strings.Join(l.rows[i].Cells, "\t"), q) {
+			if l.matches(i, q) {
 				kept = append(kept, i)
 			}
 		}
@@ -401,6 +412,14 @@ func (l *List) rowByID(id string) (Row, bool) {
 	return Row{}, false
 }
 
+// BelowRow is a row an item takes under its first (Row.Below): its cells
+// under the list's columns, the text the filter matches; Styled, when set for
+// a cell, draws it in colours of the app's own, as a Row's does.
+type BelowRow struct {
+	Cells  []string
+	Styled [][]Span
+}
+
 func (l *List) cell(row, col int) string {
 	if col < len(l.rows[row].Cells) {
 		return l.rows[row].Cells[col]
@@ -412,9 +431,14 @@ func (l *List) cell(row, col int) string {
 // column its tabs are spaces first.
 func (l *List) shown(row, col int) string {
 	r := &l.rows[row]
+	return l.shownOf(r.Cells, r.Styled, col)
+}
+
+// shownOf is the cell col of a row's cells and spans as it is drawn.
+func (l *List) shownOf(cells []string, styled [][]Span, col int) string {
 	line := col < len(l.Columns) && l.Columns[col].Line
-	if col < len(r.Styled) && r.Styled[col] != nil {
-		spans := r.Styled[col]
+	if col < len(styled) && styled[col] != nil {
+		spans := styled[col]
 		if line {
 			spans = slices.Clone(spans)
 			for i := range spans {
@@ -423,10 +447,61 @@ func (l *List) shown(row, col int) string {
 		}
 		return spansText(spans)
 	}
-	if line {
-		return Escape(expandTabs(l.cell(row, col)))
+	text := ""
+	if col < len(cells) {
+		text = cells[col]
 	}
-	return Escape(l.cell(row, col))
+	if line {
+		return Escape(expandTabs(text))
+	}
+	return Escape(text)
+}
+
+// belowText is row's below row k as drawn in room cells, the columns ws
+// wide: its cells under the columns, its last cell with text running on to
+// the row's end (tdp panel.5).
+func (l *List) belowText(row, k int, ws []int, room int) string {
+	b := l.rows[row].Below[k]
+	last := -1
+	for c := range ws {
+		if ws[c] >= 0 && (c < len(b.Cells) && b.Cells[c] != "" || c < len(b.Styled) && b.Styled[c] != nil) {
+			last = c
+		}
+	}
+	var parts []string
+	used := 0
+	for c := range ws {
+		if ws[c] < 0 {
+			continue
+		}
+		v := l.shownOf(b.Cells, b.Styled, c)
+		if c == last {
+			if c < len(l.Columns) && l.Columns[c].Path {
+				parts = append(parts, FitLeft(v, max(room-used, 0)))
+			} else {
+				parts = append(parts, Fit(v, max(room-used, 0)))
+			}
+			break
+		}
+		parts = append(parts, Fit(v, ws[c]))
+		used += ws[c] + 2
+	}
+	return strings.Join(parts, "  ")
+}
+
+// matches reports whether row's text, any of its rows', matches q (tdp
+// panel.14, panel.5).
+func (l *List) matches(row int, q string) bool {
+	r := &l.rows[row]
+	if Matches(strings.Join(r.Cells, "\t"), q) {
+		return true
+	}
+	for _, b := range r.Below {
+		if Matches(strings.Join(b.Cells, "\t"), q) {
+			return true
+		}
+	}
+	return false
 }
 
 // compare orders two rows by one column: numbers by value, text as text.
@@ -525,9 +600,14 @@ func (l *List) draw(w, h int, focused, own bool) []string {
 		l.top = want
 	}
 	seen := max(rows-l.cover, 1) // the rows above the inspect toast (tdp toast.4)
-	if cl >= l.top+seen {
-		l.top = cl - seen + 1
+	end := cl                    // the cursor's item's last row: all of it in sight (tdp panel.5)
+	for end+1 < len(lines) && lines[end+1].item == l.cursor && lines[end+1].below > 0 {
+		end++
 	}
+	if end >= l.top+seen {
+		l.top = end - seen + 1
+	}
+	l.top = min(l.top, max(want, 0)) // one taller than the view: from its first row
 	l.top = min(max(l.top, 0), max(len(lines)-seen, 0))
 	for i := 0; i < rows; i++ {
 		li := l.top + i
@@ -542,6 +622,22 @@ func (l *List) draw(w, h int, focused, own bool) []string {
 		}
 		vi := lines[li].item
 		r := l.view[vi]
+		if k := lines[li].below; k > 0 {
+			// A row under the item's first: under the columns, the mark
+			// column blank; under the cursor lit with it, Surface1 across,
+			// its text in its own colours, no arrow (tdp panel.5).
+			row := " " + indent + Repeat(" ", markW) + l.belowText(r, k-1, widths, textW-markW)
+			if vi == l.cursor {
+				bg := Surface1
+				if l.Typing() {
+					bg = DimColor(Surface1) // the cursor dimmed once (tdp P6)
+				}
+				out = append(out, underLit(Pad(row, w), bg))
+				continue
+			}
+			out = append(out, Pad(row, w-arrow)+Repeat(" ", arrow))
+			continue
+		}
 		// mark is the row's sign on a cursor block; shown, the one drawn
 		// elsewhere: the tick in Green, a flag in its colour.
 		mark, shown := "", ""
@@ -596,13 +692,16 @@ func (l *List) draw(w, h int, focused, own bool) []string {
 }
 
 // listLine is one line of the list's rows: a row (its index in view) or a
-// group's title (item -1).
+// group's title (item -1); below is which of the item's rows under its first
+// it is, 0 for the first.
 type listLine struct {
 	item  int
 	title string
+	below int
 }
 
-// lines are the rows shown, each group's title before its first row.
+// lines are the rows shown, each group's title before its first row, each
+// item's rows under its first after it.
 func (l *List) lines() []listLine {
 	out := make([]listLine, 0, len(l.view))
 	prev := ""
@@ -612,8 +711,25 @@ func (l *List) lines() []listLine {
 		}
 		prev = l.rows[r].Group
 		out = append(out, listLine{item: vi})
+		for k := range l.rows[r].Below {
+			out = append(out, listLine{item: vi, below: k + 1})
+		}
 	}
 	return out
+}
+
+// pageItems is how many items from the cursor, down when dir is 1, fit in
+// rows rows, at least one: a page moves by items, landing on one's first
+// row (tdp panel.5).
+func (l *List) pageItems(rows, dir int) int {
+	n, used := 0, 0
+	for i := l.cursor + dir; i >= 0 && i < len(l.view); i += dir {
+		if used += 1 + len(l.rows[l.view[i]].Below); used > rows {
+			break
+		}
+		n++
+	}
+	return max(n, 1)
 }
 
 // moved runs OnMove when the row under the cursor is another than last time.
@@ -904,9 +1020,9 @@ func (l *List) Key(key string, msg tea.KeyMsg) (bool, tea.Cmd) {
 			l.cursor = (l.cursor - 1 + n) % n
 		}
 	case "d", "PgDn":
-		l.cursor = min(l.cursor+half, max(n-1, 0))
+		l.cursor = min(l.cursor+l.pageItems(half, 1), max(n-1, 0))
 	case "u", "PgUp":
-		l.cursor = max(l.cursor-half, 0)
+		l.cursor = max(l.cursor-l.pageItems(half, -1), 0)
 	case "gg":
 		l.cursor = 0
 	case "G":

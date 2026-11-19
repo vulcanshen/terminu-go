@@ -593,3 +593,53 @@ func TestCommandLine(t *testing.T) {
 		t.Errorf("settings used wrong: exit %d", code)
 	}
 }
+
+// An item of several rows (tdp panel.5, panel-181 to panel-183, from gittu):
+// [1] PODS' EVENTS tab has each event's message under it, starting under
+// REASON, only some events taller; the rows below the cursor's item lit with
+// it, Surface1, another item's not; j moves an item; the filter finds an
+// event by its message.
+func TestEventsSeveralRows(t *testing.T) {
+	s := newShowcase()
+	d := tdptest.Start(t, s.app, 140, 40)
+	d.Press("P", "1", "l", "g", "g") // EVENTS, sorted by object: postgres-0 first
+	const surface = "48;2;69;71;90"
+	lit := func(text string) bool {
+		for i, l := range d.Screen() {
+			if strings.Contains(l, text) {
+				return strings.Contains(d.Styled()[i], surface)
+			}
+		}
+		t.Fatalf("no %q:\n%s", text, strings.Join(d.Screen(), "\n"))
+		return false
+	}
+	screen := d.Screen()
+	row := func(text string) int {
+		for i, l := range screen {
+			if strings.Contains(l, text) {
+				return i
+			}
+		}
+		return -1
+	}
+	reason, message := row("BackOff"), row("Back-off restarting")
+	if message != reason+1 || row("Last seen on node worker-2") != reason+2 || strings.Index(screen[message], "Back-off") != strings.Index(screen[reason], "BackOff") {
+		t.Errorf("the message is not under REASON:\n%s", strings.Join(screen, "\n"))
+	}
+	if lit("Pulled image") || lit("Back-off restarting") {
+		t.Error("on postgres-0, another event's rows are lit")
+	}
+	d.Press("j") // prometheus-server-0: one item down, its row below lit
+	if r, _ := s.panels.podList.Current(); r.ID != "e2" || !lit("Pulled image") || lit("Back-off restarting") {
+		t.Errorf("j: on %s, or the wrong rows lit", r.ID)
+	}
+	d.Press("j") // web-a8k2, two rows below
+	if r, _ := s.panels.podList.Current(); r.ID != "e1" || !lit("Back-off restarting") || !lit("Last seen on node") || lit("Pulled image") {
+		t.Errorf("j again: on %s, or the wrong rows lit", r.ID)
+	}
+	d.Press("/")
+	d.Type("worker-2")
+	if !d.Has("web-a8k2") || d.Has("prometheus-server-0") || d.Has("postgres-0") {
+		t.Errorf("the filter did not find web-a8k2 by its message:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+}

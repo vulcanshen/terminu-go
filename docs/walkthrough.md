@@ -58,6 +58,8 @@ go build -o /tmp/showcase ./examples/showcase
 **P — Panels**：panel 的每一種長相與狀態。
 - `[1] PODS` 是一般清單：`j|k` `u|d` `gg|G` 移、`h|l` 換 tab（PODS／EVENTS）、`/` 篩選、`m` 標記、`x` 刪除（confirm）、
   `s` 排序、`go` 跳到第一個沒在跑的、`D` 拖曳模式（框與模式名變色，拿著的那一列 Yellow、標記欄畫上下箭頭；`j|k` 搬、到頭尾繞回，`Enter` 放下，`Esc` 放回）。
+  `EVENTS` tab 是占好幾列的項目（panel-181～183）：事件的訊息在 REASON 底下，`BackOff` 兩列、`Pulled` 一列、`Started` 只有一列；
+  cursor 只畫在第一列，下面幾列跟著亮（Surface1 底、字照原本的顏色、沒有箭頭）；`j|k` 一次一項；按 `/` 打 `worker-2`，找到 `web-a8k2`。
 - `Space` 裡有切狀態的開關：`Empty`、`Loading`、`Fail`、`Disable`，與五種 toast（`Toast success`、`Toast info`、`Toast warning`、`Toast error`、`Toast long`）。
   `Disable` 之後下框 hint 的 `m:mark` 變停用色；I 的 `[2] FILES` 選了只列按得了的，`Disable` 之後 `V:view` 不見。
 - `[2] LOG` 是一直進來的串流：在結尾時跟著往下，往上捲就停在那裡；`Enter` 用 viewer 看全部。`Space` 裡的 `Status` 把最後一行進來的時間

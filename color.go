@@ -128,6 +128,16 @@ var sgrAt = regexp.MustCompile(`^\x1b\[[0-9;:]*m`)
 // block's style, Base on the block's colour, except the swatches, runs of █
 // whose content is a colour, which keep their own (tdp
 // color.2).
+// underLit is s on a background of bg, its text keeping its own colours,
+// what it leaves unstyled in Text: an item's rows under the cursor's first
+// (tdp panel.5).
+func underLit(s string, bg Color) string {
+	on := "\x1b[" + sgrRGB(false, bg.RGB) + "m\x1b[" + sgrRGB(true, Text.RGB) + "m"
+	s = strings.ReplaceAll(s, "\x1b[0m", "\x1b[0m"+on)
+	s = strings.ReplaceAll(s, "\x1b[m", "\x1b[m"+on)
+	return on + s + "\x1b[0m"
+}
+
 func onBlock(s string, block Style) string {
 	var out, plain strings.Builder // plain: the text waiting to go on the block
 	flush := func() {

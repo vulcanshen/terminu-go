@@ -199,6 +199,13 @@ panel 列的東西，或把它的 cursor 放到某一項上時（例：在別的
 進到那份清單：`app.OpenDiff(panel, terminu.DiffItem{Anchor: ..., Other: ..., Items: ...})`，給同樣的項目。一項都沒有時，顯示
 Pager 的 `EmptyFact`。
 
+## 占好幾列的項目
+
+清單的項目可以在第一列下面再多幾列，只給需要的項目（例：commit 的分支與 tag 放在它下面）：`Row.Below` 是
+`[]terminu.BelowRow`，每一列是一排放在清單欄位底下的 `Cells`，要上色用 `Styled`，跟 `Row.Styled` 一樣。格子給 `""` 那一欄就留白，
+所以一列的字從哪裡開始由你放；有字的最後一格一直延伸到列尾。欄位、表頭與勾都在第一列。cursor 畫在第一列，下面幾列跟著亮。
+移動、`N of M` 與捲動都算項目，panel filter 比對項目時每一列的字都算（tdp panel.5）。
+
 ## app 自己的模式
 
 `panel.EnterMode(&terminu.Mode{...})` 讓 panel 進入 app 自己的模式（tdp K11）：只有模式的 `Keys` 與 core key 作用，`Esc` 離開。
