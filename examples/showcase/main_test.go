@@ -391,3 +391,23 @@ func TestTwoVersions(t *testing.T) {
 		t.Errorf("Esc did not go back to the files:\n%s", strings.Join(d.Screen(), "\n"))
 	}
 }
+
+// An action showing something in a panel leaves the lists of the items that
+// differ it went into first (Panel.LeaveDiff, from gitreu): [1]'s M from
+// inside the last commit lands on main.go in [2]'s own files.
+func TestShowMainLeavesDiff(t *testing.T) {
+	s := newShowcase()
+	d := tdptest.Start(t, s.app, 140, 40)
+	is := s.inputs
+	d.Press("I", "2", "K", "j", "j", "j", "j", "Enter") // into the last commit, then themes/
+	if !d.Has("themes @ 1a2b3c4 ↔ themes @ 5d6e7f8") {
+		t.Fatalf("not inside themes/:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Press("1", "M")
+	if r, _ := is.fileList.Current(); d.Has("↔") || r.ID != filepath.Join(projectDir, "main.go") || s.app.Screen().Focused() != is.files {
+		t.Errorf("not on main.go in [2]:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	if d.Press("Esc"); d.Has("↔") {
+		t.Error("Esc found a list of the items that differ left behind")
+	}
+}

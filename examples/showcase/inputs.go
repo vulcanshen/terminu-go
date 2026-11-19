@@ -244,7 +244,11 @@ func newInputsScreen(s *showcase) *inputsScreen {
 		}},
 	}
 	is.inputs = &terminu.Panel{Label: "Inputs", Body: is.values}
-	is.inputs.Actions = is.stateActions(is.inputs)
+	// Showing something in [2] leaves what [2] went into first: from inside
+	// the last commit (K) too, the cursor lands on main.go in the files.
+	is.inputs.Actions = append([]terminu.Action{
+		{Key: "M", Label: "Show main.go", Desc: "in [2] FILES, out of the commit it went into", Scope: terminu.PanelScope, Do: is.showMain},
+	}, is.stateActions(is.inputs)...)
 
 	is.fileList = &terminu.List{
 		Columns:   fileColumns,
@@ -388,6 +392,19 @@ func (is *inputsScreen) changes() tea.Cmd {
 			b, err := os.ReadFile(row.ID)
 			return committed(rel, string(b)), string(b), err
 		}})
+}
+
+// showMain shows main.go in [2] FILES: out of every list of the items that
+// differ [2] went into (Panel.LeaveDiff), on its FILES tab, the cursor on
+// main.go, the focus there.
+func (is *inputsScreen) showMain() tea.Cmd {
+	is.files.LeaveDiff()
+	if is.tab != 0 {
+		is.files.Tab = 0
+		is.switchTab(0)
+	}
+	is.fileList.Select(filepath.Join(projectDir, "main.go"))
+	return is.s.app.Focus(is.files)
 }
 
 // rows are the rows of the Files panel's tab.

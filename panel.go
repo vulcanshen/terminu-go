@@ -360,6 +360,15 @@ func (p *Panel) inDiff() bool {
 // upDiff goes up a level of the items that differ (tdp panel.9).
 func (p *Panel) upDiff() { p.levels = p.levels[:len(p.levels)-1] }
 
+// LeaveDiff leaves every list of the items that differ the panel went into
+// (App.OpenDiff, tdp panel.9), back to its own rows as they are now, the
+// cursor where the app left it: for an action of the app's own that shows
+// something in the panel (Enter on a branch putting its commit under the
+// cursor of the panel that went into a commit), as if Esc were pressed
+// until it is back. It does nothing when there is none. A mode the panel
+// is in stays: a compare mode goes back to picking, its anchor kept.
+func (p *Panel) LeaveDiff() { p.levels = nil }
+
 // EnterMode puts the panel in m; Esc leaves it (tdp K11).
 func (p *Panel) EnterMode(m *Mode) { p.mode, p.under = m, nil }
 

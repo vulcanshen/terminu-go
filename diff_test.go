@@ -254,3 +254,47 @@ func TestOpenDiff(t *testing.T) {
 		t.Errorf("an error:\n%s", ta.screenText())
 	}
 }
+
+// TestLeaveDiff: LeaveDiff leaves every list of the items that differ the
+// panel went into, back to its own rows with the cursor where the app put
+// it, and does nothing when there is none; a compare mode stays, its anchor
+// kept (from gitreu).
+func TestLeaveDiff(t *testing.T) {
+	ta := newTestApp(t)
+	ta.pods.LeaveDiff() // none: nothing
+	if ta.pods.level() != nil || !strings.Contains(ta.screenText(), "pod-00") {
+		t.Fatal("LeaveDiff with no list changed the panel")
+	}
+	text := func(a, b string) func() (string, string, error) {
+		return func() (string, string, error) { return a, b, nil }
+	}
+	inner := DiffItem{Mark: DiffChanged, Name: "src", Anchor: "src @ a", Other: "src @ b", Items: func() ([]DiffItem, error) {
+		return []DiffItem{{Mark: DiffAdded, Name: "x.go", Anchor: "x.go @ a", Other: "x.go @ b", Text: text("", "x\n")}}, nil
+	}}
+	ta.OpenDiff(ta.pods, DiffItem{Anchor: "a", Other: "b", Items: func() ([]DiffItem, error) { return []DiffItem{inner}, nil }})
+	ta.press("Enter") // in again, into src
+	if len(ta.pods.levels) != 2 {
+		t.Fatalf("%d levels, want 2", len(ta.pods.levels))
+	}
+	// The app's own action: its row under the cursor, the panel back.
+	ta.list.Select("5")
+	ta.pods.LeaveDiff()
+	ta.settle()
+	if r, _ := ta.list.Current(); ta.pods.level() != nil || r.ID != "5" || strings.Contains(ta.screenText(), "↔") || !strings.Contains(ta.screenText(), "pod-05") {
+		t.Errorf("not back on pod-05:\n%s", ta.screenText())
+	}
+	if ta.press("Enter"); len(ta.ran) == 0 || ta.ran[len(ta.ran)-1] != "logs" {
+		t.Errorf("the panel's own Enter after: %v", ta.ran)
+	}
+
+	// In a compare mode: the mode stays, its anchor kept.
+	tm := manyApp(t)
+	tm.press("j", "j", "j", "C", "j", "Enter", "j", "j", "j", "j", "Enter")
+	if len(tm.pods.levels) != 2 {
+		t.Fatalf("%d levels in the mode, want 2", len(tm.pods.levels))
+	}
+	tm.pods.LeaveDiff()
+	if tm.pods.level() != nil || tm.pods.InMode() == nil || tm.list.Anchor != "3" {
+		t.Error("LeaveDiff left the compare mode, or its anchor")
+	}
+}

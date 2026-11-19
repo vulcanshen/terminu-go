@@ -194,7 +194,9 @@ out what is the same on both sides, and read a text only when it is asked for.
 An action of your own that shows two versions of one item (a file in a commit against the commit before it, a file
 being edited against its last commit) opens the same comparison with `app.OpenDiff(panel, item)`: with `Text`, the
 comparison; with `Items`, the list of what differs in it, in the panel in place of its rows until `Esc` brings them
-back.
+back. An action of yours that shows something else in that panel (Enter on a branch putting its commit under the
+cursor) calls `panel.LeaveDiff()` first: it leaves every such list, as if `Esc` were pressed until the panel's rows
+are back, and does nothing when there is none.
 
 ## Modes of your own
 
@@ -411,7 +413,7 @@ delete its on-screen code and its E5 code; E1, E3, E6, E7 and its own icon stay.
 
 ## Which terminu design
 
-terminu-go implements **tdp v1.2.16**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
+terminu-go implements **tdp v1.2.17**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
 
 ## Links
 

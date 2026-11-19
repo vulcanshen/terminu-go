@@ -1,7 +1,7 @@
 # terminu-go 開發者備忘
 
 terminu-go 是 terminu design principle（tdp）的 Go 實作：給 app 呼叫的 lib，加上展示場 `examples/showcase`。遵循 terminu design
-principle，目前對應 tdp v1.2.16。lib 只照 tdp 最新 tag 的文字做；規範沒寫或照做不好用的地方回報給 tdp，不在 lib 裡自己決定。
+principle，目前對應 tdp v1.2.17。lib 只照 tdp 最新 tag 的文字做；規範沒寫或照做不好用的地方回報給 tdp，不在 lib 裡自己決定。
 
 ## 運作方式
 
@@ -199,7 +199,9 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   `Body`、`Actions`、`Location` 都不動。lib 讀 panel 的內容與動作一律走 `p.body()`、`p.actions()`，畫位置列時有清單就用清單的：
   app 在清單開著時換了自己的 `Body`（例：`OnTab` 換 tab）或改了列，`Esc` 退回時看到的就是 app 現在的樣子，不會被 lib 存著的舊值蓋掉。
   清單裡 panel 自己的 inspect 與 `OtherKeys` 不出現，它們講的是 app 自己的列。比較模式裡進去的清單記著那個模式：模式不變，
-  它的鍵改作用在清單上，`Esc` 先退一層（`leavePanelMode`），模式結束時一起關掉（`LeaveMode`）。
+  它的鍵改作用在清單上，`Esc` 先退一層（`leavePanelMode`），模式結束時一起關掉（`LeaveMode`）。app 自己的動作要在 panel 顯示
+  別的東西時叫 `Panel.LeaveDiff()`，一次拿掉全部的層（gitreu 在分支上按 `Enter` 時，commit 圖可能還在某個 commit 的清單裡）；
+  不另給 `InDiff`：沒有清單時叫它什麼都不做，app 不用先問。
   - 比較每次都在 UNIFIED 打開，選的 tab 只在那一個比較開著時有效（縮到 96 以下再拉回來，回到這次選的 SPLIT），不記（tdp e7c5b13：
     兩個 tab 只差一個鍵，不值得存）。`Compare.Split` 因此沒有作用，標成 Deprecated、留著讓 kbu 照樣編得過，之後的 minor 版拿掉。
 

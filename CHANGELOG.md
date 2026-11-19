@@ -2,6 +2,26 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.18 — tdp v1.2.17
+
+Everything since v1.2.17, the beta v1.2.18-beta.1 included:
+
+- Comparing two rows that hold many (two directories, two namespaces, two commits) goes in to a list of the items
+  that differ (tdp panel.9): each item's mark first (`+` Green, `-` Red, `~` Peach), the same ones left out, the
+  location row and each item's comparison named with its two sides as the app names them, `Enter` opening a
+  comparison or going in again, `Esc` back up a level at a time. `Compare.Many`, `Compare.Items`, `DiffItem` and
+  `DiffMark` do it (from gitreu)
+- An action of the app's own that shows two versions of one item opens the same comparison, and one whose change
+  holds many goes in to the same list (tdp note.8): `App.OpenDiff(panel, item)`. An action that shows something
+  else in that panel calls `Panel.LeaveDiff()` first, leaving every such list, as `Esc` pressed until the panel's
+  rows are back; nothing when there is none (from gitreu)
+- Every comparison opens on UNIFIED, and the tab chosen is not kept (tdp note.8). `Compare.Split` does nothing now:
+  it is deprecated, kept so that code setting it still builds, and goes in a later minor version
+- A key the app never read (a typo) is kept as one it no longer reads, its INFO entry saying `Not read`; outside the
+  TUI (a screen not part of it, output printed for another program to show) nothing is written and the problem is
+  shown there (tdp E3, from ccdrawu): the settings file and those screens are the app's own, so the lib has nothing
+  to do
+
 ## v1.2.18-beta.1 — tdp v1.2.16
 
 - tdp's next release (panel.9) has comparing two rows that hold many (two directories, two namespaces, two

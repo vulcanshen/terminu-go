@@ -164,7 +164,8 @@ UNIFIED 或 SPLIT。兩列都裝著許多項目時（兩個資料夾、兩個 na
 
 app 自己的動作要顯示同一項的兩個版本時（commit 裡的一個檔對它前一個 commit、正在改的檔對它最後一次 commit），用
 `app.OpenDiff(panel, item)` 打開同一種比較：有 `Text` 就是那個比較；有 `Items` 就是它裡面有差異的項目清單，畫在 panel 裡
-取代原本的列，按 `Esc` 回到原本的列。
+取代原本的列，按 `Esc` 回到原本的列。app 自己的動作要在那個 panel 顯示別的東西時（例：在分支上按 `Enter`，把它的 commit
+放到 cursor 下），先叫 `panel.LeaveDiff()`：離開每一層這種清單，像一直按 `Esc` 到原本的列回來為止；沒有清單時什麼都不做。
 
 ## app 自己的模式
 
@@ -356,7 +357,7 @@ tdp E8 對任何共用的 lib 只留三點：用 lib 的 app 不另外做 lib �
 
 ## 實作哪一版 terminu design
 
-terminu-go 實作 **tdp v1.2.16**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
+terminu-go 實作 **tdp v1.2.17**。每一版對應的 tdp 版本寫在 [CHANGELOG](CHANGELOG.md)。
 
 ## 相關連結
 
