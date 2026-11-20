@@ -45,6 +45,9 @@ type toastView struct {
 	// inspect makes it the inspect toast (tdp toast.4): no timer and no hint,
 	// Esc going through it too; its kind is Info, for its text in Text.
 	inspect bool
+	// notice is a toast App.Notify showed: one Notify gives while it shows
+	// joins it (tdp E3).
+	notice bool
 }
 
 type toastDone struct{ id int }

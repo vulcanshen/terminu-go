@@ -90,3 +90,74 @@ func TestE3Notify(t *testing.T) {
 		t.Error("nothing: a command")
 	}
 }
+
+// TestE3ComingLater: one that comes after the start joins the start's toast
+// while it still shows, a row more, its kind the strongest again, its time
+// starting over; once that toast is gone it is a toast of its own; the App
+// Log keeps an entry a row (tdp E3 "Coming later", E3-43, from kbu). Notify
+// does not join an ordinary toast: that one is replaced, as toasts are.
+func TestE3ComingLater(t *testing.T) {
+	ta := newTestApp(t)
+	view := func() *toastView {
+		if ta.toast == nil || ta.toast.closing {
+			return nil
+		}
+		return ta.toast.view.(*toastView)
+	}
+	before := len(ta.logs.entries)
+	ta.Notify(Notice{Kind: Info, Text: "Settings moved from ~/.app to ~/.config/app"})
+	ta.settle()
+	first := view().id
+	ta.Notify(Notice{Kind: Warning, Text: `Namespace "dev" is not in the cluster: using the others`})
+	ta.settle()
+	v := view()
+	if v == nil || !slices.Equal(v.text, []string{"Settings moved from ~/.app to ~/.config/app", `Namespace "dev" is not in the cluster: using the others`}) {
+		t.Fatalf("the late one did not join the start's toast: %+v", v)
+	}
+	if v.kind != Warning {
+		t.Errorf("the kind is not the strongest again: %v", v.kind)
+	}
+	ta.Update(toastDone{first})
+	ta.settle()
+	if view() == nil {
+		t.Fatal("the start toast's time closed the joined one: its time starts over")
+	}
+	ta.Notify(Notice{Kind: Info, Text: `Kind "Widget" is not in the cluster: using the default`})
+	ta.settle()
+	if v = view(); len(v.text) != 3 || v.kind != Warning {
+		t.Errorf("a third: %d rows, %v", len(v.text), v.kind)
+	}
+	if n := len(ta.logs.entries) - before; n != 3 {
+		t.Errorf("the App Log has %d entries, not one a row", n)
+	}
+
+	// Gone (its time up, or Esc), or going: on its own.
+	ta.Update(toastDone{v.id}) // its time up: closing
+	ta.Notify(Notice{Kind: Info, Text: "While it goes"})
+	if v = view(); v == nil || !slices.Equal(v.text, []string{"While it goes"}) {
+		t.Errorf("a toast on its way out was joined: %+v", v)
+	}
+	ta.settle()
+	ta.Update(toastDone{v.id})
+	ta.settle()
+	ta.Notify(Notice{Kind: Info, Text: "Later still"})
+	ta.settle()
+	if v = view(); v == nil || !slices.Equal(v.text, []string{"Later still"}) || v.kind != Info {
+		t.Errorf("after the toast went: %+v", v)
+	}
+	ta.press("Esc")
+	ta.Notify(Notice{Kind: Warning, Text: "After Esc"})
+	ta.settle()
+	if v = view(); v == nil || !slices.Equal(v.text, []string{"After Esc"}) {
+		t.Errorf("after Esc: %+v", v)
+	}
+
+	// An ordinary toast is not joined, and does not take later ones in.
+	ta.Toast(Info, "Saved")
+	ta.settle()
+	ta.Notify(Notice{Kind: Warning, Text: "A late one"})
+	ta.settle()
+	if v = view(); v == nil || !slices.Equal(v.text, []string{"A late one"}) {
+		t.Errorf("an ordinary toast was joined: %+v", v)
+	}
+}

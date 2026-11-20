@@ -782,3 +782,61 @@ func TestDiffInChanges(t *testing.T) {
 		t.Errorf("the Diff mode as before:\n%s", strings.Join(d.Screen(), "\n"))
 	}
 }
+
+// What the start learns only later joins its toast while it still shows,
+// and comes on its own once it is gone (tdp E3 "Coming later", E3-43):
+// D "Coming later".
+func TestComingLater(t *testing.T) {
+	s := newShowcase()
+	d := tdptest.Start(t, s.app, 160, 40)
+	fit := "2 values in config.yaml did not fit: defaults used, yours kept in config.yaml.bak"
+	d.Do(s.dialogs.comingLater)
+	if !d.Has(fit) || d.Has(lateNamespace) {
+		t.Fatalf("the start's toast:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Advance(2 * time.Second)
+	if !d.Has(fit) || !d.Has(lateNamespace) || !d.Has("WARNING") {
+		t.Errorf("the late one did not join the toast:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Advance(3 * time.Second) // past the start toast's time: the joined one's starts over
+	if !d.Has(lateNamespace) {
+		t.Error("the joined toast went with the start's time")
+	}
+	d.Advance(5 * time.Second)
+	d.Do(s.dialogs.comingLater)
+	d.Press("Esc") // the start's toast gone first
+	d.Advance(2 * time.Second)
+	if d.Has(fit) || !d.Has(lateNamespace) {
+		t.Errorf("after Esc the late one is not on its own:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+}
+
+// In [3] the Diff mode says it cannot diff a row with the anchor, and shows
+// a side it cannot read as its error state, no error popup (tdp panel.9,
+// panel-187): assets/ against main.go, then against locked/.
+func TestDiffInChangesCannot(t *testing.T) {
+	s := newShowcase()
+	d := tdptest.Start(t, s.app, 200, 40)
+	is := s.inputs
+	d.Press("I", "2", "l", "l")
+	for _, act := range is.files.Actions {
+		if act.Label == "Diff in [3]" {
+			d.Do(act.Do)
+		}
+	}
+	d.Press("Esc")
+	if !is.fileList.Select(filepath.Join(projectDir, "assets")) {
+		t.Fatal("no assets/")
+	}
+	d.Press("D")
+	is.fileList.Select(filepath.Join(projectDir, "main.go"))
+	d.Press("Space", "Esc") // a message, so the details fill
+	if !d.Has("Can't diff main.go with assets") {
+		t.Errorf("a file against a folder:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	is.fileList.Select(filepath.Join(projectDir, "locked"))
+	d.Press("Space", "Esc")
+	if !d.Has("locked: ") || !d.Has("permission denied") || d.Has("DIFF: ") {
+		t.Errorf("a folder that cannot be read:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+}

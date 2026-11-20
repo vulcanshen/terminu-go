@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -126,25 +127,50 @@ func MisfitNotice(path, copy string, misfits ...Misfit) Notice {
 // at one start). In the App Log each row is an entry of its own at its own
 // kind, a misfit's WARNs right after its row. A notice with no Text has no
 // row; with no rows there is no toast.
+//
+// One that comes later (a namespace or a kind the app can ask a cluster
+// about only once its screen is open) joins the toast Notify showed while it
+// still shows: its rows after that toast's, the kind the strongest again,
+// its time starting over. Once that toast is gone (its time up, Esc), or
+// while another toast shows, it is a toast of its own. So a toast Notify
+// shows never replaces another of its own before it is read (tdp E3 "Coming
+// later").
 func (a *App) Notify(notices ...Notice) tea.Cmd {
 	var rows []string
-	kind := Info
+	var kinds []ToastKind
+	if t := a.toast; t != nil && !t.closing {
+		if v := t.view.(*toastView); v.notice {
+			rows, kinds = slices.Clone(v.text), []ToastKind{v.kind}
+		}
+	}
+	had := len(rows)
 	for _, n := range notices {
 		if n.Text != "" {
 			a.Log(n.Kind, n.Text)
-			if len(rows) == 0 || n.Kind == Error || n.Kind == Warning && kind != Error {
-				kind = n.Kind
-			}
-			rows = append(rows, n.Text)
+			rows, kinds = append(rows, n.Text), append(kinds, n.Kind)
 		}
 		for _, w := range n.warns {
 			a.Log(Warning, w)
 		}
 	}
-	if len(rows) == 0 {
+	if len(rows) == had {
 		return nil
 	}
-	return a.showToast(kind, rows)
+	cmd := a.showToast(strongest(kinds), rows)
+	a.toast.view.(*toastView).notice = true
+	return cmd
+}
+
+// strongest is the kind of a toast whose rows are of kinds, in order: Error,
+// then Warning, else the first's (tdp E3).
+func strongest(kinds []ToastKind) ToastKind {
+	kind := kinds[0]
+	for _, k := range kinds {
+		if k == Error || k == Warning && kind != Error {
+			kind = k
+		}
+	}
+	return kind
 }
 
 // DidNotFitText is DidNotFit's sentence, for an app with no screen to write

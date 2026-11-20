@@ -47,6 +47,16 @@ func (ds *dialogsScreen) didNotFit(readOnly bool, also ...terminu.Notice) tea.Cm
 	return ds.s.app.Notify(append(notices, also...)...)
 }
 
+// comingLater is a start whose toast says what did not fit, and a namespace
+// the cluster answers about 2 s later (tdp E3 "Coming later"): Notify joins
+// it to that toast while it shows, a row more, Warning, its time starting
+// over; once the toast is gone it comes on its own.
+func (ds *dialogsScreen) comingLater() tea.Cmd {
+	return tea.Batch(ds.didNotFit(false), ds.s.app.Tick(2*time.Second, func(time.Time) tea.Msg {
+		return noticeLater{terminu.Notice{Kind: terminu.Warning, Text: lateNamespace}}
+	}))
+}
+
 // fitSettings writes the pretend settings file with two values the showcase
 // can't use and makes them fit as a start does (tdp E3): copied aside,
 // written again with the defaults; in a folder that cannot be written
@@ -134,6 +144,13 @@ type toastLater struct {
 	kind terminu.ToastKind
 	text string
 }
+
+// noticeLater is what a start learns only later (tdp E3 "Coming later"):
+// Notify joins it to the start's toast while that one shows.
+type noticeLater struct{ n terminu.Notice }
+
+// lateNamespace is the row Coming later's cluster answers with.
+const lateNamespace = `Namespace "dev" in state.yaml is not in the cluster: using the others`
 
 type loadTick struct{}
 
@@ -236,6 +253,10 @@ func (ds *dialogsScreen) scenarios() []scenario {
 		{"Several at one start", "toast", "values that do not fit and a profile that is not there: one toast, a row each; [!] has an entry each", func() tea.Cmd {
 			return ds.didNotFit(false, terminu.Notice{Kind: terminu.Warning, Text: `Profile "work" in config.yaml is not in profiles.yaml: using the default`})
 		}},
+		// What the app can ask a cluster about only once its screen is open
+		// comes seconds after the start (tdp E3 "Coming later"): it joins the
+		// start's toast while that one shows, else comes on its own.
+		{"Coming later", "toast", "the start's toast, then 2 s later a namespace the cluster is asked about: it joins the toast if it still shows (Esc it first: on its own)", ds.comingLater},
 		{"Success report", "note", "a success too long for a toast: a viewer that [Enter] closes too, in the App Log as OK", ds.report},
 		{"Toast", "toast", "a short message on the third row from the bottom", toast("Copied 3 paths")},
 		{"Toast over a popup", "toast", "a popup, then a toast: Esc takes the toast first", func() tea.Cmd {
@@ -252,6 +273,8 @@ func (ds *dialogsScreen) onMsg(msg tea.Msg) tea.Cmd {
 	switch m := msg.(type) {
 	case toastLater:
 		return ds.s.app.Toast(m.kind, m.text)
+	case noticeLater:
+		return ds.s.app.Notify(m.n)
 	case loadTick:
 		return ds.loadStep()
 	case watchTick:

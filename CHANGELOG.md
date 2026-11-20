@@ -2,6 +2,19 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.21-beta.2 — tdp v1.2.19
+
+- An E3 toast coming after the start joins the start's (tdp main, E3 "Coming later", E3-43; from kbu, the user): a
+  namespace or a kind the app can ask a cluster about only once its screen is open goes to `App.Notify` as ever, and
+  while the toast `Notify` showed is still on screen it joins it, a row more, the kind the strongest again and its
+  time starting over; once that toast is gone (its time up, `Esc`), it is a toast of its own. The App Log keeps an
+  entry a row. An ordinary toast is not joined. The showcase's Dialogs has `Coming later`
+- What a Diff mode shown in the details says on a row it cannot diff, and on a side it cannot read, is now tdp's
+  (tdp main, panel.9, panel-187; the user chose the way beta.1 did it): `Can't diff <row> with <anchor>`, and the
+  details' Red error state `<side>: <error>`, no error popup. Nothing changes from beta.1; `DiffMode.InDetails`'s doc
+  says so
+- Coverage rows for E3-43 and panel-187
+
 ## v1.2.21-beta.1 — tdp v1.2.19
 
 - A list's Diff mode may show its diff in the list's details panel (tdp main, panel.9 "With a details panel", K11,

@@ -56,7 +56,10 @@ type DiffMode struct {
 	// (Pager.SetDiff: UNIFIED; for two rows that hold many the items that
 	// differ with their marks, the location row <anchor> ↔ <the other>); on
 	// the anchor, or a row the same as it, an empty state saying so, no
-	// toast. Key or Enter on the list sends the focus to the details; there
+	// toast; on a row it cannot diff with the anchor (Can says no, or one
+	// holds many and the other not) the empty state "Can't diff <row> with
+	// <anchor>"; a side that cannot be read is the details' error state, a
+	// Red "<side>: <error>", no error popup (tdp panel.15). Key or Enter on the list sends the focus to the details; there
 	// Key or Enter opens an item's diff or goes into it, as in the list.
 	// Esc goes back the way the user came: the diff to the details, a level
 	// up, the details to the list, the mode kept with its anchor, and on the
@@ -365,8 +368,7 @@ func (a *App) fillDetails(cm *comparing) {
 		state("Move to another "+cmpOr(c.Noun, "item")+" to diff with "+cm.name, nil)
 		return
 	case !c.can(r) || c.many(r) != c.many(anchor):
-		// TODO(tdp): what the details show on a row they cannot diff is not in tdp yet.
-		state("Can't diff "+c.name(r)+" with "+cm.name, nil)
+		state("Can't diff "+c.name(r)+" with "+cm.name, nil) // an empty state saying so (tdp panel.9)
 		return
 	}
 	o.pair = cm.pairItem(anchor, r)
@@ -375,8 +377,8 @@ func (a *App) fillDetails(cm *comparing) {
 		if se := (sideErr{}); errors.As(err, &se) {
 			side = se.name
 		}
-		// TODO(tdp): a side that cannot be read is not in tdp yet: the details'
-		// error state (panel.15), not an error popup each time the cursor comes.
+		// The details' error state (tdp panel.9, panel.15): no error popup,
+		// which would open each time the cursor came by.
 		state("", &Failure{Fact: side + ": " + err.Error()})
 	}
 	same := "No differences between " + o.pair.Anchor + " and " + o.pair.Other

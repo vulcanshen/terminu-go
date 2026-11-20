@@ -102,7 +102,9 @@ go build -o /tmp/showcase ./examples/showcase
   不用按鍵，`[3]` 就列出 `releases/v1 ↔ releases/v2` 有差異的項目。按 `D`（或 `Enter`）focus 到 `[3]`，footer 寫 `Esc:back`；
   在 `conf/` 按 `Enter` 進去、在 `app.toml` 按 `Enter` 打開 Diff。之後一直按 `Esc`：視窗 → `conf/` → `[3]` → `[2]`（還在模式裡、
   anchor 還在）→ 離開模式，`[3]` 回到 cursor 那一列跟最後一次 commit 的差異。在模式裡 `Tab`、`2`、`3` 在 `[2]` 與 `[3]` 之間移動，
-  `1` 跳 `Press [Esc] to leave Diff first`。再選一次 `Diff in [3]` 回到原本的做法。
+  `1` 跳 `Press [Esc] to leave Diff first`。在專案最上層（`FOLDERS` tab 一開始的那層）也試：在 `assets/` 按 `D`，移到 `main.go`：
+  `Can't diff main.go with assets`；移到 `locked/`：`[3]` 中間是 Red 的 `locked: …permission denied`，不開 popup（panel-187）。
+  再選一次 `Diff in [3]` 回到原本的做法。
 - 篩選遇到 app 自己的動作（panel-180）：在 `releases/` 裡按 `/` 打 `v`、`Enter` 回清單，用 `D` 比 `v1/` 與 `v2/`：進去之前篩選先清掉，
   `Esc` 退回來時是整份清單、cursor 在原本那一列。
 
@@ -119,6 +121,8 @@ go build -o /tmp/showcase ./examples/showcase
   看每個值各一筆 WARN。「…, no copy」是同樣的檔放在不能寫的資料夾：沒有 `.bak`、檔案不動，跳 Error toast。
 - 「Several at one start」：同樣的檔，再加上一個不在的 profile：只跳一個 Warning toast，一件一行；按 `!` 看一件一筆，
   值的 WARN 緊接在它那一行後面。
+- 「Coming later」（E3-43）：同樣的檔跳出啟動的 toast，2 秒後才問到叢集裡沒有的 namespace：toast 還在，就多一列
+  `Namespace "dev" …`、還是 Warning、時間重算（原本該收的時候不收）。再選一次、這次先按 `Esc` 收掉：2 秒後那一列另外跳一個 toast。
 - 「Success report」：toast 放不下的成功報告開在 viewer 裡，`Enter` 也能關；按 `!` 看它以 OK 記進 App Log。
 - 「Form: with actions」有好幾個按鈕：`Tab` 到動作區先停在右下角的 `Connect`，`j|k` 在按鈕之間走。`Test` 只要 Host：空著按會被擋，
   填了再按要等一下（標題後面轉 loading icon）才跳 toast，Host 打 `bad-1` 會失敗、開 error popup，關掉後再按 `Enter` 就是重試；

@@ -145,6 +145,10 @@ app 繼續。啟動時先用 `copied, err := terminu.KeepAside(path)` 把檔複�
 （不叫 `DidNotFit`），最後叫 `app.Notify(notices...)`。toast 一件一行，種類取最重的（Error，再來 Warning，都不是就照第一行）；
 App Log 一件一筆、用它自己的種類，那個檔的 WARN 緊接在它那一行後面。沒有畫面時，改把每個 notice 的 `Lines()` 寫到 stderr，一行一行。
 
+啟動之後才來的（例：畫面開了之後才問得到叢集的 namespace、種類）也交給 `app.Notify`：`Notify` 跳的那個 toast 還在畫面上時，
+它併進去，多一列，種類重新取最重的、時間重新算；那個 toast 已經收掉了（時間到、或按了 `Esc`），才另外跳一個。所以這種 toast
+不會在被讀到之前被另一個蓋掉。App Log 照樣一件一筆。
+
 設定檔裡 app 不讀的 key 一律留著，不管是改版後不再讀的，還是從來沒讀過的（例：打錯字的 `refesh`），app 重寫那個檔時也留著：
 不跳 toast、不備份、不收成 `Notice`。每次啟動用 `app.Log(terminu.Info, …)` 各記一筆 INFO：app 知道自己以前讀過的寫
 `No longer used: measure in ~/.config/app/config.yaml; delete it if you don't need it`，其他的寫
