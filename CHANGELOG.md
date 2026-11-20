@@ -2,6 +2,19 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.3.1-beta.1 — tdp v1.3.0
+
+- An item of several rows is closed like a bracket (tdp main, panel.5, panel.9, panel-181 reworded, panel-196; from
+  gittu, the user): the cursor's item keeps its other rows' own background and colours, no Surface1; a bar (`▌`,
+  U+258C) in the cursor's colour hangs down the inside's first cell beside them, and the item's last row is
+  underlined across the inside in it (SGR 58; a terminal that cannot colour an underline uses each cell's text
+  colour). An anchor of several rows gets the same marks in Yellow, kept with the cursor on it. A blurred panel dims
+  an underline's colour with the text
+- Opening an item's note goes in the App Log, `Opened the note of <item>`, written by the lib (tdp main, panel.18,
+  note.7; from webu): a list's row by its first cell, else the note's first line. The head coming and going does not
+- The READMEs no longer say that `App.Notify` joins a late notice into the start's toast: each notice is a toast of
+  its own, stacked (pushed to main after v1.3.0)
+
 ## v1.3.0 — tdp v1.3.0
 
 A minor, with tdp's. Everything since v1.2.21, the betas v1.2.22-beta.1 to beta.3 included:
