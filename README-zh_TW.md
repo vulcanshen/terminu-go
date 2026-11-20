@@ -297,7 +297,7 @@ popup 開在 app 自己的模式裡的 panel 上時，動作真的執行時才�
 項目可以有一則附註：連結會去哪、備註（tdp panel.18）。`panel.Note` 設成一個 func，回傳 cursor 那一項的附註，沒有就回 nil
 （app 自己的模式裡用 `Mode.Note`）。cursor 停在有附註的項目上時，附註的頭出現在那一項正下方：一個小框，裡面是附註的 glyph 與
 `i`；按 `i` 打開，一個標題 `NOTE` 的 viewer 貼在那一項下方（那一項在 panel 最底下一列時開在上面），最高到 panel 高度的一半，
-有 viewer 的捲動、選取模式與 `/` 搜尋；`Esc` 收回成頭。lib 會把 `[i] Note` 放進那個 panel 的動作；`i` 是全家族打開附註的鍵
+有 viewer 的捲動、選取模式與 `/` 搜尋；`Esc` 收回成頭。打開時 lib 自己記一筆 App Log（`Opened the note of <那一項>`），app 不用另外記。lib 會把 `[i] Note` 放進那個 panel 的動作；`i` 是全家族打開附註的鍵
 （tdp K13），所以那個 panel 上 app 自己的動作不能用 `i`。`List` 自己說得出 cursor 那一項在哪；app 自己的 body 要實作
 `terminu.NoteSpot` 的 `NoteAt() (top, bottom, col int, ok bool)`。
 

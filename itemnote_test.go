@@ -144,6 +144,37 @@ func TestNoteOpen(t *testing.T) {
 	}
 }
 
+// TestNoteLogged: opening a note only looks, and goes in the App Log as
+// opening a viewer does, naming the item: a list's row by its first cell,
+// else the note's first line; the head coming and going with the cursor
+// does not (tdp panel.18, note.7).
+func TestNoteLogged(t *testing.T) {
+	ta := noteApp(t)
+	before := len(ta.logs.entries)
+	ta.press("j", "j", "k")
+	if n := len(ta.logs.entries) - before; n != 0 {
+		t.Errorf("the head moving with the cursor logged %d entries", n)
+	}
+	ta.press("i")
+	got := ta.logs.entries[before:]
+	if len(got) != 1 || got[0].kind != Info || got[0].text != "Opened the note of pod-01" {
+		t.Errorf("opening the note logged %+v", got)
+	}
+
+	// A body of the app's own: the note's first line names it.
+	ta = noteApp(t)
+	ta.pods.Note = nil
+	mode := &Mode{Name: "Focus", Note: func() []string { return []string{"go.dev/doc", "the effective Go page"} }}
+	ta.pods.EnterMode(mode)
+	ta.list.SetRows([]Row{{ID: "x", Cells: []string{""}}})
+	ta.Update(nil)
+	before = len(ta.logs.entries)
+	ta.press("i")
+	if got := ta.logs.entries[before:]; len(got) != 1 || got[0].text != "Opened the note of go.dev/doc" {
+		t.Errorf("a row with no name: %+v", got)
+	}
+}
+
 // TestNoteClose: Esc closes the note back to its head, the focus on the
 // list, the cursor where it was (tdp panel.18, panel-194).
 func TestNoteClose(t *testing.T) {

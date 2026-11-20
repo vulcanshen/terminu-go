@@ -133,7 +133,9 @@ func (a *App) drawNoteHead(area []string, p *Panel, r Rect, top, w int) {
 // openNote opens the note of the item under p's cursor (tdp panel.18): a
 // viewer titled NOTE anchored where its head is, under the item or above it,
 // at most half the panel high, the box unfolding from the head; Esc closes
-// it back to its head.
+// it back to its head. Opening it only looks, so it goes in the App Log as
+// opening a viewer does, "Opened the note of <item>" (tdp note.7); the head
+// coming and going with the cursor does not.
 func (a *App) openNote(p *Panel) tea.Cmd {
 	a.Frame() // where the item is now: its head drawn afresh
 	s := a.note
@@ -141,6 +143,7 @@ func (a *App) openNote(p *Panel) tea.Cmd {
 	if s == nil || s.p != p || len(lines) == 0 {
 		return nil
 	}
+	a.Log(Info, "Opened the note of "+noteName(p, lines))
 	v := &Viewer{Title: "Note", Glyph: glyphNote, Lines: lines, NoNumbers: true}
 	spot := *s
 	v.note = &spot
@@ -152,6 +155,17 @@ func (a *App) openNote(p *Panel) tea.Cmd {
 		}
 	}
 	return cmd
+}
+
+// noteName names the item whose note opens, for the App Log: a list's row
+// by its first cell, else the note's first line.
+func noteName(p *Panel, lines []string) string {
+	if l, ok := p.body().(*List); ok {
+		if r, ok := l.Current(); ok && len(r.Cells) > 0 && r.Cells[0] != "" {
+			return r.Cells[0]
+		}
+	}
+	return lines[0]
 }
 
 // noteSize is a note's width and height limits on a screen sw wide and its

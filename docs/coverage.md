@@ -426,6 +426,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]iff`（M4：panel 的熱鍵優�
 | panel.18 | app 可以給項目一則附註（連結會去哪、備註），哪些項目有、寫什麼是 app 的；cursor 停在有附註的項目上時，附註的頭出現在那一項正下方：一個小框，裡面是 Text 色的 U+F02FD 與 `i`，框與 `i` 用 Blue（現在按得了的鍵），蓋在下一列上；它不收鍵、不拿 focus，cursor 一移開就消失；上面開著 popup、在 panel filter 打字、focus 不在那個 panel 時不畫（panel-192，user；取代 inspect toast）。lib：`Panel.Note`（模式裡 `Mode.Note`，最內層有的先問）；`List` 自己說那一項在哪（`NoteAt`），app 自己的 body 實作 `NoteSpot` | P `[1] PODS` 把 cursor 移到 `coredns-7w9z`（CrashLoopBackOff）或一個 Pending 的 pod，再移開 | `TestNoteHead`、showcase 的 `TestPodNote` |
 | panel.18 | 按 `i` 打開：框從頭往下展開成一個貼在那一項下方的 viewer，標題 U+F02FD `NOTE`，focus 進去：可以捲動、有選取模式與 `/` 搜尋，底下變暗（F8）；最高到 panel 高度的一半，長的行換行，再多就在裡面捲動；寬度照內容、最寬到 panel 的右邊（panel-193，user）。lib：`Viewer`（不畫行號），位置跟著頭 | 同上，在 `coredns-7w9z` 按 `i`；按 `/`、`v` | `TestNoteOpen`、showcase 的 `TestPodNote` |
 | panel.18 | `Esc` 把附註收回成頭；focus 回到清單，cursor 還在原位（panel-194，user） | 同上，打開後按 `Esc` | `TestNoteClose`、showcase 的 `TestPodNote` |
+| panel.18 | 打開附註是只看不改的動作，跟開 viewer 一樣記進 App Log（note.7）；頭跟著 cursor 出現、消失不記（來自 webu）。lib：`i` 打開時 lib 自己記一筆 INFO `Opened the note of <那一項>`：清單的列寫它的第一格，沒有名字時寫附註的第一行；app 不用另外記 | P `[1] PODS` 在 `coredns-7w9z` 按 `i`，`Esc`，再按 `!` | `TestNoteLogged` |
 | panel.18 | 那一項下面沒空間時（在 panel 最底下那一列）：頭出現在那一項正上方（`└ 󰋽 i ┘`），附註從那裡往上開、照 viewer 平常的樣子（標題在上、hint 在下），下框貼著那一項（panel-195，user） | P `[1] PODS` 按 `G` 到最後一個 pod（`traefik-4b`），按 `i` | `TestNoteUp` |
 
 ## layout/popup

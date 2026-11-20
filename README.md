@@ -351,7 +351,8 @@ An item may have a note: where a link goes, a remark (tdp panel.18). Set `panel.
 the item under the cursor, nil for an item with none (in a mode of your own, `Mode.Note`). While the cursor rests on
 an item with a note, its head shows right under the item, a small box with the note glyph and `i`; `i` opens it, a
 viewer titled `NOTE` anchored under the item (above it when the item is on the panel's last row), at most half the
-panel high, with the viewer's scrolling, selection mode and `/` search; `Esc` closes it back to its head. The lib
+panel high, with the viewer's scrolling, selection mode and `/` search; `Esc` closes it back to its head. Opening it
+goes in the App Log by itself, `Opened the note of <item>`, so your app logs nothing for it. The lib
 puts `[i] Note` among the panel's actions; `i` is the family's key for it (tdp K13), so none of your actions on that
 panel may take `i`. A `List` says where its cursor's item is; a body of your own implements
 `terminu.NoteSpot`'s `NoteAt() (top, bottom, col int, ok bool)`.
