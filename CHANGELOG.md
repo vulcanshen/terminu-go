@@ -2,6 +2,28 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.21 — tdp v1.2.20
+
+Everything since v1.2.20, the betas v1.2.21-beta.1 to beta.3 included:
+
+- A list's Diff mode may show its diff in the list's details panel (tdp panel.9 "With a details panel", K11,
+  panel-185 to panel-187; from gittu): `DiffMode.InDetails`, the app's pick, and `DiffMode.Noun`. The mode spans the
+  list and its `Panel.Details`, both frames in the mode's colour with `Diff`; the details follow the cursor with the
+  anchor's diff (UNIFIED, or the items that differ with their marks and the location row), an empty state on the
+  anchor, on a row the same as it and on a row it cannot diff, the details' Red error state on a side it cannot
+  read, never a toast or an error popup. The diff key or `Enter` on the list sends the focus to the details; `Esc`
+  goes back the way the user came; `Tab` and the two digits move between them. `AddScreen` panics when the list's
+  `Details` is not another panel of the screen
+- An E3 toast coming after the start joins the start's while it still shows (tdp E3 "Coming later", E3-43; from
+  kbu): `App.Notify` does it by itself, a row more, the kind the strongest again, its time starting over; once that
+  toast is gone it is a toast of its own. The App Log keeps an entry a row
+- A panel in a mode hints the mode's keys on its bottom border, not its own actions (tdp K11, panel.1; from gittu)
+- D is the Diff mode's key in every app, x and X delete (tdp K13; from kbu): the lib has no default key for the Diff
+  mode, so only `DiffMode.Key`'s doc and the READMEs' example change; the showcase follows
+- The showcase: `[2] FILES` switches its Diff to `[3] CHANGES` with `Diff in [3]`; Dialogs has `Coming later`
+- The coverage has rows for K13-1 to K13-3, E3-41 to E3-43 (E3-41 and E3-42 the app's), panel-185 to panel-187 and
+  the mode's hint
+
 ## v1.2.21-beta.3 — tdp v1.2.19
 
 - A panel in a mode hints the mode's keys on its bottom border, not its own actions, which do not work there (tdp K11,
