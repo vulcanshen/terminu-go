@@ -329,13 +329,13 @@ func (a *App) detailsMode(cm *comparing) *Mode {
 }
 
 // diffOver is a Diff mode's diff shown in a list's details, in place of its
-// body: body is what it shows, acts the Enter its hint writes. shows is
-// false for an empty state; items are body's when it lists the items that
-// differ; pair is the two rows, for Enter on their texts.
+// body: body is what it shows, always in the mode, whose keys work on it
+// and fill its hint. shows is false for an empty state; items are body's
+// when it lists the items that differ; pair is the two rows, for Enter on
+// their texts.
 type diffOver struct {
 	mode  *Mode
 	body  Body
-	acts  []Action
 	shows bool
 	items []DiffItem
 	pair  DiffItem
@@ -390,8 +390,7 @@ func (a *App) fillDetails(cm *comparing) {
 		case len(items) == 0:
 			state(same, nil)
 		default:
-			var list *List
-			list, o.acts = diffList(o.pair, items, func(it DiffItem) tea.Cmd { return a.openDiff(det, it) })
+			list, _ := diffList(o.pair, items, nil) // the mode's keys open its items
 			o.body, o.items, o.shows = list, items, true
 		}
 		return
@@ -406,9 +405,6 @@ func (a *App) fillDetails(cm *comparing) {
 		pg := &Pager{}
 		pg.SetDiff(x, y)
 		o.body, o.shows = pg, true
-		pair := o.pair
-		o.acts = []Action{{Key: "Enter", Label: "Diff", Desc: "its two sides", Hint: "diff", Scope: PanelScope,
-			Do: func() tea.Cmd { return a.openDiff(det, pair) }}}
 	}
 }
 

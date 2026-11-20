@@ -357,13 +357,14 @@ func (p *Panel) body() Body {
 }
 
 // actions are the panel's actions as they are now: those of the list of the
-// items that differ it went into or of the diff shown in it, or its Actions.
+// items that differ it went into, none while a Diff mode's diff is shown in
+// it (the mode's keys work there), or its Actions.
 func (p *Panel) actions() []Action {
 	if d := p.level(); d != nil {
 		return d.acts
 	}
 	if p.over != nil {
-		return p.over.acts
+		return nil
 	}
 	return p.Actions
 }
@@ -469,6 +470,18 @@ func (p *Panel) hint() (out []KeyHint, off []bool) {
 		}
 		out = append(out, KeyHint{key, desc})
 		off = append(off, disabled)
+	}
+	// In a mode the panel's own actions do not work: the hint is the mode's
+	// keys, as the footer writes them, but for the movement keys and the
+	// core keys the footer has (Space, ?, Esc; tdp K11, panel.1). A mode
+	// spanning two panels writes each panel's own layer.
+	if p.mode != nil {
+		for _, k := range p.mode.Keys {
+			if !k.NoFooter && k.Do != nil {
+				add(k.Key, k.Desc, k.off())
+			}
+		}
+		return out, off
 	}
 	if a := p.enterAction(); a != nil && a.Hint != "" && (!a.disabled() || !p.HintPressableOnly) {
 		add("Enter", a.Hint, a.disabled())

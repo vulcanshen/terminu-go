@@ -314,3 +314,67 @@ func TestDiffInDetailsEnds(t *testing.T) {
 	p.Actions = []Action{a.DiffModeAction(p, l, DiffMode{Key: "D", InDetails: true})}
 	a.AddScreen(&Screen{Name: "S", Panels: []*Panel{p}})
 }
+
+// hintText is p's bottom-border hint as text, a key off marked with !.
+func hintText(p *Panel) string {
+	hs, off := p.hint()
+	var out []string
+	for i, h := range hs {
+		s := h.Key + ":" + h.Desc
+		if off[i] {
+			s = "!" + s
+		}
+		out = append(out, s)
+	}
+	return strings.Join(out, " ")
+}
+
+// TestK11ModeHint: while a panel is in a mode its bottom-border hint is the
+// mode's keys, not the panel's own actions, which do not work there; the
+// movement keys and the core keys the footer has (Space, ?, Esc) are left
+// out, a key that cannot be pressed now drawn off, or left out on a panel
+// that hints only what can be pressed (tdp K11, panel.1, M6). A Diff mode in
+// the details writes each panel's own layer; out of the mode the panel's
+// actions are back.
+func TestK11ModeHint(t *testing.T) {
+	ta, _ := compareApp(t)
+	if h := hintText(ta.pods); !strings.Contains(h, "Enter:logs") {
+		t.Fatalf("out of a mode: %q", h)
+	}
+	ta.press("C")
+	if h := hintText(ta.pods); h != "!C|Enter:diff" {
+		t.Errorf("in the Diff mode, on the anchor: %q", h)
+	}
+	ta.press("j")
+	if h := hintText(ta.pods); h != "C|Enter:diff" {
+		t.Errorf("in the Diff mode: %q", h)
+	}
+	ta.pods.HintPressableOnly = true
+	ta.press("k")
+	if h := hintText(ta.pods); h != "" {
+		t.Errorf("pressable only, on the anchor: %q", h)
+	}
+	ta.pods.HintPressableOnly = false
+	ta.press("Esc")
+	if h := hintText(ta.pods); !strings.Contains(h, "Enter:logs") {
+		t.Errorf("out of the mode again: %q", h)
+	}
+
+	// An app's own mode: its keys.
+	ta = newTestApp(t)
+	ta.press("D")
+	if h := hintText(ta.pods); h != "Enter:drop" {
+		t.Errorf("the app's Drag mode: %q", h)
+	}
+
+	// In the details, each panel its own layer.
+	ta, files, changes := detailsApp(t)
+	ta.press("D", "j")
+	if hf, hc := hintText(files), hintText(changes); hf != "D|Enter:diff" || hc != "D|Enter:diff" {
+		t.Errorf("the list %q, the details %q", hf, hc)
+	}
+	ta.press("j") // c.txt, the same: nothing to go to, nothing to open
+	if hf, hc := hintText(files), hintText(changes); hf != "!D|Enter:diff" || hc != "!D|Enter:diff" {
+		t.Errorf("on a row the same: the list %q, the details %q", hf, hc)
+	}
+}

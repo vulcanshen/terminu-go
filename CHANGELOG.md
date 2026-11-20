@@ -2,6 +2,14 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.21-beta.3 — tdp v1.2.19
+
+- A panel in a mode hints the mode's keys on its bottom border, not its own actions, which do not work there (tdp K11,
+  panel.1; from gittu): `D|Enter:diff` in the Diff mode, `Enter:drop` in an app's Drag, a key that cannot be pressed
+  now drawn off (left out with `HintPressableOnly`), the movement keys and the core keys the footer has (Space, ?,
+  Esc) left out as ever. A Diff mode shown in the details hints each panel's own layer. Out of the mode the panel's
+  actions are back. The modes in popups (a viewer's selection, a reorder's Drag) already hinted theirs. No API change
+
 ## v1.2.21-beta.2 — tdp v1.2.19
 
 - An E3 toast coming after the start joins the start's (tdp main, E3 "Coming later", E3-43; from kbu, the user): a
