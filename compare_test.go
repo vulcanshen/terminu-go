@@ -330,9 +330,10 @@ func TestHintTab(t *testing.T) {
 }
 
 // TestCompareHead: a comparison is titled DIFF, its two tabs after it; its
-// first row names the two sides as the app names them, in Lavender, fixed
-// over the lines as they scroll; too long, it folds before ↔, then after a
-// /, never cut (note-107, note-80, note-101, from gittu).
+// first row names the two sides as the app names them, in Lavender, right
+// under the top border in the top padding's place, the padding below kept,
+// fixed over the lines as they scroll; too long, it folds before ↔, then
+// after a /, never cut (note-107, note-80, note-101, popup-15, from gittu).
 func TestCompareHead(t *testing.T) {
 	ta := newTestApp(t)
 	ta.resize(60, 20)
@@ -370,8 +371,12 @@ func TestCompareHead(t *testing.T) {
 	if _, h := vv.measure(60, 20); rowOf("of 120")-rowOf("DIFF")+1 != h {
 		t.Errorf("the popup is %d rows, measured %d:\n%s", rowOf("of 120")-rowOf("DIFF")+1, h, text)
 	}
+	// Drawn to its height as it is: no blank row above for fitRows to drop.
+	if w, h := vv.measure(60, 20); len(vv.draw(w, h, Blue)) != h {
+		t.Errorf("drawn %d rows, measured %d", len(vv.draw(w, h, Blue)), h)
+	}
 	first, second := rowOf(an), rowOf("↔ "+bn)
-	if first != rowOf("DIFF")+2 || second != first+1 || rowOf("old 0") != first+2 { // a blank row under the title, as in every popup
+	if first != rowOf("DIFF")+1 || second != first+1 || rowOf("old 0") != first+2 { // right under the border, no blank row
 		t.Fatalf("the sides at %d and %d, the lines at %d:\n%s", first, second, rowOf("old 0"), text)
 	}
 	ta.press("d", "d")
@@ -410,6 +415,11 @@ func TestCompareWidth(t *testing.T) {
 	vv := ta.topView().(*viewerView)
 	if w, _ := vv.measure(200, 40); w != 198 {
 		t.Errorf("the comparison is %d wide on 200 columns, want 198", w)
+	}
+	// Its height: the borders, the sides' row in the top padding's place,
+	// the two lines, the padding below (popup-15).
+	if _, h := vv.measure(200, 40); h != 6 {
+		t.Errorf("the comparison is %d rows, want 6", h)
 	}
 	if w, _ := (&viewerView{v: &Viewer{Lines: []string{"x"}}}).measure(200, 40); w != 120 {
 		t.Errorf("another viewer is %d wide, want 120", w)

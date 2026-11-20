@@ -83,7 +83,7 @@ go build -o /tmp/showcase ./examples/showcase
   - 同一項的兩個版本（note.8）：在 `FILES` tab 的檔上按 `H`，跟它最後一次 commit 比（`main.go`、`README.md` 有改，其他檔沒變，
     跳 Info toast）；按 `K` 進到最後一次 commit 改了的檔：改名的 `~ docs/NOTES.md → docs/notes.md`、新增、刪掉、不是文字的圖
     （`Enter` 停用）、裡面還有東西的 `themes/`（再進一層）、路徑很長的 `installation/docker-compose/production/env.example`；
-    比較的標題只寫 `DIFF`、後面接兩個 tab，兩邊的名字在第一列（Lavender，捲動時不動）；在那個長路徑上按 `Enter`，100 欄時
+    比較的標題只寫 `DIFF`、後面接兩個 tab，兩邊的名字在第一列（Lavender，緊貼上框、上面沒有空白列，捲動時不動）；在那個長路徑上按 `Enter`，100 欄時
     在 `↔` 前面折成兩列，縮到 60 欄時再在 `/` 後面折，不用 `…` 截（note-107）；比較的寬度是終端機寬減 2（F7-17）。
     `Esc` 一層一層退回原本的檔案清單。在 `themes/` 裡時到 `[1] INPUTS`
     按 `M`（Show main.go）：`[2]` 先離開 commit 的每一層，回到檔案清單、cursor 在 `main.go`。

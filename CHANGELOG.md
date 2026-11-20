@@ -2,6 +2,12 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.19-beta.5 — tdp v1.2.17
+
+- A location row in a popup takes the top padding's place, right under the top border as in a panel; the padding below
+  stays (tdp's next release, popup.1, popup-15; from gittu). The comparison's first row, its two sides, is the one
+  there is: no blank row above it, folded rows and all, the popup a row shorter
+
 ## v1.2.19-beta.4 — tdp v1.2.17
 
 - With no screen, what E3 says goes to stderr a line each after `<app>: `, in the TUI's words (tdp's next release,

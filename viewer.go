@@ -97,8 +97,9 @@ type Viewer struct {
 	// report is a success report Report opened: Enter closes it too.
 	report bool
 	// head, when set, is the rows fixed over the lines for a text w cells
-	// wide, in Lavender, never scrolled (the compare's two sides, tdp
-	// note.8); heads is them as last laid out.
+	// wide, in Lavender, never scrolled, a location row right under the top
+	// border in the top padding's place (the compare's two sides, tdp
+	// note.8, popup.1); heads is them as last laid out.
 	head  func(w int) []string
 	heads []string
 	// wide is as wide as the terminal but 2, with no 120-column cap (the
@@ -348,15 +349,26 @@ func (vv *viewerView) measure(sw, sh int) (int, int) {
 	v.textW = v.textWidth(w - 2)
 	v.layHead(w)
 	most := max(sh-2, 3)
+	frame := v.frameRows()
 	rows := len(v.heads) // the rows its lines fold onto, counted as far as the most
 	for i := range v.text {
-		if rows += len(v.wrap(i)); rows+4 >= most {
+		if rows += len(v.wrap(i)); rows+frame >= most {
 			break
 		}
 	}
-	h := min(rows+4, most)
-	v.visible = max(h-4-len(v.heads), 1)
+	h := min(rows+frame, most)
+	v.visible = max(h-frame-len(v.heads), 1)
 	return w, h
+}
+
+// frameRows are the rows v's frame takes: its borders and a blank row above
+// and below the lines, the rows fixed over them, a location row, taking the
+// top one's place (tdp popup.1).
+func (v *Viewer) frameRows() int {
+	if len(v.heads) > 0 {
+		return 3
+	}
+	return 4
 }
 
 // width is how wide v is on a terminal sw wide (tdp F7): at most 120, the
@@ -508,7 +520,7 @@ func (vv *viewerView) draw(w, h int, layer Color) []string {
 	v.sync()
 	inner := w - 2
 	v.layHead(w)
-	v.visible = max(h-4-len(v.heads), 1)
+	v.visible = max(h-v.frameRows()-len(v.heads), 1)
 	v.readLines()
 	v.textW = v.textWidth(inner)
 	numW := v.numWidth()
@@ -568,7 +580,7 @@ func (vv *viewerView) draw(w, h int, layer Color) []string {
 		}
 	}
 	box := popupBox{color: layer, glyph: v.Glyph, title: vv.title(), hint: vv.hint(), scroll: scroll, loading: v.Loading,
-		found: SearchStatus{Text: v.Query, Current: v.Current, Count: len(v.Hits)}}
+		found: SearchStatus{Text: v.Query, Current: v.Current, Count: len(v.Hits)}, flushTop: len(v.heads) > 0}
 	for i, t := range v.Tabs {
 		box.tabs = append(box.tabs, Capsule{Text: Upper(t), Selected: i == v.Tab})
 		box.tabOff = append(box.tabOff, v.tabOff != nil && v.tabOff(i))

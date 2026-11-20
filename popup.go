@@ -142,6 +142,10 @@ type popupBox struct {
 	scroll  string
 	found   SearchStatus // a search's status, left of scroll (tdp note.3)
 	bare    bool         // no padding at all (terminal)
+	// flushTop leaves out the padding above: the body starts with a location
+	// row, which takes its place right under the top border, as in a panel
+	// (tdp popup.1, panel.10). The padding below stays.
+	flushTop bool
 }
 
 func (p popupBox) draw(w int, body []string) []string {
@@ -165,7 +169,9 @@ func (p popupBox) draw(w int, body []string) []string {
 		return b.draw()
 	}
 	rows := make([]string, 0, len(body)+2)
-	rows = append(rows, Repeat(" ", inner))
+	if !p.flushTop {
+		rows = append(rows, Repeat(" ", inner))
+	}
 	rows = append(rows, body...)
 	rows = append(rows, Repeat(" ", inner))
 	b.body = rows
