@@ -557,6 +557,12 @@ func TestCommandLine(t *testing.T) {
 	if out, errs, code := run("x"); out != "" || errs != "showcase: Unknown command \"x\"\n\n"+usage || code != 2 {
 		t.Errorf("used wrong: %q %q %d", out, errs, code)
 	}
+	// Never released, it is a build from source: update says so, exit 1,
+	// nothing looked up (tdp E1, E1-10).
+	if out, errs, code := run("update"); out != "" || code != 1 ||
+		errs != "showcase: This showcase is built from source: update it there (`git pull && go install ./examples/showcase`)\n" {
+		t.Errorf("update: %q %q %d", out, errs, code)
+	}
 
 	icon, powerline := terminu.IconWidth(), terminu.PowerlineWidth()
 	t.Cleanup(func() { terminu.SetIconWidth(icon, powerline) })

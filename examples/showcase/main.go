@@ -40,6 +40,11 @@ func command(args []string, stdout, stderr io.Writer) int {
 		}
 	case "settings":
 		return settings(args[1:], stdout, stderr)
+	case "update":
+		// The showcase is never released: it is always a build from source,
+		// which update says to update there (tdp E1).
+		return terminu.SelfUpdate{App: "showcase", Version: "dev", Owner: "vulcanshen", Tap: "vulcanshen/tap",
+			Source: "git pull && go install ./examples/showcase"}.Run(stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "showcase: Unknown command %q\n\n%s", args[0], usage)
 		return 2
@@ -88,6 +93,7 @@ Usage:
   showcase                    run it
   showcase version            print the version (also --version, -v)
   showcase help               print this (also --help, -h)
+  showcase update             bring it to its latest release (a build from source: says to update it there)
   showcase iconwidth          print how many cells an icon and a powerline symbol take
   showcase settings           print the pretend settings, made to fit; what it says on stderr
   showcase settings broken    the same with a settings file it can't read

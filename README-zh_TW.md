@@ -332,6 +332,20 @@ toast，或疊在那個 menu 上的 error popup。app 自己的閱讀 panel 有�
 再接用法，exit status 2；做完 0、沒做完 1。有 `<app> iconwidth` 的 app，把 `terminu.Probe(name).Lines()` 印到 stdout：
 一個 icon 和一個 powerline 符號各占幾格，後面寫數字從哪來（`icon 2 (probe)`、`powerline 1 (TERMINU__POWERLINE_WIDTH)`）。
 
+每個 app 都有 `<app> update`：照當初安裝的方式，把 app 更新到最新的正式版（不更新到 beta）。每個 app 都一樣，所以由 lib 做：
+
+```go
+case "update":
+	os.Exit(terminu.SelfUpdate{App: "todo", Version: version.Version, Owner: "vulcanshen", Tap: "vulcanshen/tap"}.Run(os.Stdout, os.Stderr))
+```
+
+用 Homebrew 裝的，執行 `brew upgrade <Tap>/<App>`；用 install script 裝的、或從 release 下載的，從 `github.com/<Owner>/<App>`
+下載這個系統與架構的新版，對過 release 的 `checksums.txt` 再換掉正在執行的檔；用 Scoop 裝的，印出要執行的 `scoop update <app>`。
+已經是最新版時說一聲、exit 0；從原始碼編的（`Version` 是 "dev" 或空的），或沒有權限寫入檔案所在的地方時，說明原因與怎麼做、
+exit 1，不會要更多權限。release 的檔名要照家族 goreleaser 範本的命名：`<app>_<version>_<os>_<arch>.tar.gz`（Windows 是
+`.zip`），裡面有執行檔，另有 `checksums.txt`。`Source` 寫從原始碼編的怎麼更新（`git pull && make install`）；`Then` 是使用者
+自己更新完之後要跑的指令；`After(exe, updated)` 是 app 到了最新版之後自己要做的事，更新過時 `exe` 是新的執行檔。
+
 ## 設定
 
 使用者的設定裡，有兩個是 terminu 家族每個 app 共用的（tdp E3）。函式庫不讀設定檔：由 app 從自己的設定檔讀出來交給它。

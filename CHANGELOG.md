@@ -2,6 +2,20 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.22-beta.1 — tdp v1.2.20
+
+- `<app> update` in the lib (tdp main, E1, E1-9, E1-10; the user): `terminu.SelfUpdate{App, Version, Owner, Tap,
+  Source, Then, After}.Run(stdout, stderr)` gives the exit status. It brings the app to its latest release, never a
+  pre-release, the way it was installed: Homebrew runs `brew upgrade <Tap>/<App>`; the install script's or a
+  download is replaced by the release for this OS and arch from `github.com/<Owner>/<App>`, checked against its
+  `checksums.txt` (on Windows the old file moved to `.old`); Scoop prints the `scoop update <app>` to run. Already
+  the latest it says so, exit 0; built from source (`Version` "dev" or empty) or with no right to write where the
+  file is, it says why and what to do, exit 1, never asking for more rights. `After(exe, updated)` is what the app
+  does once at the latest. It needs the release files named as the family's goreleaser template names them, as
+  every member's are. A version newer than the latest release (a beta) says so, exit 0: not in tdp yet, for now
+- The showcase has `showcase update`: never released, it is a build from source, and says so
+- Coverage rows for E1-9 and E1-10
+
 ## v1.2.21 — tdp v1.2.20
 
 Everything since v1.2.20, the betas v1.2.21-beta.1 to beta.3 included:

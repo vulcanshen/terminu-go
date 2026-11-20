@@ -34,6 +34,8 @@ go build -o /tmp/showcase ./examples/showcase
   （toast 那一行、兩筆 WARN），再加 `No longer used`（E3-40）；exit 0。
 - `/tmp/showcase settings broken`：`… can't be read: …` 與一行 `Open showcase to move it aside and start fresh`，什麼檔都不動；exit 1。
 - `/tmp/showcase x`：`showcase: Unknown command "x"`、空一行、用法；exit 2。
+- `/tmp/showcase update`：展示場不發布，永遠是從原始碼編的：stderr 一行 `showcase: This showcase is built from source: update it there
+  (…)`，什麼都不查；exit 1（E1-10）。其他安裝方式（Homebrew、install script、Scoop、已經最新、沒有權限）由 lib 的測試對著假的 release 驗。
 
 ## 在每個畫面都能按的
 

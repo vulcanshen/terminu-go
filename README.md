@@ -394,6 +394,25 @@ when it is done, 1 when it is not. `<app> iconwidth`, where an app has it, print
 stdout: how many cells an icon and a powerline symbol take, each with where it came from (`icon 2 (probe)`,
 `powerline 1 (TERMINU__POWERLINE_WIDTH)`).
 
+Every app has `<app> update`, which brings it to its latest release (never a pre-release) the way it was installed.
+It is the same in every app, so the lib does it:
+
+```go
+case "update":
+	os.Exit(terminu.SelfUpdate{App: "todo", Version: version.Version, Owner: "vulcanshen", Tap: "vulcanshen/tap"}.Run(os.Stdout, os.Stderr))
+```
+
+Installed with Homebrew, it runs `brew upgrade <Tap>/<App>`. Installed with the install script or downloaded from a
+release, it downloads the release for this OS and arch from `github.com/<Owner>/<App>`, checks it against the
+release's `checksums.txt` and puts it in place of the running file. Installed with Scoop, it prints the
+`scoop update <app>` to run. Already the latest, it says so and exits 0. Built from source (`Version` "dev" or
+empty), or with no right to write where the file is, it says why and what to do and exits 1. It never asks for
+more rights. The release files must be named as the family's goreleaser template names them:
+`<app>_<version>_<os>_<arch>.tar.gz` (`.zip` on Windows) with the executable in it, and `checksums.txt`.
+`Source` is how a build from source updates (`git pull && make install`). `Then` is a command to run after
+updating by hand. `After(exe, updated)` is what your app does once it is at the latest: `exe` is the new
+executable after an update.
+
 ## Settings
 
 Two of the user's settings are shared by every terminu app (tdp E3). The library does not read config files: the
