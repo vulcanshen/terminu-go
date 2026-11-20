@@ -2,6 +2,29 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.3.0 — tdp v1.3.0
+
+A minor, with tdp's. Everything since v1.2.21, the betas v1.2.22-beta.1 to beta.3 included:
+
+- `<app> update` in the lib (tdp E1, E1-9, E1-10): `terminu.SelfUpdate{App, Version, Owner, Tap, Source, Then,
+  After}.Run(stdout, stderr)` brings the app to its latest release the way it was installed (Homebrew, the install
+  script or a download, Scoop printing the command), says so when it is the latest or newer, and stops with why and
+  what to do for a build from source or a folder it cannot write in, never asking for more rights
+- A sign, a panel that only tells (tdp panel.17): `Panel.Sign`, `SignLit` or `SignDim`; no `[N]`, passed by `Tab` and
+  the digits, no hint, no scrolling, the panels that take the focus numbered among themselves
+- Toasts stack (tdp toast.2, toast.3): the new one at the bottom pushing the others up, each its own time, at most
+  three, the same words one toast with a count (`INFO ×3`), `Esc` the oldest first. `App.Notify` makes a toast of each
+  notice: no merging, no late join
+- An item's note (tdp panel.18, K13): `Panel.Note`, `Mode.Note`, `NoteSpot`; its head under the item, `i` opening it
+  as a viewer anchored there, above the item when there is no room below. It replaces the inspect toast:
+  `Panel.Inspect` and `Mode.Inspect` stay deprecated in v1.3.0, still working, and go in the next minor
+- The App Log draws each entry as a toast's row (tdp note.7, note-108): control characters, a colour code's ESC too,
+  by name in Red, never applied
+- The key's letter the app picks to mark (tdp M5-1): a label that writes its brackets itself (`Stage [a]ll`) is drawn
+  so, and the key reference writes it without them (`Stage all`)
+- K13: `i` opens a note, `x` and `X` only for removing for good (coverage rows); the showcase's Import moves to `I`
+- The showcase: `showcase update`, signs on [K]INDS, notes on the pods not running, `Toast: a colour code in a name`
+
 ## v1.2.22-beta.3 — tdp v1.2.20
 
 - Toasts stack (tdp main, toast.2, toast.3, toast-13, toast-14, toast-29; the user): a new one comes at the bottom,
