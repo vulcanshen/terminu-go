@@ -28,14 +28,17 @@ import (
 // release, never a pre-release, the way it was installed. The app's command
 // line runs it: os.Exit(terminu.SelfUpdate{...}.Run(os.Stdout, os.Stderr)).
 //
-//   - Already the latest: "<app> 1.2.0 is the latest release.", exit 0.
+//   - Already the latest: "<app> 1.2.0 is the latest release.", exit 0;
+//     newer than it (a pre-release): "<app> 1.3.0-beta.1 is newer than
+//     the latest release, 1.2.0.", exit 0.
 //   - Installed with Homebrew (the executable under Cellar/<app>): it runs
 //     brew upgrade <Tap>/<App>, brew's output passed through.
 //   - Installed with the install script or downloaded from a release: it
 //     downloads the release for this OS and arch, holds it to the release's
 //     checksums.txt and puts its executable in place of the running one.
 //   - Installed with Scoop (under scoop/apps/<app>; Windows, where a running
-//     file cannot be replaced): it prints the scoop update <app> to run.
+//     file cannot be replaced): it prints the scoop update <app> to run,
+//     exit 0.
 //   - Built from source (Version "dev" or ""): it says to update it there,
 //     exit 1, nothing looked up.
 //   - No right to write where the executable is: it says so and what to do,
@@ -136,7 +139,7 @@ func (u SelfUpdate) run(env updateEnv, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stdout, "%s %s is the latest release.\n", u.App, cur)
 		return after(exe, false)
 	case !newer(latest, cur):
-		// TODO(tdp): a pre-release newer than the latest release is not in tdp yet.
+		// Ahead of it (a pre-release): it says so (tdp E1).
 		fmt.Fprintf(stdout, "%s %s is newer than the latest release, %s.\n", u.App, cur, latest)
 		return after(exe, false)
 	}
@@ -159,7 +162,7 @@ func (u SelfUpdate) run(env updateEnv, stdout, stderr io.Writer) int {
 		if u.Then != "" {
 			fmt.Fprintln(stdout, "  "+u.Then)
 		}
-		return 0 // TODO(tdp): Scoop's exit status is not in tdp yet; it told how, so 0.
+		return 0 // it told how: done (tdp E1)
 	}
 	fmt.Fprintf(stdout, "Updating %s %s to %s…\n", u.App, cur, latest)
 	if err := replaceExe(env, u.Owner, u.App, exe, latest); err != nil {

@@ -289,6 +289,20 @@ popup 開在 app 自己的模式裡的 panel 上時，動作真的執行時才�
 上按 `Esc` 什麼都沒變。離開的方式跟 `Panel.LeaveMode` 一樣，不跑 `OnExit`：`OnExit` 原本會做的事（例：暫停）要在呼叫前
 自己先做；離開模式會丟掉使用者做出來、要留下的東西時，在呼叫前自己先問（tdp K11）。`q` 不離開模式，離開流程會先問。
 
+## 說明牌
+
+只用來說明的 panel（例：遊戲旁邊的 NEXT、INFO、KEYS，圖例）是說明牌（tdp panel.17）：`Sign` 設成 `terminu.SignLit`
+（常亮，跟串流內容一樣不淡化）或 `terminu.SignDim`（常暗，跟沒有 focus 的 panel 一樣淡化），跟其他 panel 一起放進
+`Screen.Panels`，一起排版、一起縮放。它永遠拿不到 focus：`Tab` 與數字鍵跳過它，框上只寫 label，其他 panel 自己從 `[1]`
+編號。它沒有動作、tab、hint、捲動位置（有 `Actions` 或 `Tabs` 時 `AddScreen` panic）。它不能捲動：內容要在最小畫面
+（60 × 32）分到的大小裡放得下；`Pager` 的行還是放不下時，從底部切掉，看得到的最後一列結尾加 `…`。
+
+```go
+keys := &terminu.Pager{}
+keys.SetLines([]string{"h|l  move", "k    rotate"})
+sign := &terminu.Panel{Label: "Keys", Body: keys, Sign: terminu.SignLit}
+```
+
 ## panel 框上的狀態
 
 panel 可以在框上放一個 app 自己、一直在的狀態：一個 glyph 加一段短字，例如 panel 監看的檔案最後一次讀進來的時間

@@ -2,6 +2,20 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.22-beta.2 — tdp v1.2.20
+
+- A sign, a panel that only tells (tdp main, panel.17, K1, K2, panel-188 to panel-191; from tetru, the user):
+  `Panel.Sign`, `terminu.SignLit` or `terminu.SignDim`, the app's pick for each. It is laid out with the other panels
+  and drawn as one without the focus, its label alone; the panels that can take the focus are numbered among
+  themselves (`[N]`, the digits, `Tab|1–N`, `?`'s `1–N`), and Tab, Shift-Tab and the digits pass it by. A lit sign is
+  never dimmed, a dim one always is; under a popup both dim. No hint, scroll position, actions or tabs (`AddScreen`
+  panics on `Actions` or `Tabs`, on a screen of signs alone, and on a sign as a list's details). It does not scroll:
+  a `Pager`'s lines that do not fit are cut at the bottom, the last row shown ending in `…`. The showcase's [K]INDS
+  has a lit LEGEND and a dim SUMMARY
+- `<app> update`'s two answers are tdp's now (tdp main, E1, E1-10; the user): a version newer than the latest release
+  says so, exit 0; Scoop prints the command, exit 0. Nothing changes from beta.1
+- Coverage rows for panel-188 to panel-191; E1-10's row follows tdp
+
 ## v1.2.22-beta.1 — tdp v1.2.20
 
 - `<app> update` in the lib (tdp main, E1, E1-9, E1-10; the user): `terminu.SelfUpdate{App, Version, Owner, Tap,
@@ -12,7 +26,7 @@ Each release names the version of terminu design (tdp) it implements.
   the latest it says so, exit 0; built from source (`Version` "dev" or empty) or with no right to write where the
   file is, it says why and what to do, exit 1, never asking for more rights. `After(exe, updated)` is what the app
   does once at the latest. It needs the release files named as the family's goreleaser template names them, as
-  every member's are. A version newer than the latest release (a beta) says so, exit 0: not in tdp yet, for now
+  every member's are. A version newer than the latest release (a beta) says so, exit 0
 - The showcase has `showcase update`: never released, it is a build from source, and says so
 - Coverage rows for E1-9 and E1-10
 

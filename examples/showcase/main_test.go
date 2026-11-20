@@ -846,3 +846,41 @@ func TestDiffInChangesCannot(t *testing.T) {
 		t.Errorf("a folder that cannot be read:\n%s", strings.Join(d.Screen(), "\n"))
 	}
 }
+
+// [K]INDS has two signs under the details (tdp panel.17, panel-188 to
+// panel-191): LEGEND lit and SUMMARY dim, drawn as panels without the
+// focus, their labels alone; Tab and the digits pass them by; their lines
+// fit the smallest screen.
+func TestKindsSigns(t *testing.T) {
+	s := newShowcase()
+	d := tdptest.Start(t, s.app, 60, 32)
+	d.Press("K")
+	screen := strings.Join(d.Screen(), "\n")
+	for _, want := range []string{"LEGEND", "SUMMARY", "[1] KINDS", "[2] KIND: pods", "the kind it opens on", "Cluster-wide: read-only",
+		"16 kinds in 5 groups", "Opens on pods", "Tab|1–2:panels"} {
+		if !strings.Contains(screen, want) {
+			t.Errorf("no %q at 60 × 32:\n%s", want, screen)
+		}
+	}
+	if strings.Contains(screen, "[3]") || strings.Contains(screen, "[4]") {
+		t.Errorf("a sign numbered:\n%s", screen)
+	}
+	focused := func() *terminu.Panel { return s.app.Screen().Focused() }
+	d.Press("Tab")
+	if focused() != s.kinds.details {
+		t.Errorf("Tab went to %s", focused().Label)
+	}
+	d.Press("Tab")
+	if focused() == s.kinds.legend || focused() == s.kinds.summary {
+		t.Error("Tab stopped on a sign")
+	}
+	d.Press("3")
+	d.Press("4")
+	if focused() == s.kinds.legend || focused() == s.kinds.summary {
+		t.Error("a digit went to a sign")
+	}
+	d.Press("1", "j", "f")
+	if !d.Has("Opens on deployments") {
+		t.Errorf("SUMMARY did not follow:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+}

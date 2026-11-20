@@ -47,7 +47,7 @@ func (a *App) modeTitle() string {
 		return refTitle(l.view)
 	}
 	s := a.Screen()
-	return s.Focused().title(s.at() + 1)
+	return s.Focused().title(s.num(s.at()))
 }
 
 // panelModeMenu is the Space menu of the mode p is in: its keys marked Item

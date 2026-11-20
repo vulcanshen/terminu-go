@@ -244,6 +244,18 @@ func (m *Mode) gPair() bool {
 	return false
 }
 
+// Sign is how a sign looks, the app's pick for each (Panel.Sign, tdp
+// panel.17); the zero value is a panel that is no sign.
+type Sign int
+
+const (
+	// SignLit is never dimmed without the focus, as streaming content
+	// (tdp T2); under a popup it dims with everything (tdp F8).
+	SignLit Sign = iota + 1
+	// SignDim is dimmed as a panel without the focus is, always.
+	SignDim
+)
+
 // Failure is what a panel shows when its content could not be had (tdp panel.15):
 // a fact in Red and a hint naming a key.
 type Failure struct {
@@ -289,6 +301,18 @@ type Panel struct {
 	// and a short text in the corner the app chooses (tdp panel.1); the zero
 	// value is none.
 	FrameStatus FrameStatus
+	// Sign makes the panel a sign, one that only tells (tdp panel.17: a
+	// game's NEXT, INFO and KEYS, a legend): laid out and resized with the
+	// other panels, drawn as one without the focus, it never takes it. Its
+	// frame has its label alone, no [N]: the panels that can take the focus
+	// are numbered among themselves, and Tab and the digits pass it by. It
+	// has no tabs, actions, hint, scroll position or mode (AddScreen panics
+	// on Tabs or Actions). SignLit or SignDim is the app's pick for it,
+	// kept. Its content is the app's, loading and failure as any panel's
+	// (tdp panel.15); it does not scroll: the app makes it fit the sign's
+	// size on the smallest screen (60 × 32), and a Pager's lines that still
+	// do not fit are cut at the bottom, the last row shown ending in ….
+	Sign Sign
 	// Actions are the panel's item and panel operations; a "Enter" key is
 	// what Enter does here (tdp K3).
 	Actions []Action
@@ -523,6 +547,9 @@ func (p *Panel) title(n int) string { return "[" + itoa(n) + "] " + p.labelText(
 // drawn, so the text does not move when the tab changes: "[2] PODS", as a
 // panel without tabs looks.
 func (p *Panel) capsules(n int) []Capsule {
+	if p.Sign != 0 { // its label alone: no key goes to it (tdp panel.17)
+		return []Capsule{{Text: p.labelText(), Selected: true}}
+	}
 	num := "[" + itoa(n) + "]"
 	if len(p.Tabs) == 0 {
 		return []Capsule{{Text: num + " " + p.labelText(), Selected: true}}
@@ -546,6 +573,9 @@ func (p *Panel) capsules(n int) []Capsule {
 func (p *Panel) draw(n, w, h int, focused, pointed bool) []string {
 	if w < 2 || h < 2 {
 		return blankLines(w, h)
+	}
+	if p.Sign != 0 { // as a panel without the focus, always (tdp panel.17)
+		focused, pointed = false, false
 	}
 	lines, color := lightLines, Surface2
 	switch {
@@ -601,7 +631,14 @@ func (p *Panel) draw(n, w, h int, focused, pointed bool) []string {
 		list.inMode = p.mode != nil
 		body = list.draw(inner, ih, focused, false) // its location row is loc
 	default:
+		pg, _ := pb.(*Pager)
+		if pg != nil && p.Sign != 0 {
+			pg.top = 0 // a sign does not scroll: from the top, always
+		}
 		body = pb.Draw(inner, ih, focused)
+		if pg != nil && p.Sign != 0 {
+			body = pg.signRows(body, inner, ih)
+		}
 	}
 	empty := pb == nil // every kind of panel (tdp panel.15)
 	if e, ok := pb.(interface{ Empty() bool }); ok {
@@ -627,13 +664,15 @@ func (p *Panel) draw(n, w, h int, focused, pointed bool) []string {
 			body = emptyState(inner, ih, fail.Fact, Fg(Red), bracketKeys(fail.Hint), Fg(Overlay0))
 		}
 	}
-	b.hint, b.hintOff = p.hint()
-	if pb != nil {
-		b.scroll = pb.Scroll()
+	if p.Sign == 0 { // a sign has no hint and no scroll position (tdp panel.17)
+		b.hint, b.hintOff = p.hint()
+		if pb != nil {
+			b.scroll = pb.Scroll()
+		}
 	}
 	b.found = p.SearchStatus
 	_, pty := pb.(*Terminal)
-	if !focused && !p.Stream && !pty { // a program's screen is live, like a stream (tdp T2)
+	if !focused && !p.Stream && !pty && p.Sign != SignLit { // a program's screen is live, like a stream; a lit sign too (tdp T2, panel.17)
 		body = DimLines(body)
 	}
 	if !focused {

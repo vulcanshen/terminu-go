@@ -16,8 +16,11 @@ type kindsScreen struct {
 	screen  *terminu.Screen
 	list    *terminu.List
 	details *terminu.Panel
-	kind    *kind
-	first   string // the kind it opens on: flagged
+	// legend and summary are signs, panels that only tell (tdp panel.17):
+	// LEGEND lit, what the flag means; SUMMARY dim, what the list holds.
+	legend, summary *terminu.Panel
+	kind            *kind
+	first           string // the kind it opens on: flagged
 }
 
 // glyphFlag is the flag before the kind it opens on: the app's choice, as
@@ -34,6 +37,16 @@ func (ks *kindsScreen) setRows() {
 		}
 	}
 	ks.list.SetRows(rows)
+	if ks.summary != nil {
+		groups := map[string]bool{}
+		for _, k := range kinds {
+			groups[k.group] = true
+		}
+		ks.summary.Body.(*terminu.Pager).SetLines([]string{
+			fmt.Sprintf("%d kinds in %d groups", len(kinds), len(groups)),
+			"Opens on " + ks.first,
+		})
+	}
 }
 
 type kind struct {
@@ -116,13 +129,28 @@ func newKindsScreen(a *terminu.App) *kindsScreen {
 				return a.Toast(terminu.Success, "Opens on "+ks.first)
 			}},
 	}}
+	// Two signs under the details: drawn as panels without the focus, no
+	// [N], passed by Tab and the digits (tdp panel.17). Their lines fit the
+	// smallest screen's 60 × 32.
+	legend := &terminu.Pager{}
+	legend.SetLines([]string{terminu.Fg(terminu.Green).Render(glyphFlag) + " the kind it opens on", "Cluster-wide: read-only"})
+	ks.legend = &terminu.Panel{Label: "Legend", Body: legend, Sign: terminu.SignLit}
+	ks.summary = &terminu.Panel{Label: "Summary", Body: &terminu.Pager{}, Sign: terminu.SignDim}
+	ks.setRows()
 	ks.screen = &terminu.Screen{Name: "Kinds", Key: "K", Desc: "a list in groups and details that follow its cursor",
-		Panels: []*terminu.Panel{kindsPanel, ks.details}, NarrowBelow: 60, Layout: ks.layout}
+		Panels: []*terminu.Panel{kindsPanel, ks.details, ks.legend, ks.summary}, NarrowBelow: 60, Layout: ks.layout}
 	return ks
 }
 
-// layout puts the kinds in a sidebar and the details beside it.
+// layout puts the kinds in a sidebar and the details beside it, the two
+// signs under the details, 4 rows each: 2 for their lines.
 func (ks *kindsScreen) layout(w, h int) []terminu.Rect {
 	left := min(30, w/2)
-	return []terminu.Rect{{X: 0, Y: 0, W: left, H: h}, {X: left, Y: 0, W: w - left, H: h}}
+	sign := 4
+	if h < 4*sign { // too short for them: the details alone
+		sign = 0
+	}
+	dh := h - 2*sign
+	return []terminu.Rect{{X: 0, Y: 0, W: left, H: h}, {X: left, Y: 0, W: w - left, H: dh},
+		{X: left, Y: dh, W: w - left, H: sign}, {X: left, Y: dh + sign, W: w - left, H: sign}}
 }

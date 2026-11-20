@@ -123,6 +123,22 @@ func (t *Pager) ReadAgain(lines []string) {
 // Lines are the lines.
 func (t *Pager) Lines() []string { return t.lines }
 
+// signRows are drawn, the Pager's h rows w cells wide, as a sign shows them
+// (tdp panel.17): it does not scroll, so lines that do not all fit are cut
+// at the bottom, the last row shown ending in ….
+func (t *Pager) signRows(drawn []string, w, h int) []string {
+	if h <= 0 || len(t.rows) <= h || t.top != 0 {
+		return drawn
+	}
+	room := w - 2
+	last := readingLine(cutCR(t.rows[h-1]), tabCells)
+	if Width(last) >= room {
+		last = clip(last, room-1)
+	}
+	drawn[h-1] = " " + Pad(last+"…", room) + " "
+	return drawn
+}
+
 func (t *Pager) clamp() {
 	t.top = min(max(t.top, 0), max(len(t.rows)-t.height, 0))
 }

@@ -150,6 +150,9 @@ go build -o /tmp/showcase ./examples/showcase
 - 在 namespaced 的種類上按 `Enter` 也會進到 `[2]`（Rules K3 唯一可以用 `Enter` 換 panel 的地方），`Short name` 可以改；
   cluster 層級的種類（`persistentvolumes`、`storageclasses`、`nodes`、`namespaces`）按 `Enter` 不進去，只跳一個 toast。
 - 把終端機拉矮，捲到一組的第一個種類時，那一組的標題也留在畫面裡。
+- `[2]` 下面兩塊是說明牌（panel.17）：`LEGEND` 說 Green 的 `●` 是什麼（常亮，focus 在哪都不淡化），`SUMMARY` 寫有幾種、開在哪一種
+  （常暗）；框上只有名字、沒有號碼，footer 寫 `Tab|1–2`。一直按 `Tab`、按 `3`、`4`：focus 只在 `[1]`、`[2]` 之間；按 `Space`：兩塊都跟著
+  變暗。在 `deployments` 上按 `f`，`SUMMARY` 換成 `Opens on deployments`。縮到 60 × 32 時兩塊的字都放得下。
 
 **splash**：在 panel 上按 `V`（I 的 `[2] FILES` 除外），任意鍵關掉。畫的是 tdp 的 mark（藍色 U 框裡一個金色的 T），底 → T → U 框一段一段揭露，最後是下面的字。
 

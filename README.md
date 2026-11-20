@@ -342,6 +342,22 @@ confirm, so `Esc` there changes nothing. It is left as `Panel.LeaveMode` leaves 
 would do (a pause) before calling, and when leaving would lose something the user made and wants kept, ask before
 calling (tdp K11). `q` leaves no mode; the quit flow asks first.
 
+## A sign
+
+A panel that only tells (a game's NEXT, INFO and KEYS, a legend) is a sign (tdp panel.17): set `Sign` to
+`terminu.SignLit` (never dimmed, as streaming content) or `terminu.SignDim` (dimmed, as a panel without the focus),
+and put it in `Screen.Panels` with the rest, so it is laid out and resized with them. It never takes the focus:
+`Tab` and the digits pass it by, and its frame has its label alone, the other panels numbered among themselves.
+It has no actions, tabs, hint or scroll position (`AddScreen` panics on `Actions` or `Tabs`). It does not scroll:
+make its content fit the size it gets on the smallest screen (60 × 32). A `Pager`'s lines that still do not fit
+are cut at the bottom, the last row shown ending in `…`.
+
+```go
+keys := &terminu.Pager{}
+keys.SetLines([]string{"h|l  move", "k    rotate"})
+sign := &terminu.Panel{Label: "Keys", Body: keys, Sign: terminu.SignLit}
+```
+
 ## A status on a panel's frame
 
 A panel may show one lasting status of the app's own on its frame: a glyph and a short text, such as when a file the

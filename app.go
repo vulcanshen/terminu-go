@@ -49,15 +49,73 @@ func (s *Screen) Focused() *Panel {
 // panel when the app adds or takes away panels; when that panel itself goes,
 // the one now in its place has it.
 func (s *Screen) at() int {
-	if i := slices.Index(s.Panels, s.held); i >= 0 {
+	if i := slices.Index(s.Panels, s.held); i >= 0 && s.takes(i) {
 		s.focus = i
 		return i
 	}
 	s.focus = min(max(s.focus, 0), max(len(s.Panels)-1, 0))
 	if len(s.Panels) > 0 {
+		if !s.takes(s.focus) { // a sign never has it (tdp panel.17)
+			s.focus = s.step(s.focus, 1)
+		}
 		s.held = s.Panels[s.focus]
 	}
 	return s.focus
+}
+
+// takes reports whether panel i can take the focus: every panel but a sign
+// (tdp panel.17).
+func (s *Screen) takes(i int) bool { return i >= 0 && i < len(s.Panels) && s.Panels[i].Sign == 0 }
+
+// step is the place of the next panel after i that can take the focus, d 1
+// forward or -1 back, round the end (tdp K2); i itself when there is no
+// other.
+func (s *Screen) step(i, d int) int {
+	n := len(s.Panels)
+	for k := 1; k < n; k++ {
+		if j := ((i+d*k)%n + n) % n; s.takes(j) {
+			return j
+		}
+	}
+	return i
+}
+
+// num is panel i's [N]: the panels that can take the focus are numbered
+// among themselves, from 1; a sign has none, 0 (tdp K1, panel.17).
+func (s *Screen) num(i int) int {
+	if !s.takes(i) {
+		return 0
+	}
+	n := 1
+	for j := range i {
+		if s.takes(j) {
+			n++
+		}
+	}
+	return n
+}
+
+// numbered is the place of panel [n], -1 for none.
+func (s *Screen) numbered(n int) int {
+	for i := range s.Panels {
+		if s.takes(i) {
+			if n--; n == 0 {
+				return i
+			}
+		}
+	}
+	return -1
+}
+
+// count is how many panels have a number: the ones that can take the focus.
+func (s *Screen) count() int {
+	n := 0
+	for i := range s.Panels {
+		if s.takes(i) {
+			n++
+		}
+	}
+	return n
 }
 
 // App is the whole terminal UI: screens of panels, the popups over them,
@@ -247,6 +305,12 @@ func (a *App) AddScreen(s *Screen) *Screen {
 		if l, ok := p.Body.(*List); ok && l.Marks && l.Flags {
 			panic(fmt.Sprintf("terminu: panel [%d] %s: a list that can be marked keeps its mark column for the tick, not for flags (tdp panel.7)", i+1, p.Label))
 		}
+		if p.Sign != 0 && (len(p.Actions) > 0 || len(p.Tabs) > 0) {
+			panic(fmt.Sprintf("terminu: sign %s: a sign has no actions and no tabs, never taking the focus (tdp panel.17)", p.Label))
+		}
+	}
+	if len(s.Panels) > 0 && s.count() == 0 {
+		panic(fmt.Sprintf("terminu: screen %s: every panel is a sign, and one must take the focus (tdp panel.17)", s.Name))
 	}
 	a.screens = append(a.screens, s)
 	return s
@@ -256,7 +320,7 @@ func (a *App) AddScreen(s *Screen) *Screen {
 // anywhere but the one place tdp K3 allows: Enter, on a panel whose Details
 // is another panel of the same screen.
 func checkToDetails(s *Screen, p *Panel, act Action) error {
-	noDetails := p.Details == nil || p.Details == p || !slices.Contains(s.Panels, p.Details)
+	noDetails := p.Details == nil || p.Details == p || !slices.Contains(s.Panels, p.Details) || p.Details.Sign != 0
 	switch {
 	case act.inDetails && noDetails:
 		return fmt.Errorf("its Diff mode is shown in the details, and its panel's Details is not another panel of the screen (tdp panel.9)")
@@ -1147,7 +1211,7 @@ func (a *App) openSpaceMenu() tea.Cmd {
 	sections = append(sections, MenuSection{Title: "panel operation", Actions: a.panelActions(p, PanelScope)})
 	global := Action{Label: "Global operation", Desc: "actions for the whole app", Do: a.openGlobal}
 	m := newMenu("", sections, []Action{global})
-	m.cased = p.title(s.at() + 1)
+	m.cased = p.title(s.num(s.at()))
 	m.space = true
 	m.name = "Space menu"
 	m.run = func(a *App, act Action) tea.Cmd {
@@ -1207,8 +1271,12 @@ func (a *App) switchScreen(i int) tea.Cmd {
 // Focus moves the focus to p, on whichever screen it is, switching to that
 // screen. The app does it where the user expects the focus to move: after
 // what they pressed, never on something that happened in the background (a
-// load done, a job ended; tdp K3). A panel on no screen is left alone.
+// load done, a job ended; tdp K3). A panel on no screen, and a sign, are
+// left alone (tdp panel.17).
 func (a *App) Focus(p *Panel) tea.Cmd {
+	if p == nil || p.Sign != 0 {
+		return nil
+	}
 	for i, s := range a.screens {
 		if j := slices.Index(s.Panels, p); j >= 0 {
 			cmd := a.switchScreen(i)
@@ -1261,12 +1329,12 @@ func (a *App) panelKeyRef(p *Panel) *noteView {
 		move = append(move, KeyRow{Key: "h|l", Desc: "previous tab, next tab"})
 	}
 	core := []KeyRow{{Key: "Space", Desc: "what you can do here"}, {Key: "?", Desc: "this list"}, {Key: "!", Desc: "the app log"}}
-	if len(s.Panels) > 1 {
+	if s.count() > 1 {
 		tab := KeyRow{Key: "Tab", Desc: "next panel"}
 		if a.ShiftTab {
 			tab = KeyRow{Key: "Tab|Shift-Tab", Desc: "next panel, previous panel"} // tdp K6
 		}
-		core = append(core, tab, KeyRow{Key: "1–" + itoa(len(s.Panels)), Desc: "jump to panel N"})
+		core = append(core, tab, KeyRow{Key: "1–" + itoa(s.count()), Desc: "jump to panel N"})
 	}
 	if l, ok := pb.(*List); ok && l.Filtering() {
 		core = append(core, KeyRow{Key: "Esc", Desc: "clear the filter"})
@@ -1312,7 +1380,7 @@ func (a *App) panelKeyRef(p *Panel) *noteView {
 		}
 		sections = append(sections, refSection{title: o.Title, rows: o.Rows})
 	}
-	return keyReference(p.title(s.at()+1), sections)
+	return keyReference(p.title(s.num(s.at())), sections)
 }
 
 // refTitle is a popup's name in the title of its key reference: upper case,
@@ -1529,10 +1597,10 @@ func (a *App) panelKey(key string, msg tea.KeyMsg) tea.Cmd {
 	case "q":
 		return a.startQuit()
 	case "Tab":
-		return a.focusPanel(s, (s.at()+1)%len(s.Panels))
+		return a.focusPanel(s, s.step(s.at(), 1)) // a sign passed by (tdp K2, panel.17)
 	case "Shift-Tab":
 		if a.ShiftTab {
-			return a.focusPanel(s, (s.at()-1+len(s.Panels))%len(s.Panels))
+			return a.focusPanel(s, s.step(s.at(), -1))
 		}
 	case "Esc":
 		if l, ok := p.body().(*List); ok && l.Filtering() {
@@ -1553,7 +1621,7 @@ func (a *App) panelKey(key string, msg tea.KeyMsg) tea.Cmd {
 		}
 	}
 	if len(key) == 1 && key[0] >= '1' && key[0] <= '9' {
-		if n := int(key[0] - '1'); n < len(s.Panels) {
+		if n := s.numbered(int(key[0] - '0')); n >= 0 { // the panels that can take the focus (tdp K1, panel.17)
 			return a.focusPanel(s, n)
 		}
 		return nil
@@ -1637,14 +1705,14 @@ func (a *App) modeKey(p *Panel, key string, msg tea.KeyMsg) tea.Cmd {
 		return a.startQuit()
 	case key == "Tab" || isDigit(key) && key != "0":
 		s := a.Screen()
-		n := (s.at() + 1) % len(s.Panels)
+		n := s.step(s.at(), 1)
 		if w := slices.Index(s.Panels, p.mode.with); w >= 0 && key == "Tab" {
 			n = w // the other panel the mode is in (tdp panel.9)
 		}
 		if key != "Tab" {
-			n = int(key[0] - '1')
+			n = s.numbered(int(key[0] - '0'))
 		}
-		if n >= len(s.Panels) || n == s.at() { // it does nothing out of the mode either (tdp K11)
+		if n < 0 || n == s.at() { // it does nothing out of the mode either (tdp K11)
 			return nil
 		}
 		if p.mode.Pause && s.Panels[n] != p.mode.with {
@@ -1676,7 +1744,7 @@ func (a *App) toDetails() {
 
 // focusPanel moves the focus to panel i of s.
 func (a *App) focusPanel(s *Screen, i int) tea.Cmd {
-	if i == s.at() {
+	if i == s.at() || !s.takes(i) { // a sign never has it (tdp panel.17)
 		return nil
 	}
 	s.focus, s.held = i, s.Panels[i]
@@ -1860,7 +1928,7 @@ func (a *App) panelArea(w, top, h int) []string {
 		}
 		p.setLabel(a.labelOf(p))
 		a.uncover(p, r, top, i == s.at())
-		Composite(area, p.draw(i+1, r.W, r.H, i == s.at(), p == pointed), r.X, r.Y, w)
+		Composite(area, p.draw(s.num(i), r.W, r.H, i == s.at() && s.takes(i), p == pointed), r.X, r.Y, w)
 	}
 	return area
 }
@@ -1940,8 +2008,8 @@ func (a *App) footerHints() []KeyHint {
 			}
 		}
 		return append(out, KeyHint{"Esc", modeExit(p)})
-	case len(s.Panels) == 1:
+	case s.count() <= 1:
 		return []KeyHint{{"Space", "menu"}, {"?", "help"}, a.logHint(), {"q", "quit"}}
 	}
-	return []KeyHint{{"Space", "menu"}, {"?", "help"}, a.logHint(), {"Tab|1–" + itoa(len(s.Panels)), "panels"}, {"q", "quit"}}
+	return []KeyHint{{"Space", "menu"}, {"?", "help"}, a.logHint(), {"Tab|1–" + itoa(s.count()), "panels"}, {"q", "quit"}}
 }
