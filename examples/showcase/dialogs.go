@@ -238,6 +238,10 @@ func (ds *dialogsScreen) scenarios() []scenario {
 		}},
 		{"Success report", "note", "a success too long for a toast: a viewer that [Enter] closes too, in the App Log as OK", ds.report},
 		{"Toast", "toast", "a short message on the third row from the bottom", toast("Copied 3 paths")},
+		// A name from data with a colour code in it (hand-edited in a file):
+		// the toast and the App Log write the code by name, never applying
+		// it (tdp note.7, note-108).
+		{"Toast: a colour code in a name", "toast", "a name holding a colour code: written by name in the toast and in [!]", toast("Opened lab\x1b[31mX")},
 		{"Toast over a popup", "toast", "a popup, then a toast: Esc takes the toast first", func() tea.Cmd {
 			return tea.Batch(ds.yaml(), ds.s.app.Tick(600*time.Millisecond, func(time.Time) tea.Msg {
 				return toastLater{terminu.Warning, "The YAML changed on the cluster"}

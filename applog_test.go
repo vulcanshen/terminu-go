@@ -246,3 +246,35 @@ func TestAppLogFooter(t *testing.T) {
 		t.Errorf("closed, unseen again: %q", footer())
 	}
 }
+
+// TestAppLogNames: the App Log draws each entry as a toast's row, names and
+// short text: every control character, a colour code's ESC too, by its name
+// in Red, never applied, whatever wrote the entry, a toast or the app; a \n
+// keeps the entry on one row (tdp note.7, note-108; from hostu).
+func TestAppLogNames(t *testing.T) {
+	ta, _ := logApp(t)
+	ta.Toast(Info, "Renamed lab\x1b[31mX")
+	ta.Log(Warning, "Output: one\ntwo\x1b[0m")
+	ta.settle()
+	ta.press("Esc", "!")
+	frame := strings.Join(ta.Frame(), "\n")
+	text := StripStyles(frame)
+	// Each on one row: the \n is a name, not a line break.
+	for _, want := range []string{`Renamed lab\x1b[31mX`, `Output: one\ntwo\x1b[0m`} {
+		if !strings.Contains(text, want) {
+			t.Errorf("%q is not drawn by its names:\n%s", want, text)
+		}
+	}
+	if !strings.Contains(frame, nameSGR+`\x1b`) || !strings.Contains(frame, nameSGR+`\n`) {
+		t.Error("the names are not Red")
+	}
+	for _, l := range ta.Frame() {
+		if strings.Contains(StripStyles(l), "Renamed lab") {
+			for _, c := range covBCells(l) {
+				if c.text == "X" && c.fg == covBRGB(Red) {
+					t.Error("the colour code was applied: what follows it is Red")
+				}
+			}
+		}
+	}
+}

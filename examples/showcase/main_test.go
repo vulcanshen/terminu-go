@@ -913,3 +913,19 @@ func TestToastsStack(t *testing.T) {
 		t.Errorf("Esc did not close the oldest first:\n%s", strings.Join(d.Screen(), "\n"))
 	}
 }
+
+// A name with a colour code in it is drawn by its names, in the toast and
+// in the App Log alike, the code never applied (tdp note.7, note-108; from
+// hostu): D "Toast: a colour code in a name".
+func TestAppLogNames(t *testing.T) {
+	s := newShowcase()
+	d := tdptest.Start(t, s.app, 140, 40)
+	d.Do(func() tea.Cmd { return s.app.Toast(terminu.Info, "Opened lab\x1b[31mX") })
+	if !d.Has(`Opened lab\x1b[31mX`) {
+		t.Errorf("the toast does not show the code by name:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Press("Esc", "!")
+	if !d.Has(`INFO Opened lab\x1b[31mX`) {
+		t.Errorf("the App Log does not show the code by name:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+}

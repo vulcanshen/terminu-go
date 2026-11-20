@@ -128,6 +128,8 @@ go build -o /tmp/showcase ./examples/showcase
   值的 WARN 緊接在它那一件後面。
 - toast 往上疊（toast.2、toast.3）：連選幾次「Toast」與別的會跳 toast 的動作，新的出現在最下面、把舊的往上推，最多三個，第四個來時
   最舊的走；同一句話連跳三次，只有一個、標題寫 `INFO ×3`；按 `Esc` 一次收一個，從最上面（最舊的）開始，`Esc:close` 只畫在它上面。
+- 「Toast: a colour code in a name」：名字裡夾著 `\x1b[31m`（像資料檔裡手改過的名稱）：toast 用 Red 寫出 `\x1b[31m`、後面的 `X` 沒變紅；
+  按 `!`，App Log 那一筆也一樣，照 toast 的一列畫（note-108）。
 - 「Success report」：toast 放不下的成功報告開在 viewer 裡，`Enter` 也能關；按 `!` 看它以 OK 記進 App Log。
 - 「Form: with actions」有好幾個按鈕：`Tab` 到動作區先停在右下角的 `Connect`，`j|k` 在按鈕之間走。`Test` 只要 Host：空著按會被擋，
   填了再按要等一下（標題後面轉 loading icon）才跳 toast，Host 打 `bad-1` 會失敗、開 error popup，關掉後再按 `Enter` 就是重試；

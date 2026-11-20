@@ -85,9 +85,11 @@ func (k ToastKind) level() string {
 }
 
 // line is an entry as the App Log shows it: its time HH:MM:SS in Overlay0,
-// its level, what happened.
+// its level, what happened, drawn as a toast's row (tdp note.7, components:
+// names and short text): every control character, a colour code's ESC
+// too, by its name in Red, never applied, whatever wrote the entry.
 func (e logEntry) line() string {
-	return Fg(Overlay0).Render(e.at.Format("15:04:05")) + " " + e.kind.level() + " " + e.text
+	return Fg(Overlay0).Render(e.at.Format("15:04:05")) + " " + e.kind.level() + " " + Escape(e.text)
 }
 
 // openLog opens the App Log at its end: what it has is seen now.
