@@ -59,7 +59,7 @@ func TestCompareMany(t *testing.T) {
 	if ta.press("Enter"); ta.pods.level() != nil || !strings.Contains(ta.screenText(), "No differences between pod-03 and pod-05") {
 		t.Errorf("nothing differs:\n%s", ta.screenText())
 	}
-	ta.toast = nil
+	ta.toasts, ta.inspectT = nil, nil
 	ta.press("k", "Enter") // pod-04
 	if ta.pods.level() == nil || ta.pods.InMode() == nil || ta.pods.InMode().Name != "Diff" {
 		t.Fatalf("did not go in, in the mode:\n%s", ta.screenText())
@@ -189,7 +189,7 @@ func TestOpenDiff(t *testing.T) {
 	if ta.top() != nil || !strings.Contains(ta.screenText(), "No differences between ui.go @ 1a2b3c4 and ui.go") {
 		t.Errorf("the same twice:\n%s", ta.screenText())
 	}
-	ta.toast = nil
+	ta.toasts, ta.inspectT = nil, nil
 	commit := DiffItem{Anchor: "1a2b3c4", Other: "5d6e7f8", Items: func() ([]DiffItem, error) {
 		return []DiffItem{
 			{Mark: DiffChanged, Name: "old.go → new.go", Anchor: "old.go @ 1a2b3c4", Other: "new.go @ 5d6e7f8", Text: func() (string, string, error) { return "a\n", "b\n", nil }},
@@ -314,7 +314,7 @@ func TestDiffClearsFilter(t *testing.T) {
 	if ta.pods.level() != nil || !ta.list.Filtering() {
 		t.Fatal("nothing that differs cleared the filter")
 	}
-	ta.toast = nil
+	ta.toasts, ta.inspectT = nil, nil
 	ta.press("k", "Enter") // pod-04: in
 	if ta.pods.level() == nil || ta.list.Filtering() {
 		t.Fatalf("going in from the compare mode kept the filter:\n%s", ta.screenText())

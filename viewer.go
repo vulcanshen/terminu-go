@@ -105,6 +105,9 @@ type Viewer struct {
 	// wide is as wide as the terminal but 2, with no 120-column cap (the
 	// compare, tdp F7).
 	wide bool
+	// note is where an item's note opens (tdp panel.18): anchored under its
+	// item, not centred, its width and height kept to its panel's.
+	note *noteSpot
 }
 
 // Report opens v as a success report too long for a toast that the user
@@ -261,6 +264,19 @@ func (v *Viewer) Top() int { return v.top }
 type viewerView struct {
 	v *Viewer
 	labelled
+	w, h int // as measured last
+}
+
+// at is where the viewer goes on a sw × sh screen: an item's note where
+// its head is, under the item or above it (tdp panel.18, F7), the rest
+// centred.
+func (vv *viewerView) at(sw, sh int) (int, int) {
+	if s := vv.v.note; s != nil {
+		y, up := s.place(sh, vv.h)
+		s.up = up
+		return s.x, y
+	}
+	return (sw - vv.w) / 2, (sh - vv.h) / 2
 }
 
 func (vv *viewerView) modeName() string { return vv.v.modeName() }
@@ -349,6 +365,10 @@ func (vv *viewerView) measure(sw, sh int) (int, int) {
 	v.textW = v.textWidth(w - 2)
 	v.layHead(w)
 	most := max(sh-2, 3)
+	if v.note != nil { // at most half its panel high (tdp panel.18)
+		_, nh := v.note.most()
+		most = min(nh, most)
+	}
 	frame := v.frameRows()
 	rows := len(v.heads) // the rows its lines fold onto, counted as far as the most
 	for i := range v.text {
@@ -358,6 +378,7 @@ func (vv *viewerView) measure(sw, sh int) (int, int) {
 	}
 	h := min(rows+frame, most)
 	v.visible = max(h-frame-len(v.heads), 1)
+	vv.w, vv.h = w, h
 	return w, h
 }
 
@@ -376,6 +397,14 @@ func (v *Viewer) frameRows() int {
 func (v *Viewer) width(sw int) int {
 	if v.wide {
 		return max(sw-2, 1)
+	}
+	if v.note != nil { // as wide as its lines, as far as its panel goes (tdp panel.18)
+		most, _ := v.note.most()
+		widest := Width(titleCapsule(v.Glyph, popupTitle(v.Title, v.Subject), Base, 1<<20))
+		for _, l := range v.Lines {
+			widest = max(widest, Width(readingLine(cutCR(l), tabCells)))
+		}
+		return max(min(widest+4, most, sw-2), 1)
 	}
 	return popupWidth(sw, 0, false)
 }

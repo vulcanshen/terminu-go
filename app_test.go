@@ -295,7 +295,7 @@ func TestK11HotkeysSilentInMode(t *testing.T) {
 		t.Errorf("hotkeys worked in the mode: ran %v, popup %T", ta.ran, ta.topView())
 	}
 	ta.press("2")
-	if ta.Screen().focus != 0 || ta.toast == nil {
+	if ta.Screen().focus != 0 || ta.lastToast() == nil {
 		t.Error("a digit in a paused mode should answer with a toast and stay")
 	}
 	ta.press("Esc") // the toast first (tdp K11)
@@ -377,7 +377,7 @@ func TestToastPosition(t *testing.T) {
 	ta.Update(nil)
 	ta.Toast(Info, "Copied 3 paths")
 	ta.settle()
-	if got, want := ta.toast.y+ta.toast.h-1, ta.h-3; got != want {
+	if got, want := ta.lastToast().y+ta.lastToast().h-1, ta.h-3; got != want {
 		t.Errorf("toast's bottom border on row %d, want %d", got, want)
 	}
 }

@@ -73,9 +73,17 @@ type Mode struct {
 	// closes it, still outside the mode, and going back in is the popup's
 	// own action, EnterMode (tdp K11).
 	OnExit func() tea.Cmd
+	// Note is the note of the item under the cursor in the mode, as
+	// Panel.Note: while the panel is in the mode it is asked instead of the
+	// panel's, an inner layer's before an outer one's. The lib puts i on the
+	// mode's keys for it (tdp K13), none of the app's being i.
+	Note func() []string
 	// Inspect is the inspect toast of the item under the cursor in the mode,
-	// as Panel.Inspect: while the panel is in the mode it is asked instead of
-	// the panel's, an inner layer's before an outer one's.
+	// as Panel.Inspect.
+	//
+	// Deprecated: tdp has no inspect toast any more; an item's note
+	// replaces it (Note, tdp panel.18). It still works until a later minor
+	// version takes it away.
 	Inspect func() []string
 
 	// with is the other panel a mode spanning two is in (a Diff mode shown
@@ -343,19 +351,37 @@ type Panel struct {
 	// OtherKeys are sections of its ? about another surface that has no key
 	// reference of its own (tdp M6: a PTY, a grid), after the panel's own.
 	OtherKeys []KeySection
-	// Inspect, when set, is what the item under the panel's cursor has to show
-	// in an inspect toast (tdp toast.4), nil for an item with nothing: each
-	// string a row of its own, as Toast's. The lib asks it after every message
-	// while the panel has the focus and shows the toast, with no timer and no
-	// key of its own, every key going through it; it goes when the cursor
-	// leaves the item, and an ordinary toast replaces it until that one is
-	// gone. Which items have one and what it says are the app's.
+	// Note, when set, is the note of the item under the panel's cursor (tdp
+	// panel.18: where a link goes, a remark), nil for an item with none: its
+	// lines, wrapped when long. Which items have one and what it says are the
+	// app's. While the panel has the focus and the cursor rests on an item
+	// with one, the note's head shows right under the item, a small box with
+	// U+F02FD and i over the row below, taking no key; i opens it, a viewer
+	// titled NOTE anchored under the item (above it when there is no room
+	// below), at most half the panel high, with the viewer's scrolling,
+	// selection mode and / search; Esc closes it back to its head, the cursor
+	// where it was. The lib puts the i action, [i] Note, among the panel's;
+	// none of the app's may be i (AddScreen panics; tdp K13). The body tells
+	// where the item is: List does, a body of the app's own implements
+	// NoteSpot.
+	Note func() []string
+	// Inspect, when set, is what the item under the panel's cursor has to
+	// show in an inspect toast, nil for an item with nothing: each string a
+	// row of its own, as Toast's. The lib asks it after every message while
+	// the panel has the focus and shows the toast, with no timer and no key
+	// of its own, every key going through it; it goes when the cursor leaves
+	// the item, and an ordinary toast hides it until those are gone.
+	//
+	// Deprecated: tdp has no inspect toast any more; an item's note
+	// replaces it (Note, tdp panel.18). It still works until a later minor
+	// version takes it away.
 	Inspect func() []string
 
 	mode   *Mode
 	under  []*Mode      // the layers mode is in, outermost first
 	levels []*diffLevel // the lists of the items that differ gone into, the last shown (compare.go)
 	over   *diffOver    // a Diff mode's diff shown in the panel as the list's details (compare.go)
+	bodyY  int          // the rows from the panel's top to its body, at the last draw
 	app    *App
 }
 
@@ -390,6 +416,9 @@ func (p *Panel) actions() []Action {
 	if p.over != nil {
 		return nil
 	}
+	if p.Note != nil { // i opens an item's note (tdp panel.18, K13)
+		return append(p.Actions[:len(p.Actions):len(p.Actions)], p.noteAction())
+	}
 	return p.Actions
 }
 
@@ -413,13 +442,17 @@ func (p *Panel) upDiff() { p.levels = p.levels[:len(p.levels)-1] }
 func (p *Panel) LeaveDiff() { p.levels = nil }
 
 // EnterMode puts the panel in m; Esc leaves it (tdp K11).
-func (p *Panel) EnterMode(m *Mode) { p.mode, p.under = m, nil }
+func (p *Panel) EnterMode(m *Mode) {
+	p.noteKey(m)
+	p.mode, p.under = m, nil
+}
 
 // EnterLayer goes a layer further into the mode the panel is in, to m (tdp
 // K11): its name follows the mode's after ">" (Visual>select), its keys and
 // Exit are the ones that work, and Esc leaves m alone, running its OnExit,
 // back to the layer it was in. Out of a mode it is EnterMode.
 func (p *Panel) EnterLayer(m *Mode) {
+	p.noteKey(m)
 	if p.mode != nil {
 		p.under = append(p.under, p.mode)
 	}
@@ -623,6 +656,7 @@ func (p *Panel) draw(n, w, h int, focused, pointed bool) []string {
 	if where != "" && ih > 0 {
 		loc, ih = []string{locationRow(glyph, where, inner)}, ih-1
 	}
+	p.bodyY = 1 + len(loc)
 	var body []string
 	switch {
 	case pb == nil:

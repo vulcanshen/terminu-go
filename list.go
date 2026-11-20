@@ -172,9 +172,13 @@ type List struct {
 	cursor int   // index into view
 	top    int   // first row shown
 	cover  int   // rows at the bottom under the inspect toast (Uncover)
-	marked map[string]bool
-	held   bool // the row under the cursor is held in a Drag mode
-	inMode bool // the panel it is on is in a mode: the cursor is Subtext1
+	// noteTop and noteBottom are the cursor's item's first and last rows at
+	// the last draw, -1 when not drawn; noteCol is where its text starts
+	// (NoteAt).
+	noteTop, noteBottom, noteCol int
+	marked                       map[string]bool
+	held                         bool // the row under the cursor is held in a Drag mode
+	inMode                       bool // the panel it is on is in a mode: the cursor is Subtext1
 
 	filter *lineEditor
 	typing bool
@@ -554,6 +558,13 @@ func locationRow(glyph, loc string, w int) string {
 	return " " + Pad(Fg(Lavender).Render(glyph+TruncateLeft(Escape(loc), room-Width(glyph))), w-1)
 }
 
+// NoteAt is where the item under the cursor was at the last Draw: its
+// first and last rows and the cell its text starts at, for its note's head
+// (Panel.Note, tdp panel.18).
+func (l *List) NoteAt() (top, bottom, col int, ok bool) {
+	return l.noteTop, l.noteBottom, l.noteCol, l.noteTop >= 0
+}
+
 // Uncover keeps the cursor's row above the rows at the bottom of the list
 // that the inspect toast covers (tdp toast.4); the lib calls it before each
 // Draw.
@@ -567,6 +578,7 @@ func (l *List) Draw(w, h int, focused bool) []string { return l.draw(w, h, focus
 // list's location row itself (Panel.Location).
 func (l *List) draw(w, h int, focused, own bool) []string {
 	out := make([]string, 0, h)
+	l.noteTop, l.noteBottom = -1, -1
 	if own && l.Location != "" {
 		out = append(out, locationRow(l.LocationGlyph, l.Location, w))
 	}
@@ -592,6 +604,7 @@ func (l *List) draw(w, h int, focused, own bool) []string {
 		indent = "  "
 	}
 	textW := w - 1 - arrow - len(indent) // one cell of padding on the left, the arrow's on the right (tdp panel)
+	l.noteCol = 1 + len(indent) + markW
 	widths := l.widths(textW - markW)
 	if l.headed() {
 		// The header goes in with the items, so the columns line up.
@@ -629,6 +642,12 @@ func (l *List) draw(w, h int, focused, own bool) []string {
 		if li >= len(lines) {
 			out = append(out, Repeat(" ", w))
 			continue
+		}
+		if lines[li].item == l.cursor && l.cursor >= 0 { // where its note's head goes (tdp panel.18)
+			if l.noteTop < 0 {
+				l.noteTop = len(out)
+			}
+			l.noteBottom = len(out)
 		}
 		if lines[li].item < 0 {
 			// A group title: Blue, upper case, not bold, one cell from the frame.

@@ -1148,10 +1148,10 @@ func TestToastWrapLines(t *testing.T) {
 	body := func(text string) []string {
 		ta.Toast(Info, text)
 		ta.settle()
-		_, plain := covEBox(ta, ta.toast)
+		_, plain := covEBox(ta, ta.lastToast())
 		var out []string
 		for _, row := range plain[2 : len(plain)-2] {
-			out = append(out, covEInside(row, ta.toast.w))
+			out = append(out, covEInside(row, ta.lastToast().w))
 		}
 		return out
 	}
@@ -1179,8 +1179,8 @@ func TestToastWrapLines(t *testing.T) {
 	ta.ToastLines = 0
 	ta.resize(60, 9)
 	rows = body(long)
-	if len(rows) != 3 || !strings.HasSuffix(strings.TrimRight(rows[2], " "), "…") || ta.toast.y < 0 {
-		t.Errorf("no taller than fits above the bottom two rows: %q at row %d", rows, ta.toast.y)
+	if len(rows) != 3 || !strings.HasSuffix(strings.TrimRight(rows[2], " "), "…") || ta.lastToast().y < 0 {
+		t.Errorf("no taller than fits above the bottom two rows: %q at row %d", rows, ta.lastToast().y)
 	}
 }
 
@@ -1196,7 +1196,7 @@ func TestToastKinds(t *testing.T) {
 		ta := newTestApp(t)
 		ta.Toast(c.kind, "Copied 3 paths")
 		ta.settle()
-		styled, plain := covEBox(ta, ta.toast)
+		styled, plain := covEBox(ta, ta.lastToast())
 		if !strings.Contains(plain[0], c.glyph+" "+c.title) {
 			t.Errorf("%s: title %q", c.title, plain[0])
 		}
@@ -1218,33 +1218,10 @@ func TestToastDuration(t *testing.T) {
 	ta := newTestApp(t)
 	ta.Toast(Info, "Copied 3 paths")
 	ta.settle()
-	ta.Update(toastDone{ta.toast.view.(*toastView).id})
+	ta.Update(toastDone{ta.lastToast().view.(*toastView).id})
 	ta.settle()
-	if ta.toast != nil {
+	if ta.lastToast() != nil {
 		t.Error("the toast stays after its time")
-	}
-}
-
-func TestToastReplace(t *testing.T) {
-	ta := newTestApp(t)
-	ta.Toast(Info, "Copied 3 paths")
-	ta.settle()
-	first := ta.toast.view.(*toastView).id
-	ta.Toast(Warning, "Disk almost full")
-	ta.settle()
-	text := ta.screenText()
-	if !strings.Contains(text, "Disk almost full") || strings.Contains(text, "Copied 3 paths") || strings.Contains(text, "INFO") {
-		t.Errorf("the second toast takes the first one's place:\n%s", text)
-	}
-	ta.Update(toastDone{first})
-	ta.settle()
-	if ta.toast == nil {
-		t.Fatal("the first toast's time closed the second: its time starts again")
-	}
-	ta.Update(toastDone{ta.toast.view.(*toastView).id})
-	ta.settle()
-	if ta.toast != nil {
-		t.Error("the second toast stays after its own time")
 	}
 }
 
@@ -1253,15 +1230,15 @@ func TestToastEscFirst(t *testing.T) {
 	ta.press("Space")
 	ta.Toast(Info, "Copied 3 paths")
 	ta.settle()
-	if _, plain := covEBox(ta, ta.toast); !strings.HasPrefix(plain[len(plain)-1], "┗━ Esc:close ━") {
+	if _, plain := covEBox(ta, ta.lastToast()); !strings.HasPrefix(plain[len(plain)-1], "┗━ Esc:close ━") {
 		t.Errorf("hint: %q", plain[len(plain)-1])
 	}
 	ta.Update(keyMsg("Esc"))
-	if !ta.toast.closing {
+	if !ta.lastToast().closing {
 		t.Error("Esc closes the toast at once")
 	}
 	ta.settle()
-	if _, ok := ta.topView().(*menuView); !ok || ta.toast != nil {
+	if _, ok := ta.topView().(*menuView); !ok || ta.lastToast() != nil {
 		t.Fatalf("Esc takes the toast before the popup under it: %T", ta.topView())
 	}
 	ta.press("Esc")
@@ -1276,17 +1253,17 @@ func TestToastKeysPassThrough(t *testing.T) {
 	ta.Toast(Info, "Copied 3 paths")
 	ta.settle()
 	ta.press("j")
-	if r, _ := ta.list.Current(); r.ID != "1" || ta.toast == nil || ta.toast.closing {
+	if r, _ := ta.list.Current(); r.ID != "1" || ta.lastToast() == nil || ta.lastToast().closing {
 		t.Errorf("j goes through the toast to the list: on %s", r.ID)
 	}
 	ta.press("Space")
 	m, ok := ta.topView().(*menuView)
-	if !ok || ta.toast == nil || ta.toast.closing {
+	if !ok || ta.lastToast() == nil || ta.lastToast().closing {
 		t.Fatalf("Space goes through the toast: %T", ta.topView())
 	}
 	before := m.cursor
 	ta.press("j")
-	if m.cursor == before || ta.toast == nil || ta.toast.closing {
+	if m.cursor == before || ta.lastToast() == nil || ta.lastToast().closing {
 		t.Error("j goes through the toast to the menu")
 	}
 }

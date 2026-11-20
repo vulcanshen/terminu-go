@@ -116,7 +116,7 @@ func TestNoLongerUsed(t *testing.T) {
 		if !strings.Contains(log, "INFO No longer used: "+old+"; delete it if you don't need it") || strings.Contains(log, gone) {
 			t.Errorf("the App Log:\n%s", log)
 		}
-		if ta.toast != nil {
+		if ta.lastToast() != nil {
 			t.Error("a toast")
 		}
 	}

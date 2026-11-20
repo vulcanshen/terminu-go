@@ -45,16 +45,17 @@ type toastView struct {
 	// inspect makes it the inspect toast (tdp toast.4): no timer and no hint,
 	// Esc going through it too; its kind is Info, for its text in Text.
 	inspect bool
-	// notice is a toast App.Notify showed: one Notify gives while it shows
-	// joins it (tdp E3).
-	notice bool
+	// count is how many times its words came while it showed (INFO ×3);
+	// oldest is the oldest showing, with the hint (tdp toast.2, toast.3).
+	count  int
+	oldest bool
 }
 
 type toastDone struct{ id int }
 
 func (t *toastView) hint() []KeyHint {
-	if t.inspect {
-		return nil // no key closes it
+	if t.inspect || !t.oldest {
+		return nil // no key closes it; Esc closes the oldest first (tdp toast.3)
 	}
 	return []KeyHint{{"Esc", "close"}}
 }
@@ -69,6 +70,9 @@ func (t *toastView) glyph() string {
 func (t *toastView) title() string {
 	if t.inspect {
 		return "INSPECT"
+	}
+	if t.count > 1 { // the same words again while it showed (tdp toast.2)
+		return t.kind.title() + " ×" + itoa(t.count)
 	}
 	return t.kind.title()
 }

@@ -789,34 +789,6 @@ func TestDiffInChanges(t *testing.T) {
 	}
 }
 
-// What the start learns only later joins its toast while it still shows,
-// and comes on its own once it is gone (tdp E3 "Coming later", E3-43):
-// D "Coming later".
-func TestComingLater(t *testing.T) {
-	s := newShowcase()
-	d := tdptest.Start(t, s.app, 160, 40)
-	fit := "2 values in config.yaml did not fit: defaults used, yours kept in config.yaml.bak"
-	d.Do(s.dialogs.comingLater)
-	if !d.Has(fit) || d.Has(lateNamespace) {
-		t.Fatalf("the start's toast:\n%s", strings.Join(d.Screen(), "\n"))
-	}
-	d.Advance(2 * time.Second)
-	if !d.Has(fit) || !d.Has(lateNamespace) || !d.Has("WARNING") {
-		t.Errorf("the late one did not join the toast:\n%s", strings.Join(d.Screen(), "\n"))
-	}
-	d.Advance(3 * time.Second) // past the start toast's time: the joined one's starts over
-	if !d.Has(lateNamespace) {
-		t.Error("the joined toast went with the start's time")
-	}
-	d.Advance(5 * time.Second)
-	d.Do(s.dialogs.comingLater)
-	d.Press("Esc") // the start's toast gone first
-	d.Advance(2 * time.Second)
-	if d.Has(fit) || !d.Has(lateNamespace) {
-		t.Errorf("after Esc the late one is not on its own:\n%s", strings.Join(d.Screen(), "\n"))
-	}
-}
-
 // In [3] the Diff mode says it cannot diff a row with the anchor, and shows
 // a side it cannot read as its error state, no error popup (tdp panel.9,
 // panel-187): assets/ against main.go, then against locked/.
@@ -882,5 +854,62 @@ func TestKindsSigns(t *testing.T) {
 	d.Press("1", "j", "f")
 	if !d.Has("Opens on deployments") {
 		t.Errorf("SUMMARY did not follow:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+}
+
+// A pod that is not running says why in its note (tdp panel.18,
+// panel-192 to panel-194): the head under it, i opening the note under the
+// pod, Esc closing it back to its head; a running pod has none.
+func TestPodNote(t *testing.T) {
+	s := newShowcase()
+	d := tdptest.Start(t, s.app, 140, 40)
+	d.Press("P", "1", "g", "g")
+	head := "┌ \U000F02FD i ┐"
+	if d.Has(head) {
+		t.Fatal("a head on a running pod")
+	}
+	for range 40 {
+		if r, ok := s.panels.podList.Current(); ok && strings.Contains(r.Cells[2], "CrashLoopBackOff") {
+			break
+		}
+		d.Press("j")
+	}
+	if !d.Has(head) {
+		t.Fatalf("no head under a pod in CrashLoopBackOff:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Press("i")
+	if !d.Has("NOTE") || !d.Has("Back-off restarting failed container app") {
+		t.Errorf("i did not open its note:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Press("Esc")
+	if d.Has("NOTE") || !d.Has(head) {
+		t.Errorf("Esc did not close it back to its head:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+}
+
+// Toasts stack (tdp toast.2, toast.3, toast-13, toast-14, toast-29): the
+// start's two Warnings a toast each; the same words again count on one; Esc
+// closes the oldest first.
+func TestToastsStack(t *testing.T) {
+	s := newShowcase()
+	d := tdptest.Start(t, s.app, 160, 40)
+	const gone = `Profile "work" in config.yaml is not in profiles.yaml: using the default`
+	d.Do(func() tea.Cmd { return s.dialogs.didNotFit(false, terminu.Notice{Kind: terminu.Warning, Text: gone}) })
+	screen := strings.Join(d.Screen(), "\n")
+	if strings.Count(screen, "WARNING") != 2 || strings.Index(screen, "did not fit") > strings.Index(screen, gone) {
+		t.Errorf("not two toasts, the first above:\n%s", screen)
+	}
+	if strings.Count(screen, "Esc:close") != 1 {
+		t.Errorf("Esc:close on more than the oldest:\n%s", screen)
+	}
+	for range 3 {
+		d.Do(func() tea.Cmd { return s.app.Toast(terminu.Info, "Copied 3 paths") })
+	}
+	if !d.Has("INFO ×3") {
+		t.Errorf("the same words do not count on one toast:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Press("Esc")
+	if d.Has("did not fit") || !d.Has(gone) {
+		t.Errorf("Esc did not close the oldest first:\n%s", strings.Join(d.Screen(), "\n"))
 	}
 }

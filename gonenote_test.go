@@ -26,7 +26,7 @@ func goneNoteOnTop(t *testing.T, ta *testApp, kind ToastKind, title string, rows
 	if text := ta.screenText(); !strings.Contains(text, title) || !strings.Contains(text, "Enter|Esc:close") {
 		t.Errorf("the note as drawn:\n%s", text)
 	}
-	if ta.toast != nil {
+	if ta.lastToast() != nil {
 		t.Errorf("a toast came with the note")
 	}
 	return n
@@ -78,7 +78,7 @@ func TestNote99ViewerGoneNote(t *testing.T) {
 	ta.press("v", "v", "j", "Space")
 	menu := ta.topView()
 	ta.ReadAgain(v, fileLines(90))
-	if ta.settle(); ta.topView() != menu || ta.toast != nil {
+	if ta.settle(); ta.topView() != menu || ta.lastToast() != nil {
 		t.Errorf("nothing gone: %T on top", ta.topView())
 	}
 }
@@ -117,11 +117,11 @@ func TestNote100ViewerCannotRead(t *testing.T) {
 	}
 	ta, v = openFile(t, fileLines(80))
 	ta.press("v")
-	if cmd := ta.CannotReadAgain(v); cmd != nil || v.inMode || ta.toast != nil {
+	if cmd := ta.CannotReadAgain(v); cmd != nil || v.inMode || ta.lastToast() != nil {
 		t.Error("no words: something said")
 	}
 	ta.press("Esc")
-	if cmd := ta.CannotReadAgain(v, "gone"); cmd != nil || ta.toast != nil {
+	if cmd := ta.CannotReadAgain(v, "gone"); cmd != nil || ta.lastToast() != nil {
 		t.Error("closed: something said")
 	}
 }

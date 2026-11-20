@@ -1272,11 +1272,11 @@ func TestK11ModeCoreKeys(t *testing.T) {
 func TestK11TabPausedToast(t *testing.T) {
 	ta := newTestApp(t)
 	ta.press("D", "Tab")
-	if ta.Screen().focus != 0 || ta.toast == nil || !strings.Contains(ta.screenText(), "Press [Esc] to leave Drag first") {
+	if ta.Screen().focus != 0 || ta.lastToast() == nil || !strings.Contains(ta.screenText(), "Press [Esc] to leave Drag first") {
 		t.Fatalf("Tab in a paused mode answers with a toast and stays:\n%s", ta.screenText())
 	}
 	ta.press("Esc")
-	if ta.pods.InMode() == nil || ta.toast != nil {
+	if ta.pods.InMode() == nil || ta.lastToast() != nil {
 		t.Fatal("the first Esc takes the toast, not the mode")
 	}
 	ta.press("Esc", "Tab")
@@ -1286,7 +1286,7 @@ func TestK11TabPausedToast(t *testing.T) {
 	ta.press("1")
 	ta.pods.EnterMode(&Mode{Name: "Look"}) // not paused: Tab works
 	ta.press("Tab")
-	if ta.Screen().focus != 1 || ta.toast != nil {
+	if ta.Screen().focus != 1 || ta.lastToast() != nil {
 		t.Error("in a mode that does not pause Tab, Tab goes to the next panel")
 	}
 	// on a screen of one panel Tab does nothing out of the mode, and so
@@ -1294,8 +1294,8 @@ func TestK11TabPausedToast(t *testing.T) {
 	ta.press("O")
 	ta.Screen().Focused().EnterMode(&Mode{Name: "Play", Pause: true})
 	ta.press("Tab", "2")
-	if ta.toast != nil || ta.Screen().Focused().InMode() == nil {
-		t.Errorf("Tab and 2 on a screen of one panel: a toast %v", ta.toast != nil)
+	if ta.lastToast() != nil || ta.Screen().Focused().InMode() == nil {
+		t.Errorf("Tab and 2 on a screen of one panel: a toast %v", ta.lastToast() != nil)
 	}
 }
 
@@ -1316,14 +1316,14 @@ func TestK11DigitsPausedToast(t *testing.T) {
 	// or one with no panel, does nothing in it, silently (tdp K11-5)
 	for _, d := range []string{"1", "9"} {
 		ta.press(d)
-		if ta.toast != nil || ta.Screen().focus != 0 || ta.pods.InMode() == nil {
-			t.Errorf("%s in a paused mode: a toast %v, the focus on [%d]", d, ta.toast != nil, ta.Screen().focus+1)
+		if ta.lastToast() != nil || ta.Screen().focus != 0 || ta.pods.InMode() == nil {
+			t.Errorf("%s in a paused mode: a toast %v, the focus on [%d]", d, ta.lastToast() != nil, ta.Screen().focus+1)
 		}
 	}
 	ta.pods.LeaveMode()
 	ta.pods.EnterMode(&Mode{Name: "Look"})
 	ta.press("3")
-	if ta.Screen().focus != 2 || ta.toast != nil {
+	if ta.Screen().focus != 2 || ta.lastToast() != nil {
 		t.Error("in a mode that does not pause the digits, 3 goes to [3]")
 	}
 }

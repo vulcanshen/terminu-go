@@ -39,10 +39,13 @@ type animMsg struct{}
 
 // layer is one popup on the stack.
 type layer struct {
-	view     popupView
-	w, h     int
-	x, y     int
-	frame    int // 1–9 while opening, 9 when open, counting down while closing
+	view  popupView
+	w, h  int
+	x, y  int
+	frame int // 1–9 while opening, 9 when open, counting down while closing
+	// unfold is an item's note opening from its head (tdp panel.18): 1
+	// down from its top row, -1 up from its bottom one, 0 the popup's way.
+	unfold   int
 	closing  bool
 	toast    bool
 	loading  bool  // it was loading at the last update
@@ -73,6 +76,13 @@ func (l *layer) place(sw, sh int) {
 // is nothing to draw yet; rows are relative to the layer's top.
 func (l *layer) drawFrame(full []string, color Color) (rows []string, first, x int) {
 	f := l.frame
+	if l.unfold != 0 && f > 0 && f < openFrames { // from its head, a ninth of it a frame
+		n := min(max((len(full)*f+openFrames-1)/openFrames, 1), len(full))
+		if l.unfold > 0 {
+			return full[:n], 0, 0
+		}
+		return full[len(full)-n:], len(full) - n, 0
+	}
 	switch {
 	case f <= 0:
 		return nil, 0, 0

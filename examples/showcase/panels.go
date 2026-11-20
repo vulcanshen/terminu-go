@@ -59,9 +59,9 @@ func newPanelsScreen(s *showcase) *panelsScreen {
 	ps.pods = &terminu.Panel{Label: "Pods", Tabs: []string{"Events"}, Body: ps.podList, LoadingText: "loading pods…"}
 	ps.pods.OnTab = ps.switchTab
 	ps.pods.Actions = ps.podActions()
-	// A pod that is not running says why in an inspect toast while the
-	// cursor is on it (tdp toast.4).
-	ps.pods.Inspect = ps.podReason
+	// A pod that is not running says why in its note: the head shows under
+	// it, i opens it (tdp panel.18).
+	ps.pods.Note = ps.podReason
 	// C compares two pods' pretend YAML (tdp panel.9): the
 	// lib does the mode and the popup; the app gives the key and the text.
 	ps.pods.Actions = append(ps.pods.Actions, s.app.DiffModeAction(ps.pods, ps.podList, terminu.DiffMode{Key: "D",
@@ -187,8 +187,8 @@ func (ps *panelsScreen) layout(w, h int) []terminu.Rect {
 	}
 }
 
-// podReason is why the pod under the cursor is not running, for its
-// inspect toast; a running pod and an event have none.
+// podReason is why the pod under the cursor is not running, its note; a
+// running pod and an event have none.
 func (ps *panelsScreen) podReason() []string {
 	r, ok := ps.podList.Current()
 	if !ok || len(r.Cells) < 5 {

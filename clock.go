@@ -72,8 +72,7 @@ func init() {
 		return n
 	}
 	testhook.Toast = func(app any) bool {
-		t := app.(*App).toast
-		return t != nil && !t.closing && !t.view.(*toastView).inspect
+		return len(app.(*App).showingToasts()) > 0
 	}
 	testhook.Typing = func(app any) bool { a := app.(*App); return a.typingOrMode() || a.ptyFocus() != nil }
 	testhook.Screens = func(app any) any { return app.(*App).screens }

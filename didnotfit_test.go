@@ -172,7 +172,7 @@ func TestE3DidNotFit(t *testing.T) {
 
 	ta = newTestApp(t)
 	before = len(ta.logs.entries)
-	if cmd := ta.DidNotFit("/data/hosts.yaml", "", entry); cmd != nil || ta.toast != nil {
+	if cmd := ta.DidNotFit("/data/hosts.yaml", "", entry); cmd != nil || ta.lastToast() != nil {
 		t.Error("no copy: a toast")
 	}
 	if e := ta.logs.entries[before:]; len(e) != 1 || e[0].kind != Warning || e[0].text != `hosts.yaml: entry 3 (name "") did not fit; taken out` {

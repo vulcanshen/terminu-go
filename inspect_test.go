@@ -14,7 +14,7 @@ import (
 // inspected is the text of the inspect toast on the screen, nil when there
 // is none or it is going.
 func inspected(ta *testApp) []string {
-	if t := ta.toast; t != nil && !t.closing && t.view.(*toastView).inspect {
+	if t := ta.lastToast(); t != nil && !t.closing && t.view.(*toastView).inspect {
 		return t.view.(*toastView).text
 	}
 	return nil
@@ -39,7 +39,7 @@ func TestToastInspect(t *testing.T) {
 	if got := inspected(ta); len(got) != 1 || got[0] != "go.dev/pod-00" {
 		t.Fatalf("on pod-00: %q", got)
 	}
-	_, plain := covEBox(ta, ta.toast)
+	_, plain := covEBox(ta, ta.lastToast())
 	if !strings.Contains(plain[0], glyphInspect+" INSPECT") || strings.Contains(plain[len(plain)-1], "Esc") {
 		t.Errorf("titled INSPECT, with no hint:\n%s", strings.Join(plain, "\n"))
 	}
@@ -47,12 +47,12 @@ func TestToastInspect(t *testing.T) {
 		t.Error("Esc does not take it, and the App Log does not keep it (toast-27)")
 	}
 	ta.press("j")
-	if ta.toast != nil {
+	if ta.lastToast() != nil {
 		t.Error("it stays on pod-01, which has none")
 	}
 	ta.press("j")
 	ta.Update(keyMsg("j"))
-	if got := inspected(ta); len(got) != 1 || got[0] != "go.dev/pod-03" || ta.toast.frame != openFrames {
+	if got := inspected(ta); len(got) != 1 || got[0] != "go.dev/pod-03" || ta.lastToast().frame != openFrames {
 		t.Fatalf("from pod-02 to pod-03 it is pod-03's at once: %q", got)
 	}
 	ta.settle()
@@ -71,13 +71,13 @@ func TestToastInspect(t *testing.T) {
 		t.Errorf("Esc goes through it and leaves the layer: in %v, toast %q", ta.pods.InMode(), inspected(ta))
 	}
 	ta.press("Esc")
-	if ta.pods.InMode() != nil || ta.toast != nil {
+	if ta.pods.InMode() != nil || ta.lastToast() != nil {
 		t.Error("Esc leaves the mode, and the toast goes with it, pod-01 having none")
 	}
 
 	// None while a popup is open, back once it closes (toast-26).
 	ta.press("k", "Space")
-	if ta.toast != nil {
+	if ta.lastToast() != nil {
 		t.Error("it is there under the Space menu")
 	}
 	ta.press("Esc")
@@ -86,9 +86,8 @@ func TestToastInspect(t *testing.T) {
 	}
 }
 
-// TestToastInspectReplaced: an ordinary toast takes the inspect toast's
-// place at once, and once that one is gone it is back (tdp toast.4,
-// toast-24).
+// TestToastInspectReplaced: an ordinary toast hides the inspect toast
+// (deprecated), and once the ordinary ones are gone it is back.
 func TestToastInspectReplaced(t *testing.T) {
 	ta := newTestApp(t)
 	ta.pods.Inspect = func() []string { return []string{"go.dev/doc"} }
@@ -96,12 +95,14 @@ func TestToastInspectReplaced(t *testing.T) {
 	ta.settle()
 	ta.Toast(Success, "Copied")
 	ta.Update(nil)
-	if inspected(ta) != nil || ta.toast.frame != openFrames {
-		t.Fatalf("the ordinary toast is not in its place at once: %q, frame %d", inspected(ta), ta.toast.frame)
+	ta.settle()
+	if inspected(ta) != nil || strings.Contains(ta.screenText(), "go.dev/doc") {
+		t.Fatalf("the ordinary toast does not hide it: %q", inspected(ta))
 	}
 	ta.Update(toastDone{ta.toastSeq})
-	if inspected(ta) == nil || ta.toast.frame != openFrames {
-		t.Error("it is not back at once when the ordinary toast's time is up")
+	ta.settle()
+	if inspected(ta) == nil || !strings.Contains(ta.screenText(), "go.dev/doc") {
+		t.Error("it is not back once the ordinary toast's time is up")
 	}
 	ta.Toast(Info, "Saved")
 	ta.press("Esc")
@@ -146,7 +147,7 @@ func TestToastInspectUncovers(t *testing.T) {
 		ta.resize(60, 20)
 		ta.press("G")
 		at := slices.IndexFunc(strings.Split(ta.screenText(), "\n"), func(s string) bool { return strings.Contains(s, c.last) })
-		if ta.toast == nil || at < 0 || at >= ta.toast.y {
+		if ta.lastToast() == nil || at < 0 || at >= ta.lastToast().y {
 			t.Errorf("%s on row %d, under the inspect toast:\n%s", c.last, at, ta.screenText())
 		}
 	}
@@ -166,8 +167,8 @@ func TestToastInspectUncovers(t *testing.T) {
 	ta.resize(60, 20)
 	ta.settle()
 	ta.Frame()
-	if a.rows != ta.toast.h || b.rows != 0 {
-		t.Errorf("the focused body is told the %d rows the toast covers, the other none: %d, %d", ta.toast.h, a.rows, b.rows)
+	if a.rows != ta.lastToast().h || b.rows != 0 {
+		t.Errorf("the focused body is told the %d rows the toast covers, the other none: %d, %d", ta.lastToast().h, a.rows, b.rows)
 	}
 	show = false
 	ta.Update(nil)

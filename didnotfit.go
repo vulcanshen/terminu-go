@@ -7,7 +7,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"slices"
 	"strconv"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -83,10 +82,10 @@ func (a *App) DidNotFit(path, copy string, misfits ...Misfit) tea.Cmd {
 	return a.Notify(MisfitNotice(path, copy, misfits...))
 }
 
-// Notice is one row of the toast a start gives, with its own kind (tdp E3,
-// several at one start): a location moved, values that did not fit
-// (MisfitNotice), a copy that could not be made (KeepAside's error), a value
-// naming an entry that is not there. Notify shows them as one toast; with no
+// Notice is one thing a start says, with its own kind (tdp E3, several at
+// one start): a location moved, values that did not fit (MisfitNotice), a
+// copy that could not be made (KeepAside's error), a value naming an entry
+// that is not there. Notify shows each as a toast of its own; with no
 // screen, its Lines go to stderr.
 type Notice struct {
 	Kind ToastKind
@@ -106,9 +105,9 @@ func (n Notice) Lines() []string {
 	return append(out, n.warns...)
 }
 
-// MisfitNotice is DidNotFit's row, a Warning in DidNotFitText's words,
+// MisfitNotice is DidNotFit's toast, a Warning in DidNotFitText's words,
 // carrying a WARN for each misfit that Notify logs right after it. With copy
-// "" its Text is "": no row, the WARNs still logged.
+// "" its Text is "": no toast, the WARNs still logged.
 func MisfitNotice(path, copy string, misfits ...Misfit) Notice {
 	n := Notice{Kind: Warning, Text: DidNotFitText(path, copy, misfits...)}
 	file := filepath.Base(path)
@@ -122,55 +121,22 @@ func MisfitNotice(path, copy string, misfits ...Misfit) Notice {
 	return n
 }
 
-// Notify shows notices as one toast, a row each in the order given, its kind
-// the strongest: Error, then Warning, else the first row's (tdp E3, several
-// at one start). In the App Log each row is an entry of its own at its own
-// kind, a misfit's WARNs right after its row. A notice with no Text has no
-// row; with no rows there is no toast.
-//
-// One that comes later (a namespace or a kind the app can ask a cluster
-// about only once its screen is open) joins the toast Notify showed while it
-// still shows: its rows after that toast's, the kind the strongest again,
-// its time starting over. Once that toast is gone (its time up, Esc), or
-// while another toast shows, it is a toast of its own. So a toast Notify
-// shows never replaces another of its own before it is read (tdp E3 "Coming
-// later").
+// Notify shows notices, each a toast of its own in the order given, stacked
+// as every toast is (tdp E3, several at one start; toast.2). In the App Log
+// each is an entry of its own at its own kind, a misfit's WARNs right after
+// it. A notice with no Text shows no toast, its WARNs still logged.
 func (a *App) Notify(notices ...Notice) tea.Cmd {
-	var rows []string
-	var kinds []ToastKind
-	if t := a.toast; t != nil && !t.closing {
-		if v := t.view.(*toastView); v.notice {
-			rows, kinds = slices.Clone(v.text), []ToastKind{v.kind}
-		}
-	}
-	had := len(rows)
+	var cmds []tea.Cmd
 	for _, n := range notices {
 		if n.Text != "" {
 			a.Log(n.Kind, n.Text)
-			rows, kinds = append(rows, n.Text), append(kinds, n.Kind)
+			cmds = append(cmds, a.showToast(n.Kind, []string{n.Text}))
 		}
 		for _, w := range n.warns {
 			a.Log(Warning, w)
 		}
 	}
-	if len(rows) == had {
-		return nil
-	}
-	cmd := a.showToast(strongest(kinds), rows)
-	a.toast.view.(*toastView).notice = true
-	return cmd
-}
-
-// strongest is the kind of a toast whose rows are of kinds, in order: Error,
-// then Warning, else the first's (tdp E3).
-func strongest(kinds []ToastKind) ToastKind {
-	kind := kinds[0]
-	for _, k := range kinds {
-		if k == Error || k == Warning && kind != Error {
-			kind = k
-		}
-	}
-	return kind
+	return tea.Batch(cmds...)
 }
 
 // DidNotFitText is DidNotFit's sentence, for an app with no screen to write

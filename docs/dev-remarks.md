@@ -23,8 +23,10 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   footer 都從這一份登記產生（`app.go`、`menu.go`、`note.go`）。
 - **一個畫面怎麼畫出來**（`App.Frame`）：最上面一列（畫面 chip 列加分隔線，或 statusbar）、panel 區（每個 panel 畫好框再用 `Composite`
   放上去；失焦的 panel 內容淡化一次，串流除外）、footer。有 popup 時整個底下淡化一次，再由下往上疊每一層 popup（最上層以外都淡化），
-  最後疊 toast。每一層都照開關動畫的那一格畫（`layer.drawFrame`）。
-- **按鍵**（`handleKey`）：開到一半的 popup 不收鍵 → 離開流程裡的第二個 `Ctrl-C` → toast 先收 `Esc`（inspect toast 不收）→ `Ctrl-C` 進離開流程 → 最上層
+  最後疊 toast：`a.toasts` 從舊到新，最新的下框在倒數第三列，舊的一個個往上疊（`placeToasts`），正在收的留著位置直到消失，
+  其他的才往下補位。每一層都照開關動畫的那一格畫（`layer.drawFrame`；項目的附註從頭往下或往上展開，`layer.unfold`）。
+  有項目附註的 focus panel，畫完 panel 之後把附註的頭疊在那一項下面（`drawNoteHead`），同時記下位置（`a.note`）給 `i` 用。
+- **按鍵**（`handleKey`）：開到一半的 popup 不收鍵 → 離開流程裡的第二個 `Ctrl-C` → toast 先收 `Esc`，最舊的先（inspect toast 不收）→ `Ctrl-C` 進離開流程 → 最上層
   popup → focus 的 panel（輸入態、模式、一般）。`g` 開頭的兩鍵組合（`gg`、`go`）在 app 這一層接起來，body 收到的是 `gg`。
 - **input**：每一種 input 都是一個 `Input`（`TextInput`、`Select`、`DatePicker`…），單獨打開用 `App.Open`（或 `App.Text` 這類捷徑）；
   表單的欄位用 `Edit` 在打開時做出它的 `Input`，表單打開它時傳一個 `written`，值寫回時表單記成「改過了」（離開前先問）。一般的
@@ -166,7 +168,15 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   app 不用另外讓 `Empty()` 跟著對。
 - **toast 與 App Log 的字照原樣**（tdp toast.2）：開頭大寫是 app 的字。lib 分不出一列的開頭是名稱（`kbu.yaml saved`）還是一般的字，
   替 app 改大寫會改壞名稱，tdptest 檢查也會誤報，所以兩邊都不做；lib 自己給的字都大寫開頭。
-- **inspect toast 由 lib 問、app 只回答**（tdp toast.4，v1.1.2，webu）：`Panel.Inspect`、`Mode.Inspect` 只回答游標那一項有什麼
+- **項目的附註**（tdp panel.18，v1.2.22-beta.3，取代 inspect toast）：`Panel.Note`、`Mode.Note` 跟 inspect 一樣只回答 cursor 那一項
+  的附註；頭在哪一列要 body 說（`NoteSpot.NoteAt`：`List` 畫的時候記下 cursor 那一項的第一列、最後一列、字從哪一格開始），加上 panel
+  上面的框與位置列（`Panel.bodyY`）就是畫面上的位置。打開時先重畫一次（`a.Frame()`）拿到現在的位置，再開一個 `Viewer`，`at()` 讓它
+  貼在頭的位置而不是置中，高度最多 panel 的一半，下面放不下又是上面比較寬時往上開。`i` 的動作在 `p.actions()` 裡現加，app 的
+  `Actions` 不動；模式的 `i` 在 `EnterMode`／`EnterLayer` 時加進模式的鍵（只加一次）。
+- **toast 往上疊**（tdp toast.2、toast.3，v1.2.22-beta.3）：同一種、同樣的字的 toast 在顯示時，不開新的，只換新的 id（時間重算）、
+  次數加一；`Notify` 不再合成一個 toast，一件一個。
+- **inspect toast 由 lib 問、app 只回答**（tdp toast.4，v1.1.2，webu；tdp 已拿掉，v1.2.22-beta.3 起標成 Deprecated，`a.inspectT`
+  跟一般 toast 分開放，一般 toast 在時不畫）：`Panel.Inspect`、`Mode.Inspect` 只回答游標那一項有什麼
   可看。每個訊息之後 lib 問一次 focus 的 panel（在模式裡先問最內層有 `Inspect` 的那一層），出現、換成另一項的、消失、被一般 toast
   取代後回來都由 lib 做（`syncInspect`）：app 不用在每個移動游標的地方叫 lib，離開模式時 toast 也不會留下來。toast 在哪裡是 lib 的，
   捲動是 body 的：lib 每次畫之前用 `Uncover(rows)` 告訴 focus 的 panel 的 body 下面幾列被蓋住，`List`、`Values` 自己捲，app 自己的

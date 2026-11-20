@@ -165,7 +165,7 @@ func TestAppLogEntries(t *testing.T) {
 	ta.Log(Warning, "CRD discovery: unable")
 	ta.Error("Fetch", "Forbidden")
 	ta.settle()
-	ta.press("Esc", "Esc")
+	ta.press("Esc", "Esc", "Esc") // the two toasts, the oldest first, then the error popup
 	ta.press("!")
 	text := ta.screenText()
 	for _, want := range []string{"14:02:11 INFO Switched to Pods", "14:02:11 OK   Scaled nginx", "14:02:11 WARN CRD discovery: unable", "14:02:11 ERR  Fetch: Forbidden"} {

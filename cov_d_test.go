@@ -246,7 +246,7 @@ func TestPopupTitleGlyph(t *testing.T) {
 		ta := newTestApp(t)
 		ta.Toast(kind, "done")
 		ta.settle()
-		if top := covDPlain(covDRows(ta, ta.toast))[0]; !strings.HasPrefix(top, "┏━"+glyphRoundLeft+glyph+" ") {
+		if top := covDPlain(covDRows(ta, ta.lastToast()))[0]; !strings.HasPrefix(top, "┏━"+glyphRoundLeft+glyph+" ") {
 			t.Errorf("toast %d: the title's glyph is the kind's: %q", kind, top)
 		}
 	}
@@ -572,7 +572,7 @@ func TestPopupNarrowContentAlign(t *testing.T) {
 	ta.press("Esc")
 	ta.Toast(Info, "Saved")
 	ta.settle()
-	row := covDPlain(covDRows(ta, ta.toast))[2]
+	row := covDPlain(covDRows(ta, ta.lastToast()))[2]
 	if left, right := covDGaps(row); left <= 1 || left-right > 1 || right-left > 1 {
 		t.Errorf("a toast's text is centred: %q", row)
 	}

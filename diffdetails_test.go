@@ -119,8 +119,8 @@ func TestDiffInDetails(t *testing.T) {
 		t.Errorf("b.txt against a.txt is not UNIFIED:\n%s", text)
 	}
 	ta.press("j") // c.txt: the same
-	if text = ta.screenText(); !strings.Contains(text, "No differences between a.txt and c.txt") || ta.toast != nil {
-		t.Errorf("the same text: a toast %v\n%s", ta.toast, text)
+	if text = ta.screenText(); !strings.Contains(text, "No differences between a.txt and c.txt") || ta.lastToast() != nil {
+		t.Errorf("the same text: a toast %v\n%s", ta.lastToast(), text)
 	}
 	ta.press("j") // d.bin: not compared
 	if text = ta.screenText(); !strings.Contains(text, "Can't diff d.bin with a.txt") {
@@ -137,8 +137,8 @@ func TestDiffInDetails(t *testing.T) {
 	if text = ta.screenText(); !strings.Contains(text, "Can't diff v1/ with a.txt") {
 		t.Errorf("a folder against a text:\n%s", text)
 	}
-	if ta.toast != nil {
-		t.Errorf("a toast: %v", ta.toast)
+	if ta.lastToast() != nil {
+		t.Errorf("a toast: %v", ta.lastToast())
 	}
 
 	// Two folders: the items that differ, marked, the location row.
@@ -219,7 +219,7 @@ func TestDiffInDetailsKeys(t *testing.T) {
 	if focused() != changes || !strings.Contains(ta.screenText(), "Press [Esc] to leave Diff first") {
 		t.Error("3 left the mode's two panels")
 	}
-	ta.toast = nil
+	ta.toasts, ta.inspectT = nil, nil
 	ta.press("1")
 	if focused() != files {
 		t.Error("1 did not go back to the list")

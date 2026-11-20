@@ -331,7 +331,7 @@ func TestLayerColors(t *testing.T) {
 	// A toast is not a layer: always the first layer's colour.
 	ta.Toast(Info, "copied")
 	ta.settle()
-	if c := covCAt(ta.Frame()[ta.toast.y], ta.toast.x); c.St.Fg != LayerColor(1) {
+	if c := covCAt(ta.Frame()[ta.lastToast().y], ta.lastToast().x); c.St.Fg != LayerColor(1) {
 		t.Errorf("a toast over five popups is framed in %v, want layer 1 %v", c.St.Fg, LayerColor(1))
 	}
 }

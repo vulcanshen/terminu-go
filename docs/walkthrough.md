@@ -64,6 +64,9 @@ go build -o /tmp/showcase ./examples/showcase
   平均、加大欄距，每換一次跳一個 Info toast 說是哪一種。
   `EVENTS` tab 是占好幾列的項目（panel-181～183）：事件的訊息在 REASON 底下，`BackOff` 兩列、`Pulled` 一列、`Started` 只有一列；
   cursor 只畫在第一列，下面幾列跟著亮（Surface1 底、字照原本的顏色、沒有箭頭）；`j|k` 一次一項；按 `/` 打 `worker-2`，找到 `web-a8k2`。
+  項目的附註（panel.18）：沒在跑的 pod（`coredns-7w9z` 的 CrashLoopBackOff、Pending 的）有附註，cursor 停上去，那一列正下方出現
+  一個小框 `┌ 󰋽 i ┐` 蓋在下一列上，移開就消失；按 `i` 從那裡往下展開一個 `NOTE` viewer 寫原因，可以 `/` 搜尋、`v` 選取，`Esc`
+  收回成頭。`G` 到最後一個 pod（`traefik-4b`）：頭在那一列上面（`└ 󰋽 i ┘`），`i` 往上開。Space menu 裡有 `[i] Note`。
 - `Space` 裡有切狀態的開關：`Empty`、`Loading`、`Fail`、`Disable`，與五種 toast（`Toast success`、`Toast info`、`Toast warning`、`Toast error`、`Toast long`）。
   `Disable` 之後下框 hint 的 `m:mark` 變停用色；I 的 `[2] FILES` 選了只列按得了的，`Disable` 之後 `V:view` 不見。
 - `[2] LOG` 是一直進來的串流：在結尾時跟著往下，往上捲就停在那裡；`Enter` 用 viewer 看全部。`Space` 裡的 `Status` 把最後一行進來的時間
@@ -121,10 +124,10 @@ go build -o /tmp/showcase ./examples/showcase
   又讀得到一筆 INFO，沒有 toast。
 - 「Values that do not fit」：一個有兩個用不了的值的假設定檔，複製成 `config.yaml.bak`、用預設值重寫，跳一個 Warning toast；按 `!`
   看每個值各一筆 WARN。「…, no copy」是同樣的檔放在不能寫的資料夾：沒有 `.bak`、檔案不動，跳 Error toast。
-- 「Several at one start」：同樣的檔，再加上一個不在的 profile：只跳一個 Warning toast，一件一行；按 `!` 看一件一筆，
-  值的 WARN 緊接在它那一行後面。
-- 「Coming later」（E3-43）：同樣的檔跳出啟動的 toast，2 秒後才問到叢集裡沒有的 namespace：toast 還在，就多一列
-  `Namespace "dev" …`、還是 Warning、時間重算（原本該收的時候不收）。再選一次、這次先按 `Esc` 收掉：2 秒後那一列另外跳一個 toast。
+- 「Several at one start」：同樣的檔，再加上一個不在的 profile：一件一個 Warning toast，照順序疊起來（E3-37）；按 `!` 看一件一筆，
+  值的 WARN 緊接在它那一件後面。
+- toast 往上疊（toast.2、toast.3）：連選幾次「Toast」與別的會跳 toast 的動作，新的出現在最下面、把舊的往上推，最多三個，第四個來時
+  最舊的走；同一句話連跳三次，只有一個、標題寫 `INFO ×3`；按 `Esc` 一次收一個，從最上面（最舊的）開始，`Esc:close` 只畫在它上面。
 - 「Success report」：toast 放不下的成功報告開在 viewer 裡，`Enter` 也能關；按 `!` 看它以 OK 記進 App Log。
 - 「Form: with actions」有好幾個按鈕：`Tab` 到動作區先停在右下角的 `Connect`，`j|k` 在按鈕之間走。`Test` 只要 Host：空著按會被擋，
   填了再按要等一下（標題後面轉 loading icon）才跳 toast，Host 打 `bad-1` 會失敗、開 error popup，關掉後再按 `Enter` 就是重試；

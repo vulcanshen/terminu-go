@@ -558,8 +558,8 @@ func TestM5WritingByPosition(t *testing.T) {
 	}
 	// Sentences: keys in square brackets, as written.
 	ta.press("Esc", "D", "Tab")
-	if tv, ok := ta.toast.view.(*toastView); !ok || !strings.Contains(strings.Join(tv.text, " "), "[Esc]") {
-		t.Errorf("the lib's own sentence names its key in brackets: %+v", ta.toast.view)
+	if tv, ok := ta.lastToast().view.(*toastView); !ok || !strings.Contains(strings.Join(tv.text, " "), "[Esc]") {
+		t.Errorf("the lib's own sentence names its key in brackets: %+v", ta.lastToast().view)
 	}
 	ta.press("Esc", "Esc")
 	ta.list.SetRows(nil)
@@ -961,15 +961,15 @@ func TestToastNotALayer(t *testing.T) {
 		}
 	}
 	ta.press("Space") // keys go through the toast
-	if len(ta.stack) != 1 || ta.toast == nil {
-		t.Fatalf("Space under a toast: %d layers, toast %v", len(ta.stack), ta.toast != nil)
+	if len(ta.stack) != 1 || ta.lastToast() == nil {
+		t.Fatalf("Space under a toast: %d layers, toast %v", len(ta.stack), ta.lastToast() != nil)
 	}
 	l := ta.top()
 	if c := covBCells(ta.Frame()[l.y])[l.x]; c.fg != covBRGB(LayerColor(1)) {
 		t.Errorf("the popup under a toast is not dimmed and is layer 1: %s", c.fg)
 	}
 	ta.press("Esc")
-	if ta.toast != nil || ta.top() == nil {
+	if ta.lastToast() != nil || ta.top() == nil {
 		t.Error("Esc closes the toast first, and only it")
 	}
 }
@@ -993,7 +993,7 @@ func TestF3EscImmediate(t *testing.T) {
 	ta.Toast(Warning, "Disk almost full")
 	ta.settle()
 	ta.Update(keyMsg("Esc"))
-	if ta.toast == nil || !ta.toast.closing {
+	if ta.lastToast() == nil || !ta.lastToast().closing {
 		t.Error("Esc did not start closing the toast before its time")
 	}
 	ta.settle()
@@ -1026,7 +1026,7 @@ func TestF3Exceptions(t *testing.T) {
 	tp.Toast(Info, "copied")
 	tp.settle()
 	tp.press("Esc")
-	if tp.toast == nil || tp.toast.closing || sent.String() != "\x1b" {
+	if tp.lastToast() == nil || tp.lastToast().closing || sent.String() != "\x1b" {
 		t.Errorf("in a PTY Esc went to the toast: sent %q", sent.String())
 	}
 	// A textarea writing: Esc goes to the moving state.
@@ -1099,7 +1099,7 @@ func TestF5ErrorNonBlocking(t *testing.T) {
 		return nil
 	}
 	ta.Toast(Error, "Couldn't reach the cluster")
-	if ta.toast == nil {
+	if ta.lastToast() == nil {
 		t.Fatal("the error toast is not there at once")
 	}
 	ta.settle()
@@ -1111,7 +1111,7 @@ func TestF5ErrorNonBlocking(t *testing.T) {
 		t.Error("an error toast blocked the app")
 	}
 	ta.press("Esc")
-	if ta.toast != nil {
+	if ta.lastToast() != nil {
 		t.Error("Esc did not close the error toast")
 	}
 	ta.Error("Save failed", "hosts.yaml changed on disk since it was opened.")

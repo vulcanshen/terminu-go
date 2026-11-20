@@ -209,7 +209,7 @@ func TestTerminalSelectMode(t *testing.T) {
 	if got := string(takeClipboard()); !strings.HasPrefix(got, "\x1b]52;c;") || term.Mode() != "" {
 		t.Errorf("copied, back to the live screen: %q %q", got, term.Mode())
 	}
-	if ta.toast == nil || ta.toast.view.(*toastView).kind != Success {
+	if ta.lastToast() == nil || ta.lastToast().view.(*toastView).kind != Success {
 		t.Error("a Success toast says so")
 	}
 	if !strings.Contains(ta.screenText(), "printed meanwhile") || sent.Len() != 0 {
@@ -432,11 +432,11 @@ func TestToastPositionOverTerminal(t *testing.T) {
 	ta.settle()
 	ta.Toast(Info, "copied")
 	ta.settle()
-	if ta.toast.y+ta.toast.h != ta.h-2 {
-		t.Errorf("the toast's bottom border is on row %d, want the third from the bottom", ta.toast.y+ta.toast.h-1)
+	if ta.lastToast().y+ta.lastToast().h != ta.h-2 {
+		t.Errorf("the toast's bottom border is on row %d, want the third from the bottom", ta.lastToast().y+ta.lastToast().h-1)
 	}
 	ta.press("Esc")
-	if ta.toast.closing || sent.String() != "\x1b" {
+	if ta.lastToast().closing || sent.String() != "\x1b" {
 		t.Error("in a PTY Esc goes to the program, the toast waits for its time")
 	}
 }

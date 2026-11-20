@@ -69,7 +69,7 @@ func TestCompareMode(t *testing.T) {
 	if ta.Screen().Focused() != ta.pods || !strings.Contains(ta.screenText(), "Press [Esc] to leave Diff first") {
 		t.Error("Tab left the mode's panel")
 	}
-	ta.toast = nil
+	ta.toasts, ta.inspectT = nil, nil
 	ta.press("k", "Enter")
 	v, ok := ta.topView().(*viewerView)
 	if !ok {
@@ -93,7 +93,7 @@ func TestCompareMode(t *testing.T) {
 	if ta.top() != nil || !strings.Contains(ta.screenText(), "No differences between pod-00 and pod-35") {
 		t.Errorf("the same text:\n%s", ta.screenText())
 	}
-	ta.toast = nil
+	ta.toasts, ta.inspectT = nil, nil
 	if ta.press("g", "g"); ta.list.cursor != 0 {
 		t.Errorf("gg in the mode: at %d", ta.list.cursor)
 	}

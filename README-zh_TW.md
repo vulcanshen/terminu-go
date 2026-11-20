@@ -110,8 +110,8 @@ go run github.com/vulcanshen/terminu-go/examples/showcase@latest
 
 ## App Log
 
-在任何 panel 上按 `!` 打開 App Log：app 做過的事與出問題的事，最新的在最下面，只放在記憶體裡。每一個 toast（inspect toast
-除外，它只跟著游標）與 error popup 都會自己記進去；其他的用 `app.Log(kind, text)` 記（動作的結果、app 在背景做的事），
+在任何 panel 上按 `!` 打開 App Log：app 做過的事與出問題的事，最新的在最下面，只放在記憶體裡。每一個 toast
+與 error popup 都會自己記進去；其他的用 `app.Log(kind, text)` 記（動作的結果、app 在背景做的事），
 任何 goroutine 都能叫；寫法跟 toast 一樣，大寫開頭。有沒看過的錯誤或警告時，footer 的 `!:log` 會寫出有幾個。
 
 ## 讀不了自己的檔時
@@ -140,10 +140,14 @@ app 繼續。啟動時先用 `copied, err := terminu.KeepAside(path)` 把檔複�
 那筆 WARN，不用另外叫 `app.Log`（沒有畫面時，把那句寫到 stderr）。畫面上照原本寫的顯示，讓那一列的 `Err` 回傳 true，label
 就是 Red；那一筆不在時，它的 select 用 `Selected: -1` 打開。
 
-同一次啟動要說的不只一件時（位置搬了、一個或好幾個檔有值不合規則、備份做不出來、值指到不在的一筆），合成一個 toast：照發生的
-順序，每一件收成一個 `terminu.Notice{Kind, Text}`，檔案裡不合規則的值改用 `terminu.MisfitNotice(path, copied, misfits...)`
-（不叫 `DidNotFit`），最後叫 `app.Notify(notices...)`。toast 一件一行，種類取最重的（Error，再來 Warning，都不是就照第一行）；
-App Log 一件一筆、用它自己的種類，那個檔的 WARN 緊接在它那一行後面。沒有畫面時，改把每個 notice 的 `Lines()` 寫到 stderr，一行一行。
+同一次啟動要說的不只一件時（位置搬了、一個或好幾個檔有值不合規則、備份做不出來、值指到不在的一筆），每一件各是一個 toast，
+跟所有 toast 一樣往上疊：照發生的順序，每一件收成一個 `terminu.Notice{Kind, Text}`，檔案裡不合規則的值改用
+`terminu.MisfitNotice(path, copied, misfits...)`（不叫 `DidNotFit`），最後叫 `app.Notify(notices...)`。一件一個 toast；
+App Log 一件一筆、用它自己的種類，那個檔的 WARN 緊接在它後面。沒有畫面時，改把每個 notice 的 `Lines()` 寫到 stderr，一行一行。
+
+toast 會往上疊：新的出現在最下面，把正在顯示的往上推；每個時間到就走；最多顯示三個，第四個來時最舊的先走（它的話在 App Log
+裡）。跟正在顯示的某個 toast 一模一樣的話（同一種）不會多一個：那個重新計時，標題寫出次數（`INFO ×3`）。`Esc` 一次收一個，
+從最舊的開始。
 
 啟動之後才來的（例：畫面開了之後才問得到叢集的 namespace、種類）也交給 `app.Notify`：`Notify` 跳的那個 toast 還在畫面上時，
 它併進去，多一列，種類重新取最重的、時間重新算；那個 toast 已經收掉了（時間到、或按了 `Esc`），才另外跳一個。所以這種 toast
@@ -288,6 +292,26 @@ func (b *settings) Key(key string, _ tea.KeyMsg) (bool, tea.Cmd) {
 popup 開在 app 自己的模式裡的 panel 上時，動作真的執行時才離開模式：有 confirm 的話是按下 `Enter` 之後，所以在 confirm
 上按 `Esc` 什麼都沒變。離開的方式跟 `Panel.LeaveMode` 一樣，不跑 `OnExit`：`OnExit` 原本會做的事（例：暫停）要在呼叫前
 自己先做；離開模式會丟掉使用者做出來、要留下的東西時，在呼叫前自己先問（tdp K11）。`q` 不離開模式，離開流程會先問。
+
+## 項目的附註
+
+項目可以有一則附註：連結會去哪、備註（tdp panel.18）。`panel.Note` 設成一個 func，回傳 cursor 那一項的附註，沒有就回 nil
+（app 自己的模式裡用 `Mode.Note`）。cursor 停在有附註的項目上時，附註的頭出現在那一項正下方：一個小框，裡面是附註的 glyph 與
+`i`；按 `i` 打開，一個標題 `NOTE` 的 viewer 貼在那一項下方（那一項在 panel 最底下一列時開在上面），最高到 panel 高度的一半，
+有 viewer 的捲動、選取模式與 `/` 搜尋；`Esc` 收回成頭。lib 會把 `[i] Note` 放進那個 panel 的動作；`i` 是全家族打開附註的鍵
+（tdp K13），所以那個 panel 上 app 自己的動作不能用 `i`。`List` 自己說得出 cursor 那一項在哪；app 自己的 body 要實作
+`terminu.NoteSpot` 的 `NoteAt() (top, bottom, col int, ok bool)`。
+
+```go
+pods.Note = func() []string {
+	if r, ok := list.Current(); ok && r.Cells[2] == "Pending" {
+		return []string{"0/3 nodes are available: 3 Insufficient memory"}
+	}
+	return nil
+}
+```
+
+附註取代的 inspect toast（`Panel.Inspect`、`Mode.Inspect`）暫時照樣能用，之後的 minor 版拿掉。
 
 ## 說明牌
 

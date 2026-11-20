@@ -127,7 +127,7 @@ program's output — never reaches the terminal as it is:
 ## The App Log
 
 `!` on any panel opens the App Log: what the app did and what went wrong, newest last, in memory only. Every toast
-but the inspect toast, which only follows the cursor, and every error popup is in it by itself; `app.Log(kind, text)`
+and every error popup is in it by itself; `app.Log(kind, text)`
 adds the rest — an action's result, what the app does in the background — from any goroutine, worded as a toast, with
 a capital first. While errors or warnings came in unseen, the footer's `!:log` says how many.
 
@@ -165,11 +165,16 @@ written with the field's `Err` returning true, so its label is Red; while the en
 `Selected: -1`.
 
 When one start has more than one of these to say (a location moved, values that don't fit in one file or several, a
-copy that could not be made, a value naming an entry that is not there), they come as one toast. Collect a
-`terminu.Notice{Kind, Text}` for each in the order they happened, `terminu.MisfitNotice(path, copied, misfits...)`
-for a file's misfits in place of `DidNotFit`, and call `app.Notify(notices...)`: a row each, the toast's kind the
-strongest (Error, then Warning, else the first row's), and in the App Log an entry each at its own kind, a file's
-WARNs right after its row. With no screen, write each notice's `Lines()` to stderr instead, a line each.
+copy that could not be made, a value naming an entry that is not there), each is a toast of its own, stacked as every
+toast is. Collect a `terminu.Notice{Kind, Text}` for each in the order they happened,
+`terminu.MisfitNotice(path, copied, misfits...)` for a file's misfits in place of `DidNotFit`, and call
+`app.Notify(notices...)`: a toast each, and in the App Log an entry each at its own kind, a file's WARNs right after
+it. With no screen, write each notice's `Lines()` to stderr instead, a line each.
+
+Toasts stack: a new one comes at the bottom and pushes the ones showing up; each leaves when its time is up; at most
+three show, a fourth pushing the oldest out (its words are in the App Log). The same words as a toast showing, of the
+same kind, make no new one: that one's time starts over and its title counts them (`INFO ×3`). `Esc` closes one a
+press, the oldest first.
 
 One that comes later (a namespace or a kind you can ask a cluster about only once the screen is open) goes to
 `app.Notify` too: while the toast `Notify` showed is still on screen, it joins that toast, a row more, the kind the
@@ -341,6 +346,29 @@ When the popup is over a panel in a mode of your own, the mode is left as the ac
 confirm, so `Esc` there changes nothing. It is left as `Panel.LeaveMode` leaves it, without `OnExit`: do what `OnExit`
 would do (a pause) before calling, and when leaving would lose something the user made and wants kept, ask before
 calling (tdp K11). `q` leaves no mode; the quit flow asks first.
+
+## An item's note
+
+An item may have a note: where a link goes, a remark (tdp panel.18). Set `panel.Note` to a func giving the note of
+the item under the cursor, nil for an item with none (in a mode of your own, `Mode.Note`). While the cursor rests on
+an item with a note, its head shows right under the item, a small box with the note glyph and `i`; `i` opens it, a
+viewer titled `NOTE` anchored under the item (above it when the item is on the panel's last row), at most half the
+panel high, with the viewer's scrolling, selection mode and `/` search; `Esc` closes it back to its head. The lib
+puts `[i] Note` among the panel's actions; `i` is the family's key for it (tdp K13), so none of your actions on that
+panel may take `i`. A `List` says where its cursor's item is; a body of your own implements
+`terminu.NoteSpot`'s `NoteAt() (top, bottom, col int, ok bool)`.
+
+```go
+pods.Note = func() []string {
+	if r, ok := list.Current(); ok && r.Cells[2] == "Pending" {
+		return []string{"0/3 nodes are available: 3 Insufficient memory"}
+	}
+	return nil
+}
+```
+
+`Panel.Inspect` and `Mode.Inspect`, the inspect toast the note replaces, still work for now; they go in a later minor
+version.
 
 ## A sign
 

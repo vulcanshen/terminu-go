@@ -2,6 +2,30 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.22-beta.3 — tdp v1.2.20
+
+- Toasts stack (tdp main, toast.2, toast.3, toast-13, toast-14, toast-29; the user): a new one comes at the bottom,
+  where the toast always was, and pushes the ones showing up; each keeps its own time and leaves when it is up, the
+  others closing the gap; at most three show, a fourth pushing the oldest out (its words are in the App Log). The same
+  words as a toast showing, of the same kind, make no new one: that one's time starts over and its title counts them
+  (`INFO ×3`); the App Log still gets an entry each time. `Esc` closes one a press, the oldest first, before any other
+  popup; `Esc:close` is on the oldest only. One way for every toast: `App.Notify` no longer merges a start's notices
+  into one toast, nor joins a late one (E3-37 reworded, E3-43 gone): each notice is a toast of its own
+- An item's note replaces the inspect toast (tdp main, panel.18, panel-192 to panel-195, K13-4; the user):
+  `Panel.Note` (`Mode.Note` in a mode) gives the note of the item under the cursor. While the cursor rests on such an
+  item its head shows right under it, a small box with U+F02FD and `i`, over the row below, taking no key; `i` opens
+  it, a viewer titled `NOTE` anchored under the item, unfolding from the head, at most half the panel high, long lines
+  wrapped, with the viewer's scrolling, selection mode and `/` search; `Esc` closes it back to its head. On the panel's
+  last row the head and the note go above the item. The lib puts `[i] Note` among the panel's actions (off on an item
+  with none) and `i` among a mode's keys; a panel with notes takes no action of the app's on `i` (`AddScreen` panics).
+  `List` tells where its cursor's item is; a body of the app's own implements `NoteSpot`. `Panel.Inspect` and
+  `Mode.Inspect` are deprecated and still work for one minor version (webu moves at its next release)
+- The showcase: [1] PODS has notes on the pods that are not running; Import in the Namespace menu moves to `I`;
+  `Coming later` is gone
+- Coverage rows for panel-192 to panel-195, toast-29 and K13-4; toast-13, toast-14, E3-37, E3-41 and E3-42 reworded;
+  the inspect toast's rows and E3-43's gone
+- In the narrow layout the focused panel's number is its own among the panels that take the focus, as signs need
+
 ## v1.2.22-beta.2 — tdp v1.2.20
 
 - A sign, a panel that only tells (tdp main, panel.17, K1, K2, panel-188 to panel-191; from tetru, the user):

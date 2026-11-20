@@ -73,7 +73,7 @@ func TestViewerSelectsByDefault(t *testing.T) {
 	if got := string(takeClipboard()); got != "\x1b]52;c;a2V5\a" { // "key"
 		t.Errorf("on the clipboard: %q", got)
 	}
-	if ta.toast == nil || ta.toast.view.(*toastView).kind != Success || strings.Join(ta.toast.view.(*toastView).text, " ") != "Copied" {
+	if ta.lastToast() == nil || ta.lastToast().view.(*toastView).kind != Success || strings.Join(ta.lastToast().view.(*toastView).text, " ") != "Copied" {
 		t.Error("a Success toast says it is copied")
 	}
 }
@@ -202,8 +202,8 @@ func TestViewerSearch(t *testing.T) {
 		t.Errorf("? with hits: %q", move)
 	}
 	find("zzz")
-	if tv, ok := ta.toast.view.(*toastView); !ok || tv.kind != Info || !strings.Contains(ta.screenText(), "No line has zzz") || len(v.Hits) != 0 {
-		t.Errorf("no hit: toast %v, hits %v", ta.toast, v.Hits)
+	if tv, ok := ta.lastToast().view.(*toastView); !ok || tv.kind != Info || !strings.Contains(ta.screenText(), "No line has zzz") || len(v.Hits) != 0 {
+		t.Errorf("no hit: toast %v, hits %v", ta.lastToast(), v.Hits)
 	}
 	ta.press("n", "Esc", "G") // n with no hit does nothing; Esc the toast
 	if find("nginx"); !inSight(4) {
@@ -324,8 +324,8 @@ func TestKeyReferenceSearch(t *testing.T) {
 		t.Errorf("the hits after a resize: %d of %d, current %d", len(n.hits), want, n.current)
 	}
 	press("/", "z", "z", "z", "Enter")
-	if tv, ok := ta.toast.view.(*toastView); !ok || tv.kind != Info || !strings.Contains(ta.screenText(), "No line has zzz") || len(n.hits) != 0 {
-		t.Errorf("no hit: toast %v, hits %v", ta.toast, n.hits)
+	if tv, ok := ta.lastToast().view.(*toastView); !ok || tv.kind != Info || !strings.Contains(ta.screenText(), "No line has zzz") || len(n.hits) != 0 {
+		t.Errorf("no hit: toast %v, hits %v", ta.lastToast(), n.hits)
 	}
 
 	// A row's description folds to the room there is: narrower, the hit is
@@ -818,6 +818,7 @@ func TestMessageRows(t *testing.T) {
 		t.Error("the App Log does not have the toast on one line")
 	}
 	ta.Toast(Info, "a\nb")
+	ta.settle()
 	if !strings.Contains(strings.Join(ta.Frame(), "\n"), nameSGR+`\n`) {
 		t.Error("a \\n inside a row is not drawn by its name")
 	}

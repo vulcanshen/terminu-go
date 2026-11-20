@@ -204,10 +204,16 @@ type App struct {
 	// no hotkey may take one.
 	CoreKeys []CoreKey
 
-	screens  []*Screen
-	cur      int
-	stack    []*layer
-	toast    *layer
+	screens []*Screen
+	cur     int
+	stack   []*layer
+	// toasts are the toasts, oldest first, a closing one kept until it is
+	// gone (tdp toast.2); inspectT is the inspect toast (Panel.Inspect).
+	toasts   []*layer
+	inspectT *layer
+	// note is where the item with a note under the focused panel's cursor
+	// was at the last frame, its head drawn there (tdp panel.18).
+	note     *noteSpot
 	toastSeq int
 	w, h     int
 	pending  string // "g" waiting for its second key
@@ -304,6 +310,9 @@ func (a *App) AddScreen(s *Screen) *Screen {
 		}
 		if l, ok := p.Body.(*List); ok && l.Marks && l.Flags {
 			panic(fmt.Sprintf("terminu: panel [%d] %s: a list that can be marked keeps its mark column for the tick, not for flags (tdp panel.7)", i+1, p.Label))
+		}
+		if p.Note != nil && slices.ContainsFunc(p.Actions, func(act Action) bool { return act.Key == "i" }) {
+			panic(fmt.Sprintf("terminu: panel [%d] %s: i opens an item's note in every app, and this panel has notes (tdp K13, panel.18)", i+1, p.Label))
 		}
 		if p.Sign != 0 && (len(p.Actions) > 0 || len(p.Tabs) > 0) {
 			panic(fmt.Sprintf("terminu: sign %s: a sign has no actions and no tabs, never taking the focus (tdp panel.17)", p.Label))
@@ -431,10 +440,12 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.spin = false
 	case splashMsg:
 		cmd = a.stepSplash(msg)
-	case toastDone:
-		if a.toast != nil && a.toast.view.(*toastView).id == msg.id && !a.toast.closing {
-			a.toast.closing = true
-			cmd = a.animate()
+	case toastDone: // its time is up: it leaves, the others closing the gap (tdp toast.2)
+		for _, t := range a.toasts {
+			if t.view.(*toastView).id == msg.id && !t.closing {
+				a.closeToast(t)
+				cmd = a.animate()
+			}
 		}
 	case tea.KeyMsg:
 		cmd = a.handleKey(msg)
@@ -625,8 +636,13 @@ func (a *App) stepAnimation() tea.Cmd {
 		}
 	}
 	a.stack = kept
-	if a.toast != nil && !step(a.toast) {
-		a.toast = nil
+	n := len(a.toasts)
+	a.toasts = slices.DeleteFunc(a.toasts, func(t *layer) bool { return !step(t) })
+	if len(a.toasts) < n { // one gone: the others close the gap
+		a.placeToasts()
+	}
+	if a.inspectT != nil && !step(a.inspectT) {
+		a.inspectT = nil
 	}
 	a.anim = busy
 	if busy {
@@ -792,13 +808,16 @@ func (a *App) relayout() {
 		l.w, l.h = l.view.measure(a.w, a.h)
 		l.place(a.w, a.h)
 	}
-	if a.toast != nil {
-		a.placeToast()
-	}
+	a.placeToasts()
 }
 
-// Toast shows a short message from the bottom (tdp toast); a
-// second one replaces the first and starts its time again. Each string of
+// Toast shows a short message from the bottom (tdp toast). Toasts stack
+// (tdp toast.2): a new one comes at the bottom and pushes the ones showing
+// up; each leaves when its time is up, the others closing the gap; at most
+// three show, a fourth pushing the oldest out (its words are in the App
+// Log). The same words as one showing, of the same kind, make no new
+// toast: that one's time starts over and its title counts them (INFO ×3).
+// Esc closes one a press, the oldest first, Esc:close on it. Each string of
 // text is a row of its own, folded when too long: the app's own text has no
 // line break in it, so a \n on the screen is from outside, drawn by its
 // name (components, control characters). Each row starts with a capital
@@ -809,38 +828,80 @@ func (a *App) Toast(kind ToastKind, text ...string) tea.Cmd {
 	return a.showToast(kind, text)
 }
 
+// maxToasts is how many toasts show at most (tdp toast.2).
+const maxToasts = 3
+
 // showToast shows a toast that is logged already.
 func (a *App) showToast(kind ToastKind, text []string) tea.Cmd {
 	a.toastSeq++
-	v := &toastView{kind: kind, text: text, id: a.toastSeq, most: a.ToastLines}
-	if a.toast != nil && !a.toast.closing {
-		a.toast.view = v
-	} else {
-		a.toast = &layer{view: v, frame: 1, toast: true}
-	}
-	a.placeToast()
 	id := a.toastSeq
+	for _, t := range a.toasts {
+		if v := t.view.(*toastView); !t.closing && v.kind == kind && slices.Equal(v.text, text) {
+			v.id, v.count, v.most = id, v.count+1, a.ToastLines // the same words: its time starts over, its title counts them
+			a.placeToasts()
+			return a.own(a.after(kind.duration(), toastDone{id}))
+		}
+	}
+	a.toasts = append(a.toasts, &layer{view: &toastView{kind: kind, text: text, id: id, most: a.ToastLines, count: 1}, frame: 1, toast: true})
+	if showing := a.showingToasts(); len(showing) > maxToasts {
+		a.closeToast(showing[0]) // the oldest pushed out
+	}
+	a.placeToasts()
 	return tea.Batch(a.animate(), a.own(a.after(kind.duration(), toastDone{id})))
 }
 
-// placeToast puts the toast's bottom border on the third row from the bottom.
-func (a *App) placeToast() {
-	l := a.toast
-	l.w, l.h = l.view.measure(a.w, a.h)
-	l.x, l.y = (a.w-l.w)/2, a.h-2-l.h
+// showingToasts are the toasts showing, not closing, oldest first.
+func (a *App) showingToasts() []*layer {
+	var out []*layer
+	for _, t := range a.toasts {
+		if !t.closing {
+			out = append(out, t)
+		}
+	}
+	return out
 }
 
-// syncInspect shows the inspect toast of the item under the focused panel's
+// closeToast starts t closing, from where its opening is.
+func (a *App) closeToast(t *layer) {
+	t.closing = true
+	if t.frame > openFrames {
+		t.frame = openFrames
+	}
+	a.placeToasts()
+}
+
+// placeToasts stacks the toasts from the bottom (tdp toast.2): the
+// newest's bottom border on the third row from the bottom, each older one
+// right above it, a closing one keeping its place until it is gone; the
+// oldest showing has the hint, Esc closing it first (tdp toast.3). The
+// inspect toast goes where the newest does.
+func (a *App) placeToasts() {
+	first := true
+	for _, t := range a.toasts {
+		t.view.(*toastView).oldest = first && !t.closing
+		first = first && t.closing
+	}
+	y := a.h - 2
+	for i := len(a.toasts) - 1; i >= 0; i-- {
+		l := a.toasts[i]
+		l.w, l.h = l.view.measure(a.w, a.h)
+		y -= l.h
+		l.x, l.y = (a.w-l.w)/2, y
+	}
+	if l := a.inspectT; l != nil {
+		l.w, l.h = l.view.measure(a.w, a.h)
+		l.x, l.y = (a.w-l.w)/2, a.h-2-l.h
+	}
+}
+
+// syncInspect shows the inspect toast (deprecated: Panel.Inspect) of the item under the focused panel's
 // cursor, after every message (tdp toast.4): it comes when the cursor lands
 // on an item that has one, is that item's at once when the cursor moves to
 // another, and goes when the cursor leaves. An ordinary toast replaces it,
 // and once that one is gone it is back. The App Log does not keep it: it
 // comes and goes with the cursor (tdp toast.4, note.7).
 func (a *App) syncInspect() tea.Cmd {
-	t := a.toast
-	if t != nil && !t.closing && !t.view.(*toastView).inspect {
-		return nil
-	}
+	t := a.inspectT
 	text := a.inspectText()
 	if len(text) == 0 {
 		if t != nil && !t.closing {
@@ -854,11 +915,11 @@ func (a *App) syncInspect() tea.Cmd {
 	}
 	v := &toastView{kind: Info, text: text, most: a.ToastLines, inspect: true}
 	if t == nil {
-		a.toast = &layer{view: v, frame: 1, toast: true}
+		a.inspectT = &layer{view: v, frame: 1, toast: true}
 	} else {
 		t.view, t.closing = v, false
 	}
-	a.placeToast()
+	a.placeToasts()
 	return a.animate()
 }
 
@@ -898,7 +959,7 @@ func (a *App) uncover(p *Panel, r Rect, top int, focused bool) {
 		return
 	}
 	rows := 0
-	if t := a.toast; focused && t != nil && !t.closing && t.view.(*toastView).inspect && t.x < r.X+r.W-1 && t.x+t.w > r.X+1 {
+	if t := a.inspectT; focused && t != nil && !t.closing && len(a.toasts) == 0 && t.x < r.X+r.W-1 && t.x+t.w > r.X+1 {
 		rows = min(max(top+r.Y+r.H-1-t.y, 0), max(r.H-2, 0))
 	}
 	b.Uncover(rows)
@@ -1463,13 +1524,10 @@ func (a *App) handleKey(msg tea.KeyMsg) tea.Cmd {
 	if key == "Ctrl-C" && a.quitting {
 		return tea.Quit
 	}
-	// Esc takes the toast first (tdp K4, F3), but for the inspect toast, which
-	// takes no key (tdp toast.4).
-	if key == "Esc" && a.toast != nil && !a.toast.closing && !a.toast.view.(*toastView).inspect {
-		a.toast.closing = true
-		if a.toast.frame > openFrames {
-			a.toast.frame = openFrames
-		}
+	// Esc takes a toast first, the oldest, one a press (tdp K4, F3, toast.3);
+	// the inspect toast takes no key.
+	if showing := a.showingToasts(); key == "Esc" && len(showing) > 0 {
+		a.closeToast(showing[0])
 		return a.animate()
 	}
 	if a.Canvas != nil && a.top() == nil {
@@ -1809,7 +1867,14 @@ func (a *App) Frame() []string {
 		rows, first, dx := l.drawFrame(full, color)
 		Composite(lines, rows, l.x+dx, l.y+first, w)
 	}
-	if t := a.toast; t != nil {
+	toasts := a.toasts
+	if t := a.inspectT; t != nil && len(a.toasts) == 0 { // an ordinary toast hides it, back once they are gone
+		toasts = []*layer{t}
+	}
+	for _, t := range toasts {
+		if t.y < 0 { // stacked past the top
+			continue
+		}
 		full := t.view.draw(t.w, t.h, LayerColor(1))
 		rows, first, dx := t.drawFrame(full, LayerColor(1))
 		Composite(lines, rows, t.x+dx, t.y+first, w)
@@ -1901,7 +1966,9 @@ func (a *App) panelArea(w, top, h int) []string {
 	}
 	if a.narrow(s) {
 		a.uncover(s.Focused(), Rect{W: w, H: h}, top, true)
-		return Pad2(s.Focused().draw(s.at()+1, w, h, true, false), w, h)
+		area = Pad2(s.Focused().draw(s.num(s.at()), w, h, true, false), w, h)
+		a.drawNoteHead(area, s.Focused(), Rect{W: w, H: h}, top, w)
+		return area
 	}
 	var rects []Rect
 	if s.Layout != nil {
@@ -1929,6 +1996,10 @@ func (a *App) panelArea(w, top, h int) []string {
 		p.setLabel(a.labelOf(p))
 		a.uncover(p, r, top, i == s.at())
 		Composite(area, p.draw(s.num(i), r.W, r.H, i == s.at() && s.takes(i), p == pointed), r.X, r.Y, w)
+	}
+	a.note = nil
+	if i := s.at(); i < len(rects) && s.takes(i) {
+		a.drawNoteHead(area, s.Panels[i], rects[i], top, w)
 	}
 	return area
 }
