@@ -485,7 +485,7 @@ delete its on-screen code and its E5 code; E1, E3, E6, E7 and its own icon stay.
 
 ## Which terminu design
 
-terminu-go implements **tdp v1.2.18**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
+terminu-go implements **tdp v1.2.19**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
 
 ## Links
 

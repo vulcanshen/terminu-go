@@ -2,6 +2,19 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.20 — tdp v1.2.19
+
+Everything since v1.2.19, the betas v1.2.20-beta.1 and beta.2 included:
+
+- The Compare mode is the Diff mode (tdp panel.9, note.8; the user): the mode's name `Diff`, the action `[C] Diff`
+  (`C|Enter:diff`), the menu title `DIFF MODE`, the toasts and the error popup's title say Diff. The API is `DiffMode`
+  and `App.DiffModeAction`; `Compare` and `CompareAction` stay as deprecated aliases, so code on them still builds, and
+  go in a later minor version
+- Room left over (tdp panel.5, panel-184; from gittu, the user choosing after seeing all four): when every column
+  shows its widest value and none is taken away, `List.Spread` says where the rest goes, the app's pick for each list:
+  `SpreadEnd` (the default, as before), `SpreadFill` (to the column marked `Column.Fill`), `SpreadEven`, `SpreadGaps`
+- The coverage's M5-32 row says what was decided about `Open showcase to move it aside`
+
 ## v1.2.20-beta.2 — tdp v1.2.18
 
 - The Compare mode is the Diff mode (tdp main, panel.9, note.8; the user): the mode's name on the frame `Diff`, the
