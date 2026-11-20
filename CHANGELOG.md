@@ -2,6 +2,16 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.20-beta.1 — tdp v1.2.18
+
+- A trial, not committed API: where a list's room left over goes when every column already shows its widest value,
+  to choose from on a real list (gittu's). `List.Spread`: `SpreadPack` (the default, as before: at the row's end),
+  `SpreadFill` (all of it to the column marked `Column.Fill`), `SpreadEven` (the narrowest columns widened first,
+  until the columns are as even as the room lets them be; a wider one kept, numbers right-aligned), `SpreadGaps` (every
+  gap between columns widened alike, by 4 cells at most, the rest to the `Fill` column or the row's end). Short of
+  room, every one is Pack. tdp has no word on it yet: what stays, and its names, may change before the stable release
+- The coverage's M5-32 row says what was decided about `Open showcase to move it aside` instead of pointing elsewhere
+
 ## v1.2.19 — tdp v1.2.18
 
 Everything since v1.2.18, the betas v1.2.19-beta.1 to beta.5 included:

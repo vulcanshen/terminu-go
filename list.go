@@ -43,6 +43,9 @@ type Column struct {
 	// layout; any other control character is still its name in Red
 	// (components, control characters).
 	Line bool
+	// Fill marks the column that takes a row's room left over, with
+	// SpreadFill and SpreadGaps (List.Spread). A trial, not committed API.
+	Fill bool
 }
 
 // Row is one item of a List.
@@ -104,6 +107,13 @@ type SortKey struct {
 // panel filter (tdp panel).
 type List struct {
 	Columns []Column
+	// Spread is where a row's room goes when every column already shows its
+	// widest value: the leftover shows no more text, so it only says where
+	// the blank is. SpreadPack, the default, leaves it at the row's end. When
+	// the room is short, every Spread is the same: the shrinkable columns
+	// narrow, then columns go. A trial to choose from on a real list, not
+	// committed API: tdp has no word on it yet, and what stays may change.
+	Spread Spread
 	// Marks keeps a column for marks in front of every row (Principle P3,
 	// batches of marked items).
 	Marks bool
@@ -168,6 +178,9 @@ type List struct {
 	typing bool
 	scroll string
 	height int // rows of items the last Draw had room for
+	// gapMore is how much wider than two cells each gap between columns is,
+	// as the last widths worked it out (SpreadGaps).
+	gapMore int
 }
 
 // SetRows replaces the list's rows, keeping the cursor on the same row when
@@ -484,9 +497,9 @@ func (l *List) belowText(row, k int, ws []int, room int) string {
 			break
 		}
 		parts = append(parts, Fit(v, ws[c]))
-		used += ws[c] + 2
+		used += ws[c] + Width(l.gap())
 	}
-	return strings.Join(parts, "  ")
+	return strings.Join(parts, l.gap())
 }
 
 // matches reports whether row's text, any of its rows', matches q (tdp
@@ -766,6 +779,7 @@ func (l *List) widths(w int) []int {
 	if n == 0 {
 		return []int{w}
 	}
+	l.gapMore = 0
 	ws := make([]int, n)
 	for c := range n {
 		ws[c] = Width(l.title(c))
@@ -818,6 +832,9 @@ func (l *List) widths(w int) []int {
 	}
 	room += 2
 	if want <= room || len(shrink) == 0 {
+		if !slices.Contains(ws, -1) {
+			l.spread(ws, w) // every column at its widest: the room left over
+		}
 		return cutLast(ws, w)
 	}
 	base, more := 0, 0
@@ -846,6 +863,107 @@ func (l *List) widths(w int) []int {
 	}
 	return cutLast(ws, w)
 }
+
+// Spread is where a list's room left over goes (List.Spread). A trial, not
+// committed API.
+type Spread int
+
+const (
+	// SpreadPack leaves the room at the row's end, as before.
+	SpreadPack Spread = iota
+	// SpreadFill gives it all to the column marked Fill (a description, so
+	// the columns after it sit at the right edge); with none, as Pack.
+	SpreadFill
+	// SpreadEven widens the narrowest columns first, until the columns are
+	// as even as the room lets them be: one already wider keeps its width,
+	// nothing is cut, a number stays right-aligned in its wider column.
+	SpreadEven
+	// SpreadGaps widens every gap between columns alike, by spreadGapMore
+	// cells at most; what is left after goes to the Fill column, or with
+	// none to the row's end.
+	SpreadGaps
+)
+
+// spreadGapMore is how much a gap between columns may widen with
+// SpreadGaps: from its two cells to six.
+const spreadGapMore = 4
+
+// spread places the room left over in w when every shown column is at its
+// widest, as l.Spread says: in the columns' widths ws, or in the gaps
+// (l.gapMore).
+func (l *List) spread(ws []int, w int) {
+	var shown []int
+	used := -2
+	for c, x := range ws {
+		if x >= 0 {
+			shown, used = append(shown, c), used+x+2
+		}
+	}
+	left := w - used
+	if left <= 0 || len(shown) == 0 {
+		return
+	}
+	fill := -1
+	for _, c := range shown {
+		if l.Columns[c].Fill {
+			fill = c
+			break
+		}
+	}
+	switch l.Spread {
+	case SpreadFill:
+		if fill >= 0 {
+			ws[fill] += left
+		}
+	case SpreadEven:
+		for left > 0 {
+			low, next, at := -1, -1, 0
+			for _, c := range shown {
+				if low < 0 || ws[c] < low {
+					low = ws[c]
+				}
+			}
+			for _, c := range shown {
+				switch {
+				case ws[c] == low:
+					at++
+				case next < 0 || ws[c] < next:
+					next = ws[c]
+				}
+			}
+			step := left / at
+			if next >= 0 {
+				step = min(step, next-low)
+			}
+			if step == 0 { // fewer cells than columns at the level: one each, from the left
+				for _, c := range shown {
+					if ws[c] == low && left > 0 {
+						ws[c]++
+						left--
+					}
+				}
+				break
+			}
+			for _, c := range shown {
+				if ws[c] == low {
+					ws[c] += step
+				}
+			}
+			left -= step * at
+		}
+	case SpreadGaps:
+		if len(shown) > 1 {
+			l.gapMore = min(spreadGapMore, left/(len(shown)-1))
+			left -= l.gapMore * (len(shown) - 1)
+		}
+		if fill >= 0 {
+			ws[fill] += left
+		}
+	}
+}
+
+// gap is what is between two columns: two cells, more with SpreadGaps.
+func (l *List) gap() string { return Repeat(" ", 2+l.gapMore) }
 
 // cutLast narrows the column the edge falls in to what is left of w, so it is
 // cut its own way with "…", not chopped at the frame; the ones after it are
@@ -916,7 +1034,7 @@ func (l *List) header(ws []int) string {
 			parts = append(parts, Pad(t, ws[c]))
 		}
 	}
-	return strings.Join(parts, "  ")
+	return strings.Join(parts, l.gap())
 }
 
 func (l *List) rowText(r int, ws []int) string {
@@ -942,7 +1060,7 @@ func (l *List) rowText(r int, ws []int) string {
 		}
 		parts = append(parts, v)
 	}
-	return strings.Join(parts, "  ")
+	return strings.Join(parts, l.gap())
 }
 
 // filterRow is the typing row: the typed words one cell from the frame, the
