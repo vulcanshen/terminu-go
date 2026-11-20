@@ -177,9 +177,7 @@ same kind, make no new one: that one's time starts over and its title counts the
 press, the oldest first.
 
 One that comes later (a namespace or a kind you can ask a cluster about only once the screen is open) goes to
-`app.Notify` too: while the toast `Notify` showed is still on screen, it joins that toast, a row more, the kind the
-strongest again and its time starting over; once that toast is gone (its time up, or `Esc`), it comes as a toast of
-its own. So one of these toasts never replaces another before it is read. The App Log keeps an entry a row.
+`app.Notify` too, a toast of its own stacked with the rest, so none replaces another before it is read.
 
 A key in a settings file that the app doesn't read is kept, whether it is one the app no longer reads or one it never
 did (a typo, `refesh`), also when the app writes the file again: no toast, no copy, no `Notice`. At every start, log
