@@ -558,6 +558,24 @@ func locationRow(glyph, loc string, w int) string {
 	return " " + Pad(Fg(Lavender).Render(glyph+TruncateLeft(Escape(loc), room-Width(glyph))), w-1)
 }
 
+// cursorColour is the colour the cursor of row r is drawn in, for the marks
+// beside the item's other rows (tdp panel.5): Subtext1 or the row's own
+// (tdp color.2), Yellow while held (Drag), dimmed once while typing in the
+// filter (tdp P6).
+func (l *List) cursorColour(r int) Color {
+	colour := Subtext1
+	if c := l.rows[r].CursorColor; c.Set && !l.inMode {
+		colour = c
+	}
+	if l.held {
+		colour = Yellow
+	}
+	if l.Typing() {
+		colour = DimColor(colour)
+	}
+	return colour
+}
+
 // NoteAt is where the item under the cursor was at the last Draw: its
 // first and last rows and the cell its text starts at, for its note's head
 // (Panel.Note, tdp panel.18).
@@ -658,18 +676,26 @@ func (l *List) draw(w, h int, focused, own bool) []string {
 		r := l.view[vi]
 		if k := lines[li].below; k > 0 {
 			// A row under the item's first: under the columns, the mark
-			// column blank; under the cursor lit with it, Surface1 across,
-			// its text in its own colours, no arrow (tdp panel.5).
-			row := " " + indent + Repeat(" ", markW) + l.belowText(r, k-1, widths, textW-markW)
-			if vi == l.cursor {
-				bg := Surface1
-				if l.Typing() {
-					bg = DimColor(Surface1) // the cursor dimmed once (tdp P6)
-				}
-				out = append(out, underLit(Pad(row, w), bg))
+			// column blank, its own background and colours. The cursor's
+			// item, and an anchor of several rows, are closed like a
+			// bracket: a bar down the inside's first cell beside these
+			// rows, the item's last row underlined across the inside, in
+			// the cursor's colour, an anchor's in Yellow (tdp panel.5,
+			// panel.9).
+			row := indent + Repeat(" ", markW) + l.belowText(r, k-1, widths, textW-markW)
+			mark, marked := l.cursorColour(r), vi == l.cursor
+			if l.Anchor != "" && l.rowID(r) == l.Anchor {
+				mark, marked = Yellow, true // the cursor on it or not
+			}
+			if !marked {
+				out = append(out, " "+Pad(row, w-1-arrow)+Repeat(" ", arrow))
 				continue
 			}
-			out = append(out, Pad(row, w-arrow)+Repeat(" ", arrow))
+			line := Fg(mark).Render(glyphBar) + Pad(row, w-1)
+			if li+1 >= len(lines) || lines[li+1].item != vi { // the item's last row
+				line = underlineIn(line, mark)
+			}
+			out = append(out, line)
 			continue
 		}
 		// mark is the row's sign on a cursor block; shown, the one drawn

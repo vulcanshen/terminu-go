@@ -63,7 +63,7 @@ go build -o /tmp/showcase ./examples/showcase
   寬度有剩時（panel-184）：把終端機拉到 240 欄左右，Space menu 的 `Room left over` 一次換一種：放最後、`NAME` 填滿（`AGE` 靠到右邊）、
   平均、加大欄距，每換一次跳一個 Info toast 說是哪一種。
   `EVENTS` tab 是占好幾列的項目（panel-181～183）：事件的訊息在 REASON 底下，`BackOff` 兩列、`Pulled` 一列、`Started` 只有一列；
-  cursor 只畫在第一列，下面幾列跟著亮（Surface1 底、字照原本的顏色、沒有箭頭）；`j|k` 一次一項；按 `/` 打 `worker-2`，找到 `web-a8k2`。
+  cursor 只畫在第一列、箭頭在那一列，下面幾列保留自己的顏色，旁邊垂一條 Subtext1 的邊、最後一列畫 Subtext1 底線，像括號一樣包住整個項目；`j|k` 一次一項；按 `/` 打 `worker-2`，找到 `web-a8k2`。
   項目的附註（panel.18）：沒在跑的 pod（`coredns-7w9z` 的 CrashLoopBackOff、Pending 的）有附註，cursor 停上去，那一列正下方出現
   一個小框 `┌ 󰋽 i ┐` 蓋在下一列上，移開就消失；按 `i` 從那裡往下展開一個 `NOTE` viewer 寫原因，可以 `/` 搜尋、`v` 選取，`Esc`
   收回成頭。`G` 到最後一個 pod（`traefik-4b`）：頭在那一列上面（`└ 󰋽 i ┘`），`i` 往上開。Space menu 裡有 `[i] Note`。

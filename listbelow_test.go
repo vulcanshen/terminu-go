@@ -36,28 +36,38 @@ func lineWith(lines []string, s string) (string, int) {
 // TestListSeveralRows: an item may take rows under its first, as many as it
 // needs; the first holds the columns, the header and the tick; what the rows
 // below hold sits under the columns, the last cell running on; the cursor is
-// drawn on the first row only, the rows below lit with it, Surface1 across,
-// their text in its own colours, no arrow (panel-181, from gittu).
+// drawn on the first row only, with its arrow; the other rows keep their own
+// background and colours, a Subtext1 bar down the inside's first cell beside
+// them and the item's last row underlined across the inside in Subtext1, no
+// Surface1 (tdp panel.5, panel-181, from gittu).
 func TestListSeveralRows(t *testing.T) {
 	l := belowList()
 	l.ToggleMark() // c0
 	l.Key("j", tea.KeyMsg{})
 	l.ToggleMark() // c1, the cursor on it
 	lines := l.Draw(50, 14, true)
-	surface, green := sgrRGB(false, Surface1.RGB), sgrRGB(true, Green.RGB)
+	green := sgrRGB(true, Green.RGB)
+	bar := Fg(Subtext1).Render(glyphBar)
+	under := "\x1b[4;" + sgrUnderline(Subtext1.RGB) + "m"
 	first, at := lineWith(lines, "change 1")
-	below, under := lineWith(lines, "feat, v1.2")
-	if first == "" || below == "" || under != at {
-		t.Fatalf("the refs are not under DESCRIPTION: %d, %d:\n%s", under, at, strings.Join(lines, "\n"))
+	below, col := lineWith(lines, "feat, v1.2")
+	if first == "" || below == "" || col != at {
+		t.Fatalf("the refs are not under DESCRIPTION: %d, %d:\n%s", col, at, strings.Join(lines, "\n"))
 	}
 	if !strings.Contains(first, glyphHard) || strings.Contains(below, glyphHard) {
 		t.Error("the arrow is not on the first row only")
 	}
-	if !strings.Contains(below, surface) || !strings.Contains(below, green) {
-		t.Errorf("the row below is not lit, Surface1, its colours kept: %q", below)
+	if !strings.HasPrefix(StripStyles(below), glyphBar) || !strings.Contains(below, bar) {
+		t.Errorf("no Subtext1 bar down the first cell: %q", below)
+	}
+	if !strings.HasPrefix(below, under) || !strings.Contains(below, green) {
+		t.Errorf("the item's last row is not underlined in Subtext1, its colours kept: %q", below)
+	}
+	if strings.Contains(below, sgrRGB(false, Surface1.RGB)) {
+		t.Errorf("the row below still has Surface1: %q", below)
 	}
 	if w := Width(below); w != 50 {
-		t.Errorf("the lit row is %d wide, not the whole width", w)
+		t.Errorf("the row below is %d wide, not the whole width", w)
 	}
 	if strings.Contains(StripStyles(below), glyphMarked) || !strings.Contains(StripStyles(first), glyphMarked) {
 		t.Error("the tick is not on the first row only")
@@ -65,15 +75,84 @@ func TestListSeveralRows(t *testing.T) {
 	if header, _ := lineWith(lines, "DESCRIPTION"); header == "" {
 		t.Error("no header")
 	}
-	// Off the cursor: not lit.
+
+	// Two rows below (c4): the bar beside both, the underline on the last only.
+	l.Key("j", tea.KeyMsg{})
+	l.Key("j", tea.KeyMsg{})
 	l.Key("j", tea.KeyMsg{})
 	lines = l.Draw(50, 14, true)
-	if below, _ = lineWith(lines, "feat, v1.2"); strings.Contains(below, surface) {
-		t.Errorf("a row below off the cursor is lit: %q", below)
+	mid, _ := lineWith(lines, "main")
+	last, _ := lineWith(lines, "release-x")
+	if !strings.HasPrefix(StripStyles(mid), glyphBar) || strings.Contains(mid, under) {
+		t.Errorf("the middle row: a bar, no underline: %q", mid)
+	}
+	if !strings.HasPrefix(StripStyles(last), glyphBar) || !strings.HasPrefix(last, under) {
+		t.Errorf("the last row: a bar and the underline: %q", last)
 	}
 	// The last cell with text runs on past its column.
-	if long, _ := lineWith(lines, "release-x"); !strings.Contains(StripStyles(long), "runs on past") {
-		t.Errorf("the last cell is cut at its column: %q", StripStyles(long))
+	if !strings.Contains(StripStyles(last), "runs on past") {
+		t.Errorf("the last cell is cut at its column: %q", StripStyles(last))
+	}
+
+	// Off the cursor: no marks.
+	if below, _ = lineWith(lines, "feat, v1.2"); strings.Contains(StripStyles(below), glyphBar) || strings.Contains(below, "\x1b[4;") {
+		t.Errorf("a row below off the cursor is marked: %q", below)
+	}
+
+	// Typing in the filter dims the cursor once, its marks too (tdp P6).
+	l.Key("/", tea.KeyMsg{})
+	lines = l.Draw(50, 14, true)
+	if last, _ = lineWith(lines, "release-x"); !strings.Contains(last, Fg(DimColor(Subtext1)).Render(glyphBar)) {
+		t.Errorf("the marks are not dimmed while typing: %q", last)
+	}
+}
+
+// TestListAnchorSeveralRows: an anchor of several rows (tdp panel.9,
+// panel-196): its first row the Yellow anchor row; its other rows keep their
+// colours with a Yellow bar beside them and the last underlined in Yellow;
+// with the cursor on it, the first row is the cursor and the others keep the
+// Yellow marks. A dimmed panel dims the underline as it dims the text.
+func TestListAnchorSeveralRows(t *testing.T) {
+	l := belowList()
+	l.Anchor, l.inMode = "4", true // c4, two rows below
+	bar := Fg(Yellow).Render(glyphBar)
+	under := "\x1b[4;" + sgrUnderline(Yellow.RGB) + "m"
+	check := func(why string) {
+		t.Helper()
+		lines := l.Draw(50, 14, true)
+		first, _ := lineWith(lines, "change 4")
+		mid, _ := lineWith(lines, "main")
+		last, _ := lineWith(lines, "release-x")
+		if !strings.Contains(first, sgrRGB(false, Yellow.RGB)) && !strings.Contains(first, sgrRGB(false, Subtext1.RGB)) {
+			t.Errorf("%s: the first row is neither the anchor nor the cursor: %q", why, first)
+		}
+		if !strings.Contains(mid, bar) || strings.Contains(mid, under) {
+			t.Errorf("%s: the middle row: a Yellow bar, no underline: %q", why, mid)
+		}
+		if !strings.Contains(last, bar) || !strings.HasPrefix(last, under) {
+			t.Errorf("%s: the last row: a Yellow bar and underline: %q", why, last)
+		}
+		if strings.Contains(mid, sgrRGB(false, Yellow.RGB)) {
+			t.Errorf("%s: a row below is filled Yellow: %q", why, mid)
+		}
+	}
+	check("the cursor elsewhere")
+	for range 4 {
+		l.Key("j", tea.KeyMsg{})
+	}
+	if r, _ := l.Current(); r.ID != "4" {
+		t.Fatalf("the cursor on %s", r.ID)
+	}
+	check("the cursor on it")
+	first, _ := lineWith(l.Draw(50, 14, true), "change 4")
+	if !strings.Contains(first, glyphHard) {
+		t.Error("the cursor is not on the anchor's first row")
+	}
+
+	// Dimmed, the underline's colour dims too.
+	dim := strings.Join(DimLines(l.Draw(50, 14, false)), "\n")
+	if !strings.Contains(dim, sgrUnderline(DimRGB(Yellow.RGB))) || strings.Contains(dim, sgrUnderline(Yellow.RGB)) {
+		t.Error("the underline is not dimmed with the panel")
 	}
 }
 

@@ -128,14 +128,20 @@ var sgrAt = regexp.MustCompile(`^\x1b\[[0-9;:]*m`)
 // block's style, Base on the block's colour, except the swatches, runs of █
 // whose content is a colour, which keep their own (tdp
 // color.2).
-// underLit is s on a background of bg, its text keeping its own colours,
-// what it leaves unstyled in Text: an item's rows under the cursor's first
-// (tdp panel.5).
-func underLit(s string, bg Color) string {
-	on := "\x1b[" + sgrRGB(false, bg.RGB) + "m\x1b[" + sgrRGB(true, Text.RGB) + "m"
+// underlineIn is s underlined across in c (SGR 58), its text keeping its own
+// colours: the last row of an item of several rows under the cursor or the
+// anchor (tdp panel.5, panel.9). A terminal that cannot colour an underline
+// draws it in each cell's text colour.
+func underlineIn(s string, c Color) string {
+	on := "\x1b[4;" + sgrUnderline(c.RGB) + "m"
 	s = strings.ReplaceAll(s, "\x1b[0m", "\x1b[0m"+on)
 	s = strings.ReplaceAll(s, "\x1b[m", "\x1b[m"+on)
 	return on + s + "\x1b[0m"
+}
+
+// sgrUnderline is the SGR parameters for an underline in c.
+func sgrUnderline(c RGB) string {
+	return "58;2;" + strconv.Itoa(int(c[0])) + ";" + strconv.Itoa(int(c[1])) + ";" + strconv.Itoa(int(c[2]))
 }
 
 func onBlock(s string, block Style) string {
@@ -329,7 +335,7 @@ func dimSGR(params string) string {
 			needText = true
 		case n == 39:
 			needText = true
-		case (n == 38 || n == 48) && i+1 < len(ps):
+		case (n == 38 || n == 48 || n == 58) && i+1 < len(ps):
 			fg := n == 38
 			var c RGB
 			switch ps[i+1] {
@@ -357,7 +363,12 @@ func dimSGR(params string) string {
 				out = append(out, p)
 				continue
 			}
-			out = append(out, sgrRGB(fg, DimRGB(c)))
+			switch n {
+			case 58: // an underline's colour dims as the text's
+				out = append(out, sgrUnderline(DimRGB(c)))
+			default:
+				out = append(out, sgrRGB(fg, DimRGB(c)))
+			}
 			if fg {
 				needText = false
 			}

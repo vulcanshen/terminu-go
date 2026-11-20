@@ -602,18 +602,17 @@ func TestCommandLine(t *testing.T) {
 
 // An item of several rows (tdp panel.5, panel-181 to panel-183, from gittu):
 // [1] PODS' EVENTS tab has each event's message under it, starting under
-// REASON, only some events taller; the rows below the cursor's item lit with
-// it, Surface1, another item's not; j moves an item; the filter finds an
-// event by its message.
+// REASON, only some events taller; the rows below the cursor's item marked,
+// a bar down beside them, another item's not; j moves an item; the filter
+// finds an event by its message.
 func TestEventsSeveralRows(t *testing.T) {
 	s := newShowcase()
 	d := tdptest.Start(t, s.app, 140, 40)
 	d.Press("P", "1", "l", "g", "g") // EVENTS, sorted by object: postgres-0 first
-	const surface = "48;2;69;71;90"
-	lit := func(text string) bool {
-		for i, l := range d.Screen() {
+	lit := func(text string) bool {  // the bar beside the row (tdp panel.5)
+		for _, l := range d.Screen() {
 			if strings.Contains(l, text) {
-				return strings.Contains(d.Styled()[i], surface)
+				return strings.Contains(l, "\u258c")
 			}
 		}
 		t.Fatalf("no %q:\n%s", text, strings.Join(d.Screen(), "\n"))
