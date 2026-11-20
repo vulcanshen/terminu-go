@@ -82,7 +82,8 @@ func (p *Panel) noteKey(m *Mode) {
 		}})
 }
 
-// noteHead is the head of a note, w cells: a small box with the glyph and i,
+// noteHead is the head of a note: a small box with the glyph in Text and i,
+// the box and i in Blue as a key that can be pressed now (tdp panel.18);
 // its top border under the item, its bottom border above it (up).
 func noteHead(up bool) string {
 	l, r := "┌", "┐"

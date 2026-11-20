@@ -421,10 +421,10 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]iff`（M4：panel 的熱鍵優�
 | panel.17 | 說明牌永遠拿不到 focus：`Tab`（與 `Shift-Tab`）、數字鍵都跳過它，滑鼠點它沒作用（lib 不收滑鼠，X2），沒有 Space menu 與動作；`App.Focus` 給說明牌時什麼都不做；說明牌不能當清單的明細（`AddScreen` panic）；第一個 panel 是說明牌時 focus 從下一個開始（panel-189） | K：一直按 `Tab`、按 `3`、`4` | `TestSignNoFocus`、showcase 的 `TestKindsSigns` |
 | panel.17 | 說明牌照 app 挑的常亮（跟串流內容一樣不淡化，T2）或常暗（跟沒有 focus 的 panel 一樣淡化），之後不變；上面開著 popup 時跟大家一起變暗（F8）（panel-190） | K：focus 在 `[1]` 或 `[2]` 時 `LEGEND` 都亮、`SUMMARY` 都暗；按 `Space` 兩塊都變暗 | `TestSignLight` |
 | panel.17 | 說明牌不能捲動：app 讓內容在最小畫面（60 × 32）時就放得下；還是放不下時從底部切掉，看得到的最後一列結尾加 `…`；放得下的不動（panel-191）。lib：`Pager` 做這件事（從頂端畫、不捲）；app 自己的 body 由 app 切 | K 縮到 60 × 32：兩塊的字都在、沒有 `…` | `TestSignFits`、showcase 的 `TestKindsSigns` |
-| panel.18 | app 可以給項目一則附註（連結會去哪、備註），哪些項目有、寫什麼是 app 的；cursor 停在有附註的項目上時，附註的頭出現在那一項正下方：一個小框，裡面是 U+F02FD 與 `i`，蓋在下一列上；它不收鍵、不拿 focus，cursor 一移開就消失；上面開著 popup、在 panel filter 打字、focus 不在那個 panel 時不畫（panel-192，user；取代 inspect toast）。lib：`Panel.Note`（模式裡 `Mode.Note`，最內層有的先問）；`List` 自己說那一項在哪（`NoteAt`），app 自己的 body 實作 `NoteSpot`。頭的顏色規範沒寫，暫定：框線與 `i` Blue、glyph Text | P `[1] PODS` 把 cursor 移到 `coredns-7w9z`（CrashLoopBackOff）或一個 Pending 的 pod，再移開 | `TestNoteHead`、showcase 的 `TestPodNote` |
+| panel.18 | app 可以給項目一則附註（連結會去哪、備註），哪些項目有、寫什麼是 app 的；cursor 停在有附註的項目上時，附註的頭出現在那一項正下方：一個小框，裡面是 Text 色的 U+F02FD 與 `i`，框與 `i` 用 Blue（現在按得了的鍵），蓋在下一列上；它不收鍵、不拿 focus，cursor 一移開就消失；上面開著 popup、在 panel filter 打字、focus 不在那個 panel 時不畫（panel-192，user；取代 inspect toast）。lib：`Panel.Note`（模式裡 `Mode.Note`，最內層有的先問）；`List` 自己說那一項在哪（`NoteAt`），app 自己的 body 實作 `NoteSpot` | P `[1] PODS` 把 cursor 移到 `coredns-7w9z`（CrashLoopBackOff）或一個 Pending 的 pod，再移開 | `TestNoteHead`、showcase 的 `TestPodNote` |
 | panel.18 | 按 `i` 打開：框從頭往下展開成一個貼在那一項下方的 viewer，標題 U+F02FD `NOTE`，focus 進去：可以捲動、有選取模式與 `/` 搜尋，底下變暗（F8）；最高到 panel 高度的一半，長的行換行，再多就在裡面捲動；寬度照內容、最寬到 panel 的右邊（panel-193，user）。lib：`Viewer`（不畫行號），位置跟著頭 | 同上，在 `coredns-7w9z` 按 `i`；按 `/`、`v` | `TestNoteOpen`、showcase 的 `TestPodNote` |
 | panel.18 | `Esc` 把附註收回成頭；focus 回到清單，cursor 還在原位（panel-194，user） | 同上，打開後按 `Esc` | `TestNoteClose`、showcase 的 `TestPodNote` |
-| panel.18 | 那一項下面沒空間時（在 panel 最底下那一列）往上開：頭畫在那一項上面（框的下緣 `└ … ┘`），打開的 viewer 下框貼著那一項、從下往上展開（panel-195，user）。打開的 viewer 標題仍在上框，規範沒寫往上開時頭（標題）在哪，暫定 | P `[1] PODS` 按 `G` 到最後一個 pod（`traefik-4b`），按 `i` | `TestNoteUp` |
+| panel.18 | 那一項下面沒空間時（在 panel 最底下那一列）：頭出現在那一項正上方（`└ 󰋽 i ┘`），附註從那裡往上開、照 viewer 平常的樣子（標題在上、hint 在下），下框貼著那一項（panel-195，user） | P `[1] PODS` 按 `G` 到最後一個 pod（`traefik-4b`），按 `i` | `TestNoteUp` |
 
 ## layout/popup
 

@@ -59,6 +59,11 @@ func TestNoteHead(t *testing.T) {
 	if got := row(ta, y); !strings.Contains(got, "┌ "+glyphNote+" i ┐") || strings.Contains(got, "pod-02") {
 		t.Errorf("the head does not lie over the row below: %q", got)
 	}
+	// The box and i Blue, as a key that can be pressed now; the glyph Text.
+	if styled := ta.Frame()[y]; !strings.Contains(styled, Fg(Blue).Render("┌ ")) || !strings.Contains(styled, Fg(Text).Render(glyphNote)) ||
+		!strings.Contains(styled, Fg(Blue).Render(" i ┐")) {
+		t.Errorf("the head's colours: %q", styled)
+	}
 	ta.press("j") // it takes no key: j moves the cursor
 	if r, _ := ta.list.Current(); r.ID != "2" || headRow(ta) != y+1 {
 		t.Errorf("j did not move the cursor past it: %s, head on %d", r.ID, headRow(ta))
