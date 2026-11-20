@@ -294,7 +294,7 @@ func newInputsScreen(s *showcase) *inputsScreen {
 	// On the Folders tab two folders compare as two rows that hold many: the
 	// items that differ, a level at a time (tdp panel.9); two text files as
 	// text.
-	is.files.Actions = append(is.files.Actions, a.DiffModeAction(is.files, is.fileList, terminu.DiffMode{Key: "C",
+	is.files.Actions = append(is.files.Actions, a.DiffModeAction(is.files, is.fileList, terminu.DiffMode{Key: "D",
 		Can:   func(r terminu.Row) bool { return is.tab == 2 && (folderRow(r) || textFile(r.ID)) },
 		Many:  folderRow,
 		Name:  func(r terminu.Row) string { return relPath(r.ID) },

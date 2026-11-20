@@ -201,7 +201,7 @@ password itself in a terminal popup. Not for Windows: use gsudo or the sudo Wind
 
 ## Diff
 
-`app.DiffModeAction(panel, list, terminu.DiffMode{Key: "C", Text: ...})` gives a list the Diff mode: the user picks
+`app.DiffModeAction(panel, list, terminu.DiffMode{Key: "D", Text: ...})` gives a list the Diff mode: the user picks
 two rows and sees what differs, UNIFIED or SPLIT. Two rows that hold many (two directories, two namespaces, two
 commits) go in instead, to a list of the items that differ: `Many` says which rows hold many, and `Items` gives the
 items that differ between two of them, each a `terminu.DiffItem`. The lib draws that list in the panel, each item's

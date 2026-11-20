@@ -15,7 +15,7 @@ const glyphCompare = "\U000F018A" // nf-md-compare: the Diff popup (tdp note.8)
 // note.8): the key, which rows can be compared and their text. The lib does
 // the rest.
 type DiffMode struct {
-	// Key is the diff key (the app's choice, kbu's C): on a row it enters
+	// Key is the diff key, D in every app (tdp K13, [D]iff): on a row it enters
 	// the mode with that row as the anchor; in the mode it opens the Diff,
 	// as Enter does.
 	Key string

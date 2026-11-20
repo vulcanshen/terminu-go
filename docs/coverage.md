@@ -19,7 +19,7 @@ app 名 `showcase`，五個畫面，畫面 chip 列 `[P]ANELS [I]NPUTS [D]IALOGS
 
 | 畫面 | 一句話 | panel |
 |---|---|---|
-| `[P]ANELS` | panel 的每一種樣子與狀態 | `[1] PODS`：一般清單（tab `PODS` / `EVENTS`、表頭排序、標記、cursor、40 列、截斷、panel filter、`[D]rag` 模式）；`[2] LOG`：串流內容、沒有 cursor，`Enter` 開 viewer；`[3] SETTINGS`：一列一個值 |
+| `[P]ANELS` | panel 的每一種樣子與狀態 | `[1] PODS`：一般清單（tab `PODS` / `EVENTS`、表頭排序、標記、cursor、40 列、截斷、panel filter、`D[r]ag` 模式、`[D]iff` 模式）；`[2] LOG`：串流內容、沒有 cursor，`Enter` 開 viewer；`[3] SETTINGS`：一列一個值 |
 | `[I]NPUTS` | 每一種 input | `[1] INPUTS`：一列一個值，每一種 input（含各方案）各一列，`Enter` 打開它的 popup（`Host` 是 app 自己給預覽的 finder）；`[2] FILES`：清單，`[/] Find` 開一般的 finder（有預覽）、`[S]low index` 是結果慢慢進來的 finder、`[V]iew` 用 viewer 開檔案；`Folders` 分頁一層一層走假專案的資料夾（`Enter` 進、`Esc` 回） |
 | `[D]IALOGS` | 每一種 dialog 與疊法 | `[1] DIALOGS`：每一列是一個情境（某一種 dialog、某一種狀態、某一種疊法），`Enter` 開它 |
 | `[t]ERMINAL` | PTY 的兩種放法（畫面的鍵是小寫的 `t`） | `[1] SHELL`：PTY 放在 panel 裡；`[2] SESSIONS`：清單，`[Alt-t]erm` 開 terminal popup；第一列 `panel` 代表 `[1] SHELL`，cursor 在那一列時指著它 |
@@ -31,7 +31,7 @@ app 名 `showcase`，五個畫面，畫面 chip 列 `[P]ANELS [I]NPUTS [D]IALOGS
 global operation popup 有 `[N]arrow layout`（不管多寬都一次畫一個 panel）、`[1] About`（數字的 global 熱鍵）、`[S]tart task`（畫面
 chip 列下的進度條）、`Hide secrets in preview`。icon 佔兩格用 `SHOWCASE__ICON_WIDTH=2` 啟動（E5 的覆寫），statusbar 寫出現在用幾格。
 假的檔案在 `/tmp/terminu-showcase`（`project` 與 `.ssh`），file-picker 的打字列打得到；打 `~/` 開頭的路徑看的是真的家目錄。
-P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優先），要換到 Dialogs 畫面，先換到別的 panel 或用 global operation。
+P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]iff`（M4：panel 的熱鍵優先），要換到 Dialogs 畫面，先換到別的 panel 或用 global operation。
 
 **測試名稱**：`Test` + 規則編號或元件名 + 一句話（例：`TestK4EscOneLayer`、`TestToastReplace`）。L4 的畫面測試是一組跑遍
 尺寸、icon 寬度與每一種 popup 的表格測試（`TestL4EveryRowFullWidth`），下面多處引用它。
@@ -49,7 +49,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | P6 | 亮的就是 focus：最上層 popup、focus 的 panel、finder 有 focus 的那塊、同鍵兩處指示會觸發的那個、沒 focus 那塊上的 cursor 淡化 | 見 F8、T2、finder.4、M9、color.2；預覽框不在其中、一直不淡化（finder.2） | 各條的測試 |
 | 術語 Surface | footer、statusbar、tab 列不是 surface，focus 不停在上面 | 任一畫面 `Tab` 只在 panel 之間 | `TestK2TabCyclesPanels` |
 | 術語 輸入態 | 打字列上打的字就是內容；select／picker 的清單、表單本身不是輸入態 | 見 K8 | `TestK8InputState` |
-| 術語 模式 | 一部分鍵換意思、`Esc` 離開；zoom 這類版面切換不是模式 | P `[1] PODS` 的 `[D]rag`；D「Note viewer」的 `v`（visual） | `TestK11ModeCoreKeys`、`TestK11ModeLabel`、`TestK11HotkeysSilentInMode` |
+| 術語 模式 | 一部分鍵換意思、`Esc` 離開；zoom 這類版面切換不是模式 | P `[1] PODS` 的 `D[r]ag`；D「Note viewer」的 `v`（visual） | `TestK11ModeCoreKeys`、`TestK11ModeLabel`、`TestK11HotkeysSilentInMode` |
 
 ## Rules — K Core key
 
@@ -101,7 +101,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | K10 | 其他 Alt 出口鍵要不要 confirm、保留哪些鍵、出口後 focus 落點：app 決定（lib 提供選項；落點：`Terminal.OnLeave`，出口鍵被接受、focus 出來之後跑） | T `[2] SESSIONS` 的 `[Alt-t]erm` 隱藏 terminal popup；T `[1] SHELL` 按 `Alt-Esc`、`Enter` 離開後 focus 到 `[2] SESSIONS` 的 `panel` 列 | `TestK10ReservedKeysShown`、`TestTerminalKeyTakesSeveral`（`TerminalKey.Keys`：一組鍵寫一次）、`TestTerminalOnLeave` |
 | K10 | 子程序還沒準備好時可以不轉送一般鍵，但 `Ctrl-C` 照轉、出口鍵照有效照揭露 | T `[1] SHELL` 的 `Slow start`（模擬連線中） | `TestK10NotReadyForwardsCtrlC`、`TestTerminalFirstOutput`（lib：`Terminal.OnFirstOutput`、`Spoke`，app 拿來結束 NotReady 與 loading） |
 | K10 | `Alt-Esc` 與兩次 `Esc` 的 byte 一樣（實作參考：bubbletea v1.3.10 實測會黏）：在真的終端機上驗 | 照 [`walkthrough.md`](walkthrough.md) 的「`Esc` 與 `Alt-Esc`」按 | — |
-| K11 | 模式裡 `!` 不作用（`TestAppLogOnBang`）；`Space` 開模式的 Space menu（見 menu.4；app 自己的模式裡使用者把動作放到 `Space` 時除外，見下面 K11-27 那一列）；`?` 開模式的 key reference；`Enter` 做模式裡最直覺的事（tdp 的模式照各自寫的，例：Drag 放下拿著的那一列；app 自己的模式由 app 決定）；`Esc` 離開、回到進入前的狀態（app 自己的模式離開後留下什麼由 app 決定；離開時可以跳出一個 popup，見下面 K11-16 那一列）；`q`、`Ctrl-C` 照 K9 | P `[1] PODS` 的 `[D]rag` | `TestK11ModeCoreKeys` |
+| K11 | 模式裡 `!` 不作用（`TestAppLogOnBang`）；`Space` 開模式的 Space menu（見 menu.4；app 自己的模式裡使用者把動作放到 `Space` 時除外，見下面 K11-27 那一列）；`?` 開模式的 key reference；`Enter` 做模式裡最直覺的事（tdp 的模式照各自寫的，例：Drag 放下拿著的那一列；app 自己的模式由 app 決定）；`Esc` 離開、回到進入前的狀態（app 自己的模式離開後留下什麼由 app 決定；離開時可以跳出一個 popup，見下面 K11-16 那一列）；`q`、`Ctrl-C` 照 K9 | P `[1] PODS` 的 `D[r]ag` | `TestK11ModeCoreKeys` |
 | K11 | 模式裡只有模式自己的鍵與上表的 core key 作用：panel 熱鍵與 global 熱鍵都不作用，按了不出聲 | Drag 裡按 `m`（panel 熱鍵）、`I`（global 熱鍵） | `TestK11HotkeysSilentInMode` |
 | K11 | 模式可以暫停 `Tab` 與數字鍵，按了要有回應（toast）；toast 在時第一個 `Esc` 先收 toast；在模式外也不會做事的鍵（只有一個 panel 的畫面上的 `Tab`、`2`，沒有那個 panel 的數字，已經 focus 的 panel 的數字）不作用、不出聲（K11-5） | Drag 裡按 `Tab`、`2`（toast），再按 `1`、`9`（不出聲） | `TestK11TabPausedToast`、`TestK11DigitsPausedToast` |
 | K11 | 模式名在框的上框右側、外框換模式色、離開恢復；不只靠顏色 | Drag；D「Note viewer」的 `v`；I 的 `Segments` 按 `D` | `TestK11ModeLabel`、`TestReorderDrag` |
@@ -127,11 +127,14 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | K12 | `PgUp\|PgDn` 就是 `u\|d`：`u\|d` 能移動的地方一樣移動半頁、到頭尾停住（清單、menu、表單、finder、select、checkbox popup、一列一個值、pager、viewer 與它的選取模式、key reference、picker、Compare 模式、PTY 的 History）；跟方向鍵一樣不列在 `u\|d` 旁邊，key reference 與模式的 Space menu 都只有 `u\|d`（K12-18）。app 自己的模式：`ModeKey.Keys` 由 app 列進方向鍵與 `PgUp\|PgDn`，lib 不補（README「app 自己的模式」） | P `[1] PODS` 按 `PgDn`、`PgUp`，按 `C` 之後也按；T `[1] SHELL` 跑幾行後按 `PgUp` 再按 `?`、`Space` | `TestK7AliasEverywhere`、`TestK12PgUpPgDnAreUD` |
 | K12 | `Home`、`End` 只在打字列（游標到最前、最後）；清單、menu、viewer、textarea 的「移」都不作用 | 任一清單、menu、D「Note viewer」、I 的 `Comment` 上按 `Home`、`End` | `TestK12HomeEndOnlyTyping` |
 | K12 | 一步一步的移動（`j\|k`、`h\|l`、方向鍵、`Tab`）到頭尾繞回：panel 清單、一列一個值、menu、表單、finder／select／checkbox popup、panel 的 tab、picker 的欄與項目 | P `[1] PODS` 在最後一列按 `j`；tab 在最後一個按 `l`；每種清單各一次 | `TestK12StepWraps` |
-| K12 | Drag mode 拿著的一項也繞回（panel 的 Drag、reorder）：拿著最後一項往後到第一個、其他各往後一格；拿著第一項往前到最後一個 | P `[1] PODS` 按 `D` 再按 `k`；I 的 `Segments` 在最後一項按 `D` `j` | `TestPanelDragHeldRow`、`TestReorderDragWraps` |
+| K12 | Drag mode 拿著的一項也繞回（panel 的 Drag、reorder）：拿著最後一項往後到第一個、其他各往後一格；拿著第一項往前到最後一個 | P `[1] PODS` 按 `r` 再按 `k`；I 的 `Segments` 在最後一項按 `D` `j` | `TestPanelDragHeldRow`、`TestReorderDragWraps` |
 | K12 | `u\|d` 到頭尾停住、不繞；照空間走的不繞：日曆的日子、月與年、左右兩側、一段文字裡的移動 | P `[1] PODS` 在倒數幾列按 `d`；I 的 `Meeting` 日曆；D「Note viewer」的 visual | `TestK12HalfPageStops`、`TestK12SpatialNoWrap` |
 | K12 | 二維內容（一列有好幾個項目，例：webu 網頁內文裡的連結）閱讀時沒有游標，`j\|k`、`u\|d`、`gg\|G` 捲動；一個項目一個項目走是一個模式（K11），模式裡 `j\|k` 照閱讀順序走（同一列從左到右，再到下一列）、到頭尾繞回，`gg\|G` 到第一個、最後一個（K12-17）：app 自己的 body 做，模式用 `Panel.EnterMode` 與 `ModeKey` | lib 不適用；展示場沒有二維內容 | — |
 | K12 | 一段文字裡（viewer 的選取模式、textarea 的移動狀態）加 `w\|b\|e`、`0\|$`；viewer 平常 `h\|l` 給 tab，選取模式裡 `h\|l` 移游標、不切 tab | D「Note viewer」的 visual；D「Popup with tabs」（平常 `h\|l` 切 tab，`v` 之後 `h\|l` 移游標）；I 的 `Comment` 移動狀態 | `TestK12TextMotions`、`TestNoteHotkeysAndMode` |
 | K12 | 模式裡沒有移動可做的移動鍵，可以做模式自己的動作，同一個鍵的方向鍵或 `PgUp\|PgDn` 做一樣的事（app 自己的模式裡使用者改了那個字母做的事時，不管是改走還是放動作上去，方向鍵或 `PgUp\|PgDn` 照這個模式給它的預設，並在 `?` 裡跟現在做那件事的鍵寫在一起，K11-25）；寫在 `?` 與提示裡，模式的 Space menu 照 K11；模式外面、有移動可做的鍵都照舊（K12-19）。lib：模式裡的鍵只給模式自己的鍵與 core key，`ModeKey` 收那個鍵與它的方向鍵（`Keys: k, ↑`）；使用者改了字母做的事時，app 只動那個字母，方向鍵與 `PgUp\|PgDn` 留在模式預設給它們的 `ModeKey` 的 `Keys`（lib 不補鍵，不會讓它們跟著字母走）。模式的 Space menu 裡，鍵是 `h j k l u d g G` 的列只用 `Enter` 執行（在 menu 裡這些鍵是移動，K12），menu 自己的 `?` 不列它的鍵，列上的標記照留（那是在模式裡按的鍵，M3） | 展示場沒有這種模式；在有這種模式的 app 裡，模式裡按那個鍵（例 `k`）與它的方向鍵、打開 `?`，再到模式外面按它 | `TestK12FreeKeyInAMode`、`TestK12ModeMenuRefMovingKeys`、`TestK11RefWritesArrowAfterMovedKey`、`TestK11ModeKeyRefSplitsAPair` |
+| K13 | `D` 是 Diff 模式的鍵，寫成 `[D]iff`；只有同一個 panel 已經把 `D` 給了另一個不是刪除的動作（例：Drag）時，app 才把其中一個換成別的鍵（K13-1，來自 kbu）。lib：`DiffMode.Key` 是 app 給的，lib 沒有預設；文件的例子寫 `D` | P `[1] PODS` 與 I `[2] FILES` 的 `FOLDERS` tab 按 `Space`：Diff 那一列寫 `[D]iff`；PODS 的 Drag 讓到 `r`（`D[r]ag`） | showcase 的 `TestK13Keys` |
+| K13 | `x` 刪掉 cursor 上那一項（`[x] Delete`）；`X` 一次刪很多（標記的那些、整批），例：`[X] Delete marked`（K13-2） | P `[1] PODS` 按 `Space`：`[x] Delete`、`[X] Delete marked` | showcase 的 `TestK13Keys` |
+| K13 | 會永久拿掉東西的動作（刪除、丟掉改動、drop）不在 `D` 或 `d` 上（K13-3）。lib 自己的動作沒有刪除；reorder 的 `D`（拿起，Drag）不是刪除 | 展示場每個 panel 的動作 | showcase 的 `TestK13Keys` |
 
 ## Rules — M Menu 與揭露
 
@@ -144,7 +147,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | M3 | 只有打字列的 popup（text、password、number）：hint 列出全部操作、60 欄放得下（L1） | I 的 `Name`、`Password`、`PIN`、`Port`（終端機 60 欄） | `TestM3TypingPopupHintFits60` |
 | M4 | global operation popup：從 Space menu 的 global 列 `Enter`，疊在 Space menu 上；一種 menu；全部全域動作；離開在這裡 | 任一 panel：`Space` → `Global operation` | `TestM4GlobalPopup` |
 | M4 | `Esc` 回到 Space menu；執行了照 T1；目前畫面的切換列停用 | 在 `[P]ANELS` 上看 `[P]anels` 那一列 | `TestM4EscBackToSpaceMenu`、`TestM4CurrentScreenDisabled` |
-| M4 | global 熱鍵在 panel 上直接按（沒有 popup 時）；跟 panel 熱鍵撞鍵時 panel 的優先、那個 panel 的 key reference 不列被蓋掉的 global 鍵；數字的 global 熱鍵只在 popup 裡；模式裡不作用 | P `[1] PODS` 的 `[D]rag` 蓋掉 global 的 `[D]ialogs` | `TestM4GlobalHotkeyOnPanel`、`TestM4PanelKeyWins` |
+| M4 | global 熱鍵在 panel 上直接按（沒有 popup 時）；跟 panel 熱鍵撞鍵時 panel 的優先、那個 panel 的 key reference 不列被蓋掉的 global 鍵；數字的 global 熱鍵只在 popup 裡；模式裡不作用 | P `[1] PODS` 的 `[D]iff` 蓋掉 global 的 `[D]ialogs` | `TestM4GlobalHotkeyOnPanel`、`TestM4PanelKeyWins` |
 | M4 | key reference 唯讀、可捲、沒游標、不能執行 | 任一處按 `?` | `TestKeyReferenceReadOnly` |
 | M5 | 每一列：左邊動作名稱、右邊一句單行說明 | Space menu | `TestMenuRowLayout` |
 | M5 | 熱鍵標記：多字元的熱鍵碰上 label 開頭也不分大小寫（`go` 加 `Goto` → `[go]to`） | 測試驗 | `TestM5HotkeyMarking` |
@@ -229,7 +232,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | S1 | 在 panel 上按 `V` 開 splash；某 panel 可把 `V` 給自己用，至少一個 panel 仍是 splash | P `[1] PODS` 按 `V`；I `[2] FILES` 的 `V` 給 `[V]iew` | `TestS1SplashOnV`、`TestS1EveryAppHasSplash` |
 | S2 | 不出現在 Space menu、global operation popup、key reference、footer、hint、README | lib：splash 沒有登記項 | `TestS2SplashNotDisclosed` |
 | S3 | 任意鍵只關掉 splash（含 `q`、`Ctrl-C`、`Esc`、`Space`、`?`） | splash 上按 `Ctrl-C` | `TestS3AnyKeyClosesOnly` |
-| S4 | 啟動不播；popup 開著、輸入態、PTY 裡、模式裡按 `V` 不叫出，`V` 是模式自己的鍵時照那個鍵（S4-3） | 開著 popup、在 filter 打字、在 Shell 裡、`[1] PODS` 的 `[D]rag` 裡按 `V` | `TestS4SplashOnlyOnPanel` |
+| S4 | 啟動不播；popup 開著、輸入態、PTY 裡、模式裡按 `V` 不叫出，`V` 是模式自己的鍵時照那個鍵（S4-3） | 開著 popup、在 filter 打字、在 Shell 裡、`[1] PODS` 的 `D[r]ag` 裡按 `V` | `TestS4SplashOnlyOnPanel` |
 | S5 | 畫 icon 一格對一格：25 × 19 格加上下各一列底共 21 列，一格一個 `nf-fa-square` 佔兩欄（icon 佔一格時補空白），底 Surface0、U 框 `#205090`、字 `#f2b753`；下面空一列接六列字（名稱 Blue 粗體、版本 Blue、介紹 Text、`developed by` Overlay0、信箱金色、`Press any key to close` Overlay0），在 mark 的寬度裡置中、每列不超過 50 欄（超過時建立 splash 回錯誤）；整塊上下左右置中；E8：展示場畫 tdp 的 `principle/icon.svg`（複本在 `examples/showcase/icon.svg`） | P `[1] PODS` 按 `V` | `TestS5SplashMatchesIcon`、`TestS5SplashRefusesBadIcon`、`TestS5SplashRefusesWideText` |
 | S5 | 放不下整塊（不到 50 欄或 30 列）時不畫 mark、只畫字，置中、照樣分兩批；太窄照 components 的「折行」；一個字比終端機寬就照格子切開、每段置中；還是太矮從下面往上截（提示 → 作者兩列 → 介紹，連同上面的空白列），名稱與版本一定出現，只有 1 列時只畫名稱 | 把視窗縮到 49 欄或 29 列以下按 `V` | `TestS5SplashTooSmall`、`TestS5SplashOneRow` |
 | S5 | 揭露動畫：tick 10ms、段間停 250ms；底一個 tick 一列由上往下 → 金色的字照 svg 裡註解的順序一個字一段（一個註解開始一個字，第一個是 `<!-- U -->`）、一個 tick 2 格打散 → U 框由下往上一列一列、同一列從中間往兩端，一個 tick 一對（中線那格自己一個 tick） → mark 畫完 400ms 後名稱、版本、介紹，再 500ms 後作者兩列與提示；照打開後經過的時間走，晚到的 tick 不累積延遲 | 同上 | `TestS5SplashReveal`、`TestS5SplashKeepsTime` |
@@ -283,7 +286,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | color.1（6） | 粗體只用在：cursor 上的字、popup 標題、膠囊的字、模式名、標題後的 loading icon | 每種畫面 | `TestBoldOnlyWhereAllowed` |
 | color.2 | 每個意義的色碼與用處（Base、Mantle、Blue、Surface2、層色、Lavender、Green、Yellow、Peach、Red、Overlay0、Text、Subtext1、Surface1） | 每個畫面 | `TestColorTable` |
 | color.2 | 畫面不塗底色：沒指定背景的格子留給終端機；Base 只用在色塊上的字；膠囊串自己塗滿每一格（沒選中的段 Mantle），只有串外面留給終端機 | 換一個不是 Base 的終端機底色看 | `TestNoBackgroundPainted` |
-| color.2 | 模式色 Yellow 也用在 Drag 拿著的那一列 | P `[1] PODS` 的 `[D]rag`；I 的 `Segments` 按 `D` | `TestPanelDragHeldRow`、`TestReorderDrag` |
+| color.2 | 模式色 Yellow 也用在 Drag 拿著的那一列 | P `[1] PODS` 的 `D[r]ag`；I 的 `Segments` 按 `D` | `TestPanelDragHeldRow`、`TestReorderDrag` |
 | color.2 | Peach、Red 也用在 panel 框上 app 自己的狀態講的事值得注意、出錯時（panel.1） | P `[2] LOG` 的 `Status` 之後選 `Status trouble` | `TestPanel1FrameStatusColour` |
 | color.2 | 例外是色塊：內容本身就是顏色的格子（`ColorText` 的 `███`）在 cursor 色塊上保留自己的顏色，同一塊上的其他字照樣換成 Base。lib：表單、一列一個值的 panel、一般清單的 cursor | I `[1] INPUTS` 的 `Background` 停在上面 | `TestSwatchOnCursor` |
 | color.2 | cursor 色塊：popup 層色底、panel Subtext1 底，字 Base 粗體；沒 focus 那塊的 cursor 再淡化一次；放在色塊上的字一律 Base | P 的 cursor；I `[/] Find` 的兩塊 | `TestCursorBlock` |
@@ -332,7 +335,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | panel.1 | cursor 換列就換成指那一列的 panel；那一列的 panel 不在畫面上（別的畫面、版面沒排進來）或沒有對應時，沒有 panel 被指到（panel-152） | T `[2] SESSIONS` 從 `panel` 移到 `shell` | `TestPointedFollowsCursor` |
 | panel.1 | 只在清單有 focus 時才指：focus 到被指的 panel 上照 focus 畫，focus 到別的 panel 上沒有 panel 被指到；被 popup 蓋住時一起淡化（panel-153） | T 在 `panel` 列按 `Tab`；按 `Space` 開 menu | `TestPointedOnlyFromFocus` |
 | panel.1 | 上框左邊 `[N] label` 膠囊緊接框角；`N` 是跳到該 panel 的數字鍵；有 tab 時 `[N]` 自己一段、第一個 tab 的名字就是 label，在第一個 tab 時 `[N]` 與它之間一個空格（`[2] PODS`）；loading icon 放整串膠囊後、前後各空一格 | P `[1] PODS` 的 tab；`Loading` | `TestPanelTitle`、`TestPanelTabChain`、`TestPanelLoadingIconAfterChain` |
-| panel.1 | 上框右邊模式名，夾在接頭之間（粗線 `┫ ┣`、細線 `┤ ├`），模式色加粗、大小寫照原樣；盡量一個詞；放不下先截標題；膠囊跟著換模式色 | P `[1] PODS` 的 `[D]rag`（粗線）；細線：展示場沒有不暫停 `Tab` 的模式（LOG 的 Freeze 照 K11 拿掉了：app 自己的模式只做元件與規則沒做的事），看測試；縮窄 | `TestPanelModeLabel`、`TestPanelModeLabelKeptWhenNarrow` |
+| panel.1 | 上框右邊模式名，夾在接頭之間（粗線 `┫ ┣`、細線 `┤ ├`），模式色加粗、大小寫照原樣；盡量一個詞；放不下先截標題；膠囊跟著換模式色 | P `[1] PODS` 的 `D[r]ag`（粗線）；細線：展示場沒有不暫停 `Tab` 的模式（LOG 的 Freeze 照 K11 拿掉了：app 自己的模式只做元件與規則沒做的事），看測試；縮窄 | `TestPanelModeLabel`、`TestPanelModeLabelKeptWhenNarrow` |
 | panel.1 | 下框左邊 hint（每個 panel 都有；focus 在 panel filter 打字列上、在 panel 裡的 PTY 時不寫，回來時再寫）；下框右邊捲動位置 | 每個 panel；P 按 `/` 打字；T `[1] SHELL` 按 `Enter` 進去 | `TestPanelHint`、`TestPanelNoHintWhileFiltering`、`TestK10ExitKeyShown` |
 | panel.1 | 框上的字與角之間隔一段線（`┗━ Enter:logs`、`3 of 40 ━┛`、`┫Drag┣━┓`），只有 `[N] label` 膠囊緊接左上角 | 每個 panel | `TestPanelFrameTextSpacing` |
 | panel.1 | hint：這個 panel 自己的鍵（`Enter` 做什麼、常用熱鍵），不寫移動鍵與 footer 已有的 core key；清單一項都沒有時（panel filter 篩到空，或本來就空）拿掉 `Enter` 與對項目的熱鍵，只留對整個 panel 的；focus 時鍵 Blue 說明 Overlay0、失焦跟著淡化；放不下從尾端整組捨（下框有 app 自己的狀態時它先拿掉，見下面那幾列）、捲動位置留著，搜尋的狀態（note.3）也留著 | 每個 panel；縮窄；I `[2] FILES` 的 `Empty`（只剩 `/:find`），或按 `/` 打 `zz` 再 `Tab` | `TestPanelHintContent`、`TestPanelHintDrop`、`TestPanelHintNoItems` |
@@ -346,7 +349,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | panel.4 | 失焦時串色換成失焦的框線色、Mantle 不變；被蓋住時照 F8 跟整個畫面一起淡化，Mantle 變成 Crust `#11111b`（panel-137） | P `[1] PODS` 按 `Tab`；再開 Space menu | `TestCapsuleChain`、`TestDimEveryColor` |
 | panel.5 | cursor：Subtext1 底、Base 粗體、佔滿內寬、整列 Base 字；右邊的留白（跟箭頭一樣寬）畫 U+E0B0、跟 cursor 同色；失焦跟著淡化；自己有顏色的列，Subtext1 可以換成那個顏色，箭頭也一樣（color.2 那一列，color-27） | P `[1] PODS` | `TestListCursor`、`TestCursorArrow`、`TestColor27RowColourCursor` |
 | panel.5 | 模式裡先標住、cursor 會離開的那一列（例：Compare 的 anchor，K11）：整列 Yellow 底、Base 字、不加粗、沒有箭頭；cursor 停在上面時 cursor 優先（lib：`List.Anchor`；kbu 回報的，tdp 下一版明寫） | lib；展示場還沒有，tdp 寫進去時補 | `TestListAnchor` |
-| menu.4 | 模式裡（panel、popup 裡、PTY 上）`Space` 開模式的 Space menu（使用者把動作放到 `Space` 的 app 自己的模式沒有這個 menu，K11-27）：tdp（元件或規則）規定的模式照下面列，app 自己的模式列模式的哪些動作與鍵由 app 決定（K11 那一列，K11-15），列出來的照下面畫、照下面執行，模式外的東西一律不列；標題是模式所在的地方（panel 的 `[N] label` 或 popup 的標題）；`ITEM OPERATION` 對 cursor 那一項能做的事、能執行、現在不能做的停用（viewer 的選取模式：還沒開始選時 `[v] Select`、開始選之後 `Cop[y]`）；`<模式名> MODE` 模式的鍵，移動鍵只顯示（鍵 Blue、說明 Overlay0、cursor 跳過），`[Esc] Leave` 能執行（app 自己的模式是 app 有列的時候）；panel、item、global 的動作不列；menu 裡 `Esc` 只關 menu；PTY 上的模式不再把 `Space` 送給子程序（lib：`ModeKey.Item`、`Label`、`MenuDesc`；menu-23～27、K5-3、reorder-19） | P `[1] PODS` 按 `C` 或 `[D]rag` 再按 `Space`；D「Note viewer」按 `v` 再按 `Space`；I 的 `Segments` 按 `D` 再按 `Space`；terminal 的 History 裡按 `Space` | `TestModeSpaceMenu`、`TestModeSpaceMenuInPopups`、`TestK11ModeCoreKeys` |
+| menu.4 | 模式裡（panel、popup 裡、PTY 上）`Space` 開模式的 Space menu（使用者把動作放到 `Space` 的 app 自己的模式沒有這個 menu，K11-27）：tdp（元件或規則）規定的模式照下面列，app 自己的模式列模式的哪些動作與鍵由 app 決定（K11 那一列，K11-15），列出來的照下面畫、照下面執行，模式外的東西一律不列；標題是模式所在的地方（panel 的 `[N] label` 或 popup 的標題）；`ITEM OPERATION` 對 cursor 那一項能做的事、能執行、現在不能做的停用（viewer 的選取模式：還沒開始選時 `[v] Select`、開始選之後 `Cop[y]`）；`<模式名> MODE` 模式的鍵，移動鍵只顯示（鍵 Blue、說明 Overlay0、cursor 跳過），`[Esc] Leave` 能執行（app 自己的模式是 app 有列的時候）；panel、item、global 的動作不列；menu 裡 `Esc` 只關 menu；PTY 上的模式不再把 `Space` 送給子程序（lib：`ModeKey.Item`、`Label`、`MenuDesc`；menu-23～27、K5-3、reorder-19） | P `[1] PODS` 按 `D`（`[D]iff`）或 `r`（`D[r]ag`）再按 `Space`；D「Note viewer」按 `v` 再按 `Space`；I 的 `Segments` 按 `D` 再按 `Space`；terminal 的 History 裡按 `Space` | `TestModeSpaceMenu`、`TestModeSpaceMenuInPopups`、`TestK11ModeCoreKeys` |
 | panel.1、popup.1 | `h|l` 會切 tab 的地方 lib 自動寫 `h|l:tab`：兩個以上 tab 的 panel 放在 `Enter` 後面，有兩個以上 tab 的 viewer（Diff 的 `UNIFIED`／`SPLIT`、有好幾頁的）放最前面；只有一個 tab、模式裡、選取模式裡、`SPLIT` 停用時不寫；放不下照舊從尾端整組捨（panel-17、19，popup-10、11，filu 回報的） | P `[1] PODS`（`PODS`／`EVENTS`）；D「Popup with tabs」 | `TestHintTab`、`TestPanelHint`、`TestPanelHintDrop` |
 | panel.9 | Diff 鍵進入 K11 的模式，那一列成為 anchor（`List.Anchor`）；只比文字（`DiffMode.Can`，不能比的沒有 Diff 的動作）；`j|k`、`u|d`、`gg|G` 移動；Diff 鍵或 `Enter` 打開 Diff，cursor 在 anchor 或不能比的列上時停用；兩邊一樣時 Info toast；`Esc` 離開、拿掉 anchor；`Tab` 與數字鍵暫停；anchor 不在了時離開、Warning toast（lib：`App.DiffModeAction`，舊名 `App.CompareAction` 照樣編得過；panel-138～145） | P `[1] PODS` 按 `C`、移開再按 `Enter` | `TestCompareMode`、`TestCompareAnchorGone`、`TestModeKeyDisabled` |
 | panel.9 | 比兩個裝著許多項目的列（資料夾、namespace、commit）時不直接打開 Diff，照 panel.10 進到一層有差異的項目清單，位置列是 app 給的兩邊名字 `<anchor> ↔ <另一個>`、取代 panel 自己的；每一項前面 `+`（Green，只有另一個有）、`-`（Red，只有 anchor 有）、`~`（Peach，兩邊都有但不一樣），兩邊一樣的不列，名字照 app 給的（改名寫 `舊 → 新`）；`Enter` 打開那一項的 Diff，第一列是 app 給的兩邊名字，從哪裡進來都一樣，裝著許多項目的再進一層，不是文字的停用；`Esc` 一層一層退回，cursor 回到出來的那一項，最後回到Diff 模式、anchor 留著；沒有差異時 Info toast；一邊裝著許多項目、一邊不是時Diff 鍵停用；清單裡模式不變（框、模式名、鍵），`Esc` 寫 `up`／`one level up`，Space menu 與 `?` 只有清單的鍵（lib：`DiffMode.Many`、`DiffMode.Items`、`DiffItem`、`DiffMark`；panel-176～179） | I `[2] FILES` 的 `FOLDERS` tab 進 `releases/`，在 `v1/` 按 `C`、移到 `v2/` 按 `Enter`，再進 `conf/` | `TestCompareMany`、`TestCompareManyAnchorGone`、showcase 的 `TestCompareFolders` |
@@ -360,7 +363,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]rag`（M4：panel 的熱鍵優�
 | panel.7 | 標記欄：每列最前一格，標記的畫 Green U+F0132，沒標記的空白，欄寬一直保留 | P `[1] PODS` 的 `[m]ark` | `TestListMarkColumn` |
 | panel.7 | 標記欄一列只放一個記號：不能標記的清單，app 可以把一種旗標畫在標記欄（glyph 與顏色是 app 的；cursor 上跟勾一樣在 cursor 底上），每一列都保留標記欄，沒有旗標的留空白，旗標換到別列時字不位移；可以標記的清單標記欄只放勾：同時開 `Marks` 與 `Flags`，`AddScreen` 就 panic（lib：`List.Flags`、`Row.Flag`；panel-154、155） | K `[1] KINDS` 最前面 `pods` 的 Green `●`，在別的種類上按 `[f] Default` | `TestPanelFlags`、`TestPanelFlagsNotWithMarks` |
 | panel.5 | lib：app 照 ID 設標記（`List.SetMarked`），篩選中沒顯示的列也勾得到 | P `[1] PODS` 的 `[m]ark` | `TestListMarkAndSelectByID` |
-| panel.8 | Drag mode 拿著的那一列（進 Drag 的鍵由 app 決定）：照 cursor 畫，Subtext1 換成 Yellow 底、Base 粗體，箭頭也是 Yellow；標記欄畫 U+F04E2，放下後回到原本的標記（旗標也一樣）；有 Drag 的 panel 每一列都保留標記欄；按鍵同 reorder 拿著時（`j\|k` 搬、到頭尾繞回，`Enter` 放下，`Esc` 放回）。lib：`List.Draggable`、`Hold`、`MoveHeld`、`Drop`，Drag mode 與它的鍵由 app 登記 | P `[1] PODS` 的 `[D]rag`（先 `m` 標記一列再拿起它） | `TestPanelDragHeldRow`、`TestPanelFlagsDrag`（旗標） |
+| panel.8 | Drag mode 拿著的那一列（進 Drag 的鍵由 app 決定）：照 cursor 畫，Subtext1 換成 Yellow 底、Base 粗體，箭頭也是 Yellow；標記欄畫 U+F04E2，放下後回到原本的標記（旗標也一樣）；有 Drag 的 panel 每一列都保留標記欄；按鍵同 reorder 拿著時（`j\|k` 搬、到頭尾繞回，`Enter` 放下，`Esc` 放回）。lib：`List.Draggable`、`Hold`、`MoveHeld`、`Drop`，Drag mode 與它的鍵由 app 登記 | P `[1] PODS` 的 `D[r]ag`（先 `m` 標記一列再拿起它） | `TestPanelDragHeldRow`、`TestPanelFlagsDrag`（旗標） |
 | panel.5 | 欄放不下時，框邊落在的那一欄照它的截法截（從尾端或從中間，加 `…`），後面的欄不畫；不在框邊硬切 | P `[1] PODS` 縮到很窄 | `TestListColumnsGiveWay` |
 | panel.5 | 截斷從尾端加 `…`；路徑、檔名可以從前面截；兩端都有意義的從中間截（`demo-app…66-gm72n`），每一欄從哪裡截，app 可以自行決定（panel-74；lib：`Column.Path`、`Column.Middle`） | P `[1] PODS` 的長名字（從中間截）；I `[2] FILES` 的路徑 | `TestListTruncate`、`TestTruncateMiddle` |
 | panel.5 | 欄的寬度：可以截短的欄（名稱、網址、一行文字）分剩下的寬度、照各自的截法截，其他短欄照最寬的值不縮；放不下先把可以截短的縮到最少寬度（app 定，預設 12），還放不下才照 app 標的順序整欄收（表頭一起），名稱欄不收；變大時欄照順序回來、可以截短的長回去（lib：`Column.Shrink`、`MinWidth`、`Drop`） | P `[1] PODS` 把視窗縮窄：名稱先縮到 12 格，再 `AGE`、`RESTARTS`、`READY` 依序收掉 | `TestListColumnsGiveWay` |
@@ -654,7 +657,7 @@ tdp v1.2.0 把 project 與它的範本（`family.mk`、`release.yml`、`.gorelea
 
 | 情境 | 展示場的登記 |
 |---|---|
-| 首字母 | `[m]ark`、`[D]rag`、`[V]iew` |
+| 首字母 | `[m]ark`、`[D]iff`、`[V]iew` |
 | 首字母，大小寫跟 label 不同 | `[v]im`、`[e]xport`（D「Menu: Open with」、「Menu: long descriptions」） |
 | 在 label 中間 | `Copy UR[L]`（I `[2] FILES`）、`He[x] view`（D「Menu: Open with」） |
 | 字母不在 label 裡 | `[x] Delete` |
@@ -689,7 +692,7 @@ tdp v1.2.0 把 project 與它的範本（`family.mk`、`release.yml`、`.gorelea
 | U+F0C9 | `nf-fa-bars` | popup.1（menu） | Space menu |
 | U+F059 | `nf-fa-question_circle` | popup.1、note.5 | 任一處按 `?` |
 | U+F0ECC | `nf-md-shield_alert` | popup.1、confirm | D「Confirm」 |
-| U+F04E2 | `nf-md-swap_vertical` | panel.5（Drag 拿著的列）、reorder.2 | P `[1] PODS` 的 `[D]rag`；I 的 `Segments` 按 `D` |
+| U+F04E2 | `nf-md-swap_vertical` | panel.5（Drag 拿著的列）、reorder.2 | P `[1] PODS` 的 `D[r]ag`；I 的 `Segments` 按 `D` |
 | U+F018D | `nf-md-console` | popup.1、terminal | T 的 terminal popup |
 | U+F05E0 | `nf-md-check_circle` | toast（Success） | P 的 `Toast success` |
 | U+F024 | `nf-fa-flag` | toast（Info） | P 的 `Toast info` |

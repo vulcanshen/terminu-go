@@ -64,7 +64,7 @@ func newPanelsScreen(s *showcase) *panelsScreen {
 	ps.pods.Inspect = ps.podReason
 	// C compares two pods' pretend YAML (tdp panel.9): the
 	// lib does the mode and the popup; the app gives the key and the text.
-	ps.pods.Actions = append(ps.pods.Actions, s.app.DiffModeAction(ps.pods, ps.podList, terminu.DiffMode{Key: "C",
+	ps.pods.Actions = append(ps.pods.Actions, s.app.DiffModeAction(ps.pods, ps.podList, terminu.DiffMode{Key: "D",
 		Text: func(r terminu.Row) (string, error) { return podYAML(r), nil }}))
 
 	ps.logText = &terminu.Pager{Follow: true, EmptyFact: "No log lines yet"}
@@ -309,7 +309,7 @@ func (ps *panelsScreen) podActions() []terminu.Action {
 			Do: func() tea.Cmd {
 				return a.Toast(terminu.Info, "Deleted "+ps.current())
 			}},
-		{Label: "Delete marked", Desc: "every marked pod", Scope: terminu.PanelScope,
+		{Key: "X", Label: "Delete marked", Desc: "every marked pod", Scope: terminu.PanelScope,
 			Disabled: func() bool { return len(ps.podList.Marked()) == 0 || ps.disabled },
 			Ask:      &terminu.Ask{Title: "Delete marked", Question: "Delete the marked pods?", Verb: "delete"},
 			Do: func() tea.Cmd {
@@ -317,7 +317,9 @@ func (ps *panelsScreen) podActions() []terminu.Action {
 				ps.podList.ClearMarks()
 				return a.Toast(terminu.Info, fmt.Sprintf("Deleted %d pods", n))
 			}},
-		{Key: "D", Label: "Drag", Desc: "this pod to another place in the list", Scope: terminu.ItemScope,
+		// D is the Diff mode's in every app, x and X delete (tdp K13): the
+		// Drag goes on r, D[r]ag.
+		{Key: "r", Label: "Drag", Desc: "this pod to another place in the list", Scope: terminu.ItemScope,
 			Do: ps.startDrag},
 		// Where a wide row's room goes once every column is at its widest
 		// (tdp panel.5): the app's pick, here round the four; NAME is the

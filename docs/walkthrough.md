@@ -48,7 +48,7 @@ go build -o /tmp/showcase ./examples/showcase
 | `!` | App Log（每個 app 都有）：toast、error popup 與展示場記下的事；footer 有沒看過的錯誤時寫成 `!:N errors`；模式裡與打字列上不作用 |
 | `%` | 展示場自己的 core key（Rules K1）：在每個 panel 與 popup 上都打開展示場現在的狀態；打字列上是字元 |
 
-- P 的 `[1] PODS` 上按 `D` 是這個 panel 自己的 `[D]rag`，不會換到 Dialogs 畫面（panel 的熱鍵優先，Rules M4）。要去 Dialogs，
+- P 的 `[1] PODS` 上按 `D` 是這個 panel 自己的 `[D]iff`，不會換到 Dialogs 畫面（panel 的熱鍵優先，Rules M4）。要去 Dialogs，
   先 `Tab` 到別的 panel 再按 `D`，或從 Global operation 選。
 - Global operation 裡有展示場自己的開關：`[N]arrow layout`（不管多寬都一次畫一個 panel）、`[1] About`（數字的 global 熱鍵，
   只在這個 popup 裡按得到）、`[S]tart task`（chip 列下的進度條）、`Hide secrets in preview`。
@@ -57,7 +57,7 @@ go build -o /tmp/showcase ./examples/showcase
 
 **P — Panels**：panel 的每一種長相與狀態。
 - `[1] PODS` 是一般清單：`j|k` `u|d` `gg|G` 移、`h|l` 換 tab（PODS／EVENTS）、`/` 篩選、`m` 標記、`x` 刪除（confirm）、
-  `s` 排序、`go` 跳到第一個沒在跑的、`D` 拖曳模式（框與模式名變色，拿著的那一列 Yellow、標記欄畫上下箭頭；`j|k` 搬、到頭尾繞回，`Enter` 放下，`Esc` 放回）。
+  `s` 排序、`go` 跳到第一個沒在跑的、`D` Diff 模式（`[D]iff`，K13）、`X` 刪掉標記的、`r` 拖曳模式（`D[r]ag`，因為 `D` 給了 Diff；框與模式名變色，拿著的那一列 Yellow、標記欄畫上下箭頭；`j|k` 搬、到頭尾繞回，`Enter` 放下，`Esc` 放回）。
   寬度有剩時（panel-184）：把終端機拉到 240 欄左右，Space menu 的 `Room left over` 一次換一種：放最後、`NAME` 填滿（`AGE` 靠到右邊）、
   平均、加大欄距，每換一次跳一個 Info toast 說是哪一種。
   `EVENTS` tab 是占好幾列的項目（panel-181～183）：事件的訊息在 REASON 底下，`BackOff` 兩列、`Pulled` 一列、`Started` 只有一列；
@@ -89,7 +89,7 @@ go build -o /tmp/showcase ./examples/showcase
     在 `↔` 前面折成兩列，縮到 60 欄時再在 `/` 後面折，不用 `…` 截（note-107）；Diff 的寬度是終端機寬減 2（F7-17）。
     `Esc` 一層一層退回原本的檔案清單。在 `themes/` 裡時到 `[1] INPUTS`
     按 `M`（Show main.go）：`[2]` 先離開 commit 的每一層，回到檔案清單、cursor 在 `main.go`。
-  - 比兩個資料夾（panel.9）：`FOLDERS` tab 進 `releases/`，在 `v1/` 按 `C`、移到 `v2/` 按 `Enter`：位置列 `releases/v1 ↔ releases/v2`，
+  - 比兩個資料夾（panel.9）：`FOLDERS` tab 進 `releases/`，在 `v1/` 按 `D`、移到 `v2/` 按 `Enter`：位置列 `releases/v1 ↔ releases/v2`，
     只列兩邊不一樣的項目（`+ NEWS.md`、`~ conf/`、`~ logo.png`、`~ main.go`、`- old-notes.txt`，一樣的 `README.md`、`docs/` 不列）；
     `conf/` 再進一層；`Esc` 一層一層退回，最後回到 Diff 模式、anchor 還在。
 - `[3] CHANGES` 跟著 `[2]` 的 cursor（note.8 的 In a panel）：cursor 上那個檔跟它最後一次 commit 的差異，畫法跟 UNIFIED 一樣（只有改的段落、
@@ -97,7 +97,7 @@ go build -o /tmp/showcase ./examples/showcase
   沒改的檔寫 `No changes since 5d6e7f8`（`Enter` 停用），圖寫 `Not a text file`。在 `FOLDERS` tab 的 `releases/` 裡移到 `v2/`
   （最後一次 commit 之後新增的資料夾）：`[3]` 列出它有差異的項目、每一項帶標記，全部是 Green 的 `+`（note-106）；按 `3` 再按 `Enter`
   進到這份清單；`[2]` 的 cursor 一動，`[3]` 就離開清單、換成新的那一列。
-- 篩選遇到 app 自己的動作（panel-180）：在 `releases/` 裡按 `/` 打 `v`、`Enter` 回清單，用 `C` 比 `v1/` 與 `v2/`：進去之前篩選先清掉，
+- 篩選遇到 app 自己的動作（panel-180）：在 `releases/` 裡按 `/` 打 `v`、`Enter` 回清單，用 `D` 比 `v1/` 與 `v2/`：進去之前篩選先清掉，
   `Esc` 退回來時是整份清單、cursor 在原本那一列。
 
 **D — Dialogs**：每一種 dialog 與疊法。

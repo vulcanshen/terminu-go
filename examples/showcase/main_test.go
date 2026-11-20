@@ -334,7 +334,7 @@ func TestCompareFolders(t *testing.T) {
 	if is.dir != filepath.Join(projectDir, "releases") {
 		t.Fatalf("in %q", is.dir)
 	}
-	d.Press("C", "j", "Enter") // v1/ against v2/
+	d.Press("D", "j", "Enter") // v1/ against v2/
 	if is.files.InMode() == nil || !d.Has("releases/v1 ↔ releases/v2") {
 		t.Fatalf("did not go in:\n%s", strings.Join(d.Screen(), "\n"))
 	}
@@ -364,7 +364,7 @@ func TestCompareFolders(t *testing.T) {
 		t.Error("an image was compared")
 	}
 	d.Press("Esc")
-	if !d.Has("C|Enter:diff") || d.Has("↔") || is.fileList.Anchor == "" {
+	if !d.Has("D|Enter:diff") || d.Has("↔") || is.fileList.Anchor == "" {
 		t.Errorf("not back in the mode with the anchor kept:\n%s", strings.Join(d.Screen(), "\n"))
 	}
 	d.Press("Esc")
@@ -681,5 +681,37 @@ func TestRoomLeftOver(t *testing.T) {
 	}
 	if s.panels.podList.Spread != terminu.SpreadEnd || room() != end {
 		t.Errorf("round the four, not back at the end: %d", s.panels.podList.Spread)
+	}
+}
+
+// D is the Diff mode's key in every app, written [D]iff; x deletes the item
+// under the cursor, X many at once; nothing that removes for good is on D or
+// d (tdp K13, K13-1 to K13-3): [1] PODS has [D]iff, its Drag on r, D[r]ag,
+// [x] Delete and [X] Delete marked; [2] FILES' Diff is on D too.
+func TestK13Keys(t *testing.T) {
+	s := newShowcase()
+	d := tdptest.Start(t, s.app, 160, 40)
+	d.Press("P", "1", "Space")
+	for _, want := range []string{"[D]iff", "D[r]ag", "[x] Delete", "[X] Delete marked"} {
+		if !d.Has(want) {
+			t.Errorf("[1] PODS' menu has no %q:\n%s", want, strings.Join(d.Screen(), "\n"))
+		}
+	}
+	d.Press("Esc", "I", "2", "l", "l", "Space") // FOLDERS
+	if !d.Has("[D]iff") {
+		t.Errorf("[2] FILES' menu has no [D]iff:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	for _, sc := range []*terminu.Screen{s.panels.screen, s.inputs.screen, s.dialogs.screen, s.terminal.screen, s.kinds.screen} {
+		for _, p := range sc.Panels {
+			for _, act := range p.Actions {
+				removes := strings.Contains(act.Label, "Delete") || strings.Contains(act.Label, "Discard") || strings.Contains(act.Label, "Drop")
+				if removes && (act.Key == "D" || act.Key == "d") {
+					t.Errorf("%s removes on %s", act.Label, act.Key)
+				}
+				if act.Label == "Diff" && act.Key != "Enter" && act.Key != "D" { // the mode's, not an Enter that opens one
+					t.Errorf("the Diff mode on %s in %s", act.Key, p.Label)
+				}
+			}
+		}
 	}
 }

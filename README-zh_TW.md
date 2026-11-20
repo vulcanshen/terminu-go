@@ -171,7 +171,7 @@ Success 記進 App Log。
 
 ## Diff
 
-`app.DiffModeAction(panel, list, terminu.DiffMode{Key: "C", Text: ...})` 讓清單有 Diff 模式：使用者挑兩列，在 Diff 裡看哪裡不一樣，
+`app.DiffModeAction(panel, list, terminu.DiffMode{Key: "D", Text: ...})` 讓清單有 Diff 模式：使用者挑兩列，在 Diff 裡看哪裡不一樣，
 UNIFIED 或 SPLIT。兩列都裝著許多項目時（兩個資料夾、兩個 namespace、兩個 commit），改成進到一層「有差異的項目」清單：
 `Many` 說哪些列裝著許多項目，`Items` 給出兩列之間有差異的項目，一項一個 `terminu.DiffItem`。那層清單由 lib 畫在 panel 裡，
 每一項前面的標記（`DiffAdded` +、`DiffRemoved` -、`DiffChanged` ~）、`Enter`、`Esc` 與位置列也都是 lib 的。
