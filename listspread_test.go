@@ -20,18 +20,18 @@ func spreadList(s Spread) *List {
 }
 
 // TestListSpread: when every column already shows its widest value, the room
-// left over goes where Spread says: Pack at the row's end; Fill to the Fill
+// left over goes where Spread says: End at the row's end; Fill to the Fill
 // column, the columns after it at the right edge; Even to the narrowest
 // columns first, a wider one kept, a number still right-aligned; Gaps to
 // every gap alike up to six cells, the rest to the Fill column. With the room
-// short, every Spread is Pack (a trial, from gittu).
+// short, every Spread is End (panel-184, from gittu).
 func TestListSpread(t *testing.T) {
 	cases := []struct {
 		s    Spread
 		want []int
 		gap  int
 	}{
-		{SpreadPack, []int{4, 4, 20, 10}, 0},
+		{SpreadEnd, []int{4, 4, 20, 10}, 0},
 		{SpreadFill, []int{4, 4, 36, 10}, 0},
 		{SpreadEven, []int{12, 11, 20, 11}, 0},
 		{SpreadGaps, []int{4, 4, 24, 10}, 4},
@@ -66,7 +66,7 @@ func TestListSpread(t *testing.T) {
 	if row := l.rowText(1, ws); !strings.HasPrefix(row, "bb  "+strings.Repeat(" ", 6)+"1234") || Width(row) != 60 {
 		t.Errorf("Gaps: the row's gaps: %q", row)
 	}
-	// No Fill column: Fill is Pack, Gaps leaves the rest at the row's end.
+	// No Fill column: Fill is End, Gaps leaves the rest at the row's end.
 	for _, s := range []Spread{SpreadFill, SpreadGaps} {
 		l := spreadList(s)
 		l.Columns[2].Fill = false
@@ -75,7 +75,7 @@ func TestListSpread(t *testing.T) {
 		}
 	}
 	// A column gone for room: no Spread places what is left.
-	dropped := spreadList(SpreadPack).widths(35)
+	dropped := spreadList(SpreadEnd).widths(35)
 	for _, c := range cases {
 		if got := spreadList(c.s).widths(35); !slices.Equal(got, dropped) || got[3] >= 0 {
 			t.Errorf("Spread %d with a column gone: %v, want %v", c.s, got, dropped)
@@ -85,8 +85,8 @@ func TestListSpread(t *testing.T) {
 	if l.widths(36); l.gapMore != 0 {
 		t.Errorf("Gaps: narrower, the gaps are still +%d", l.gapMore)
 	}
-	// Short of room: every Spread is Pack, the description shrinking.
-	pack := spreadList(SpreadPack).widths(36)
+	// Short of room: every Spread is End, the description shrinking.
+	pack := spreadList(SpreadEnd).widths(36)
 	for _, c := range cases {
 		l := spreadList(c.s)
 		if got := l.widths(36); !slices.Equal(got, pack) || l.gapMore != 0 {

@@ -1,6 +1,7 @@
 package terminu
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -29,7 +30,7 @@ func TestDiffLines(t *testing.T) {
 func compareApp(t *testing.T) (*testApp, *bool) {
 	ta := newTestApp(t)
 	split := new(bool)
-	ta.pods.Actions = append(ta.pods.Actions, ta.CompareAction(ta.pods, ta.list, Compare{Key: "C", Split: split,
+	ta.pods.Actions = append(ta.pods.Actions, ta.DiffModeAction(ta.pods, ta.list, DiffMode{Key: "C", Split: split,
 		Can: func(r Row) bool { return r.ID != "2" },
 		Text: func(r Row) (string, error) {
 			var b strings.Builder
@@ -49,11 +50,11 @@ func compareApp(t *testing.T) (*testApp, *bool) {
 func TestCompareMode(t *testing.T) {
 	ta, _ := compareApp(t)
 	ta.press("C")
-	if m := ta.pods.InMode(); m == nil || m.Name != "Compare" || ta.list.Anchor != "0" {
+	if m := ta.pods.InMode(); m == nil || m.Name != "Diff" || ta.list.Anchor != "0" {
 		t.Fatalf("not in the compare mode: %v, anchor %q", m, ta.list.Anchor)
 	}
 	frame := strings.Join(ta.Frame(), "\n")
-	if !strings.Contains(covCFooter(ta), "C|Enter:compare") || !strings.Contains(frame, Fg(Surface2).Render(":compare")) {
+	if !strings.Contains(covCFooter(ta), "C|Enter:diff") || !strings.Contains(frame, Fg(Surface2).Render(":diff")) {
 		t.Errorf("on the anchor the compare keys are off: %q", covCFooter(ta))
 	}
 	ta.press("Enter")
@@ -65,7 +66,7 @@ func TestCompareMode(t *testing.T) {
 		t.Error("compared a row that cannot be")
 	}
 	ta.press("Tab")
-	if ta.Screen().Focused() != ta.pods || !strings.Contains(ta.screenText(), "Press [Esc] to leave Compare first") {
+	if ta.Screen().Focused() != ta.pods || !strings.Contains(ta.screenText(), "Press [Esc] to leave Diff first") {
 		t.Error("Tab left the mode's panel")
 	}
 	ta.toast = nil
@@ -104,7 +105,7 @@ func TestCompareMode(t *testing.T) {
 	for _, e := range ta.logs.entries {
 		logged = append(logged, e.text)
 	}
-	if want := []string{"Press [Esc] to leave Compare first", "No differences between pod-00 and pod-35"}; fmt.Sprint(logged) != fmt.Sprint(want) {
+	if want := []string{"Press [Esc] to leave Diff first", "No differences between pod-00 and pod-35"}; fmt.Sprint(logged) != fmt.Sprint(want) {
 		t.Errorf("logged %q, want %q", logged, want)
 	}
 }
@@ -201,7 +202,7 @@ func TestCompareAnchorGone(t *testing.T) {
 	rows := ta.list.Rows()
 	ta.list.SetRows(rows[1:])
 	ta.press("j")
-	if ta.pods.InMode() != nil || ta.list.Anchor != "" || !strings.Contains(ta.screenText(), "Compare ended: pod-00 is gone") {
+	if ta.pods.InMode() != nil || ta.list.Anchor != "" || !strings.Contains(ta.screenText(), "Diff ended: pod-00 is gone") {
 		t.Errorf("the anchor gone:\n%s", ta.screenText())
 	}
 }
@@ -229,7 +230,7 @@ func TestCompareResize(t *testing.T) {
 	ta := newTestApp(t)
 	split := new(bool)
 	*split = true
-	ta.pods.Actions = append(ta.pods.Actions, ta.CompareAction(ta.pods, ta.list, Compare{Key: "C", Split: split,
+	ta.pods.Actions = append(ta.pods.Actions, ta.DiffModeAction(ta.pods, ta.list, DiffMode{Key: "C", Split: split,
 		Text: func(r Row) (string, error) {
 			var b strings.Builder
 			for i := range 61 {
@@ -435,5 +436,46 @@ func TestCompareWidth(t *testing.T) {
 	}
 	if !strings.Contains(ta.screenText(), "right") {
 		t.Errorf("no other side:\n%s", ta.screenText())
+	}
+}
+
+// TestCompareDeprecated: Compare and CompareAction, the Diff mode's old
+// names, still build and give the same mode, so an app on them upgrades
+// without a change (tdp panel.9 renamed it the Diff mode).
+func TestCompareDeprecated(t *testing.T) {
+	ta := newTestApp(t)
+	var c Compare = DiffMode{Key: "C", Text: func(r Row) (string, error) { return r.Cells[0], nil }}
+	act := ta.CompareAction(ta.pods, ta.list, c)
+	if act.Label != "Diff" || act.Key != "C" {
+		t.Errorf("CompareAction: %q %q", act.Key, act.Label)
+	}
+	ta.pods.Actions = append(ta.pods.Actions, act)
+	ta.press("C")
+	if m := ta.pods.InMode(); m == nil || m.Name != "Diff" {
+		t.Errorf("not in the Diff mode: %v", m)
+	}
+}
+
+// TestDiffError: a side that cannot be read is an error popup titled with
+// the Diff and the side, DIFF: <side>; one with no side to blame, with the
+// item (tdp note.8, panel.9: the Compare mode is the Diff mode).
+func TestDiffError(t *testing.T) {
+	ta := newTestApp(t)
+	ta.pods.Actions = append(ta.pods.Actions, ta.DiffModeAction(ta.pods, ta.list, DiffMode{Key: "C",
+		Text: func(r Row) (string, error) {
+			if r.ID == "1" {
+				return "", errors.New("permission denied")
+			}
+			return r.Cells[0], nil
+		}}))
+	ta.press("C", "j", "Enter") // pod-00 with pod-01, which cannot be read
+	if text := ta.screenText(); !strings.Contains(text, "DIFF: pod-01") || !strings.Contains(text, "permission denied") {
+		t.Errorf("a side that cannot be read:\n%s", text)
+	}
+	ta.covBCloseAll()
+	ta.OpenDiff(ta.pods, DiffItem{Anchor: "a", Other: "b", Items: func() ([]DiffItem, error) { return nil, errors.New("gone") }})
+	ta.settle()
+	if text := ta.screenText(); !strings.Contains(text, "DIFF: a ↔ b") {
+		t.Errorf("the item's error:\n%s", text)
 	}
 }

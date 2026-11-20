@@ -46,7 +46,7 @@ func newPanelsScreen(s *showcase) *panelsScreen {
 	ps := &panelsScreen{s: s}
 	ps.podList = &terminu.List{
 		Columns: []terminu.Column{
-			{Title: "Name", Middle: true, Shrink: true}, {Title: "Ready", Drop: 3}, {Title: "Status"}, {Title: "Restarts", Number: true, Drop: 2}, {Title: "Age", Number: true, Drop: 1},
+			{Title: "Name", Middle: true, Shrink: true, Fill: true}, {Title: "Ready", Drop: 3}, {Title: "Status"}, {Title: "Restarts", Number: true, Drop: 2}, {Title: "Age", Number: true, Drop: 1},
 		},
 		Marks:      true,
 		Draggable:  true,
@@ -64,7 +64,7 @@ func newPanelsScreen(s *showcase) *panelsScreen {
 	ps.pods.Inspect = ps.podReason
 	// C compares two pods' pretend YAML (tdp panel.9): the
 	// lib does the mode and the popup; the app gives the key and the text.
-	ps.pods.Actions = append(ps.pods.Actions, s.app.CompareAction(ps.pods, ps.podList, terminu.Compare{Key: "C",
+	ps.pods.Actions = append(ps.pods.Actions, s.app.DiffModeAction(ps.pods, ps.podList, terminu.DiffMode{Key: "C",
 		Text: func(r terminu.Row) (string, error) { return podYAML(r), nil }}))
 
 	ps.logText = &terminu.Pager{Follow: true, EmptyFact: "No log lines yet"}
@@ -267,10 +267,10 @@ var eventRows = []terminu.Row{
 func (ps *panelsScreen) switchTab(tab int) tea.Cmd {
 	cur := ps.podList.Sorting()
 	if tab == 1 {
-		ps.podList.Columns = []terminu.Column{{Title: "Object", Middle: true, Shrink: true}, {Title: "Type", Drop: 3}, {Title: "Reason"}, {Title: "Count", Number: true, Drop: 2}, {Title: "Age", Number: true, Drop: 1}}
+		ps.podList.Columns = []terminu.Column{{Title: "Object", Middle: true, Shrink: true, Fill: true}, {Title: "Type", Drop: 3}, {Title: "Reason"}, {Title: "Count", Number: true, Drop: 2}, {Title: "Age", Number: true, Drop: 1}}
 		ps.podList.SetRows(eventRows)
 	} else {
-		ps.podList.Columns = []terminu.Column{{Title: "Name", Middle: true, Shrink: true}, {Title: "Ready", Drop: 3}, {Title: "Status"}, {Title: "Restarts", Number: true, Drop: 2}, {Title: "Age", Number: true, Drop: 1}}
+		ps.podList.Columns = []terminu.Column{{Title: "Name", Middle: true, Shrink: true, Fill: true}, {Title: "Ready", Drop: 3}, {Title: "Status"}, {Title: "Restarts", Number: true, Drop: 2}, {Title: "Age", Number: true, Drop: 1}}
 		ps.podList.SetRows(podRows())
 	}
 	ps.podList.SortBy(cur...)
@@ -283,6 +283,12 @@ func (ps *panelsScreen) current() string {
 		return ""
 	}
 	return r.ID
+}
+
+// spreadNames are the four ways a list's room left over goes, as the
+// showcase says them (tdp panel.5).
+var spreadNames = map[terminu.Spread]string{
+	terminu.SpreadEnd: "at the end", terminu.SpreadFill: "NAME fills", terminu.SpreadEven: "even", terminu.SpreadGaps: "wider gaps",
 }
 
 func (ps *panelsScreen) podActions() []terminu.Action {
@@ -313,6 +319,14 @@ func (ps *panelsScreen) podActions() []terminu.Action {
 			}},
 		{Key: "D", Label: "Drag", Desc: "this pod to another place in the list", Scope: terminu.ItemScope,
 			Do: ps.startDrag},
+		// Where a wide row's room goes once every column is at its widest
+		// (tdp panel.5): the app's pick, here round the four; NAME is the
+		// column that fills.
+		{Label: "Room left over", Desc: "on a wide terminal: at the end, NAME fills, even, wider gaps", Scope: terminu.PanelScope,
+			Do: func() tea.Cmd {
+				ps.podList.Spread = (ps.podList.Spread + 1) % 4
+				return a.Toast(terminu.Info, "Room left over: "+spreadNames[ps.podList.Spread])
+			}},
 		// After adding an item the cursor goes to it, scrolled into sight
 		// (tdp K3): sorted by name, it lands far from where the cursor was.
 		{Key: "n", Label: "New", Desc: "a pod, the cursor going to it", Scope: terminu.PanelScope,

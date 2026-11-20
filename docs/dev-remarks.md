@@ -128,7 +128,7 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
 
 - **lib 執行的 operation 由 lib 記進 App Log**（tdp note.7，v0.11.0）：切換畫面是 lib 照登記產生、自己執行的，app 不知道，所以 lib
   自己記 `Switched to <畫面名>`（note.7 的例子）；app 用 `ShowScreen`、`Focus` 切過去的是 app 那個動作的結果，由 app 記。lib
-  的 list 篩選（`/`）也是 lib 執行的，照 note.7 不記：篩選只是換看得到的範圍（tdp v0.11.1）。比較模式（`CompareAction`）
+  的 list 篩選（`/`）也是 lib 執行的，照 note.7 不記：篩選只是換看得到的範圍（tdp v0.11.1）。Diff 模式（`DiffModeAction`）
   也照 note.7 不記，裡面跳的 toast 照樣記（tdp v0.11.2）；在 confirm、表單、input popup 上按 `Esc` 取消的動作沒做，lib
   不記，也不跑 `Do`、`Submit`、`Done`。清單上 `Enter`（或 menu 上那一列）進明細只是換 focus（K3），lib 不記（tdp v0.11.3）。
 - **tdptest 走 lib 內部的 hook，不開公開 API**（2026-10-20，harness 的請求）：driver 要知道 popup 還在不在播、有幾層、有沒有 toast、
@@ -194,16 +194,16 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   一直攔著 SIGHUP：shell 被關掉時會把掛斷轉給它底下的程式，這時 main 可能還在存檔。不另給 hook，收尾只放在 `Run` 之後。
   - 測試在 PTY 裡跑一份測試程式，再關掉 PTY 的 master。測試這邊不能讀 PTY：有 `Read` 在等時，Go 要等它回來才真的關掉檔案，
     app 就收不到掛斷。
-- **差異清單疊在 panel 上，不換掉它的 Body**（tdp panel.9、note.8，v1.2.18-beta.1，gitreu 來的）：比較模式比兩個裝著許多項目的列、
+- **差異清單疊在 panel 上，不換掉它的 Body**（tdp panel.9、note.8，v1.2.18-beta.1，gitreu 來的）：Diff 模式比兩個裝著許多項目的列、
   或 `OpenDiff` 進到一個 commit 時，panel 多一層 `levels`（一層一個 lib 自己的 `List`，標記放在 `Flags` 的標記欄，名字欄從前面截），
   `Body`、`Actions`、`Location` 都不動。lib 讀 panel 的內容與動作一律走 `p.body()`、`p.actions()`，畫位置列時有清單就用清單的：
   app 在清單開著時換了自己的 `Body`（例：`OnTab` 換 tab）或改了列，`Esc` 退回時看到的就是 app 現在的樣子，不會被 lib 存著的舊值蓋掉。
-  清單裡 panel 自己的 inspect 與 `OtherKeys` 不出現，它們講的是 app 自己的列。比較模式裡進去的清單記著那個模式：模式不變，
+  清單裡 panel 自己的 inspect 與 `OtherKeys` 不出現，它們講的是 app 自己的列。Diff 模式裡進去的清單記著那個模式：模式不變，
   它的鍵改作用在清單上，`Esc` 先退一層（`leavePanelMode`），模式結束時一起關掉（`LeaveMode`）。app 自己的動作要在 panel 顯示
   別的東西時叫 `Panel.LeaveDiff()`，一次拿掉全部的層（gitreu 在分支上按 `Enter` 時，commit 圖可能還在某個 commit 的清單裡）；
   不另給 `InDiff`：沒有清單時叫它什麼都不做，app 不用先問。
   - 比較每次都在 UNIFIED 打開，選的 tab 只在那一個比較開著時有效（縮到 96 以下再拉回來，回到這次選的 SPLIT），不記（tdp e7c5b13：
-    兩個 tab 只差一個鍵，不值得存）。`Compare.Split` 因此沒有作用，標成 Deprecated、留著讓 kbu 照樣編得過，之後的 minor 版拿掉。
+    兩個 tab 只差一個鍵，不值得存）。`DiffMode.Split` 因此沒有作用，標成 Deprecated、留著讓 kbu 照樣編得過，之後的 minor 版拿掉。
 
 ## 已否決，不要重提
 

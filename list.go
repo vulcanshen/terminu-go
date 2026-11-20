@@ -44,7 +44,8 @@ type Column struct {
 	// (components, control characters).
 	Line bool
 	// Fill marks the column that takes a row's room left over, with
-	// SpreadFill and SpreadGaps (List.Spread). A trial, not committed API.
+	// SpreadFill and SpreadGaps (List.Spread): a long one, a commit's
+	// description (tdp panel.5).
 	Fill bool
 }
 
@@ -108,11 +109,12 @@ type SortKey struct {
 type List struct {
 	Columns []Column
 	// Spread is where a row's room goes when every column already shows its
-	// widest value: the leftover shows no more text, so it only says where
-	// the blank is. SpreadPack, the default, leaves it at the row's end. When
-	// the room is short, every Spread is the same: the shrinkable columns
-	// narrow, then columns go. A trial to choose from on a real list, not
-	// committed API: tdp has no word on it yet, and what stays may change.
+	// widest value and none is taken away, the app's pick for each list (tdp
+	// panel.5, when there is room left over): it shows no more text, so it
+	// only says where the blank is. SpreadEnd, the default, leaves it at the
+	// row's end. When the room is short, every Spread is the same: the
+	// shrinkable columns narrow, then columns go. The header, the rows and an
+	// item's rows below follow the same widths.
 	Spread Spread
 	// Marks keeps a column for marks in front of every row (Principle P3,
 	// batches of marked items).
@@ -126,7 +128,7 @@ type List struct {
 	// AddScreen panics.
 	Flags bool
 	// Anchor is the ID of a row a mode keeps picked while the cursor moves
-	// on (a Compare mode's first pick, tdp K11): drawn whole in Yellow,
+	// on (a Diff mode's first pick, tdp K11): drawn whole in Yellow,
 	// the mode's, with Base text, not bold and no arrow, as a selected range
 	// (tdp color, note). The cursor on it wins. "" is none.
 	Anchor string
@@ -864,15 +866,16 @@ func (l *List) widths(w int) []int {
 	return cutLast(ws, w)
 }
 
-// Spread is where a list's room left over goes (List.Spread). A trial, not
-// committed API.
+// Spread is where a list's room left over goes (List.Spread; tdp
+// panel.5).
 type Spread int
 
 const (
-	// SpreadPack leaves the room at the row's end, as before.
-	SpreadPack Spread = iota
+	// SpreadEnd leaves the room at the row's end, the columns keeping their
+	// widths: the default.
+	SpreadEnd Spread = iota
 	// SpreadFill gives it all to the column marked Fill (a description, so
-	// the columns after it sit at the right edge); with none, as Pack.
+	// the columns after it sit at the right edge); with none, as End.
 	SpreadFill
 	// SpreadEven widens the narrowest columns first, until the columns are
 	// as even as the room lets them be: one already wider keeps its width,

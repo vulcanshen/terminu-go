@@ -364,7 +364,7 @@ func TestCompareFolders(t *testing.T) {
 		t.Error("an image was compared")
 	}
 	d.Press("Esc")
-	if !d.Has("C|Enter:compare") || d.Has("↔") || is.fileList.Anchor == "" {
+	if !d.Has("C|Enter:diff") || d.Has("↔") || is.fileList.Anchor == "" {
 		t.Errorf("not back in the mode with the anchor kept:\n%s", strings.Join(d.Screen(), "\n"))
 	}
 	d.Press("Esc")
@@ -461,8 +461,8 @@ func TestChangesPanel(t *testing.T) {
 	if !regexp.MustCompile(`\+ +fmt\.Println\("showcase", 42\)`).MatchString(screen) || !regexp.MustCompile(`- +fmt\.Println\("showcase"\)`).MatchString(screen) {
 		t.Errorf("main.go's changes are not drawn as UNIFIED:\n%s", screen)
 	}
-	if d.Has("@@") || d.Has("diff --git") || !d.Has("Enter:compare") {
-		t.Errorf("a patch's own lines, or no Enter:compare:\n%s", screen)
+	if d.Has("@@") || d.Has("diff --git") || !d.Has("Enter:diff") {
+		t.Errorf("a patch's own lines, or no Enter:diff:\n%s", screen)
 	}
 	d.Press("Enter")
 	if !d.Has("main.go @ 5d6e7f8 ↔ main.go") || !d.Has("UNIFIED") || !d.Has("SPLIT") {
@@ -499,7 +499,7 @@ func TestNewFolderChanges(t *testing.T) {
 			t.Errorf("no %q:\n%s", want, strings.Join(d.Screen(), "\n"))
 		}
 	}
-	if d.Press("3"); !d.Has("Enter:open") || d.Has("Enter:compare") {
+	if d.Press("3"); !d.Has("Enter:open") || d.Has("Enter:diff") {
 		t.Errorf("no Enter:open on [3]:\n%s", strings.Join(d.Screen(), "\n"))
 	}
 	if styled := strings.Join(d.Styled(), "\n"); !strings.Contains(styled, terminu.Fg(terminu.Green).Render("+")) {
@@ -641,5 +641,45 @@ func TestEventsSeveralRows(t *testing.T) {
 	d.Type("worker-2")
 	if !d.Has("web-a8k2") || d.Has("prometheus-server-0") || d.Has("postgres-0") {
 		t.Errorf("the filter did not find web-a8k2 by its message:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+}
+
+// Room left over on a wide terminal (tdp panel.5, panel-184): [1] PODS'
+// "Room left over" goes round the four ways; with NAME filling, AGE sits at
+// the panel's right edge, at the end there is room after it; the header and
+// the rows keep the same widths.
+func TestRoomLeftOver(t *testing.T) {
+	s := newShowcase()
+	d := tdptest.Start(t, s.app, 240, 40)
+	d.Press("P", "1")
+	room := func() int { // the blank between AGE and the frame on the header
+		for _, l := range d.Screen() {
+			if i := strings.Index(l, "AGE"); i >= 0 && strings.Contains(l, "NAME") {
+				rest := l[i+len("AGE"):]
+				return len(rest) - len(strings.TrimLeft(rest, " "))
+			}
+		}
+		t.Fatalf("no header:\n%s", strings.Join(d.Screen(), "\n"))
+		return -1
+	}
+	end := room()
+	var spread terminu.Action
+	for _, act := range s.panels.pods.Actions {
+		if act.Label == "Room left over" {
+			spread = act
+		}
+	}
+	d.Do(spread.Do) // NAME fills
+	if s.panels.podList.Spread != terminu.SpreadFill || !d.Has("Room left over: NAME fills") {
+		t.Fatalf("not NAME fills: %d", s.panels.podList.Spread)
+	}
+	if fill := room(); end <= 4 || fill > 3 {
+		t.Errorf("AGE is not at the right edge with NAME filling: %d cells after it, %d at the end", fill, end)
+	}
+	for range 3 {
+		d.Do(spread.Do)
+	}
+	if s.panels.podList.Spread != terminu.SpreadEnd || room() != end {
+		t.Errorf("round the four, not back at the end: %d", s.panels.podList.Spread)
 	}
 }

@@ -199,35 +199,36 @@ anywhere. `Done` gets how the command ended: an `*terminu.ElevateError` when it 
 error popup; `OnCancel` runs when the user cancels. With doas and no sudo, set `Tool: terminu.Doas`: doas asks for the
 password itself in a terminal popup. Not for Windows: use gsudo or the sudo Windows has there, the system asking with UAC.
 
-## Comparing
+## Diff
 
-`app.CompareAction(panel, list, terminu.Compare{Key: "C", Text: ...})` gives a list the compare mode: the user picks
+`app.DiffModeAction(panel, list, terminu.DiffMode{Key: "C", Text: ...})` gives a list the Diff mode: the user picks
 two rows and sees what differs, UNIFIED or SPLIT. Two rows that hold many (two directories, two namespaces, two
 commits) go in instead, to a list of the items that differ: `Many` says which rows hold many, and `Items` gives the
 items that differ between two of them, each a `terminu.DiffItem`. The lib draws that list in the panel, each item's
 mark (`DiffAdded` +, `DiffRemoved` -, `DiffChanged` ~), and does `Enter`, `Esc` and the location row.
+`CompareAction` and `Compare`, the old names, still build; they go in a later minor version.
 
 A `DiffItem` names its two sides in `Anchor` and `Other`, the older one the anchor, so that they say where
-(`ui.go @ 1a2b3c4`): its comparison, titled `DIFF`, has them for its first row however it is reached, right under the
+(`ui.go @ 1a2b3c4`): its diff, titled `DIFF`, has them for its first row however it is reached, right under the
 top border as a location row is, folded and never cut when they are long, and the list it goes into has them for its location row. It has `Text`, each side's text ("" on a side it is not on), or `Items` when it holds many itself,
-or neither when it is not text and has no comparison. A rename you know of is `DiffChanged`, named `old → new`. Leave
+or neither when it is not text and has no diff. A rename you know of is `DiffChanged`, named `old → new`. Leave
 out what is the same on both sides, and read a text only when it is asked for.
 
 An action of your own that shows two versions of one item (a file in a commit against the commit before it, a file
-being edited against its last commit) opens the same comparison with `app.OpenDiff(panel, item)`: with `Text`, the
+being edited against its last commit) opens the same diff with `app.OpenDiff(panel, item)`: with `Text`, the
 comparison; with `Items`, the list of what differs in it, in the panel in place of its rows until `Esc` brings them
 back. An action of yours that shows something else in that panel (Enter on a branch putting its commit under the
 cursor) calls `panel.LeaveDiff()` first: it leaves every such list, as if `Esc` were pressed until the panel's rows
 are back, and does nothing when there is none.
 
-Going into such a list changes what the panel lists, so `OpenDiff` and the compare mode clear the panel's filter first
+Going into such a list changes what the panel lists, so `OpenDiff` and the Diff mode clear the panel's filter first
 (tdp panel.14). Do the same in an action of yours that changes what a panel lists or puts its cursor on a particular
 item (the cursor in another panel taking this one to an item, going into an item): call `list.ClearFilter()` first,
 whether or not the filter hides that item. The focus merely leaving the panel keeps the filter.
 
 A panel that shows a difference (a details panel showing what changed in the file under the cursor) draws it as
 UNIFIED does, never as a tool prints it (`git diff`'s headers and `@@` lines): read the two texts and call
-`pager.SetDiff(anchor, other)` on its `Pager`, and give the panel an `Enter` action that opens the comparison with
+`pager.SetDiff(anchor, other)` on its `Pager`, and give the panel an `Enter` action that opens the diff with
 `app.OpenDiff(panel, item)`. The same text on both sides shows the Pager's `EmptyFact`.
 
 When what it shows holds many (a folder that is new, a commit), list the items that differ, never their bare names:
@@ -243,6 +244,15 @@ A list item can take rows under its first, on the items that need them (a commit
 with text runs on to the row's end. The first row keeps the columns, the header and the tick. The cursor is drawn on
 it, and the rows below are lit with it. Moving, `N of M` and scrolling count items, and the filter matches an item by
 any of its rows (tdp panel.5).
+
+## Room left over
+
+On a wide terminal, once every column shows its widest value and none is taken away, `List.Spread` says where the
+rest of the width goes, your pick for each list (tdp panel.5): `SpreadEnd`, the default, at the row's end;
+`SpreadFill`, all of it to the column you mark `Column.Fill` (a long one, a description), the columns after it at the
+right edge; `SpreadEven`, the narrowest columns widened first until they are as even as the room allows;
+`SpreadGaps`, every gap between columns widened alike from 2 cells up to 6, the rest to the `Fill` column or the row's
+end. Short of room, every one narrows and drops columns as before.
 
 ## Modes of your own
 
@@ -287,7 +297,7 @@ The user may put one of the mode's actions on `Space` as well; you never put one
 mode has no Space menu. The footer writes it first, where `Space:menu` was (`Space:drop ?:help …`), and `?` lists it
 among the mode's keys. The keys only that menu listed go in the footer then: take their `NoFooter` off. Refusing
 `Space` when an action has it already, the Warning saying what `Space` does now and to press `Esc` first for the menu,
-and keeping `Space` for the menu in a mode of tdp's (Drag, Compare) are yours. A `ModeKey` taking `Space` with no `Do`
+and keeping `Space` for the menu in a mode of tdp's (Drag, Diff) are yours. A `ModeKey` taking `Space` with no `Do`
 is still the core key, `Space` opening the menu.
 
 What the footer of a mode of your own writes between `Space:menu ?:help` and `Esc:<verb>` is up to you, core keys

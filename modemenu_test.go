@@ -17,20 +17,20 @@ func menuOnTop(t *testing.T, ta *testApp) *menuView {
 func cursorLabel(m *menuView) string { return m.rows[m.cursor].action.Label }
 
 // TestModeSpaceMenu: Space in a panel's mode opens its Space menu, titled
-// as the panel: ITEM OPERATION, the mode's keys under COMPARE MODE, the
+// as the panel: ITEM OPERATION, the mode's keys under DIFF MODE, the
 // movement keys only shown in Blue, the cursor passing them; a row does as
 // its key; Esc only closes the menu; [Esc] Leave leaves (menu-23 to 27,
 // K11-1, screen-8).
 func TestModeSpaceMenu(t *testing.T) {
 	ta, _ := compareApp(t)
 	ta.press("C")
-	if f := covCFooter(ta); !strings.HasPrefix(f, "Space:menu ?:help C|Enter:compare") {
+	if f := covCFooter(ta); !strings.HasPrefix(f, "Space:menu ?:help C|Enter:diff") {
 		t.Errorf("the mode's footer: %q", f)
 	}
 	ta.press("Space")
 	m := menuOnTop(t, ta)
 	text := ta.screenText()
-	for _, want := range []string{"[1] PODS", "ITEM OPERATION", "[C]ompare", "with pod-00", "COMPARE MODE", "j|k", "down, up", "[Esc] Leave"} {
+	for _, want := range []string{"[1] PODS", "ITEM OPERATION", "[C] Diff", "with pod-00", "DIFF MODE", "j|k", "down, up", "[Esc] Leave"} {
 		if !strings.Contains(text, want) {
 			t.Errorf("%q is not in the menu:\n%s", want, text)
 		}
@@ -49,12 +49,12 @@ func TestModeSpaceMenu(t *testing.T) {
 		t.Fatal("Esc in the menu leaves the mode or keeps the menu")
 	}
 	ta.press("j", "Space")
-	if m := menuOnTop(t, ta); cursorLabel(m) != "Compare" {
+	if m := menuOnTop(t, ta); cursorLabel(m) != "Diff" {
 		t.Fatalf("off the anchor the cursor is on %q", cursorLabel(m))
 	}
 	ta.press("Enter")
 	if _, ok := ta.topView().(*viewerView); !ok || !strings.Contains(ta.screenText(), "pod-00 ↔ pod-01") {
-		t.Fatalf("[C]ompare from the menu did not compare: %T", ta.topView())
+		t.Fatalf("[C] Diff from the menu did not open the Diff: %T", ta.topView())
 	}
 	ta.press("Esc", "Space")
 	m = menuOnTop(t, ta)

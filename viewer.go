@@ -88,17 +88,17 @@ type Viewer struct {
 	crlf []bool
 	// tabW is the user's input_tab_width: the spaces a tab is drawn as.
 	tabW int
-	// tabOff is a tab that cannot be chosen now (tdp M6): the compare's
+	// tabOff is a tab that cannot be chosen now (tdp M6): the Diff's
 	// SPLIT on a narrow terminal.
 	tabOff func(i int) bool
 	// relayout lays the lines out again for a terminal sw wide, before it is
-	// measured (the compare, its lines cut to the width).
+	// measured (the Diff, its lines cut to the width).
 	relayout func(sw int)
 	// report is a success report Report opened: Enter closes it too.
 	report bool
 	// head, when set, is the rows fixed over the lines for a text w cells
 	// wide, in Lavender, never scrolled, a location row right under the top
-	// border in the top padding's place (the compare's two sides, tdp
+	// border in the top padding's place (the Diff's two sides, tdp
 	// note.8, popup.1); heads is them as last laid out.
 	head  func(w int) []string
 	heads []string

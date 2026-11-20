@@ -159,7 +159,7 @@ type App struct {
 	quitConfirm popupView
 	anim        bool
 	timers      []tea.Cmd          // the lib's own timers started while a message is handled (sendTimers)
-	comparings  []*comparing       // the compare modes under way (compare.go)
+	comparings  []*comparing       // the Diff modes under way (compare.go)
 	labels      map[any]*labelAnim // the mode names opening and closing, by frame (modelabel.go)
 	labelTick   bool               // a tick for them on its way
 	spin        bool

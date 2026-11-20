@@ -1016,7 +1016,7 @@ func TestK12PgUpPgDnAreUD(t *testing.T) {
 		name string
 		open func() *testApp
 	}{
-		{"compare", func() *testApp { ta, _ := compareApp(t); ta.press("C"); return ta }},
+		{"diff mode", func() *testApp { ta, _ := compareApp(t); ta.press("C"); return ta }},
 		{"history", func() *testApp { ta, _, _ := termWithHistory(t); ta.press("PgUp"); return ta }},
 	} {
 		after := func(keys []string) string {

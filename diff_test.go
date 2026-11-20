@@ -14,7 +14,7 @@ func manyApp(t *testing.T) *testApp {
 	text := func(a, b string) func() (string, string, error) {
 		return func() (string, string, error) { return a, b, nil }
 	}
-	ta.pods.Actions = append(ta.pods.Actions, ta.CompareAction(ta.pods, ta.list, Compare{Key: "C",
+	ta.pods.Actions = append(ta.pods.Actions, ta.DiffModeAction(ta.pods, ta.list, DiffMode{Key: "C",
 		Can:  func(r Row) bool { return r.ID != "2" },
 		Many: func(r Row) bool { return r.ID == "3" || r.ID == "4" || r.ID == "5" },
 		Text: func(r Row) (string, error) { return "age: " + r.Cells[1] + "\n", nil },
@@ -48,11 +48,11 @@ func frameText(ta *testApp) string { return strings.Join(ta.Frame(), "\n") }
 func TestCompareMany(t *testing.T) {
 	ta := manyApp(t)
 	ta.press("j", "j", "j", "C") // pod-03, the anchor
-	if ta.press("k"); !strings.Contains(covCFooter(ta), "C|Enter:compare") || !strings.Contains(frameText(ta), Fg(Surface2).Render(":compare")) {
+	if ta.press("k"); !strings.Contains(covCFooter(ta), "C|Enter:diff") || !strings.Contains(frameText(ta), Fg(Surface2).Render(":diff")) {
 		t.Errorf("on pod-02 the compare keys are off: %q", covCFooter(ta))
 	}
 	ta.press("k") // pod-01: text against one that holds many
-	if ta.press("Enter"); ta.top() != nil || ta.pods.level() != nil || !strings.Contains(frameText(ta), Fg(Surface2).Render(":compare")) {
+	if ta.press("Enter"); ta.top() != nil || ta.pods.level() != nil || !strings.Contains(frameText(ta), Fg(Surface2).Render(":diff")) {
 		t.Error("a row that holds many compared with one that does not")
 	}
 	ta.press("j", "j", "j", "j") // pod-05: nothing differs
@@ -61,7 +61,7 @@ func TestCompareMany(t *testing.T) {
 	}
 	ta.toast = nil
 	ta.press("k", "Enter") // pod-04
-	if ta.pods.level() == nil || ta.pods.InMode() == nil || ta.pods.InMode().Name != "Compare" {
+	if ta.pods.level() == nil || ta.pods.InMode() == nil || ta.pods.InMode().Name != "Diff" {
 		t.Fatalf("did not go in, in the mode:\n%s", ta.screenText())
 	}
 	text, frame := ta.screenText(), frameText(ta)
@@ -112,7 +112,7 @@ func TestCompareMany(t *testing.T) {
 		t.Errorf("an item only the other has:\n%s", ta.screenText())
 	}
 	ta.press("Esc", "j", "j") // logo.png: not text
-	if ta.press("Enter"); ta.top() != nil || !strings.Contains(frameText(ta), Fg(Surface2).Render(":compare")) {
+	if ta.press("Enter"); ta.top() != nil || !strings.Contains(frameText(ta), Fg(Surface2).Render(":diff")) {
 		t.Error("an item that is not text was compared, or its key is not off")
 	}
 	ta.press("j", "Enter") // src: in again
@@ -151,7 +151,7 @@ func TestCompareManyAnchorGone(t *testing.T) {
 	rows := ta.list.Rows()
 	ta.list.SetRows(append(rows[:3:3], rows[4:]...))
 	ta.press("j")
-	if ta.pods.InMode() != nil || ta.pods.level() != nil || !strings.Contains(ta.screenText(), "Compare ended: pod-03 is gone") {
+	if ta.pods.InMode() != nil || ta.pods.level() != nil || !strings.Contains(ta.screenText(), "Diff ended: pod-03 is gone") {
 		t.Errorf("the anchor gone:\n%s", ta.screenText())
 	}
 }
@@ -209,12 +209,12 @@ func TestOpenDiff(t *testing.T) {
 	if ta.pods.InMode() != nil || !strings.Contains(text, "1a2b3c4 ↔ 5d6e7f8") || strings.Contains(text, "~/proj") || !strings.Contains(text, "old.go → new.go") {
 		t.Fatalf("going into a commit:\n%s", text)
 	}
-	if strings.Contains(text, "pod inspect") || !strings.Contains(text, "Enter:compare") {
-		t.Errorf("the panel's inspect shows, or the hint is not Enter:compare:\n%s", text)
+	if strings.Contains(text, "pod inspect") || !strings.Contains(text, "Enter:diff") {
+		t.Errorf("the panel's inspect shows, or the hint is not Enter:diff:\n%s", text)
 	}
 	ta.press("Space")
 	menu := ta.screenText()
-	if !strings.Contains(menu, "Compare") || strings.Contains(menu, "Logs") || strings.Contains(menu, "Delete") {
+	if !strings.Contains(menu, "Diff") || strings.Contains(menu, "Logs") || strings.Contains(menu, "Delete") {
 		t.Errorf("the Space menu has the panel's own actions:\n%s", menu)
 	}
 	ta.press("Esc", "?")

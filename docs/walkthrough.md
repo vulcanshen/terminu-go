@@ -58,6 +58,8 @@ go build -o /tmp/showcase ./examples/showcase
 **P — Panels**：panel 的每一種長相與狀態。
 - `[1] PODS` 是一般清單：`j|k` `u|d` `gg|G` 移、`h|l` 換 tab（PODS／EVENTS）、`/` 篩選、`m` 標記、`x` 刪除（confirm）、
   `s` 排序、`go` 跳到第一個沒在跑的、`D` 拖曳模式（框與模式名變色，拿著的那一列 Yellow、標記欄畫上下箭頭；`j|k` 搬、到頭尾繞回，`Enter` 放下，`Esc` 放回）。
+  寬度有剩時（panel-184）：把終端機拉到 240 欄左右，Space menu 的 `Room left over` 一次換一種：放最後、`NAME` 填滿（`AGE` 靠到右邊）、
+  平均、加大欄距，每換一次跳一個 Info toast 說是哪一種。
   `EVENTS` tab 是占好幾列的項目（panel-181～183）：事件的訊息在 REASON 底下，`BackOff` 兩列、`Pulled` 一列、`Started` 只有一列；
   cursor 只畫在第一列，下面幾列跟著亮（Surface1 底、字照原本的顏色、沒有箭頭）；`j|k` 一次一項；按 `/` 打 `worker-2`，找到 `web-a8k2`。
 - `Space` 裡有切狀態的開關：`Empty`、`Loading`、`Fail`、`Disable`，與五種 toast（`Toast success`、`Toast info`、`Toast warning`、`Toast error`、`Toast long`）。
@@ -83,15 +85,15 @@ go build -o /tmp/showcase ./examples/showcase
   - 同一項的兩個版本（note.8）：在 `FILES` tab 的檔上按 `H`，跟它最後一次 commit 比（`main.go`、`README.md` 有改，其他檔沒變，
     跳 Info toast）；按 `K` 進到最後一次 commit 改了的檔：改名的 `~ docs/NOTES.md → docs/notes.md`、新增、刪掉、不是文字的圖
     （`Enter` 停用）、裡面還有東西的 `themes/`（再進一層）、路徑很長的 `installation/docker-compose/production/env.example`；
-    比較的標題只寫 `DIFF`、後面接兩個 tab，兩邊的名字在第一列（Lavender，緊貼上框、上面沒有空白列，捲動時不動）；在那個長路徑上按 `Enter`，100 欄時
-    在 `↔` 前面折成兩列，縮到 60 欄時再在 `/` 後面折，不用 `…` 截（note-107）；比較的寬度是終端機寬減 2（F7-17）。
+    Diff 的標題只寫 `DIFF`、後面接兩個 tab，兩邊的名字在第一列（Lavender，緊貼上框、上面沒有空白列，捲動時不動）；在那個長路徑上按 `Enter`，100 欄時
+    在 `↔` 前面折成兩列，縮到 60 欄時再在 `/` 後面折，不用 `…` 截（note-107）；Diff 的寬度是終端機寬減 2（F7-17）。
     `Esc` 一層一層退回原本的檔案清單。在 `themes/` 裡時到 `[1] INPUTS`
     按 `M`（Show main.go）：`[2]` 先離開 commit 的每一層，回到檔案清單、cursor 在 `main.go`。
   - 比兩個資料夾（panel.9）：`FOLDERS` tab 進 `releases/`，在 `v1/` 按 `C`、移到 `v2/` 按 `Enter`：位置列 `releases/v1 ↔ releases/v2`，
     只列兩邊不一樣的項目（`+ NEWS.md`、`~ conf/`、`~ logo.png`、`~ main.go`、`- old-notes.txt`，一樣的 `README.md`、`docs/` 不列）；
-    `conf/` 再進一層；`Esc` 一層一層退回，最後回到比較模式、anchor 還在。
+    `conf/` 再進一層；`Esc` 一層一層退回，最後回到 Diff 模式、anchor 還在。
 - `[3] CHANGES` 跟著 `[2]` 的 cursor（note.8 的 In a panel）：cursor 上那個檔跟它最後一次 commit 的差異，畫法跟 UNIFIED 一樣（只有改的段落、
-  兩欄行號、`-` Red、`+` Green），不是 git 印的 patch；位置列是那個檔。在 `main.go` 上看得到改的那一行，按 `3` 再按 `Enter` 打開比較；
+  兩欄行號、`-` Red、`+` Green），不是 git 印的 patch；位置列是那個檔。在 `main.go` 上看得到改的那一行，按 `3` 再按 `Enter` 打開 Diff；
   沒改的檔寫 `No changes since 5d6e7f8`（`Enter` 停用），圖寫 `Not a text file`。在 `FOLDERS` tab 的 `releases/` 裡移到 `v2/`
   （最後一次 commit 之後新增的資料夾）：`[3]` 列出它有差異的項目、每一項帶標記，全部是 Green 的 `+`（note-106）；按 `3` 再按 `Enter`
   進到這份清單；`[2]` 的 cursor 一動，`[3]` 就離開清單、換成新的那一列。

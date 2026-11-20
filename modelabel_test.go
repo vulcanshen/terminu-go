@@ -69,22 +69,22 @@ func TestModeLabelOpens(t *testing.T) {
 }
 
 // TestModeLabelFrames: every 32ms frame shows one more character, so a
-// longer name takes longer: Compare's 8 frames all differ (panel-146).
+// longer name takes longer: Select's 7 frames all differ (panel-146).
 func TestModeLabelFrames(t *testing.T) {
 	seen := map[string]bool{}
-	for f := range 8 {
-		l := &labelAnim{name: "Compare", dir: 1}
+	for f := range 7 {
+		l := &labelAnim{name: "Select", dir: 1}
 		got := StripStyles(drawLabel(l.name, 1-l.at(l.start.Add(time.Duration(f)*frameTime)), heavyLines, Fg(Blue)))
 		if seen[got] {
 			t.Errorf("frame %d is the one before it: %q", f, got)
 		}
 		late := StripStyles(drawLabel(l.name, 1-l.at(l.start.Add(time.Duration(f)*frameTime+31*time.Millisecond)), heavyLines, Fg(Blue)))
-		if f < 7 && late != got {
+		if f < 6 && late != got {
 			t.Errorf("frame %d changes within its 32ms: %q, then %q", f, got, late)
 		}
 		seen[got] = true
-		if f == 7 && !strings.Contains(got, "┫Compare┣") {
-			t.Errorf("frame 8 is not all open: %q", got)
+		if f == 6 && !strings.Contains(got, "┫Select┣") {
+			t.Errorf("frame 7 is not all open: %q", got)
 		}
 	}
 }

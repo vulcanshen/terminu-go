@@ -294,7 +294,7 @@ func newInputsScreen(s *showcase) *inputsScreen {
 	// On the Folders tab two folders compare as two rows that hold many: the
 	// items that differ, a level at a time (tdp panel.9); two text files as
 	// text.
-	is.files.Actions = append(is.files.Actions, a.CompareAction(is.files, is.fileList, terminu.Compare{Key: "C",
+	is.files.Actions = append(is.files.Actions, a.DiffModeAction(is.files, is.fileList, terminu.DiffMode{Key: "C",
 		Can:   func(r terminu.Row) bool { return is.tab == 2 && (folderRow(r) || textFile(r.ID)) },
 		Many:  folderRow,
 		Name:  func(r terminu.Row) string { return relPath(r.ID) },
@@ -316,7 +316,7 @@ func newInputsScreen(s *showcase) *inputsScreen {
 	}
 	many := func() bool { it, ok := is.lastCommitItem(); return ok && it.Items != nil }
 	is.changes = &terminu.Panel{Label: "Changes", Body: is.changed, Actions: []terminu.Action{
-		{Key: "Enter", Label: "Compare", Desc: "the file against its last commit, UNIFIED and SPLIT", Hint: "compare",
+		{Key: "Enter", Label: "Diff", Desc: "the file against its last commit, UNIFIED and SPLIT", Hint: "diff",
 			Scope: terminu.PanelScope, Hidden: many, Disabled: func() bool { return is.changed.Empty() }, Do: openChanges},
 		{Key: "Enter", Label: "Open", Desc: "the items that differ in the folder since its last commit", Hint: "open",
 			Scope: terminu.PanelScope, Hidden: func() bool { return !many() }, Disabled: func() bool { return is.changed.Empty() }, Do: openChanges},

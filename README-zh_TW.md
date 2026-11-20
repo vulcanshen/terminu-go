@@ -169,30 +169,31 @@ Success 記進 App Log。
 （指令印出來的每一列），交給 error popup；使用者取消時跑 `OnCancel`。沒有 sudo 只有 doas 時設 `Tool: terminu.Doas`，doas
 在 terminal popup 裡自己問密碼。Windows 不用這個，照舊用 gsudo 或 Windows 的 sudo（系統跳 UAC）。
 
-## 比較
+## Diff
 
-`app.CompareAction(panel, list, terminu.Compare{Key: "C", Text: ...})` 讓清單有比較模式：使用者挑兩列，看哪裡不一樣，
+`app.DiffModeAction(panel, list, terminu.DiffMode{Key: "C", Text: ...})` 讓清單有 Diff 模式：使用者挑兩列，在 Diff 裡看哪裡不一樣，
 UNIFIED 或 SPLIT。兩列都裝著許多項目時（兩個資料夾、兩個 namespace、兩個 commit），改成進到一層「有差異的項目」清單：
 `Many` 說哪些列裝著許多項目，`Items` 給出兩列之間有差異的項目，一項一個 `terminu.DiffItem`。那層清單由 lib 畫在 panel 裡，
 每一項前面的標記（`DiffAdded` +、`DiffRemoved` -、`DiffChanged` ~）、`Enter`、`Esc` 與位置列也都是 lib 的。
+舊的名字 `CompareAction` 與 `Compare` 照樣編得過，之後的 minor 版拿掉。
 
 `DiffItem` 用 `Anchor` 與 `Other` 寫出兩邊的名字，舊的那邊當 anchor，名字要看得出在哪裡（`ui.go @ 1a2b3c4`）：不管從哪裡
-打開，它的比較（標題是 `DIFF`）第一列都寫這兩個名字，跟位置列一樣緊貼上框，太長時折行、不截，它進去的那一層清單也用它們當位置列。它有 `Text`（兩邊的文字，沒有的那邊給 ""），或是它
-自己也裝著許多項目時的 `Items`；兩個都沒有，就是不是文字、沒有比較的項目。app 知道是改名的，用 `DiffChanged`，名字寫
+打開，它的 Diff（標題是 `DIFF`）第一列都寫這兩個名字，跟位置列一樣緊貼上框，太長時折行、不截，它進去的那一層清單也用它們當位置列。它有 `Text`（兩邊的文字，沒有的那邊給 ""），或是它
+自己也裝著許多項目時的 `Items`；兩個都沒有，就是不是文字、沒有 Diff 的項目。app 知道是改名的，用 `DiffChanged`，名字寫
 `舊 → 新`。兩邊一樣的不要列，文字等到要比時才讀。
 
 app 自己的動作要顯示同一項的兩個版本時（commit 裡的一個檔對它前一個 commit、正在改的檔對它最後一次 commit），用
-`app.OpenDiff(panel, item)` 打開同一種比較：有 `Text` 就是那個比較；有 `Items` 就是它裡面有差異的項目清單，畫在 panel 裡
+`app.OpenDiff(panel, item)` 打開同一個 Diff：有 `Text` 就是那個 Diff；有 `Items` 就是它裡面有差異的項目清單，畫在 panel 裡
 取代原本的列，按 `Esc` 回到原本的列。app 自己的動作要在那個 panel 顯示別的東西時（例：在分支上按 `Enter`，把它的 commit
 放到 cursor 下），先叫 `panel.LeaveDiff()`：離開每一層這種清單，像一直按 `Esc` 到原本的列回來為止；沒有清單時什麼都不做。
 
-進到這種清單會換掉 panel 列的東西，所以 `OpenDiff` 與比較模式進去之前會先清掉 panel 的篩選（tdp panel.14）。app 自己的動作要換掉
+進到這種清單會換掉 panel 列的東西，所以 `OpenDiff` 與 Diff 模式進去之前會先清掉 panel 的篩選（tdp panel.14）。app 自己的動作要換掉
 panel 列的東西，或把它的 cursor 放到某一項上時（例：在別的 panel 移動 cursor，把這個 panel 帶到那一項；進到一項裡面），也一樣
 先叫 `list.ClearFilter()`，不管篩選有沒有藏住那一項。只是 focus 離開 panel，篩選留著。
 
 顯示差異的 panel（例：跟著 cursor 的明細，顯示 cursor 上那個檔改了什麼）畫法跟 UNIFIED 一樣，不照工具印的樣子（`git diff`
 的標頭與 `@@` 那幾行）：app 自己讀兩邊的文字，在它的 `Pager` 上叫 `pager.SetDiff(anchor, other)`，再給 panel 一個 `Enter`
-動作，用 `app.OpenDiff(panel, item)` 打開比較。兩邊一樣時，顯示 Pager 的 `EmptyFact`。
+動作，用 `app.OpenDiff(panel, item)` 打開 Diff。兩邊一樣時，顯示 Pager 的 `EmptyFact`。
 
 顯示的東西裝著許多項目時（例：新的資料夾、一個 commit），要列出有差異的項目，不能只寫名字：`pager.SetDiffItems(items)` 每一項
 先畫它的標記與顏色、再畫名字，跟 `OpenDiff` 進去的清單一樣（新資料夾的項目全部是 `DiffAdded`）。它的 `Enter` 在這個 panel 裡
@@ -205,6 +206,13 @@ Pager 的 `EmptyFact`。
 `[]terminu.BelowRow`，每一列是一排放在清單欄位底下的 `Cells`，要上色用 `Styled`，跟 `Row.Styled` 一樣。格子給 `""` 那一欄就留白，
 所以一列的字從哪裡開始由你放；有字的最後一格一直延伸到列尾。欄位、表頭與勾都在第一列。cursor 畫在第一列，下面幾列跟著亮。
 移動、`N of M` 與捲動都算項目，panel filter 比對項目時每一列的字都算（tdp panel.5）。
+
+## 寬度有剩時
+
+終端機很寬、每一欄都已經是最寬的值、也沒有收掉的欄時，`List.Spread` 決定剩下的寬度放哪裡，每個清單由你挑（tdp panel.5）：
+`SpreadEnd`（預設）放在列尾；`SpreadFill` 全部給標了 `Column.Fill` 的那一欄（長的那一欄，例：說明），後面的欄靠到最右邊；
+`SpreadEven` 先撐寬最窄的幾欄，直到盡量一樣寬；`SpreadGaps` 每個欄距一起從 2 格加到最多 6 格，還有剩給 `Fill` 那一欄，沒有就放列尾。
+空間不夠時四種都一樣，照原本的先縮、再收掉欄。
 
 ## app 自己的模式
 
@@ -243,7 +251,7 @@ popup 就是唯一的一個（tdp K11）。
 `ModeKey`，例：`{Key: "Space", Desc: "drop", Do: drop}`：`Space` 就做那個動作，這個模式沒有 Space menu。footer 把它寫在
 最前面、原本 `Space:menu` 的位置（`Space:drop ?:help …`），`?` 把它列在模式的鍵裡。原本只列在那個 menu 裡的鍵，這時要
 放進 footer：拿掉它們的 `NoFooter`。`Space` 已經有動作時擋下、跳 Warning 說 `Space` 改做什麼與要 menu 先按 `Esc`、
-tdp 的模式（Drag、Compare）不讓放，都是 app 的事。收 `Space` 但沒有 `Do` 的 `ModeKey` 照樣是 core key，`Space` 開 menu。
+tdp 的模式（Drag、Diff）不讓放，都是 app 的事。收 `Space` 但沒有 `Do` 的 `ModeKey` 照樣是 core key，`Space` 開 menu。
 
 app 自己的模式的 footer，在 `Space:menu ?:help` 與 `Esc:<動詞>` 中間寫哪些鍵由 app 決定，core key 也可以（tdp K11、
 screen.2）。要寫 `q:quit`，給模式一個沒有 `Do` 的 `ModeKey`：`{Key: "q", Desc: "quit"}`。`q` 照樣進入離開流程，跟在任何

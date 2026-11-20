@@ -366,7 +366,7 @@ func (p *Panel) upDiff() { p.levels = p.levels[:len(p.levels)-1] }
 // something in the panel (Enter on a branch putting its commit under the
 // cursor of the panel that went into a commit), as if Esc were pressed
 // until it is back. It does nothing when there is none. A mode the panel
-// is in stays: a compare mode goes back to picking, its anchor kept.
+// is in stays: a Diff mode goes back to picking, its anchor kept.
 func (p *Panel) LeaveDiff() { p.levels = nil }
 
 // EnterMode puts the panel in m; Esc leaves it (tdp K11).
