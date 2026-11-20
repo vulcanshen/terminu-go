@@ -155,6 +155,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]iff`（M4：panel 的熱鍵優�
 | M5 | 每一列：左邊動作名稱、右邊一句單行說明 | Space menu | `TestMenuRowLayout` |
 | M5 | 熱鍵標記：多字元的熱鍵碰上 label 開頭也不分大小寫（`go` 加 `Goto` → `[go]to`） | 測試驗 | `TestM5HotkeyMarking` |
 | M5 | 熱鍵標記：字母出現在 label 裡（不分大小寫）原地包第一個，括號裡照鍵寫、label 照原本的大小寫：`[r]ename`、`[n]ew`、`D[e]lete`、`UR[L]`、`Ex[P]ort`；不在 label 裡放前面 `[x] Reset`；modifier 照同一套 `[Alt-t]erm`；多字元 `[go]to`；數字放前面 `[3] Favorites`；core key 放前面 `[Enter] Edit`；沒熱鍵不加 | 展示場的登記各用到一次（見下面「熱鍵標記」） | `TestM5HotkeyMarking` |
+| M5 | 字母出現在 label 裡時只包一個：預設第一次出現的，app 也可以挑別的，例：鍵代表的那個字的開頭（`Stage [a]ll`、`Mark [r]esolved`）（M5-1，來自 gittu）。lib：app 自己在 `Action.Label`（或 `Screen.Name`）寫好方括號、括號裡照鍵寫，`MarkLabel` 看到 `[鍵]` 就不動，menu、chip、finder 照它畫；`?` 的 key reference 照樣寫不帶方括號的名字（`Stage all`）。panel 的標題是 `[N]` 與名字，不放熱鍵 | 展示場沒有這種 label；lib 的測試用 `Stage [a]ll` 的動作與 `Stats [S]ummary` 的畫面 | `TestM5AppPicks` |
 | M5 | 括號裡印的就是要按的鍵（大小寫算數）；label 已寫出鍵的不再括；不只靠顏色或 glyph 暗示 | 同上 | `TestM5HotkeyMarking` |
 | M5 | 鍵名：鍵帽名、大駝峰（`Esc` `Tab` `Enter` `Space` `Backspace` `Delete` `Home` `End` `PgUp` `PgDn`、`↑↓←→`）；`Ctrl` 後字母大寫；`-` 連 modifier；幾個鍵做同一件事用 `\|` 並列（不用 `/`）、`–` 範圍 | lib：鍵名由一個函式產生；一次進來的一串字就是字（打得快的 `end` 不是 End 鍵） | `TestM5KeyNames` |
 | M5 | 依位置：label 用括號；句子裡鍵加方括號；hint、footer `鍵:說明`、項目間一格；key reference 兩欄、不加括號冒號 | 空狀態、toast、hint、footer、`?` | `TestM5WritingByPosition` |

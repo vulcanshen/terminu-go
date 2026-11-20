@@ -21,7 +21,8 @@ type Rect struct{ X, Y, W, H int }
 type Screen struct {
 	// Name is the screen's chip and its row in the global operation popup
 	// ("Panels"); Key is its global hotkey ("P"). Desc is that row's
-	// description.
+	// description. A Name may mark its key itself, as Action.Label may
+	// (tdp M5-1).
 	Name, Key, Desc string
 	Panels          []*Panel
 	// Layout places the panels in the panel area, one Rect each; nil puts

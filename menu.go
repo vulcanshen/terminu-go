@@ -344,8 +344,19 @@ func (m *menuView) keyRef() []refSection {
 func (m *menuView) typing() bool { return false }
 
 // plainLabel is an action's label as the key reference writes it: no hotkey
-// marker, its case as it is (tdp note).
-func plainLabel(a Action) string { return a.Label }
+// marker, its case as it is (tdp note.5); one the label writes itself, at
+// the appearance the app picked, goes too: "Stage [a]ll" is "Stage all",
+// "[x] Reset" is "Reset" (tdp M5-1).
+func plainLabel(a Action) string {
+	if a.Key == "" {
+		return a.Label
+	}
+	mark := "[" + a.Key + "]"
+	if rest, ok := strings.CutPrefix(a.Label, mark+" "); ok {
+		return rest
+	}
+	return strings.Replace(a.Label, mark, a.Key, 1)
+}
 
 func descTail(d string) string {
 	if d == "" {

@@ -20,7 +20,11 @@ type Action struct {
 	// letter (tdp K1, K12); "Enter" is the panel's Enter action.
 	Key string
 	// Label is the action's name ("Rename"); the hotkey marker is added
-	// where tdp M5 puts it.
+	// where tdp M5 puts it, the key's letter's first appearance. To mark
+	// another one (the start of the word the key stands for), write the
+	// brackets in the Label yourself, the key as it is pressed: "Stage
+	// [a]ll", Key "a" (tdp M5-1). Menus, chips and the finder leave it as
+	// it is; the key reference writes it without them, "Stage all".
 	Label string
 	// Desc is one line: what it does to what.
 	Desc  string
