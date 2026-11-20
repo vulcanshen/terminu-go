@@ -2,6 +2,30 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.19 — tdp v1.2.18
+
+Everything since v1.2.18, the betas v1.2.19-beta.1 to beta.5 included:
+
+- A panel that shows a difference draws it as UNIFIED does, never as a tool prints it: `Pager.SetDiff(anchor, other)`;
+  what holds many (a new folder, a commit) lists the items that differ with their marks: `Pager.SetDiffItems(items)`;
+  `Enter` on either is the panel's own `App.OpenDiff` (tdp note.8, note-103, note-106; from gittu)
+- The comparison is titled `DIFF` with its two tabs; its first row names the two sides, Lavender, right under the top
+  border in the top padding's place, folded before `↔` and after a `/` and never cut; it is as wide as the terminal
+  but 2 (tdp note.8, note-107, F7-17, popup-15; from gittu)
+- Going into a list of the items that differ, the compare mode and `App.OpenDiff` clear the panel's filter first; an
+  app's own action that changes what a panel lists or puts its cursor on an item calls `List.ClearFilter()` first (tdp
+  panel.14, panel-180; from gittu)
+- A list item can take rows under its first: `Row.Below []BelowRow`; the cursor on its first row, the rest lit
+  Surface1; moving, `N of M` and scrolling count items; the filter matches any of its rows (tdp panel.5, panel-181 to
+  panel-183; from gittu)
+- With no screen, what E3 says goes to stderr in the TUI's words: `Notice.Lines()`, `NoLongerUsedLines(paths...)`,
+  `CannotReadText(path, err)`; `ProbeResult.Lines()` is what `<app> iconwidth` prints (tdp E3-40, E1-3; tdp #24). The
+  README's quick start and `examples/minimal` write `Run`'s error after `<app>: ` and exit 1; the README has sections
+  on the command line and on what a read the app repeats on its own records (tdp E1, note-104, note-105)
+- A textarea that opened empty checks its text on Enter even with nothing typed, so one that may not be empty is an
+  error and stays open; new `Textarea.Unchanged`, as `TextInput`'s (tdp K3; tgo #7, from gittu)
+- The README's section on a file the app can't read has a key the app doesn't read and outside the TUI (tdp E3)
+
 ## v1.2.19-beta.5 — tdp v1.2.17
 
 - A location row in a popup takes the top padding's place, right under the top border as in a panel; the padding below
