@@ -294,13 +294,28 @@ func newInputsScreen(s *showcase) *inputsScreen {
 	// On the Folders tab two folders compare as two rows that hold many: the
 	// items that differ, a level at a time (tdp panel.9); two text files as
 	// text.
-	is.files.Actions = append(is.files.Actions, a.DiffModeAction(is.files, is.fileList, terminu.DiffMode{Key: "D",
+	diff := terminu.DiffMode{Key: "D", Noun: "file or folder",
 		Can:   func(r terminu.Row) bool { return is.tab == 2 && (folderRow(r) || textFile(r.ID)) },
 		Many:  folderRow,
 		Name:  func(r terminu.Row) string { return relPath(r.ID) },
 		Text:  func(r terminu.Row) (string, error) { b, err := os.ReadFile(r.ID); return string(b), err },
 		Items: func(x, y terminu.Row) ([]terminu.DiffItem, error) { return dirDiff(x.ID, y.ID) },
-	}))
+	}
+	diffAt := len(is.files.Actions)
+	is.files.Actions = append(is.files.Actions, a.DiffModeAction(is.files, is.fileList, diff),
+		// [2] has a details panel, so the app may show the Diff mode there
+		// instead (tdp panel.9 "With a details panel"): the mode spans [2]
+		// and [3], [3] following the cursor with the anchor's diff.
+		terminu.Action{Label: "Diff in [3]", Desc: "show the Diff mode in [3] CHANGES, or open it as before", Scope: terminu.PanelScope,
+			Hidden: func() bool { return is.tab != 2 },
+			Do: func() tea.Cmd {
+				diff.InDetails = !diff.InDetails
+				is.files.Actions[diffAt] = a.DiffModeAction(is.files, is.fileList, diff)
+				if diff.InDetails {
+					return a.Toast(terminu.Info, "The Diff mode shows in [3] CHANGES")
+				}
+				return a.Toast(terminu.Info, "The Diff mode opens the diff, as before")
+			}})
 
 	// [3] CHANGES follows [2]'s cursor: the file under it against its last
 	// commit, drawn as UNIFIED is (tdp note.8 "In a panel"), not as git

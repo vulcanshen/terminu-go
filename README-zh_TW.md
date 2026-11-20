@@ -200,6 +200,14 @@ panel 列的東西，或把它的 cursor 放到某一項上時（例：在別的
 進到那份清單：`app.OpenDiff(panel, terminu.DiffItem{Anchor: ..., Other: ..., Items: ...})`，給同樣的項目。一項都沒有時，顯示
 Pager 的 `EmptyFact`。
 
+有明細 panel（`panel.Details`）的清單，可以改把 Diff 模式放在明細裡，不打開視窗、也不進到清單裡：設 `InDetails`（用哪一種由 app
+決定）。這時模式同時涵蓋清單與明細，兩個框都是模式顏色、都寫 `Diff`。明細跟著 cursor，不用按鍵：lib 用 app 的 `Text` 與
+`Items`，在明細裡畫出 anchor 跟 cursor 那一列的差異，畫法跟 `SetDiff`、`SetDiffItems` 一樣；cursor 在 anchor 上時是空狀態
+（`Move to another <Noun> to diff with <anchor>`：設 `Noun`，沒設時是 `item`），跟 anchor 一樣的列也是。在清單上按 Diff 鍵
+或 `Enter`，focus 移到明細，在那裡打開一項的差異或再進一層；`Esc` 照使用者來的路退回，先回到清單、anchor 留著，再離開模式，
+明細換回 app 自己的內容。模式裡明細原本的內容、位置列、`Fail` 與 loading 那句都不顯示，照常更新就好。清單的 `Details` 一定要是
+同一個畫面的另一個 panel。
+
 ## 占好幾列的項目
 
 清單的項目可以在第一列下面再多幾列，只給需要的項目（例：commit 的分支與 tag 放在它下面）：`Row.Below` 是

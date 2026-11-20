@@ -715,3 +715,70 @@ func TestK13Keys(t *testing.T) {
 		}
 	}
 }
+
+// [2] FILES may show its Diff mode in [3] CHANGES, its details (tdp
+// panel.9 "With a details panel", panel-185, panel-186): the showcase
+// switches between the two ways. The mode spans [2] and [3]; [3] follows
+// the cursor with the anchor's diff, an empty state on the anchor; D sends
+// the focus to [3], Enter there goes into a folder, Esc goes back the way
+// the user came, and out of the mode [3] shows the file under the cursor
+// against its last commit again.
+func TestDiffInChanges(t *testing.T) {
+	s := newShowcase()
+	d := tdptest.Start(t, s.app, 160, 40)
+	is := s.inputs
+	d.Press("I", "2", "l", "l", "/")
+	d.Type("rel")
+	d.Press("Enter", "Enter") // into releases/
+	var in terminu.Action
+	for _, act := range is.files.Actions {
+		if act.Label == "Diff in [3]" {
+			in = act
+		}
+	}
+	d.Do(in.Do)
+	if !d.Has("The Diff mode shows in [3] CHANGES") {
+		t.Fatal("no toast")
+	}
+	d.Press("Esc", "D") // the toast closed; v1/ the anchor
+	if is.files.InMode() == nil || is.changes.InMode() == nil || s.app.Screen().Focused() != is.files {
+		t.Fatal("the mode does not span [2] and [3], the focus on [2]")
+	}
+	if !d.Has("Move to another file or folder to diff with releases/v1") {
+		t.Errorf("on the anchor:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Press("j") // v2/: [3] lists the items that differ, no key pressed
+	for _, want := range []string{"releases/v1 ↔ releases/v2", "+ NEWS.md", "~ conf/", "- old-notes.txt"} {
+		if !d.Has(want) {
+			t.Errorf("no %q in [3]:\n%s", want, strings.Join(d.Screen(), "\n"))
+		}
+	}
+	if s.app.Screen().Focused() != is.files || d.Has("DIFF") {
+		t.Error("moving the cursor did more than fill [3]")
+	}
+	d.Press("D")
+	if s.app.Screen().Focused() != is.changes {
+		t.Fatal("D did not send the focus to [3]")
+	}
+	d.Press("j", "Enter") // conf/: in
+	if !d.Has("releases/v1/conf ↔ releases/v2/conf") || !d.Has("~ app.toml") {
+		t.Fatalf("conf/ in [3]:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Press("Enter")
+	if !d.Has("+port = 9090") {
+		t.Errorf("app.toml's comparison:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Press("Esc", "Esc", "Esc") // the comparison, conf/, [3]
+	if s.app.Screen().Focused() != is.files || is.files.InMode() == nil || is.fileList.Anchor == "" {
+		t.Fatal("Esc did not go back to [2], the mode kept")
+	}
+	d.Press("Esc")
+	if is.files.InMode() != nil || is.changes.InMode() != nil || d.Has("releases/v1 ↔ releases/v2") {
+		t.Errorf("out of the mode:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Do(in.Do)
+	d.Press("Esc", "k", "D", "j", "Enter") // as before: v1/ against v2/, into the list in [2]
+	if s.app.Screen().Focused() != is.files || is.changes.InMode() != nil || !d.Has("releases/v1 ↔ releases/v2") {
+		t.Errorf("the Diff mode as before:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+}

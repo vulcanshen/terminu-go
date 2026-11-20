@@ -77,6 +77,16 @@ type Mode struct {
 	// as Panel.Inspect: while the panel is in the mode it is asked instead of
 	// the panel's, an inner layer's before an outer one's.
 	Inspect func() []string
+
+	// with is the other panel a mode spanning two is in (a Diff mode shown
+	// in a list's details, tdp panel.9): Tab and its digit go to it, Pause
+	// or not.
+	with *Panel
+	// back, when set, is what Esc does in place of leaving (the details
+	// going back to the list, the mode still on), backDesc how the key
+	// reference writes it.
+	back     func() tea.Cmd
+	backDesc string
 }
 
 // ModeKey is one of a mode's keys.
@@ -321,6 +331,7 @@ type Panel struct {
 	mode   *Mode
 	under  []*Mode      // the layers mode is in, outermost first
 	levels []*diffLevel // the lists of the items that differ gone into, the last shown (compare.go)
+	over   *diffOver    // a Diff mode's diff shown in the panel as the list's details (compare.go)
 	app    *App
 }
 
@@ -333,19 +344,26 @@ func (p *Panel) level() *diffLevel {
 }
 
 // body is what the panel shows: the list of the items that differ it went
-// into (tdp panel.9), or its Body.
+// into (tdp panel.9), a Diff mode's diff shown in it as a list's details,
+// or its Body.
 func (p *Panel) body() Body {
 	if d := p.level(); d != nil {
 		return d.list
+	}
+	if p.over != nil {
+		return p.over.body
 	}
 	return p.Body
 }
 
 // actions are the panel's actions as they are now: those of the list of the
-// items that differ it went into, or its Actions.
+// items that differ it went into or of the diff shown in it, or its Actions.
 func (p *Panel) actions() []Action {
 	if d := p.level(); d != nil {
 		return d.acts
+	}
+	if p.over != nil {
+		return p.over.acts
 	}
 	return p.Actions
 }
@@ -552,6 +570,9 @@ func (p *Panel) draw(n, w, h int, focused, pointed bool) []string {
 	where, glyph := p.Location, p.LocationGlyph
 	pb := p.body()
 	list, _ := pb.(*List)
+	if p.over != nil && p.level() == nil { // a Diff mode's diff as the details: its own, none but a list's (tdp panel.9)
+		where, glyph = "", ""
+	}
 	if (where == "" || p.level() != nil) && list != nil { // a list of the items that differ: its own (tdp panel.9)
 		where, glyph = list.Location, list.LocationGlyph
 	}
@@ -573,7 +594,10 @@ func (p *Panel) draw(n, w, h int, focused, pointed bool) []string {
 	if e, ok := pb.(interface{ Empty() bool }); ok {
 		empty = e.Empty()
 	}
-	fail := p.Fail
+	fail, loading := p.Fail, p.Loading && p.LoadingText != ""
+	if p.over != nil { // the app's failure and loading are its own content's
+		fail, loading = nil, false
+	}
 	if f, ok := pb.(interface{ Failure() *Failure }); ok {
 		if bf := f.Failure(); bf != nil { // known as it drew, just now
 			empty = true
@@ -584,7 +608,7 @@ func (p *Panel) draw(n, w, h int, focused, pointed bool) []string {
 	}
 	if empty {
 		switch {
-		case p.Loading && p.LoadingText != "":
+		case loading:
 			body = emptyState(inner, ih, loadingFrame()+" "+p.LoadingText, Fg(Overlay0), "", Style{})
 		case fail != nil:
 			body = emptyState(inner, ih, fail.Fact, Fg(Red), bracketKeys(fail.Hint), Fg(Overlay0))

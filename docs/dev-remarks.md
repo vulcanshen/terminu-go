@@ -204,6 +204,13 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   不另給 `InDiff`：沒有清單時叫它什麼都不做，app 不用先問。
   - 比較每次都在 UNIFIED 打開，選的 tab 只在那一個比較開著時有效（縮到 96 以下再拉回來，回到這次選的 SPLIT），不記（tdp e7c5b13：
     兩個 tab 只差一個鍵，不值得存）。`DiffMode.Split` 因此沒有作用，標成 Deprecated、留著讓 kbu 照樣編得過，之後的 minor 版拿掉。
+  - Diff 模式放在明細裡（`DiffMode.InDetails`，tdp panel.9 的「有明細 panel 時」）：明細由 lib 自己畫，不把那一對交給 app 畫，
+    整個家族的樣子才一樣（gittu 提的兩種裡選這一種）。明細 panel 多一個 `over`（`diffOver`：lib 的 `Pager`、差異項目的 `List` 或空狀態
+    `diffState`），`p.body()`、`p.actions()` 先看 `levels`、再看 `over`、最後才是 app 的 `Body`；app 的 `Body`、`Location`、`Fail`、
+    loading 那句與 inspect 在模式裡藏起來，app 的 `OnMove` 照常更新它們，離開模式就是 app 現在的樣子。明細在每次 Update 之後
+    （`checkCompares`）照 cursor 那一列重填，同一列不重讀；換了列，明細裡進去的那幾層一起丟掉，它們是上一對的。模式跨兩個 panel：
+    清單與明細各進一個 `Mode`（都叫 `Diff`，框都是模式色），`Mode.with` 是另一個 panel，`Pause` 照樣擋其他 panel、放行它；
+    明細那一層的 `Mode.back` 讓 `Esc` 回清單而不是離開（`leavePanelMode`），清單那一層的 `OnExit` 把明細一起帶出模式。
 
 ## 已否決，不要重提
 

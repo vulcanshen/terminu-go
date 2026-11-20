@@ -236,6 +236,17 @@ When what it shows holds many (a folder that is new, a commit), list the items t
 them (a new folder's items are all `DiffAdded`). Its `Enter` goes into that list in the panel: `app.OpenDiff(panel,
 terminu.DiffItem{Anchor: ..., Other: ..., Items: ...})` with the same items. None shows the Pager's `EmptyFact`.
 
+A list with a details panel (`panel.Details`) may show its Diff mode there instead, without opening anything or
+going into the list: set `InDetails` (which way is yours). The mode then spans the list and its details, both
+frames in the mode's colour with `Diff` on them. The details follow the cursor, no key pressed: the lib shows the
+anchor against the row under the cursor there, as `SetDiff` and `SetDiffItems` draw it, from your `Text` and
+`Items`, and an empty state on the anchor (`Move to another <Noun> to diff with <anchor>`: set `Noun`, `item`
+when empty) or on a row the same as it. The diff key or `Enter` on the list sends the focus to the details,
+where it opens an item's diff or goes into it; `Esc` comes back the way the user went, to the list with the
+anchor kept, then out of the mode, and the details show your own content again. While the mode is on, your
+content, location row, `Fail` and loading text in the details are not shown; keep them up to date as ever. The
+list's `Details` must be another panel of the same screen.
+
 ## An item of several rows
 
 A list item can take rows under its first, on the items that need them (a commit's branches and tags under it):

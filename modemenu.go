@@ -129,6 +129,9 @@ func (a *App) leavePanelMode(p *Panel) tea.Cmd {
 		p.upDiff()
 		return nil
 	}
+	if m.back != nil { // the details back to the list, the mode still on (tdp panel.9)
+		return m.back()
+	}
 	p.mode = nil
 	if n := len(p.under); n > 0 { // a layer less (tdp K11)
 		p.mode, p.under = p.under[n-1], p.under[:n-1]

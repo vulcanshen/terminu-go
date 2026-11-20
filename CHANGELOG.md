@@ -2,6 +2,27 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.2.21-beta.1 — tdp v1.2.19
+
+- A list's Diff mode may show its diff in the list's details panel (tdp main, panel.9 "With a details panel", K11,
+  panel-185, panel-186; from gittu, the user): set `DiffMode.InDetails` (the app's pick; off is as before). The mode
+  spans the list and its `Panel.Details`, both frames in the mode's colour with `Diff`, the heavy line on the one
+  with the focus, which stays on the list. The details follow the cursor with no key: the anchor against the row
+  under the cursor, UNIFIED for text, or the items that differ with their marks and the location row `<anchor> ↔
+  <the other>`; on the anchor `Move to another <Noun> to diff with <anchor>` (`DiffMode.Noun`, `item` when empty),
+  on a row the same as it `No differences between a and b`, no toast. The diff key or `Enter` on the list sends the
+  focus to the details, where it opens an item's diff or goes in; `Esc` goes back the way the user came: the diff,
+  a level, the details (`Esc:back`), the list with the anchor kept, out of the mode. `Tab` and the two panels'
+  digits move between them; the other panels wait. On a row it cannot diff the details say `Can't diff <row> with
+  <anchor>`, and a side that cannot be read is the details' error state, in Red, not an error popup (not in tdp yet;
+  for now). `AddScreen` panics when the list's `Details` is not another panel of the screen
+- D is the Diff mode's key in every app, x and X delete (tdp main, K13, K13-1 to K13-3; from kbu, the user): the lib
+  has no default key for the Diff mode, so only `DiffMode.Key`'s doc and the READMEs' example change. The showcase's
+  `[1] PODS` has its Diff on `D`, its Drag on `r` (`D[r]ag`) and `[X] Delete marked`; `[2] FILES`' Diff is on `D`,
+  and `Diff in [3]` switches it to show in `[3] CHANGES`
+- The coverage has rows for panel-185, panel-186, K13-1 to K13-3, E3-41 and E3-42 (the last two the app's), and the
+  rows that still said `C` for the Diff say `D`
+
 ## v1.2.20 — tdp v1.2.19
 
 Everything since v1.2.19, the betas v1.2.20-beta.1 and beta.2 included:

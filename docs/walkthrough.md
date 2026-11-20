@@ -97,6 +97,12 @@ go build -o /tmp/showcase ./examples/showcase
   沒改的檔寫 `No changes since 5d6e7f8`（`Enter` 停用），圖寫 `Not a text file`。在 `FOLDERS` tab 的 `releases/` 裡移到 `v2/`
   （最後一次 commit 之後新增的資料夾）：`[3]` 列出它有差異的項目、每一項帶標記，全部是 Green 的 `+`（note-106）；按 `3` 再按 `Enter`
   進到這份清單；`[2]` 的 cursor 一動，`[3]` 就離開清單、換成新的那一列。
+- Diff 模式放在明細裡（panel-185、panel-186）：在 `releases/` 裡按 `Space` 選 `Diff in [3]`，在 `v1/` 按 `D`：`[2]` 與 `[3]`
+  兩個框都變黃、都寫 `Diff`，粗線還在 `[2]`；`[3]` 寫 `Move to another file or folder to diff with releases/v1`。按 `j` 到 `v2/`：
+  不用按鍵，`[3]` 就列出 `releases/v1 ↔ releases/v2` 有差異的項目。按 `D`（或 `Enter`）focus 到 `[3]`，footer 寫 `Esc:back`；
+  在 `conf/` 按 `Enter` 進去、在 `app.toml` 按 `Enter` 打開 Diff。之後一直按 `Esc`：視窗 → `conf/` → `[3]` → `[2]`（還在模式裡、
+  anchor 還在）→ 離開模式，`[3]` 回到 cursor 那一列跟最後一次 commit 的差異。在模式裡 `Tab`、`2`、`3` 在 `[2]` 與 `[3]` 之間移動，
+  `1` 跳 `Press [Esc] to leave Diff first`。再選一次 `Diff in [3]` 回到原本的做法。
 - 篩選遇到 app 自己的動作（panel-180）：在 `releases/` 裡按 `/` 打 `v`、`Enter` 回清單，用 `D` 比 `v1/` 與 `v2/`：進去之前篩選先清掉，
   `Esc` 退回來時是整份清單、cursor 在原本那一列。
 

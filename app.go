@@ -256,12 +256,15 @@ func (a *App) AddScreen(s *Screen) *Screen {
 // anywhere but the one place tdp K3 allows: Enter, on a panel whose Details
 // is another panel of the same screen.
 func checkToDetails(s *Screen, p *Panel, act Action) error {
+	noDetails := p.Details == nil || p.Details == p || !slices.Contains(s.Panels, p.Details)
 	switch {
+	case act.inDetails && noDetails:
+		return fmt.Errorf("its Diff mode is shown in the details, and its panel's Details is not another panel of the screen (tdp panel.9)")
 	case act.ToDetails == nil:
 		return nil
 	case act.Key != "Enter":
 		return fmt.Errorf("only Enter may send the focus to the details (Rules K3)")
-	case p.Details == nil || p.Details == p || !slices.Contains(s.Panels, p.Details):
+	case noDetails:
 		return fmt.Errorf("its panel's Details is not another panel of the screen (Rules K3)")
 	}
 	return nil
@@ -805,7 +808,7 @@ func (a *App) inspectText() []string {
 		return nil
 	}
 	p := s.Focused()
-	if p == nil || p.level() != nil { // the app's inspect is about its own rows
+	if p == nil || p.level() != nil || p.over != nil { // the app's inspect is about its own rows
 		return nil
 	}
 	if p.mode != nil {
@@ -1342,9 +1345,12 @@ func (a *App) modeKeyRef(p *Panel) *noteView {
 	if l := p.modeLayers(); len(l) > 1 {
 		back = ", back to " + strings.Join(l[:len(l)-1], ">")
 	}
-	if p.inDiff() {
+	switch {
+	case p.inDiff():
 		rows = append(rows, KeyRow{Key: "Esc", Desc: "one level up"})
-	} else {
+	case p.mode.back != nil:
+		rows = append(rows, KeyRow{Key: "Esc", Desc: p.mode.backDesc})
+	default:
 		rows = append(rows, KeyRow{Key: "Esc", Desc: cmpOr(p.mode.Exit, "leave") + back})
 	}
 	core := []KeyRow{{Key: "Space", Desc: "what you can do here"}, {Key: "?", Desc: "this list"}, {Key: "q|Ctrl-C", Desc: "quit"}}
@@ -1631,23 +1637,20 @@ func (a *App) modeKey(p *Panel, key string, msg tea.KeyMsg) tea.Cmd {
 		return a.startQuit()
 	case key == "Tab" || isDigit(key) && key != "0":
 		s := a.Screen()
-		if p.mode.Pause {
-			n := (s.at() + 1) % len(s.Panels)
-			if key != "Tab" {
-				n = int(key[0] - '1')
-			}
-			if n >= len(s.Panels) || n == s.at() { // it does nothing out of the mode either (tdp K11)
-				return nil
-			}
+		n := (s.at() + 1) % len(s.Panels)
+		if w := slices.Index(s.Panels, p.mode.with); w >= 0 && key == "Tab" {
+			n = w // the other panel the mode is in (tdp panel.9)
+		}
+		if key != "Tab" {
+			n = int(key[0] - '1')
+		}
+		if n >= len(s.Panels) || n == s.at() { // it does nothing out of the mode either (tdp K11)
+			return nil
+		}
+		if p.mode.Pause && s.Panels[n] != p.mode.with {
 			return a.Toast(Info, "Press [Esc] to leave "+p.modeName()+" first")
 		}
-		if key == "Tab" {
-			return a.focusPanel(s, (s.at()+1)%len(s.Panels))
-		}
-		if n := int(key[0] - '1'); n < len(s.Panels) {
-			return a.focusPanel(s, n)
-		}
-		return nil
+		return a.focusPanel(s, n)
 	}
 	for _, k := range p.mode.Keys {
 		if k.takes(key) && k.Do != nil {
