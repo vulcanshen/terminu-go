@@ -2,6 +2,8 @@ package terminu
 
 import (
 	"fmt"
+	"math"
+	"slices"
 	"strings"
 	"testing"
 
@@ -33,22 +35,114 @@ func lineWith(lines []string, s string) (string, int) {
 	return "", -1
 }
 
+// cellBgs is each cell's background in a drawn line, "r;g;b", "" for none.
+func cellBgs(line string) []string {
+	var out []string
+	bg := ""
+	walk(line, func(seq string, cells int) {
+		if cells > 0 {
+			for range cells {
+				out = append(out, bg)
+			}
+			return
+		}
+		if !strings.HasPrefix(seq, "\x1b[") || !strings.HasSuffix(seq, "m") {
+			return
+		}
+		ps := strings.Split(seq[2:len(seq)-1], ";")
+		for i := 0; i < len(ps); i++ {
+			switch ps[i] {
+			case "", "0", "49":
+				bg = ""
+			case "38", "58":
+				if i+1 < len(ps) && ps[i+1] == "2" {
+					i += 4
+				} else {
+					i += 2
+				}
+			case "48":
+				if i+4 < len(ps) && ps[i+1] == "2" {
+					bg = strings.Join(ps[i+2:i+5], ";")
+					i += 4
+				} else {
+					bg = "?"
+					i += 2
+				}
+			}
+		}
+	})
+	return out
+}
+
+// wantFade is the fade the spec gives n cells from start into bg (tdp
+// panel.5): lerp(start, bg, 1 - (1 - x)^3), x from 0 in the first cell to 1
+// in the last, each channel rounded half up; "" for a cell within 2 of bg on
+// every channel, left unpainted.
+func wantFade(start, bg RGB, n int) []string {
+	out := make([]string, n)
+	for i := range n {
+		t := 1 - math.Pow(1-float64(i)/float64(n-1), 3)
+		var c [3]int
+		near := true
+		for k := range 3 {
+			c[k] = int(math.Floor(float64(start[k]) + (float64(bg[k])-float64(start[k]))*t + 0.5))
+			if d := c[k] - int(bg[k]); d < -2 || d > 2 {
+				near = false
+			}
+		}
+		if !near {
+			out[i] = fmt.Sprintf("%d;%d;%d", c[0], c[1], c[2])
+		}
+	}
+	return out
+}
+
+// The fades' starts the spec gives: Subtext1 and Yellow dimmed twice (tdp
+// panel.5, panel.9).
+var (
+	cursorFade = RGB{0x2f, 0x31, 0x3c}
+	anchorFade = RGB{0x3c, 0x37, 0x33}
+)
+
+// faded checks that row fades from start into the terminal's background
+// across the inside's first n cells, the arrow's cells after them unpainted.
+func faded(t *testing.T, why, row string, start RGB, n int) {
+	t.Helper()
+	bgs := cellBgs(row)
+	if len(bgs) < n {
+		t.Fatalf("%s: %d cells: %q", why, len(bgs), row)
+	}
+	if got, want := bgs[:n], wantFade(start, termBg, n); !slices.Equal(got, want) {
+		t.Errorf("%s: the fade\n got %q\nwant %q", why, got, want)
+	}
+	for _, b := range bgs[n:] {
+		if b != "" {
+			t.Errorf("%s: the arrow's cell is painted: %q", why, row)
+		}
+	}
+	for _, s := range []string{"\x1b[48;7;", "\u258c", "\x1b[4;", "58;2;"} {
+		if strings.Contains(row, s) {
+			t.Errorf("%s: %q on the row: %q", why, s, row)
+		}
+	}
+}
+
 // TestListSeveralRows: an item may take rows under its first, as many as it
 // needs; the first holds the columns, the header and the tick; what the rows
 // below hold sits under the columns, the last cell running on; the cursor is
-// drawn on the first row only, with its arrow; the other rows keep their own
-// background and colours, a Subtext1 bar down the inside's first cell beside
-// them and the item's last row underlined across the inside in Subtext1, no
-// Surface1 (tdp panel.5, panel-181, from gittu).
+// drawn on the first row only, with its arrow; the other rows keep their
+// text's colours on a background fading out across the inside, from the
+// first row's block colour dimmed twice (Subtext1: #2f313c) in its first
+// cell, dropping fast, into the terminal's own background, a cell within 2
+// of it unpainted, the arrow's cell too; no bar, no underline (tdp panel.5,
+// panel-181, from gittu).
 func TestListSeveralRows(t *testing.T) {
 	l := belowList()
 	l.ToggleMark() // c0
 	l.Key("j", tea.KeyMsg{})
 	l.ToggleMark() // c1, the cursor on it
 	lines := l.Draw(50, 14, true)
-	green := sgrRGB(true, Green.RGB)
-	bar := Fg(Subtext1).Render(glyphBar)
-	under := "\x1b[4;" + sgrUnderline(Subtext1.RGB) + "m"
+	n := 50 - Width(glyphHard)
 	first, at := lineWith(lines, "change 1")
 	below, col := lineWith(lines, "feat, v1.2")
 	if first == "" || below == "" || col != at {
@@ -57,17 +151,12 @@ func TestListSeveralRows(t *testing.T) {
 	if !strings.Contains(first, glyphHard) || strings.Contains(below, glyphHard) {
 		t.Error("the arrow is not on the first row only")
 	}
-	if !strings.HasPrefix(StripStyles(below), glyphBar) || !strings.Contains(below, bar) {
-		t.Errorf("no Subtext1 bar down the first cell: %q", below)
+	if bgs := cellBgs(below); len(bgs) != 50 || bgs[0] != "47;49;60" {
+		t.Errorf("the fade does not start from #2f313c in the inside's first cell: %q", below)
 	}
-	if !strings.HasPrefix(below, under) || !strings.Contains(below, green) {
-		t.Errorf("the item's last row is not underlined in Subtext1, its colours kept: %q", below)
-	}
-	if strings.Contains(below, sgrRGB(false, Surface1.RGB)) {
-		t.Errorf("the row below still has Surface1: %q", below)
-	}
-	if w := Width(below); w != 50 {
-		t.Errorf("the row below is %d wide, not the whole width", w)
+	faded(t, "c1", below, cursorFade, n)
+	if !strings.Contains(below, sgrRGB(true, Green.RGB)) {
+		t.Errorf("the row below lost its colours: %q", below)
 	}
 	if strings.Contains(StripStyles(below), glyphMarked) || !strings.Contains(StripStyles(first), glyphMarked) {
 		t.Error("the tick is not on the first row only")
@@ -76,47 +165,45 @@ func TestListSeveralRows(t *testing.T) {
 		t.Error("no header")
 	}
 
-	// Two rows below (c4): the bar beside both, the underline on the last only.
+	// Two rows below (c4): both fade the same.
 	l.Key("j", tea.KeyMsg{})
 	l.Key("j", tea.KeyMsg{})
 	l.Key("j", tea.KeyMsg{})
 	lines = l.Draw(50, 14, true)
 	mid, _ := lineWith(lines, "main")
 	last, _ := lineWith(lines, "release-x")
-	if !strings.HasPrefix(StripStyles(mid), glyphBar) || strings.Contains(mid, under) {
-		t.Errorf("the middle row: a bar, no underline: %q", mid)
-	}
-	if !strings.HasPrefix(StripStyles(last), glyphBar) || !strings.HasPrefix(last, under) {
-		t.Errorf("the last row: a bar and the underline: %q", last)
-	}
+	faded(t, "c4's middle row", mid, cursorFade, n)
+	faded(t, "c4's last row", last, cursorFade, n)
 	// The last cell with text runs on past its column.
 	if !strings.Contains(StripStyles(last), "runs on past") {
 		t.Errorf("the last cell is cut at its column: %q", StripStyles(last))
 	}
 
-	// Off the cursor: no marks.
-	if below, _ = lineWith(lines, "feat, v1.2"); strings.Contains(StripStyles(below), glyphBar) || strings.Contains(below, "\x1b[4;") {
-		t.Errorf("a row below off the cursor is marked: %q", below)
+	// Off the cursor: no background at all.
+	below, _ = lineWith(lines, "feat, v1.2")
+	for _, b := range cellBgs(below) {
+		if b != "" {
+			t.Errorf("a row below off the cursor is painted: %q", below)
+			break
+		}
 	}
 
-	// Typing in the filter dims the cursor once, its marks too (tdp P6).
+	// Typing in the filter dims the cursor once, the fade's start with it (tdp P6).
 	l.Key("/", tea.KeyMsg{})
-	lines = l.Draw(50, 14, true)
-	if last, _ = lineWith(lines, "release-x"); !strings.Contains(last, Fg(DimColor(Subtext1)).Render(glyphBar)) {
-		t.Errorf("the marks are not dimmed while typing: %q", last)
-	}
+	last, _ = lineWith(l.Draw(50, 14, true), "release-x")
+	faded(t, "typing", last, DimRGB(cursorFade), n)
 }
 
 // TestListAnchorSeveralRows: an anchor of several rows (tdp panel.9,
-// panel-196): its first row the Yellow anchor row; its other rows keep their
-// colours with a Yellow bar beside them and the last underlined in Yellow;
-// with the cursor on it, the first row is the cursor and the others keep the
-// Yellow marks. A dimmed panel dims the underline as it dims the text.
+// panel-196): its first row the Yellow anchor row; its other rows fade out
+// as the cursor's do, from Yellow dimmed twice (#3c3733), their text keeping
+// its colours; with the cursor on it, the first row is the cursor and the
+// others keep the Yellow fade. Dimmed, the start dims and the fade still
+// ends in the terminal's background.
 func TestListAnchorSeveralRows(t *testing.T) {
 	l := belowList()
 	l.Anchor, l.inMode = "4", true // c4, two rows below
-	bar := Fg(Yellow).Render(glyphBar)
-	under := "\x1b[4;" + sgrUnderline(Yellow.RGB) + "m"
+	n := 50 - Width(glyphHard)
 	check := func(why string) {
 		t.Helper()
 		lines := l.Draw(50, 14, true)
@@ -126,15 +213,11 @@ func TestListAnchorSeveralRows(t *testing.T) {
 		if !strings.Contains(first, sgrRGB(false, Yellow.RGB)) && !strings.Contains(first, sgrRGB(false, Subtext1.RGB)) {
 			t.Errorf("%s: the first row is neither the anchor nor the cursor: %q", why, first)
 		}
-		if !strings.Contains(mid, bar) || strings.Contains(mid, under) {
-			t.Errorf("%s: the middle row: a Yellow bar, no underline: %q", why, mid)
+		if bgs := cellBgs(mid); bgs[0] != "60;55;51" {
+			t.Errorf("%s: the fade does not start from #3c3733: %q", why, mid)
 		}
-		if !strings.Contains(last, bar) || !strings.HasPrefix(last, under) {
-			t.Errorf("%s: the last row: a Yellow bar and underline: %q", why, last)
-		}
-		if strings.Contains(mid, sgrRGB(false, Yellow.RGB)) {
-			t.Errorf("%s: a row below is filled Yellow: %q", why, mid)
-		}
+		faded(t, why+", the middle row", mid, anchorFade, n)
+		faded(t, why+", the last row", last, anchorFade, n)
 	}
 	check("the cursor elsewhere")
 	for range 4 {
@@ -149,10 +232,71 @@ func TestListAnchorSeveralRows(t *testing.T) {
 		t.Error("the cursor is not on the anchor's first row")
 	}
 
-	// Dimmed, the underline's colour dims too.
-	dim := strings.Join(DimLines(l.Draw(50, 14, false)), "\n")
-	if !strings.Contains(dim, sgrUnderline(DimRGB(Yellow.RGB))) || strings.Contains(dim, sgrUnderline(Yellow.RGB)) {
-		t.Error("the underline is not dimmed with the panel")
+	// Dimmed (tdp T2): the start dims, the fade still ends in the background.
+	mid, _ := lineWith(finishFades(DimLines(l.draw(50, 14, false, true))), "main")
+	faded(t, "dimmed", mid, DimRGB(anchorFade), n)
+}
+
+// TestListFadeDimmed: on a screen, a fade's start dims with the rest and the
+// fade still ends in the terminal's own background, on a terminal whose
+// background is not Base too: without the focus (tdp T2) and under a popup
+// (tdp F8), each dimming the start once more (tdp panel.5, panel-181).
+func TestListFadeDimmed(t *testing.T) {
+	old := termBg
+	t.Cleanup(func() { termBg = old })
+	termBg = RGB{0x30, 0x34, 0x46}
+	l := belowList()
+	l.Key("j", tea.KeyMsg{}) // c1
+	a := anySize(New("x"))
+	a.AddScreen(&Screen{Name: "S", Panels: []*Panel{{Label: "Commits", Body: l}, {Label: "Other", Body: &Pager{}}},
+		Layout: func(w, h int) []Rect { return []Rect{{0, 0, 60, h}, {60, 0, w - 60, h}} }})
+	a.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	n := 58 - Width(glyphHard) // the inside of the 60 cells, the arrow's cells unpainted
+	check := func(why string, start RGB) {
+		t.Helper()
+		row, _ := lineWith(a.Frame(), "feat, v1.2")
+		bgs := cellBgs(row)
+		if len(bgs) < 60 || bgs[0] != "" {
+			t.Fatalf("%s: %q", why, row)
+		}
+		faded(t, why, Cut(row, 1, 59), start, n)
+	}
+	check("with the focus", cursorFade)
+	a.Update(keyMsg("2"))
+	check("without the focus", DimRGB(cursorFade))
+	a.Confirm(Ask{Title: "Delete", Question: "Delete it?", Verb: "delete"}, func() tea.Cmd { return nil })
+	check("under a popup", DimRGB(DimRGB(cursorFade)))
+}
+
+// TestFadeBackgroundOSC11: the terminal's background is asked for with the
+// palette, before DA1 (OSC 11); its answer is where a fade ends, Base with
+// none (tdp color.2, color.4, panel.5); the lib's own terminal answers a
+// program in it with that background.
+func TestFadeBackgroundOSC11(t *testing.T) {
+	q := probeQueries(false)
+	if at := strings.Index(q, "\x1b]11;?\x1b\\"); at < strings.LastIndex(q, "\x1b]4;") || at > strings.Index(q, "\x1b[c") {
+		t.Errorf("the background is not asked for after the palette, before DA1: %q", q)
+	}
+	oldBg, oldPal := termBg, palette16
+	t.Cleanup(func() { termBg, palette16 = oldBg, oldPal })
+	termBg = Base.RGB
+	if _, done := parseAnswers("\x1b]4;1;rgb:f3/8b/a8\x07\x1b[?62;22c"); !done || termBg != Base.RGB {
+		t.Errorf("no answer: the background is %v, not Base", termBg)
+	}
+	for _, reply := range []string{
+		"\x1b]4;1;rgb:f3/8b/a8\x07\x1b]11;rgb:3030/3434/4646\x1b\\\x1b[?62;22c",
+		"\x1b]11;rgb:30/34/46\x07\x1b[?62;22c",
+	} {
+		termBg = Base.RGB
+		if _, done := parseAnswers(reply); !done || termBg != (RGB{0x30, 0x34, 0x46}) {
+			t.Errorf("%q: the background is %v", reply, termBg)
+		}
+	}
+	if _, done := parseAnswers("\x1b]11;rgb:3030/34"); done {
+		t.Error("an unfinished reply counted as done")
+	}
+	if r := string(vtAfter(10, 5, "\x1b]11;?\x1b\\").reply); r != "\x1b]11;rgb:3030/3434/4646\x1b\\" {
+		t.Errorf("the lib's terminal answers %q", r)
 	}
 }
 

@@ -558,10 +558,10 @@ func locationRow(glyph, loc string, w int) string {
 	return " " + Pad(Fg(Lavender).Render(glyph+TruncateLeft(Escape(loc), room-Width(glyph))), w-1)
 }
 
-// cursorColour is the colour the cursor of row r is drawn in, for the marks
-// beside the item's other rows (tdp panel.5): Subtext1 or the row's own
-// (tdp color.2), Yellow while held (Drag), dimmed once while typing in the
-// filter (tdp P6).
+// cursorColour is the colour the cursor of row r is drawn in, where the fade
+// of the item's other rows starts from (tdp panel.5): Subtext1 or the row's
+// own (tdp color.2), Yellow while held (Drag), dimmed once while typing in
+// the filter (tdp P6).
 func (l *List) cursorColour(r int) Color {
 	colour := Subtext1
 	if c := l.rows[r].CursorColor; c.Set && !l.inMode {
@@ -590,7 +590,7 @@ func (l *List) Uncover(rows int) { l.cover = rows }
 
 // Draw draws the list in w × h: the location row, the filter's typing row,
 // the header, the rows.
-func (l *List) Draw(w, h int, focused bool) []string { return l.draw(w, h, focused, true) }
+func (l *List) Draw(w, h int, focused bool) []string { return finishFades(l.draw(w, h, focused, true)) }
 
 // draw draws the list, its location row only when own: a panel draws a
 // list's location row itself (Panel.Location).
@@ -676,26 +676,21 @@ func (l *List) draw(w, h int, focused, own bool) []string {
 		r := l.view[vi]
 		if k := lines[li].below; k > 0 {
 			// A row under the item's first: under the columns, the mark
-			// column blank, its own background and colours. The cursor's
-			// item, and an anchor of several rows, are closed like a
-			// bracket: a bar down the inside's first cell beside these
-			// rows, the item's last row underlined across the inside, in
-			// the cursor's colour, an anchor's in Yellow (tdp panel.5,
+			// column blank, its text in its own colours. The cursor's
+			// item's, and an anchor's, fade out across the inside from the
+			// first row's block colour dimmed twice, the cursor's colour
+			// or Yellow, into the terminal's own background (tdp panel.5,
 			// panel.9).
-			row := indent + Repeat(" ", markW) + l.belowText(r, k-1, widths, textW-markW)
+			row := " " + Pad(indent+Repeat(" ", markW)+l.belowText(r, k-1, widths, textW-markW), w-1-arrow)
 			mark, marked := l.cursorColour(r), vi == l.cursor
 			if l.Anchor != "" && l.rowID(r) == l.Anchor {
 				mark, marked = Yellow, true // the cursor on it or not
 			}
 			if !marked {
-				out = append(out, " "+Pad(row, w-1-arrow)+Repeat(" ", arrow))
+				out = append(out, row+Repeat(" ", arrow))
 				continue
 			}
-			line := Fg(mark).Render(glyphBar) + Pad(row, w-1)
-			if li+1 >= len(lines) || lines[li+1].item != vi { // the item's last row
-				line = underlineIn(line, mark)
-			}
-			out = append(out, line)
+			out = append(out, fadeRow(row, DimRGB(DimRGB(mark.RGB)))+Repeat(" ", arrow))
 			continue
 		}
 		// mark is the row's sign on a cursor block; shown, the one drawn
@@ -749,6 +744,24 @@ func (l *List) draw(w, h int, focused, own bool) []string {
 		l.scroll = scrollText(true, l.cursor+1, 0, len(l.view))
 	}
 	return out
+}
+
+// fadeRow is row on a background fading out from start across its cells
+// into the terminal's own, its text keeping its colours (tdp panel.5): each
+// cell carries a fade's mark (fadeSGR), so a dimmed panel dims the start and
+// the fade still ends in the terminal's background.
+func fadeRow(row string, start RGB) string {
+	n := Width(row)
+	var b strings.Builder
+	col := 0
+	walk(row, func(seq string, cells int) {
+		if cells > 0 {
+			b.WriteString(fadeSGR(start, col, n))
+			col += cells
+		}
+		b.WriteString(seq)
+	})
+	return b.String() + "\x1b[0m"
 }
 
 // listLine is one line of the list's rows: a row (its index in view) or a

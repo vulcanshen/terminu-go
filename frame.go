@@ -34,7 +34,6 @@ const (
 	glyphError      = "\U000F0238" // nf-md-fire
 	glyphSuccess    = "\U000F05E0" // nf-md-check_circle
 	glyphInspect    = "\U000F0208" // nf-md-eye: the inspect toast
-	glyphBar        = "\U0000258C" // ▌: the bar down the cursor's or anchor's item of several rows (tdp panel.5)
 	glyphLog        = "\U0000F03A" // nf-fa-list: the App Log
 )
 

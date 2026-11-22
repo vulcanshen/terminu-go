@@ -2000,7 +2000,7 @@ func (a *App) Frame() []string {
 		rows, first, dx := t.drawFrame(full, LayerColor(1))
 		Composite(lines, rows, t.x+dx, t.y+first, w)
 	}
-	return lines
+	return finishFades(lines) // dimmed or not, each fade ends in the terminal's background (tdp panel.5)
 }
 
 // base is the screen under the popups: the top row, the panels, the footer.

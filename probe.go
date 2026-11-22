@@ -60,8 +60,10 @@ func (r ProbeResult) Lines() []string {
 // ssh (LC_TERMINU_ICON_WIDTH, LC_TERMINU_POWERLINE_WIDTH), then asking the
 // terminal where the cursor ended up after printing one (CPR, unix only). The palette
 // is asked for with OSC 4 at the same time; colours the terminal does not
-// report stay xterm's. Probe sets the lib's widths and palette and reports
-// what it found.
+// report stay xterm's. The terminal's background is asked for with them
+// (OSC 11), for the fade of an item's other rows (tdp panel.5, color.2); with
+// no answer it is Base. Probe sets the lib's widths, palette and background
+// and reports what it found.
 func Probe(app string) ProbeResult {
 	res := ProbeResult{IconCells: 1, PowerlineCells: 1, IconFrom: "default", PowerlineFrom: "default"}
 	iconSet := widthFromEnv(&res.IconCells, &res.IconFrom, EnvName(app, "icon width"), FamilyIconWidth, RemoteIconWidth)
@@ -99,8 +101,9 @@ type answers struct {
 
 // parseAnswers reads the terminal's replies to the probe: two cursor position
 // reports (after an icon, then after a powerline symbol, each printed from
-// column 1), any OSC 4 colour reports, and the DA1 reply that ends it all.
-// Colours it finds go into the palette.
+// column 1), any OSC 4 colour reports, the OSC 11 background report, and the
+// DA1 reply that ends it all. Colours it finds go into the palette, the
+// background into termBg.
 func parseAnswers(b string) (ans answers, done bool) {
 	cpr := 0
 	for len(b) > 0 {
@@ -110,8 +113,9 @@ func parseAnswers(b string) (ans answers, done bool) {
 		}
 		b = b[i:]
 		switch {
-		case strings.HasPrefix(b, "\x1b]4;"):
-			rest := b[len("\x1b]4;"):]
+		case strings.HasPrefix(b, "\x1b]4;"), strings.HasPrefix(b, "\x1b]11;"):
+			head := b[:strings.IndexByte(b, ';')+1]
+			rest := b[len(head):]
 			end, term := strings.IndexByte(rest, '\x07'), 1
 			if st := strings.Index(rest, "\x1b\\"); st >= 0 && (end < 0 || st < end) {
 				end, term = st, 2
@@ -119,8 +123,15 @@ func parseAnswers(b string) (ans answers, done bool) {
 			if end < 0 {
 				return ans, false
 			}
-			if setPaletteReply(rest[:end]) {
-				ans.colours++
+			switch head {
+			case "\x1b]4;":
+				if setPaletteReply(rest[:end]) {
+					ans.colours++
+				}
+			default:
+				if c, ok := rgbSpec(rest[:end]); ok {
+					termBg = c
+				}
 			}
 			b = rest[end+term:]
 		case strings.HasPrefix(b, "\x1b[?"):
@@ -160,22 +171,32 @@ func setPaletteReply(body string) bool {
 	if !ok || err != nil || idx < 0 || idx > 15 {
 		return false
 	}
-	spec, ok = strings.CutPrefix(spec, "rgb:")
+	c, ok := rgbSpec(spec)
 	if !ok {
 		return false
 	}
+	palette16[idx] = c
+	return true
+}
+
+// rgbSpec reads a colour a terminal reports, "rgb:RRRR/GGGG/BBBB".
+func rgbSpec(spec string) (RGB, bool) {
+	spec, ok := strings.CutPrefix(spec, "rgb:")
+	if !ok {
+		return RGB{}, false
+	}
 	parts := strings.Split(spec, "/")
 	if len(parts) != 3 {
-		return false
+		return RGB{}, false
 	}
 	var c RGB
 	for i, p := range parts {
 		if len(p) == 0 || len(p) > 4 {
-			return false
+			return RGB{}, false
 		}
 		v, err := strconv.ParseUint(p, 16, 16)
 		if err != nil {
-			return false
+			return RGB{}, false
 		}
 		// Keep the high 8 bits whatever the digit count: "ff" and "ffff" are both 255.
 		bits := uint(len(p) * 4)
@@ -186,13 +207,12 @@ func setPaletteReply(body string) bool {
 		}
 		c[i] = uint8(v)
 	}
-	palette16[idx] = c
-	return true
+	return c, true
 }
 
 // probeQueries is what Probe sends: an icon and a cursor position request, a
-// powerline symbol and another, the 16 palette colours, then DA1, which every
-// terminal answers, so no reply is waited for past it.
+// powerline symbol and another, the 16 palette colours, the background, then
+// DA1, which every terminal answers, so no reply is waited for past it.
 func probeQueries(widths bool) string {
 	var b strings.Builder
 	if widths {
@@ -201,6 +221,7 @@ func probeQueries(widths bool) string {
 	for i := range 16 {
 		b.WriteString("\x1b]4;" + strconv.Itoa(i) + ";?\x1b\\")
 	}
+	b.WriteString("\x1b]11;?\x1b\\")
 	b.WriteString("\x1b[c")
 	return b.String()
 }

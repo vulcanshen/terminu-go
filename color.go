@@ -124,26 +124,15 @@ func (s Style) Render(text string) string {
 // sgrAt matches an SGR sequence at the start of a string.
 var sgrAt = regexp.MustCompile(`^\x1b\[[0-9;:]*m`)
 
-// onBlock draws styled text on a cursor block: every character turns to the
-// block's style, Base on the block's colour, except the swatches, runs of █
-// whose content is a colour, which keep their own (tdp
-// color.2).
-// underlineIn is s underlined across in c (SGR 58), its text keeping its own
-// colours: the last row of an item of several rows under the cursor or the
-// anchor (tdp panel.5, panel.9). A terminal that cannot colour an underline
-// draws it in each cell's text colour.
-func underlineIn(s string, c Color) string {
-	on := "\x1b[4;" + sgrUnderline(c.RGB) + "m"
-	s = strings.ReplaceAll(s, "\x1b[0m", "\x1b[0m"+on)
-	s = strings.ReplaceAll(s, "\x1b[m", "\x1b[m"+on)
-	return on + s + "\x1b[0m"
-}
-
 // sgrUnderline is the SGR parameters for an underline in c.
 func sgrUnderline(c RGB) string {
 	return "58;2;" + strconv.Itoa(int(c[0])) + ";" + strconv.Itoa(int(c[1])) + ";" + strconv.Itoa(int(c[2]))
 }
 
+// onBlock draws styled text on a cursor block: every character turns to the
+// block's style, Base on the block's colour, except the swatches, runs of █
+// whose content is a colour, which keep their own (tdp
+// color.2).
 func onBlock(s string, block Style) string {
 	var out, plain strings.Builder // plain: the text waiting to go on the block
 	flush := func() {
@@ -235,6 +224,70 @@ func DimColor(c Color) Color {
 		return c
 	}
 	return Color{RGB: DimRGB(c.RGB), Set: true}
+}
+
+// --- the fade of an item's other rows (tdp panel.5, color.2) -------------
+
+// termBg is the terminal's own background, where a fade ends: Base until
+// Probe asks the terminal (OSC 11, tdp color.2, color.4).
+var termBg = Base.RGB
+
+// fadeSGR marks cell i of a fade n cells long from start into the terminal's
+// background. The mark is the lib's own, never sent to a terminal: Dim dims
+// its start as it dims any colour, so a dimmed fade still ends in the
+// terminal's background (tdp T2, F8), and finishFades writes the cell's
+// colour once the screen is drawn.
+func fadeSGR(start RGB, i, n int) string { return "\x1b[" + fadeParams(start, i, n) + "m" }
+
+func fadeParams(start RGB, i, n int) string {
+	return "48;7;" + strconv.Itoa(int(start[0])) + ";" + strconv.Itoa(int(start[1])) + ";" + strconv.Itoa(int(start[2])) +
+		";" + strconv.Itoa(i) + ";" + strconv.Itoa(n)
+}
+
+// fadeMark matches a fade's mark.
+var fadeMark = regexp.MustCompile(`\x1b\[48;7;(\d+);(\d+);(\d+);(\d+);(\d+)m`)
+
+// fadeColor is cell i of n of a fade from start into the terminal's
+// background: lerp(start, background, 1 − (1 − x)³), x going from 0 in the
+// first cell to 1 in the last, each channel rounded half up. It is false for
+// a cell within 2 of the background on every channel, left unpainted
+// (tdp panel.5).
+func fadeColor(start RGB, i, n int) (RGB, bool) {
+	x := 0.0
+	if n > 1 {
+		x = float64(i) / float64(n-1)
+	}
+	left := 1 - x
+	t := 1 - left*left*left
+	var c RGB
+	paint := false
+	for k := range c {
+		v := float64(start[k]) + (float64(termBg[k])-float64(start[k]))*t
+		c[k] = uint8(v + 0.5)
+		if d := int(c[k]) - int(termBg[k]); d < -2 || d > 2 {
+			paint = true
+		}
+	}
+	return c, paint
+}
+
+// finishFades writes every fade's mark in lines as its cell's colour, or
+// the terminal's own background for a cell left unpainted (tdp panel.5).
+func finishFades(lines []string) []string {
+	for i, l := range lines {
+		if strings.Contains(l, "\x1b[48;7;") {
+			lines[i] = fadeMark.ReplaceAllStringFunc(l, func(m string) string {
+				p := fadeMark.FindStringSubmatch(m)
+				v := func(k int) int { n, _ := strconv.Atoi(p[k]); return n }
+				c, paint := fadeColor(RGB{uint8(v(1)), uint8(v(2)), uint8(v(3))}, v(4), v(5))
+				if !paint {
+					return "\x1b[49m"
+				}
+				return "\x1b[" + sgrRGB(false, c) + "m"
+			})
+		}
+	}
+	return lines
 }
 
 // palette16 is the terminal's 16 colours: xterm's until Probe asks the
@@ -359,6 +412,21 @@ func dimSGR(params string) string {
 				idx, _ := strconv.Atoi(ps[i+2])
 				c = color256(idx)
 				i += 2
+			case "7": // a fade's mark: its start dims, it still ends in the terminal's background (tdp panel.5)
+				if n != 48 || i+6 >= len(ps) {
+					out = append(out, ps[i:]...)
+					i = len(ps)
+					continue
+				}
+				for k := range 3 {
+					v, _ := strconv.Atoi(ps[i+2+k])
+					c[k] = uint8(v)
+				}
+				cell, _ := strconv.Atoi(ps[i+5])
+				cells, _ := strconv.Atoi(ps[i+6])
+				out = append(out, fadeParams(DimRGB(c), cell, cells))
+				i += 6
+				continue
 			default:
 				out = append(out, p)
 				continue
