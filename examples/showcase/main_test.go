@@ -928,3 +928,33 @@ func TestAppLogNames(t *testing.T) {
 		t.Errorf("the App Log does not show the code by name:\n%s", strings.Join(d.Screen(), "\n"))
 	}
 }
+
+// [R]EVIEW's right side follows the leading panel that last had the focus
+// (tdp L5, L5-4; from gittu): DIFF and HISTORY under CHANGES, the third
+// place hidden and its digit doing nothing; COMMITS, DESCRIPTION, FILES
+// under BRANCHES; moving into them changes nothing; numbers by place.
+func TestReviewFollows(t *testing.T) {
+	s := newShowcase()
+	d := tdptest.Start(t, s.app, 140, 40)
+	d.Press("R")
+	focused := func() *terminu.Panel { return s.app.Screen().Focused() }
+	if !d.Has("[3] DIFF") || !d.Has("[4] HISTORY") || d.Has("[5]") || !d.Has("Tab|1–5:panels") {
+		t.Fatalf("CHANGES leading:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Press("5")
+	if focused() != s.review.panels["Changes"] {
+		t.Errorf("the hidden place's digit went to %s", focused().Label)
+	}
+	d.Press("2")
+	if !d.Has("[3] COMMITS") || !d.Has("[4] DESCRIPTION") || !d.Has("[5] FILES") || d.Has("DIFF") {
+		t.Errorf("BRANCHES leading:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Press("5")
+	if focused() != s.review.panels["Files"] || !d.Has("[3] COMMITS") {
+		t.Errorf("into the right side something changed: %s\n%s", focused().Label, strings.Join(d.Screen(), "\n"))
+	}
+	d.Press("1")
+	if !d.Has("[3] DIFF") || d.Has("FILES") {
+		t.Errorf("CHANGES again:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+}

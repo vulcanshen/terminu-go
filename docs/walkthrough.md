@@ -159,6 +159,12 @@ go build -o /tmp/showcase ./examples/showcase
   （常暗）；框上只有名字、沒有號碼，footer 寫 `Tab|1–2`。一直按 `Tab`、按 `3`、`4`：focus 只在 `[1]`、`[2]` 之間；按 `Space`：兩塊都跟著
   變暗。在 `deployments` 上按 `f`，`SUMMARY` 換成 `Opens on deployments`。縮到 60 × 32 時兩塊的字都放得下。
 
+**R — Review**：跟著帶頭 panel 換的 panel（L5-4）。
+- 左邊是兩塊帶頭的：`[1] CHANGES` 與 `[2] BRANCHES`；右上是說明牌 `REPO`（沒有號碼）。
+- 一開始 focus 在 `[1] CHANGES`：右邊是 `[3] DIFF`、`[4] HISTORY`，第五個位置收起、兩塊平分空間，按 `5` 沒反應。
+- 按 `2`：右邊換成 `[3] COMMITS`、`[4] DESCRIPTION`、`[5] FILES`。按 `Tab` 或 `3`～`5` 進右邊，什麼都不換；再按 `1`，又是 DIFF 與
+  HISTORY，每次都一樣。footer 一直寫 `Tab|1–5`。
+
 **splash**：在 panel 上按 `V`（I 的 `[2] FILES` 除外），任意鍵關掉。畫的是 tdp 的 mark（藍色 U 框裡一個金色的 T），底 → T → U 框一段一段揭露，最後是下面的字。
 
 ## `Esc` 與 `Alt-Esc`

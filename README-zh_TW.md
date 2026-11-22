@@ -312,6 +312,14 @@ pods.Note = func() []string {
 
 附註取代的 inspect toast（`Panel.Inspect`、`Mode.Inspect`）暫時照樣能用，之後的 minor 版拿掉。
 
+## 跟著帶頭 panel 換的 panel
+
+畫面上有些位置可以跟著「幾塊帶頭的 panel 裡，最後拿到 focus 的那一塊」換（tdp L5）：例如 git 工具的右邊，帶頭的是分支時顯示
+commit，是改動的檔案時顯示那個檔的 diff 與 history。跟著的位置寫在 `Screen.Following`（`Panels` 的索引），每一塊帶頭的 panel
+要顯示什麼寫在 `Screen.Leads`：`terminu.Lead{Panel: changes, Shows: []*terminu.Panel{diff, history, nil}}`，`nil` 是收起那個位置。
+focus 移到帶頭的 panel 時，lib 把它的那幾塊放進那些位置；focus 移進它們時什麼都不換。號碼照位置：一個位置的 `[N]` 不管顯示什麼
+都不變，收起的也是，收著時它的數字鍵不作用。app 的 `Layout` 用 `screen.Hidden(i)` 把收起那塊的空間給旁邊。
+
 ## 說明牌
 
 只用來說明的 panel（例：遊戲旁邊的 NEXT、INFO、KEYS，圖例）是說明牌（tdp panel.17）：`Sign` 設成 `terminu.SignLit`

@@ -180,6 +180,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]iff`（M4：panel 的熱鍵優�
 | L3 | footer、statusbar、tab 列列數鎖死；放不下截斷或從尾端捨，不折行 | 縮到 30 欄 | `TestL3ChromeRowsFixed` |
 | L4 | 每一列剛好等於終端機寬度 | 每個畫面、每種 popup，多種尺寸（含 5 列以下與 1×1：popup 被截掉、不 panic），icon 一格與兩格；app 的文字裡有 Tab 時一樣 | `TestL4EveryRowFullWidth`、`TestE3TabsDrawnAsSpaces`；展示場的 `TestFirstLaunch` 與 tdptest 的 `TestTrickyValuesEverywhere`、`TestSizesAndMashes`（每處理一個 message 量一次） |
 | L5 | focus 不只靠顏色（粗線與細線）；切換 focus 內容不位移 | `Tab` 換 panel；Drag 模式裡照樣看得出 focus | `TestL5FocusNotColorOnly`、`TestL5NoShift` |
+| L5 | 唯一的例外：跟著帶頭 panel 換的 panel，由 app 固定：focus 換到另一塊帶頭的 panel 時，跟著的那幾個位置換內容、可以收起一塊、旁邊的變寬，同一塊帶頭的每次都一樣；focus 移進跟著的位置時什麼都不換；號碼照位置，一個位置的 `[N]` 不管顯示什麼都不變（footer 的 `1–N`、`?`、標題），收起的那塊收著時數字鍵不作用（L5-4，來自 gittu）。lib：`Screen.Leads`（`Lead{Panel, Shows}`）與 `Screen.Following`（跟著的位置），`nil` 收起；`Screen.Hidden(i)` 給 app 的 Layout 把收起那塊的空間給旁邊；沒有 Layout 時顯示的位置平分寬度；`AddScreen` 先顯示有 focus 的那塊帶頭的（沒有就第一塊） | R：`[1] CHANGES` 時右邊是 `[3] DIFF`、`[4] HISTORY`、第五個位置收起（按 `5` 沒反應）；按 `2` 換成 `[3] COMMITS`、`[4] DESCRIPTION`、`[5] FILES`；`Tab` 或數字鍵進右邊，什麼都不換 | `TestL5Follow`、showcase 的 `TestReviewFollows` |
 
 ## Rules — F Popup
 

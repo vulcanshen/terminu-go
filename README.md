@@ -369,6 +369,16 @@ pods.Note = func() []string {
 `Panel.Inspect` and `Mode.Inspect`, the inspect toast the note replaces, still work for now; they go in a later minor
 version.
 
+## Panels that follow a leading panel
+
+Some places of a screen may follow whichever of a few leading panels last had the focus (tdp L5): a git tool's right
+side showing a branch's commits while the branches lead, a file's diff and history while the changes do. List the
+places that follow in `Screen.Following` (indexes into `Panels`) and, for each leading panel, what they show in
+`Screen.Leads`: `terminu.Lead{Panel: changes, Shows: []*terminu.Panel{diff, history, nil}}`, `nil` hiding a place.
+When the focus moves to a leading panel, the lib puts its panels in those places; moving into them changes nothing.
+Numbers go by place: a place keeps its `[N]` whatever it shows, a hidden one too, its digit doing nothing while it is
+hidden. Your `Layout` asks `screen.Hidden(i)` to give a hidden place's room to its neighbour.
+
 ## A sign
 
 A panel that only tells (a game's NEXT, INFO and KEYS, a legend) is a sign (tdp panel.17): set `Sign` to

@@ -2,6 +2,15 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.3.1-beta.2 — tdp v1.3.0
+
+- Panels that follow a leading panel (tdp main, L5, L5-4; from gittu, the user): `Screen.Following` lists the places
+  that follow, `Screen.Leads` what each leading panel shows there (`Lead{Panel, Shows}`, `nil` hiding a place). When
+  the focus moves to a leading panel, the lib puts its panels in those places, the same every time; moving into them
+  changes nothing. Numbers go by place: a place keeps its `[N]` whatever it shows, a hidden one too, its digit doing
+  nothing while it is hidden. `Screen.Hidden(i)` lets the app's `Layout` give a hidden place's room to its
+  neighbour; with no `Layout` the shown places share the width. The showcase has a [R]EVIEW screen
+
 ## v1.3.1-beta.1 — tdp v1.3.0
 
 - An item of several rows is closed like a bracket (tdp main, panel.5, panel.9, panel-181 reworded, panel-196; from

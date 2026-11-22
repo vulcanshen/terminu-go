@@ -33,9 +33,60 @@ type Screen struct {
 	// across the whole width (tdp screen.5); at most 60, where every panel
 	// is side by side (tdp L1).
 	NarrowBelow int
+	// Leads and Following tie places of the screen to the leading panel
+	// that last had the focus (tdp L5, panels that follow a leading panel):
+	// Following are the places (indexes into Panels) that follow; while a
+	// Lead's Panel is the last of the leading panels to have had the focus,
+	// place Following[k] shows its Shows[k], nil hiding that place. The
+	// same leading panel always shows the same; the focus moving into the
+	// following places changes nothing. A place keeps its [N] whatever it
+	// shows, a hidden one too, its digit doing nothing while it is hidden
+	// (tdp K1). AddScreen shows the leading panel with the focus, else the
+	// first; Layout asks Hidden to widen a hidden place's neighbour, and
+	// with no Layout the shown places share the width.
+	Leads     []Lead
+	Following []int
 
-	focus int
-	held  *Panel // the panel with the focus, kept when panels come and go
+	focus  int
+	held   *Panel // the panel with the focus, kept when panels come and go
+	hidden map[int]bool
+}
+
+// Lead is one leading panel and what the following places show while it is
+// the last of the leading panels to have had the focus (Screen.Leads).
+type Lead struct {
+	Panel *Panel
+	Shows []*Panel
+}
+
+// Hidden reports whether place i is hidden now, the leading panel that last
+// had the focus showing nothing there (Screen.Leads): Layout gives its room
+// to its neighbour.
+func (s *Screen) Hidden(i int) bool { return s.hidden[i] }
+
+// follow shows in the following places what leading panel p shows, when p
+// is one (tdp L5); the same every time.
+func (s *Screen) follow(p *Panel) {
+	if p == nil {
+		return
+	}
+	for _, l := range s.Leads {
+		if l.Panel != p {
+			continue
+		}
+		s.hidden = map[int]bool{}
+		for k, place := range s.Following {
+			if k >= len(l.Shows) || place < 0 || place >= len(s.Panels) {
+				continue
+			}
+			if l.Shows[k] == nil {
+				s.hidden[place] = true
+				continue
+			}
+			s.Panels[place] = l.Shows[k]
+		}
+		return
+	}
 }
 
 // Focused is the panel with the focus.
@@ -65,8 +116,12 @@ func (s *Screen) at() int {
 }
 
 // takes reports whether panel i can take the focus: every panel but a sign
-// (tdp panel.17).
-func (s *Screen) takes(i int) bool { return i >= 0 && i < len(s.Panels) && s.Panels[i].Sign == 0 }
+// (tdp panel.17), and but a place hidden now (Leads).
+func (s *Screen) takes(i int) bool { return s.hasNum(i) && !s.hidden[i] }
+
+// hasNum reports whether place i has a number: every place but a sign's, a
+// hidden one keeping its own (tdp K1, L5).
+func (s *Screen) hasNum(i int) bool { return i >= 0 && i < len(s.Panels) && s.Panels[i].Sign == 0 }
 
 // step is the place of the next panel after i that can take the focus, d 1
 // forward or -1 back, round the end (tdp K2); i itself when there is no
@@ -81,25 +136,26 @@ func (s *Screen) step(i, d int) int {
 	return i
 }
 
-// num is panel i's [N]: the panels that can take the focus are numbered
-// among themselves, from 1; a sign has none, 0 (tdp K1, panel.17).
+// num is place i's [N]: the places that have a number are numbered among
+// themselves, from 1, by place, whatever they show; a sign has none, 0 (tdp
+// K1, panel.17, L5).
 func (s *Screen) num(i int) int {
-	if !s.takes(i) {
+	if !s.hasNum(i) {
 		return 0
 	}
 	n := 1
 	for j := range i {
-		if s.takes(j) {
+		if s.hasNum(j) {
 			n++
 		}
 	}
 	return n
 }
 
-// numbered is the place of panel [n], -1 for none.
+// numbered is the place of [n], -1 for none; a hidden one is still it.
 func (s *Screen) numbered(n int) int {
 	for i := range s.Panels {
-		if s.takes(i) {
+		if s.hasNum(i) {
 			if n--; n == 0 {
 				return i
 			}
@@ -108,11 +164,12 @@ func (s *Screen) numbered(n int) int {
 	return -1
 }
 
-// count is how many panels have a number: the ones that can take the focus.
+// count is how many places have a number: all but the signs, a hidden one
+// too (tdp L5).
 func (s *Screen) count() int {
 	n := 0
 	for i := range s.Panels {
-		if s.takes(i) {
+		if s.hasNum(i) {
 			n++
 		}
 	}
@@ -318,6 +375,28 @@ func (a *App) AddScreen(s *Screen) *Screen {
 		if p.Sign != 0 && (len(p.Actions) > 0 || len(p.Tabs) > 0) {
 			panic(fmt.Sprintf("terminu: sign %s: a sign has no actions and no tabs, never taking the focus (tdp panel.17)", p.Label))
 		}
+	}
+	for _, l := range s.Leads {
+		if !slices.Contains(s.Panels, l.Panel) || len(l.Shows) != len(s.Following) {
+			panic(fmt.Sprintf("terminu: screen %s: a Lead's Panel must be a place and its Shows one for each of Following (tdp L5)", s.Name))
+		}
+		for _, p := range l.Shows {
+			if p != nil {
+				p.app = a
+			}
+		}
+	}
+	for _, place := range s.Following {
+		if place < 0 || place >= len(s.Panels) || slices.ContainsFunc(s.Leads, func(l Lead) bool { return s.Panels[place] == l.Panel }) {
+			panic(fmt.Sprintf("terminu: screen %s: Following holds a place that is not one, or a leading panel (tdp L5)", s.Name))
+		}
+	}
+	if len(s.Leads) > 0 {
+		first := s.Leads[0].Panel
+		if f := s.Focused(); slices.ContainsFunc(s.Leads, func(l Lead) bool { return l.Panel == f }) {
+			first = f
+		}
+		s.follow(first)
 	}
 	if len(s.Panels) > 0 && s.count() == 0 {
 		panic(fmt.Sprintf("terminu: screen %s: every panel is a sign, and one must take the focus (tdp panel.17)", s.Name))
@@ -1807,6 +1886,7 @@ func (a *App) focusPanel(s *Screen, i int) tea.Cmd {
 		return nil
 	}
 	s.focus, s.held = i, s.Panels[i]
+	s.follow(s.Panels[i]) // a leading panel: the following places show for it (tdp L5)
 	a.focusChanged()
 	return nil
 }
@@ -1974,11 +2054,21 @@ func (a *App) panelArea(w, top, h int) []string {
 	var rects []Rect
 	if s.Layout != nil {
 		rects = s.Layout(w, h)
-	} else {
-		x := 0
+	} else { // side by side, the shown places sharing the width (tdp L5)
+		shown := 0
 		for i := range s.Panels {
-			pw := w / len(s.Panels)
-			if i == len(s.Panels)-1 {
+			if !s.hidden[i] {
+				shown++
+			}
+		}
+		x, k := 0, 0
+		for i := range s.Panels {
+			if s.hidden[i] {
+				rects = append(rects, Rect{})
+				continue
+			}
+			pw := w / max(shown, 1)
+			if k++; k == shown {
 				pw = w - x
 			}
 			rects = append(rects, Rect{X: x, Y: 0, W: pw, H: h})
@@ -1991,6 +2081,9 @@ func (a *App) panelArea(w, top, h int) []string {
 			break
 		}
 		r := rects[i]
+		if s.hidden[i] { // hidden while the leading panel shows nothing there (tdp L5)
+			continue
+		}
 		if fp, ok := p.Body.(*FilePreview); ok {
 			fp.hide = a.HideSecretsInPreview // the app's setting, as a file-picker's preview has it
 		}
