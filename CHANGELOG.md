@@ -2,6 +2,35 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.3.1 — tdp v1.3.1
+
+A patch, with tdp's. Everything since v1.3.0, the betas v1.3.1-beta.1 and beta.2 included:
+
+- Panels that follow a leading panel (tdp L5, L5-4; from gittu): `Screen.Following` lists the places that follow,
+  `Screen.Leads` what each leading panel shows there (`Lead{Panel, Shows}`, `nil` hiding a place). When the focus
+  moves to a leading panel, the lib puts its panels in those places, the same every time; moving into them changes
+  nothing. Numbers go by place: a place keeps its `[N]` whatever it shows, a hidden one too, its digit doing nothing
+  while it is hidden. `Screen.Hidden(i)` lets the app's `Layout` give a hidden place's room to its neighbour; with no
+  `Layout` the shown places share the width. The showcase has a [R]EVIEW screen
+- `AddScreen` takes an `Enter` that sends the focus to a panel's details when the details are on the screen whenever
+  that panel has the focus (tdp K3, L5; from gittu): in a place that does not follow, or in the `Shows` of every
+  leading panel that can be the last to have had the focus, a leading panel's own, a following panel's those showing
+  it. Before, only the panels of `Screen.Panels` counted, so a leading panel's details in its own `Shows` were
+  refused. The actions of the panels only the following places show are checked too
+- An item of several rows fades out (tdp panel.5, panel.9, panel-181 and panel-196 reworded; from gittu, the user;
+  the bar and underline of v1.3.1-beta.1 are gone): the cursor stays on the first row with its arrow; the item's
+  other rows keep their text's colours on a background fading out across the inside, from the first row's block
+  colour dimmed twice (Subtext1 `#2f313c`, the row's own colour, Yellow `#3c3733` for an anchor or a held row) into
+  the terminal's own background, `lerp(start, background, 1 − (1 − x)³)`, a cell within 2 of it unpainted, the
+  arrow's cells too. Without the focus (T2) and under a popup (F8) only the start dims, so the fade still ends in
+  the terminal's background
+- The terminal's background is asked for at startup with the palette (tdp color.2, color.4): `Probe` sends OSC 11
+  before DA1, Base with no answer. The lib's terminal answers a program's OSC 11 with it, no longer with Base
+- Opening an item's note goes in the App Log, `Opened the note of <item>`, written by the lib (tdp panel.18, note.7;
+  from webu): a list's row by its first cell, else the note's first line. The head coming and going does not
+- The READMEs no longer say that `App.Notify` joins a late notice into the start's toast: each notice is a toast of
+  its own, stacked
+
 ## v1.3.1-beta.2 — tdp v1.3.0
 
 - Panels that follow a leading panel (tdp main, L5, L5-4; from gittu, the user): `Screen.Following` lists the places
