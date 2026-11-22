@@ -356,7 +356,15 @@ func New(name string) *App { return &App{Name: name} }
 // not the app's to take (tdp K1, K12), or has a list with both Marks and
 // Flags (tdp panel.7): that is a mistake in the program.
 func (a *App) AddScreen(s *Screen) *Screen {
-	for i, p := range s.Panels {
+	all := slices.Clone(s.Panels) // and the panels the following places may show (tdp L5)
+	for _, l := range s.Leads {
+		for _, p := range l.Shows {
+			if p != nil && !slices.Contains(all, p) {
+				all = append(all, p)
+			}
+		}
+	}
+	for i, p := range all {
 		p.app = a
 		for _, act := range p.Actions {
 			if err := checkPanelKey(act.Key); err != nil {
@@ -409,7 +417,7 @@ func (a *App) AddScreen(s *Screen) *Screen {
 // anywhere but the one place tdp K3 allows: Enter, on a panel whose Details
 // is another panel of the same screen.
 func checkToDetails(s *Screen, p *Panel, act Action) error {
-	noDetails := p.Details == nil || p.Details == p || !slices.Contains(s.Panels, p.Details) || p.Details.Sign != 0
+	noDetails := p.Details == nil || p.Details == p || !s.detailsShown(p) || p.Details.Sign != 0
 	switch {
 	case act.inDetails && noDetails:
 		return fmt.Errorf("its Diff mode is shown in the details, and its panel's Details is not another panel of the screen (tdp panel.9)")
@@ -421,6 +429,38 @@ func checkToDetails(s *Screen, p *Panel, act Action) error {
 		return fmt.Errorf("its panel's Details is not another panel of the screen (Rules K3)")
 	}
 	return nil
+}
+
+// detailsShown reports whether p's Details is on the screen whenever p has
+// the focus (tdp K3, L5): in a place that does not follow, or shown by every
+// leading panel that can be the last to have had the focus while p has it:
+// p itself when it leads, those showing p when it follows, else every one.
+func (s *Screen) detailsShown(p *Panel) bool {
+	d := p.Details
+	for i, q := range s.Panels {
+		if q == d && !slices.Contains(s.Following, i) {
+			return true
+		}
+	}
+	var leads []Lead
+	for _, l := range s.Leads {
+		if l.Panel == p {
+			leads = []Lead{l}
+			break
+		}
+		if slices.Contains(l.Shows, p) {
+			leads = append(leads, l)
+		}
+	}
+	if leads == nil && slices.Contains(s.Panels, p) {
+		leads = s.Leads
+	}
+	for _, l := range leads {
+		if !slices.Contains(l.Shows, d) {
+			return false
+		}
+	}
+	return len(leads) > 0
 }
 
 // checkPanelKey refuses a hotkey that a core key or a movement letter owns

@@ -1,8 +1,11 @@
 package terminu
 
 import (
+	"fmt"
 	"strings"
 	"testing"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 // leadApp is a screen whose right side follows the leading panel that last
@@ -119,4 +122,62 @@ func TestL5Follow(t *testing.T) {
 	}()
 	New("x").AddScreen(&Screen{Name: "S", Panels: []*Panel{ps["Changes"], ps["Diff"]}, Following: []int{1},
 		Leads: []Lead{{Panel: ps["Changes"], Shows: nil}}})
+}
+
+// TestL5DetailsK3: Enter may send the focus to the details when the
+// details are on the screen whenever its panel has the focus (tdp K3, L5;
+// from gittu): a leading panel's details in its own Shows, a following
+// panel's in the Shows of the lead showing it; a details only another lead
+// shows is refused, Enter there would go to a hidden panel.
+func TestL5DetailsK3(t *testing.T) {
+	build := func(set func(ps map[string]*Panel)) (*App, map[string]*Panel, error) {
+		ps := map[string]*Panel{}
+		for _, n := range []string{"Changes", "Branches", "Diff", "History", "Commits", "Description", "Files"} {
+			ps[n] = &Panel{Label: n, Body: &Pager{}}
+		}
+		set(ps)
+		a := anySize(New("x"))
+		var err error
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+					err = fmt.Errorf("%v", r)
+				}
+			}()
+			a.AddScreen(&Screen{Name: "S", // in BRANCHES's layout, as gittu starts it
+				Panels:    []*Panel{ps["Changes"], ps["Branches"], ps["Commits"], ps["Description"], ps["Files"]},
+				Following: []int{2, 3, 4},
+				Leads: []Lead{
+					{Panel: ps["Changes"], Shows: []*Panel{ps["Diff"], ps["History"], nil}},
+					{Panel: ps["Branches"], Shows: []*Panel{ps["Commits"], ps["Description"], ps["Files"]}},
+				}})
+		}()
+		return a, ps, err
+	}
+	toDetails := func(p, d *Panel) {
+		p.Details = d
+		p.Actions = []Action{{Key: "Enter", Label: "Show", Scope: PanelScope, ToDetails: func() bool { return true }, Do: func() tea.Cmd { return nil }}}
+	}
+
+	a, ps, err := build(func(ps map[string]*Panel) { toDetails(ps["Changes"], ps["Diff"]) })
+	if err != nil {
+		t.Fatalf("a lead's details in its own Shows was refused: %v", err)
+	}
+	a.Update(tea.WindowSizeMsg{Width: 120, Height: 30})
+	a.Update(keyMsg("Enter"))
+	if f := a.Screen().Focused(); f != ps["Diff"] {
+		t.Errorf("Enter on CHANGES went to %s, not its details", f.Label)
+	}
+	if _, _, err = build(func(ps map[string]*Panel) { toDetails(ps["Changes"], ps["Commits"]) }); err == nil {
+		t.Error("a lead's details only another lead shows was taken")
+	}
+	if _, _, err = build(func(ps map[string]*Panel) { toDetails(ps["Commits"], ps["Description"]) }); err != nil {
+		t.Errorf("a following panel's details shown by the same lead was refused: %v", err)
+	}
+	if _, _, err = build(func(ps map[string]*Panel) { toDetails(ps["Commits"], ps["History"]) }); err == nil {
+		t.Error("a following panel's details another lead shows was taken")
+	}
+	if _, _, err = build(func(ps map[string]*Panel) { ps["Diff"].Actions = []Action{{Key: "q", Label: "Quit"}} }); err == nil {
+		t.Error("a following panel's action on a core key was taken: its actions are not checked")
+	}
 }
