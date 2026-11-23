@@ -183,6 +183,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]iff`（M4：panel 的熱鍵優�
 | L1 | 60 × 32 能完成所有核心任務、所有 panel 並排；放不下所有 panel 時照 screen 的窄寬 | 終端機開 60 × 32 走一遍；`Narrow layout`；tdptest 的 `Check` 在 60 × 32 跑一輪 | `TestL1Core60x32`、`TestScreenNarrow`、`TestOnResize`（lib：`App.OnResize`，app 照寬度重排） |
 | L1 | 最低尺寸預設 60×32、app 可以調低不能高於（lib：`App.MinWidth`、`MinHeight`，高過的當成 60×32；tdptest 的 `Check` 報出來）；比它小時只在正中央畫三列：名稱（Blue 粗體）、`needs a terminal of at least W×H`、`Press [Ctrl-C] twice to quit`（都是 Overlay0）（screen.7），放不下先拿掉提示、再拿掉怎麼離開那一列，一列比畫面寬也算放不下（28～33 欄只剩名稱與怎麼離開），名稱畫得下多少畫多少，到 1×1 不當掉；按鍵都不作用、不送進 PTY，只有連按兩次 `Ctrl-C` 立刻離開；狀態保留，拉大回到原本的畫面 | 展示場的最低尺寸是 60×20：把視窗縮到比它小 | `TestL1LeastSize`、`TestCheckLimits`；展示場的 `TestFirstLaunch`（只縮寬、只縮高、30 欄、兩列、80×5、一列、1×1，開著 popup 縮小再放回） |
 | L2 | 標題、statusbar、chip 等動態文字固定寬度；一列裡最後一個動態欄位可以不補空白 | statusbar 的錯誤與警告數（`%-3d`，固定寬）、最後的 `copying: 4%`（不補）；panel 標題換 tab | `TestL2FixedWidthChrome` |
+| L2 | 固定寬度的欄位用什麼補由 app 決定：前面補 0（`01`）或後面補空白（`1 `），膠囊裡也一樣，補的空白算字的一部分；glyph 與它後面的字之間不超過一格（L2-2，user 2026-11-23，來自 kbu） | lib：panel 的標題與 tab、畫面 chip、popup 的 tab 都照 app 寫的字畫，字尾的空白不修掉、算進寬度，選中的段一起填色，`RELATIVES 1 ` 到 `RELATIVES 10` 後面的 tab 不動；用什麼補、glyph 後面空幾格由 app 寫 | `TestPanel38PaddedText` |
 | L3 | footer、statusbar、tab 列列數鎖死；放不下截斷或從尾端捨，不折行 | 縮到 30 欄 | `TestL3ChromeRowsFixed` |
 | L4 | 每一列剛好等於終端機寬度 | 每個畫面、每種 popup，多種尺寸（含 5 列以下與 1×1：popup 被截掉、不 panic），icon 一格與兩格；app 的文字裡有 Tab 時一樣 | `TestL4EveryRowFullWidth`、`TestE3TabsDrawnAsSpaces`；展示場的 `TestFirstLaunch` 與 tdptest 的 `TestTrickyValuesEverywhere`、`TestSizesAndMashes`（每處理一個 message 量一次） |
 | L5 | focus 不只靠顏色（粗線與細線）；切換 focus 內容不位移 | `Tab` 換 panel；Drag 模式裡照樣看得出 focus | `TestL5FocusNotColorOnly`、`TestL5NoShift` |
@@ -361,7 +362,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]iff`（M4：panel 的熱鍵優�
 | panel.4 | 兩端斜角 U+E0BA / U+E0B0，前景是旁邊那一段的底（選中的串色、沒選中的 Mantle），外側不塗背景；選中的填串色、字 Base 粗體；沒選中的底 Mantle、字用串色；接縫一律斜線、前景串色背景 Mantle：選中 → 沒選中 U+E0BC、沒選中 → 選中 U+E0BA、兩段都沒選中 U+E0BB；串色：panel 是框線色、popup 是層色、chip 是 Blue；`[N]` 膠囊與目前 tab 都算選中（panel-31～36） | P `[1] PODS` 換 tab；D「Popup with tabs」 | `TestCapsuleChain` |
 | panel.1 | label 裡的名稱照原樣，跟 popup 的標題一樣：`[2] PODS: nginx-7d4f`；整個 label 就是名稱時照原樣（lib：`Panel.Name`；Space menu 與 `?` 的標題也一樣） | K `[2] KIND: pods` | `TestPanelName` |
 | panel.4 | `[N]` 與第一個 tab 都選中時中間的空白跟接縫一樣佔一個 powerline 符號的寬度，換 tab 時字不位移 | P `[1] PODS` 換 tab（`SHOWCASE__POWERLINE_WIDTH=2` 也試一次） | `TestPanelTabSpaceIsAJoin` |
-| panel.4 | 字前後不加空白、大寫；放不下先縮沒選中的成第一個字，再從尾端收成 `…`，選中的永遠留著、不撐寬框；選中的那一段自己就太長時字從尾端截加 `…`，兩端斜角照畫、跟框角之間留一段線 | 縮窄 | `TestCapsuleChainShrink`、`TestPanelModeLabelKeptWhenNarrow` |
+| panel.4 | 字前後不加空白、大寫；字尾為了固定寬度補的空白算字的一部分，選中時一起填色（panel-38，L2）；放不下先縮沒選中的成第一個字，再從尾端收成 `…`，選中的永遠留著、不撐寬框；選中的那一段自己就太長時字從尾端截加 `…`，兩端斜角照畫、跟框角之間留一段線 | 縮窄 | `TestCapsuleChainShrink`、`TestPanelModeLabelKeptWhenNarrow`、`TestPanel38PaddedText` |
 | panel.4 | 失焦時串色換成失焦的框線色、Mantle 不變；被蓋住時照 F8 跟整個畫面一起淡化，Mantle 變成 Crust `#11111b`（panel-137） | P `[1] PODS` 按 `Tab`；再開 Space menu | `TestCapsuleChain`、`TestDimEveryColor` |
 | panel.5 | cursor：Subtext1 底、Base 粗體、佔滿內寬、整列 Base 字；右邊的留白（跟箭頭一樣寬）畫 U+E0B0、跟 cursor 同色；失焦跟著淡化；自己有顏色的列，Subtext1 可以換成那個顏色，箭頭也一樣（color.2 那一列，color-27） | P `[1] PODS` | `TestListCursor`、`TestCursorArrow`、`TestColor27RowColourCursor` |
 | panel.5 | 模式裡先標住、cursor 會離開的那一列（例：Compare 的 anchor，K11）：整列 Yellow 底、Base 字、不加粗、沒有箭頭；cursor 停在上面時 cursor 優先（lib：`List.Anchor`；kbu 回報的，tdp 下一版明寫） | lib；展示場還沒有，tdp 寫進去時補 | `TestListAnchor` |
