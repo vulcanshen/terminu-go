@@ -453,6 +453,9 @@ func TestInputNoSuggestionTabNoop(t *testing.T) {
 
 // --- K3 ----------------------------------------------------------------------
 
+// TestK3EnterRunsRegistered: Enter runs the action the app registered for
+// it; which one may go by each item as it stands, the hint following
+// (tdp K3; K3-2 removed, the user 2026-11-23, from gittu).
 func TestK3EnterRunsRegistered(t *testing.T) {
 	ta := newTestApp(t)
 	if !strings.Contains(ta.screenText(), "Enter:logs") {
@@ -460,7 +463,25 @@ func TestK3EnterRunsRegistered(t *testing.T) {
 	}
 	ta.press("Enter", "j", "j", "Enter")
 	if fmt.Sprint(ta.ran) != "[logs logs]" {
-		t.Errorf("Enter on two pods ran %v, the same action each time", ta.ran)
+		t.Errorf("Enter on two pods ran %v", ta.ran)
+	}
+	// Another Enter on the even pods: each item its own.
+	even := func() bool { r, _ := ta.list.Current(); return r.ID != "" && (r.ID[len(r.ID)-1]-'0')%2 == 0 }
+	ta.pods.Actions[0].Hidden = even
+	ta.pods.Actions = append(ta.pods.Actions, Action{Key: "Enter", Label: "Shell", Desc: "into this pod", Scope: ItemScope, Hint: "shell",
+		Hidden: func() bool { return !even() }, Do: ta.record("shell")})
+	ta.ran = nil
+	ta.press("g", "g") // pod-00
+	if !strings.Contains(ta.screenText(), "Enter:shell") || strings.Contains(ta.screenText(), "Enter:logs") {
+		t.Error("on an even pod the hint says shell")
+	}
+	ta.press("Enter", "j")
+	if !strings.Contains(ta.screenText(), "Enter:logs") {
+		t.Error("on an odd pod the hint says logs")
+	}
+	ta.press("Enter")
+	if fmt.Sprint(ta.ran) != "[shell logs]" {
+		t.Errorf("Enter by the item: ran %v", ta.ran)
 	}
 }
 

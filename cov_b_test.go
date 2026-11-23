@@ -1858,3 +1858,41 @@ func TestF6AskFor(t *testing.T) {
 		t.Errorf("Esc on the confirm went to %T, not back to the menu", ta.topView())
 	}
 }
+
+// TestF6AskWhenItLoses: an action that asks only when this run would lose
+// something asks then, and asks nothing when nothing would be lost; the same
+// state asks the same way again, the lib keeping nothing of the time before
+// (tdp F6; F6-1, F6-6).
+func TestF6AskWhenItLoses(t *testing.T) {
+	ta := newTestApp(t)
+	unsaved := true
+	ta.pods.Actions = append(ta.pods.Actions, Action{Key: "W", Label: "Switch", Desc: "to another branch", Scope: PanelScope,
+		AskFor: func() *Ask {
+			if !unsaved {
+				return nil
+			}
+			return &Ask{Title: "Switch", Question: "Switch and drop the unsaved changes?", Verb: "switch"}
+		}, Do: ta.record("switch")})
+	asks := func(why string, want bool) {
+		t.Helper()
+		ta.ran = nil
+		ta.press("W")
+		_, asked := ta.topView().(*confirmView)
+		if asked != want {
+			t.Fatalf("%s: asked %v, want %v", why, asked, want)
+		}
+		if asked {
+			ta.press("Enter")
+		}
+		if !slices.Equal(ta.ran, []string{"switch"}) || ta.top() != nil {
+			t.Errorf("%s: ran %v, %T open", why, ta.ran, ta.topView())
+		}
+	}
+	asks("changes to lose", true)
+	unsaved = false
+	asks("nothing to lose", false)
+	unsaved = true
+	asks("changes to lose again, though accepted before", true)
+	unsaved = false
+	asks("nothing to lose again", false)
+}

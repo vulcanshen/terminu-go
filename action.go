@@ -32,13 +32,17 @@ type Action struct {
 	// Hint is the word after the key in the panel's bottom-border hint
 	// ("logs" for Enter:logs); "" keeps the action out of the hint.
 	Hint string
-	// Ask, when set, asks first (tdp F6): every time.
+	// Ask, when set, asks first, every time it runs (tdp F6).
 	Ask *Ask
 	// AskFor, when set, is asked when the action runs, after Hidden and
 	// Disabled, for the question it asks then (the name of the item under the
-	// cursor); nil asks nothing (a step that turns out to need no asking). It
-	// wins over Ask. Run from a menu, the confirm opens over the menu, so Esc
-	// on it goes back to the menu (tdp T1).
+	// cursor), or for whether it asks at all: an action may ask only when
+	// this run would lose something or reach further than it usually does
+	// (a switch that would drop unsaved changes, an amend of a commit already
+	// pushed), nil asking nothing. The same state always asks the same way,
+	// nothing else deciding it, whether it asked before included (tdp F6).
+	// It wins over Ask. Run from a menu, the confirm opens over the menu, so
+	// Esc on it goes back to the menu (tdp T1).
 	AskFor func() *Ask
 	// Hidden reports that its object does not exist now: the row is not
 	// shown at all (tdp M6).
