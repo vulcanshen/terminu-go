@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -1107,4 +1108,41 @@ func TestTypingModeHoldsShell(t *testing.T) {
 		t.Errorf("? on [1] SHELL writes its Esc:\n%s", strings.Join(d.Screen(), "\n"))
 	}
 	d.Press("Esc")
+}
+
+// TestDragSetsFilterAside: [1] PODS filtered, r picks up a pod: every pod
+// shows, k moves it past one the filter hid; Enter drops it, the filter
+// back, the cursor on it; picked up again, Esc puts it back the same way
+// (tdp panel.8; panel-199; from kbu, the user).
+func TestDragSetsFilterAside(t *testing.T) {
+	s := newShowcase()
+	d := tdptest.Start(t, s.app, 120, 40)
+	ps, l := s.panels, s.panels.podList
+	const pod, hidden = "ingress-nginx-controller-8d4", "cert-manager-7f9c" // 13 and 12
+	d.Press("P", "1", "/")
+	d.Type("nginx")
+	d.Press("Enter") // sorted by name: ingress-nginx… first
+	if ps.current() != pod || d.Has(hidden) {
+		t.Fatalf("filtered on nginx, the cursor on %s:\n%s", ps.current(), strings.Join(d.Screen(), "\n"))
+	}
+	at := func(id string) int {
+		return slices.IndexFunc(l.Rows(), func(r terminu.Row) bool { return r.ID == id })
+	}
+	d.Press("r")
+	if l.Filtering() || !d.Has(hidden) || ps.current() != pod {
+		t.Errorf("held: filtering %v, the cursor on %s:\n%s", l.Filtering(), ps.current(), strings.Join(d.Screen(), "\n"))
+	}
+	d.Press("k")
+	if at(pod) != 12 || at(hidden) != 13 {
+		t.Errorf("k: %s at %d, %s at %d", pod, at(pod), hidden, at(hidden))
+	}
+	d.Press("Enter")
+	if !l.Filtering() || d.Has(hidden) || ps.current() != pod || at(pod) != 12 {
+		t.Errorf("dropped: filtering %v, the cursor on %s, at %d:\n%s", l.Filtering(), ps.current(), at(pod), strings.Join(d.Screen(), "\n"))
+	}
+	d.Press("Esc") // the Dropped toast first (tdp K4)
+	d.Press("r", "k", "Esc")
+	if !l.Filtering() || d.Has(hidden) || ps.current() != pod || at(pod) != 12 || ps.pods.InMode() != nil {
+		t.Errorf("put back: filtering %v, the cursor on %s, at %d:\n%s", l.Filtering(), ps.current(), at(pod), strings.Join(d.Screen(), "\n"))
+	}
 }

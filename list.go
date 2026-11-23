@@ -193,8 +193,12 @@ type List struct {
 
 	filter *lineEditor
 	typing bool
-	scroll string
-	height int // rows of items the last Draw had room for
+	// aside is the filter set aside while a row is held, asideTyping whether
+	// its typing row had the focus: Drop brings them back (tdp panel.8).
+	aside       *lineEditor
+	asideTyping bool
+	scroll      string
+	height      int // rows of items the last Draw had room for
 	// gapMore is how much wider than two cells each gap between columns is,
 	// as the last widths worked it out (SpreadGaps).
 	gapMore int
@@ -306,17 +310,41 @@ func (l *List) SetMarked(ids []string) {
 // (tdp panel): it is drawn as the cursor in the mode's colour, Yellow,
 // with the swap glyph in its mark column, until Drop. It reports whether
 // there was a row. The Drag mode and its keys are the app's (Panel.EnterMode).
+// On a filtered list the filter is set aside while the row is held: its
+// typing row folded away, every row shown, the held one where it really is,
+// for only among all the rows can a move say what it swaps with (tdp
+// panel.8, panel.14).
 func (l *List) Hold() bool {
-	_, ok := l.Current()
+	cur, ok := l.Current()
 	l.held = ok
+	if ok && l.filter != nil {
+		l.aside, l.asideTyping = l.filter, l.typing
+		l.filter, l.typing = nil, false
+		l.rebuild()
+		l.Select(cur.ID)
+	}
 	return ok
 }
 
 // Holding reports a row held.
 func (l *List) Holding() bool { return l.held }
 
-// Drop puts the held row down where it is; its own mark shows again.
-func (l *List) Drop() { l.held = false }
+// Drop puts the held row down where it is; its own mark shows again. A
+// filter set aside by Hold comes back as it was, the cursor on that row: the
+// app putting it back (Esc) drops it too, then sets the rows as they were
+// (tdp panel.8).
+func (l *List) Drop() {
+	l.held = false
+	if l.aside == nil {
+		return
+	}
+	cur, ok := l.Current()
+	l.filter, l.typing, l.aside = l.aside, l.asideTyping, nil
+	l.rebuild()
+	if ok {
+		l.Select(cur.ID)
+	}
+}
 
 // MoveHeld swaps the held row with the next or the previous row shown, the
 // cursor going with it. Past the ends it wraps: the last moved down goes to

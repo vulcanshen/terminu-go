@@ -59,7 +59,7 @@ go build -o /tmp/showcase ./examples/showcase
 
 **P — Panels**：panel 的每一種長相與狀態。
 - `[1] PODS` 是一般清單：`j|k` `u|d` `gg|G` 移、`h|l` 換 tab（PODS／EVENTS）、`/` 篩選、`m` 標記、`x` 刪除（confirm）、
-  `s` 排序、`go` 跳到第一個沒在跑的、`D` Diff 模式（`[D]iff`，K13）、`X` 刪掉標記的、`r` 拖曳模式（`D[r]ag`，因為 `D` 給了 Diff；框與模式名變色，拿著的那一列 Yellow、標記欄畫上下箭頭；`j|k` 搬、到頭尾繞回，`Enter` 放下，`Esc` 放回）。
+  `s` 排序、`go` 跳到第一個沒在跑的、`D` Diff 模式（`[D]iff`，K13）、`X` 刪掉標記的、`r` 拖曳模式（`D[r]ag`，因為 `D` 給了 Diff；框與模式名變色，拿著的那一列 Yellow、標記欄畫上下箭頭；`j|k` 搬、到頭尾繞回，`Enter` 放下，`Esc` 放回）。先用 `/` 篩選再按 `r`：拿著的時候篩選先收起來、全部的 pod 都列出來，放下或放回後篩選照原樣回來，cursor 停在那個 pod 上。
   寬度有剩時（panel-184）：把終端機拉到 240 欄左右，Space menu 的 `Room left over` 一次換一種：放最後、`NAME` 填滿（`AGE` 靠到右邊）、
   平均、加大欄距，每換一次跳一個 Info toast 說是哪一種。
   `EVENTS` tab 是占好幾列的項目（panel-181～183）：事件的訊息在 REASON 底下，`BackOff` 兩列、`Pulled` 一列、`Started` 只有一列；

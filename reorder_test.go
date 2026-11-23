@@ -269,6 +269,55 @@ func TestPanelDragHeldRow(t *testing.T) {
 	}
 }
 
+// TestPanel199DragSetsFilterAside: picking up an item of a filtered list
+// sets the filter aside while it is held: the typing row folded away, every
+// row shown, the item where it really is, a move swapping it with the row
+// next to it among all of them; dropped, the filter comes back as it was,
+// the cursor on that item (tdp panel.8, panel.14; panel-199; from kbu, the
+// user).
+func TestPanel199DragSetsFilterAside(t *testing.T) {
+	ta := newTestApp(t)
+	l := ta.list
+	ta.press("/", "p", "o", "d", "-", "2", "Enter") // pod-20 to pod-29, the cursor on pod-20
+	if r, _ := l.Current(); r.ID != "20" || len(l.view) != 10 || l.Typing() {
+		t.Fatalf("filtered: the cursor on %s, %d rows shown, typing %v", r.ID, len(l.view), l.Typing())
+	}
+	drawn := func() string { return StripStyles(strings.Join(l.Draw(60, 50, true), "\n")) }
+	if !l.Hold() {
+		t.Fatal("Hold on a row")
+	}
+	text := drawn()
+	if r, _ := l.Current(); r.ID != "20" || l.cursor != 20 || len(l.view) != 40 || l.Filtering() || l.Typing() ||
+		strings.Contains(text, glyphTyping) || !strings.Contains(text, "pod-19") {
+		t.Errorf("held: the cursor on %s at %d, %d rows shown, filtering %v, typing %v:\n%s",
+			r.ID, l.cursor, len(l.view), l.Filtering(), l.Typing(), text)
+	}
+	l.MoveHeld(false) // past pod-19, which the filter hid
+	if l.rows[19].ID != "20" || l.rows[20].ID != "19" || l.cursor != 19 {
+		t.Errorf("k swaps it with the row above among all: %s %s, the cursor at %d", l.rows[19].ID, l.rows[20].ID, l.cursor)
+	}
+	l.Drop()
+	text = drawn()
+	if r, _ := l.Current(); r.ID != "20" || len(l.view) != 10 || !l.Filtering() || l.Typing() || l.filter.value() != "pod-2" ||
+		!strings.Contains(text, glyphTyping) || strings.Contains(text, "pod-19") {
+		t.Errorf("dropped: the cursor on %s, %d rows shown, filtering %v, typing %v:\n%s", r.ID, len(l.view), l.Filtering(), l.Typing(), text)
+	}
+	// On the typing row when picked up, it is back on the typing row.
+	ta.press("/")
+	l.Hold()
+	l.Drop()
+	if !l.Typing() {
+		t.Error("the filter came back not as it was: its typing row lost the focus")
+	}
+	// No filter, none brought back.
+	l.ClearFilter()
+	l.Hold()
+	l.Drop()
+	if l.Filtering() || len(l.view) != 40 {
+		t.Errorf("a filter after a Drag on a list with none: %v, %d rows", l.Filtering(), len(l.view))
+	}
+}
+
 // The viewer's selection mode does not take the app's own core keys either
 // (tdp K11).
 func TestK11PopupModeCoreKeys(t *testing.T) {
