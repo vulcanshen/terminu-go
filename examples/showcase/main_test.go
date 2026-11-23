@@ -958,3 +958,65 @@ func TestReviewFollows(t *testing.T) {
 		t.Errorf("CHANGES again:\n%s", strings.Join(d.Screen(), "\n"))
 	}
 }
+
+// What the project is in the middle of, and work running on it, in [2]
+// FILES' location row (tdp panel.10, panel-197): Merge half done puts the
+// merge after the where in Lavender, its glyph telling it; Push puts
+// Pushing… after it in Green, the loading icon turning in Green in the
+// glyph's place, for three seconds; then the glyph is back, or none.
+func TestPushLocationWork(t *testing.T) {
+	s := newShowcase()
+	d := tdptest.Start(t, s.app, 120, 40)
+	is := s.inputs
+	act := func(label string) func() tea.Cmd {
+		for _, a := range is.files.Actions {
+			if a.Label == label {
+				return a.Do
+			}
+		}
+		t.Fatalf("no %s on [2] FILES", label)
+		return nil
+	}
+	const lavender, green = "38;2;180;190;254", "38;2;166;227;161"
+	frames := "\U000F0A9E\U000F0A9F\U000F0AA0\U000F0AA1\U000F0AA2\U000F0AA3\U000F0AA4\U000F0AA5"
+	row := func() (plain, styled string) { // the files' location row
+		for i, l := range d.Screen() {
+			if strings.Contains(l, "terminu-showcase") || strings.Contains(l, "Merging") || strings.Contains(l, "Pushing") {
+				return l, d.Styled()[i]
+			}
+		}
+		t.Fatalf("no location row:\n%s", strings.Join(d.Screen(), "\n"))
+		return "", ""
+	}
+	d.Press("I", "2", "Space")
+	if !d.Has("Merge half done") || !d.Has("work running on the project") {
+		t.Fatal("its Space menu has Merge half done and Push")
+	}
+	d.Press("Esc")
+
+	d.Do(act("Merge half done"))
+	plain, styled := row()
+	if !strings.Contains(plain, glyphMerge+" ") || !strings.Contains(plain, "Merging: feature/login") || !strings.Contains(styled, lavender) || strings.Contains(styled, green) {
+		t.Errorf("the merge in Lavender, its glyph first: %q", plain)
+	}
+	d.Do(act("Push"))
+	plain, styled = row()
+	if !strings.Contains(plain, "Merging: feature/login Pushing…") || strings.Contains(plain, glyphMerge) || !strings.ContainsAny(plain, frames) || !strings.Contains(styled, green) {
+		t.Errorf("pushing: the work in Green, the loading icon in the glyph's place: %q", plain)
+	}
+	d.Advance(3 * time.Second)
+	plain, _ = row()
+	if strings.Contains(plain, "Pushing") || !strings.Contains(plain, glyphMerge+" ") || strings.ContainsAny(plain, frames) || !d.Has("Pushed to origin") {
+		t.Errorf("pushed: the glyph back: %q", plain)
+	}
+
+	d.Do(act("Merge half done"))
+	d.Do(act("Push"))
+	if plain, _ = row(); strings.Contains(plain, "Merging") || !strings.ContainsAny(plain, frames) {
+		t.Errorf("no merge, pushing: the loading icon still: %q", plain)
+	}
+	d.Advance(3 * time.Second)
+	if plain, _ = row(); strings.ContainsAny(plain, frames+glyphMerge) {
+		t.Errorf("no merge, pushed: no glyph: %q", plain)
+	}
+}

@@ -151,6 +151,17 @@ type List struct {
 	// … comes right after it (tdp panel.10). Whether there is one, and
 	// which, is the app's; it goes with this Location.
 	LocationGlyph string
+	// LocationWork, when set, is work now running on the place the location
+	// row names (a push, a fetch): after Location, a space between, in
+	// Green, the loading icon turning in Green where the glyph sits, until
+	// it is "" again and LocationGlyph is back. With no Location it is the
+	// row by itself. A row too long is cut from the front, so the work stays.
+	// What the place is in the middle of (a merge left half done) is
+	// Location's, in the row's Lavender, LocationGlyph telling it
+	// (tdp panel.10). What it says, and when, is the app's. In a panel on
+	// the screen the lib keeps the icon turning; in a list the app draws
+	// itself, App.Spinning does.
+	LocationWork string
 	// OnMove runs when the cursor comes to another row, by a key or not, the
 	// first time included: before the frame is drawn, so a details panel
 	// shows that row in the same frame (tdp panel.13). It does not
@@ -549,13 +560,28 @@ func leadingNumber(s string) (float64, error) {
 // locationRow is a panel's location row (tdp panel.10) in w cells: one
 // cell from the frame on the left, the arrow's room on the right, in
 // Lavender, cut from the front; a glyph, when there is one, first with a
-// space after it, staying when the text is cut.
-func locationRow(glyph, loc string, w int) string {
+// space after it, staying when the text is cut. Work running on the place
+// follows in Green, the loading icon turning in Green in the glyph's place
+// (tdp popup.4); the cut keeps it, the … in the colour of what it cuts.
+func locationRow(glyph, loc, work string, w int) string {
 	room := w - 1 - Width(glyphHard)
-	if glyph != "" {
-		glyph = Escape(glyph) + " "
+	lead, text := "", Escape(loc)
+	switch {
+	case work != "":
+		lead = Fg(Green).Render(loadingFrame()) + " "
+	case glyph != "":
+		lead = Fg(Lavender).Render(Escape(glyph)) + " "
 	}
-	return " " + Pad(Fg(Lavender).Render(glyph+TruncateLeft(Escape(loc), room-Width(glyph))), w-1)
+	if work != "" && loc != "" {
+		text += " "
+	}
+	if text != "" {
+		text = Fg(Lavender).Render(text)
+	}
+	if work != "" {
+		text += Fg(Green).Render(Escape(work))
+	}
+	return " " + Pad(lead+TruncateLeft(text, room-Width(lead)), w-1)
 }
 
 // cursorColour is the colour the cursor of row r is drawn in, where the fade
@@ -597,8 +623,8 @@ func (l *List) Draw(w, h int, focused bool) []string { return finishFades(l.draw
 func (l *List) draw(w, h int, focused, own bool) []string {
 	out := make([]string, 0, h)
 	l.noteTop, l.noteBottom = -1, -1
-	if own && l.Location != "" {
-		out = append(out, locationRow(l.LocationGlyph, l.Location, w))
+	if own && (l.Location != "" || l.LocationWork != "") {
+		out = append(out, locationRow(l.LocationGlyph, l.Location, l.LocationWork, w))
 	}
 	if l.filter != nil {
 		out = append(out, l.filterRow(w, focused))

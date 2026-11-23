@@ -97,6 +97,7 @@ go build -o /tmp/showcase ./examples/showcase
   - 比兩個資料夾（panel.9）：`FOLDERS` tab 進 `releases/`，在 `v1/` 按 `D`、移到 `v2/` 按 `Enter`：位置列 `releases/v1 ↔ releases/v2`，
     只列兩邊不一樣的項目（`+ NEWS.md`、`~ conf/`、`~ logo.png`、`~ main.go`、`- old-notes.txt`，一樣的 `README.md`、`docs/` 不列）；
     `conf/` 再進一層；`Esc` 一層一層退回，最後回到 Diff 模式、anchor 還在。
+  - 位置列的狀態與工作（panel.10）：`Space` 選 `Merge half done`，位置後面接 Lavender 的 `Merging: feature/login`、開頭換成 merge 的 icon；再選 `Push`，後面接 Green 的 `Pushing…`、icon 換成轉著的 Green loading icon，三秒後換回 merge 的 icon。
 - `[3] CHANGES` 跟著 `[2]` 的 cursor（note.8 的 In a panel）：cursor 上那個檔跟它最後一次 commit 的差異，畫法跟 UNIFIED 一樣（只有改的段落、
   兩欄行號、`-` Red、`+` Green），不是 git 印的 patch；位置列是那個檔。在 `main.go` 上看得到改的那一行，按 `3` 再按 `Enter` 打開 Diff；
   沒改的檔寫 `No changes since 5d6e7f8`（`Enter` 停用），圖寫 `Not a text file`。在 `FOLDERS` tab 的 `releases/` 裡移到 `v2/`

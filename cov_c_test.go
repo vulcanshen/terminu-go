@@ -2108,7 +2108,7 @@ func TestPanelLocationRow(t *testing.T) {
 	ta.resize(40, 14) // [1] in columns 0-19, its rows 1-11 inside the frame
 	row := func(y int) string { return Cut(ta.Frame()[y], 1, 19) }
 	text := func(y int) string { return strings.TrimSpace(StripStyles(row(y))) }
-	want := StripStyles(locationRow("", reader.Location, 18))
+	want := StripStyles(locationRow("", reader.Location, "", 18))
 	if got := StripStyles(row(1)); got != want || !strings.HasPrefix(got, " …") || !strings.HasSuffix(strings.TrimSpace(got), "panel.md") {
 		t.Errorf("the first row, one cell in, cut from the front:\n%q\n%q", got, want)
 	}

@@ -31,6 +31,8 @@ type inputsScreen struct {
 	index    *terminu.Finder // the slow index, while it fills
 	grepping string          // what Find in files searches for now
 	indexed  int
+	where    string // the files' location row's where
+	merging  bool   // the project in the middle of a merge, in that row
 }
 
 // The showcase's own glyphs for its inputs (the app's choice: what each
@@ -46,6 +48,7 @@ const (
 	glyphTune     = "\U000F062E" // nf-md-tune
 	glyphSearch   = "\U0000F002" // nf-fa-search
 	glyphTag      = "\U000F04F9" // nf-md-tag
+	glyphMerge    = "\U000F062D" // nf-md-source_merge: the project in the middle of a merge
 )
 
 func newInputsScreen(s *showcase) *inputsScreen {
@@ -259,7 +262,7 @@ func newInputsScreen(s *showcase) *inputsScreen {
 	}
 	is.fileList.SetRows(fileRows())
 	is.fileList.SortBy(terminu.SortKey{Col: 0})
-	is.fileList.Location = projectDir // where the files are (tdp panel.10)
+	is.locate(projectDir) // where the files are (tdp panel.10)
 	// This panel's hint lists only what can be pressed now (tdp M6: the
 	// app's choice): View, disabled, leaves it.
 	is.files = &terminu.Panel{Label: "Files", Tabs: []string{"Lines", "Folders"}, Body: is.fileList, HintPressableOnly: true, OnTab: is.switchTab}
@@ -356,9 +359,11 @@ var (
 func (is *inputsScreen) switchTab(tab int) tea.Cmd {
 	is.tab = tab
 	is.fileList.ClearFilter() // only the Folders tab has one
-	is.fileList.Columns, is.fileList.Location, is.fileList.Filterable = fileColumns, projectDir, tab == 2
+	is.fileList.Columns, is.fileList.Filterable = fileColumns, tab == 2
+	is.locate(projectDir)
 	if tab == 1 {
-		is.fileList.Columns, is.fileList.Location = lineColumns, filepath.Join(projectDir, "main.go")
+		is.fileList.Columns = lineColumns
+		is.locate(filepath.Join(projectDir, "main.go"))
 	}
 	is.fileList.SortBy(terminu.SortKey{Col: 0})
 	if tab == 2 {
@@ -370,12 +375,42 @@ func (is *inputsScreen) switchTab(tab int) tea.Cmd {
 	return nil
 }
 
+// locate puts where in the files' location row, and after it the merge the
+// project is in the middle of, its glyph telling it (tdp panel.10).
+func (is *inputsScreen) locate(where string) {
+	is.where = where
+	is.fileList.Location, is.fileList.LocationGlyph = where, ""
+	if is.merging {
+		is.fileList.Location, is.fileList.LocationGlyph = where+"  Merging: feature/login", glyphMerge
+	}
+}
+
+type pushDone struct{}
+
+// push stands for work running on the project: Green in the files'
+// location row, the loading icon in its glyph's place, for three seconds
+// (tdp panel.10).
+func (is *inputsScreen) push() tea.Cmd {
+	if is.fileList.LocationWork != "" {
+		return is.s.app.Toast(terminu.Info, "A push is already running")
+	}
+	is.fileList.LocationWork = "Pushing…"
+	return is.s.app.Tick(3*time.Second, func(time.Time) tea.Msg { return pushDone{} })
+}
+
+// pushDone ends the push: the row's own glyph is back, or none.
+func (is *inputsScreen) pushDone() tea.Cmd {
+	is.fileList.LocationWork = ""
+	return is.s.app.Toast(terminu.Success, "Pushed to origin")
+}
+
 // showFolder shows the Folders tab's folder, the cursor at the top: the
 // location row is the path down to it, and Esc goes up a level, doing
 // nothing at the top (tdp panel.10).
 func (is *inputsScreen) showFolder() {
 	rows, err := folderRows(is.dir)
-	is.fileList.Location, is.files.Fail = is.dir, nil
+	is.locate(is.dir)
+	is.files.Fail = nil
 	if err != nil {
 		is.files.Fail = &terminu.Failure{Fact: "Cannot read " + filepath.Base(is.dir), Hint: "Press [Esc] to go back up"}
 	}
@@ -562,6 +597,13 @@ func (is *inputsScreen) stateActions(p *terminu.Panel) []terminu.Action {
 			}},
 		{Label: "Loading", Desc: "start loading, or stop", Scope: terminu.PanelScope,
 			Do: func() tea.Cmd { p.Loading = !p.Loading; return nil }},
+		// What the project is in the middle of, and work running on it, in
+		// the location row (tdp panel.10).
+		{Label: "Merge half done", Desc: "leave a merge in the middle, or finish it", Scope: terminu.PanelScope,
+			Hidden: func() bool { return p != is.files },
+			Do:     func() tea.Cmd { is.merging = !is.merging; is.locate(is.where); return nil }},
+		{Label: "Push", Desc: "work running on the project for a few seconds", Scope: terminu.PanelScope,
+			Hidden: func() bool { return p != is.files }, Do: is.push},
 		{Label: "Disable", Desc: "some rows cannot be used now", Scope: terminu.PanelScope,
 			Hidden: func() bool { return p != is.inputs },
 			Do:     func() tea.Cmd { is.disabled = !is.disabled; return nil }},

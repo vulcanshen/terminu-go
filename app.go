@@ -667,7 +667,7 @@ func (a *App) loading() bool {
 	}
 	if s := a.Screen(); s != nil {
 		for _, p := range s.Panels {
-			if p.Loading {
+			if _, _, work := p.location(); p.Loading || work != "" { // work running on a location row's place (tdp panel.10)
 				return true
 			}
 		}

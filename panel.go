@@ -299,6 +299,10 @@ type Panel struct {
 	// LocationGlyph is the glyph that starts Location's row, drawn as
 	// List.LocationGlyph; a list's own goes with the list's Location.
 	LocationGlyph string
+	// LocationWork is work now running on the place Location names, drawn
+	// as List.LocationWork; set with no Location, the row is the panel's,
+	// not its list's. A list's own goes with the list's Location.
+	LocationWork string
 	// SearchStatus is the status of the app's own / search in the panel
 	// (a panel with no cursor searching its text, a mode's search), drawn
 	// on the bottom border left of the scroll position while its Count is
@@ -404,6 +408,19 @@ func (p *Panel) body() Body {
 		return p.over.body
 	}
 	return p.Body
+}
+
+// location is what the panel's location row says (tdp panel.10): its own,
+// or its list's.
+func (p *Panel) location() (where, glyph, work string) {
+	where, glyph, work = p.Location, p.LocationGlyph, p.LocationWork
+	if p.over != nil && p.level() == nil { // a Diff mode's diff as the details: its own, none but a list's (tdp panel.9)
+		where, glyph, work = "", "", ""
+	}
+	if list, _ := p.body().(*List); list != nil && (where == "" && work == "" || p.level() != nil) { // a list of the items that differ: its own (tdp panel.9)
+		where, glyph, work = list.Location, list.LocationGlyph, list.LocationWork
+	}
+	return where, glyph, work
 }
 
 // actions are the panel's actions as they are now: those of the list of the
@@ -643,18 +660,12 @@ func (p *Panel) draw(n, w, h int, focused, pointed bool) []string {
 	}
 	b.mode, b.modeClosed = mode, 1-lab.shown
 	inner, ih := w-2, h-2
-	where, glyph := p.Location, p.LocationGlyph
+	where, glyph, work := p.location()
 	pb := p.body()
 	list, _ := pb.(*List)
-	if p.over != nil && p.level() == nil { // a Diff mode's diff as the details: its own, none but a list's (tdp panel.9)
-		where, glyph = "", ""
-	}
-	if (where == "" || p.level() != nil) && list != nil { // a list of the items that differ: its own (tdp panel.9)
-		where, glyph = list.Location, list.LocationGlyph
-	}
 	var loc []string
-	if where != "" && ih > 0 {
-		loc, ih = []string{locationRow(glyph, where, inner)}, ih-1
+	if (where != "" || work != "") && ih > 0 {
+		loc, ih = []string{locationRow(glyph, where, work, inner)}, ih-1
 	}
 	p.bodyY = 1 + len(loc)
 	var body []string

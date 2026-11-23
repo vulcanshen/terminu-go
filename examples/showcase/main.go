@@ -241,6 +241,8 @@ func (s *showcase) onMsg(msg tea.Msg) tea.Cmd {
 		return s.inputs.indexStep()
 	case grepDone:
 		return s.inputs.grepDone(msg.(grepDone))
+	case pushDone:
+		return s.inputs.pushDone()
 	case toastLater, loadTick, watchTick:
 		return s.dialogs.onMsg(msg)
 	case busy:
