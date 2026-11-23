@@ -6,10 +6,13 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 
@@ -27,10 +30,20 @@ const helperEnv = "TERMINU__CONPTY_HELPER"
 //     ending, any other with "got <line>".
 //   - "exit3" ends at once, with exit status 3.
 //   - "wait" says so and waits a minute.
+//   - "trap" notes in closeDir when it is ready, and when it is told to
+//     close (its console closing).
 func TestConPTYHelper(t *testing.T) {
 	switch os.Getenv(helperEnv) {
 	case "":
 		t.Skip("the program the ConPTY tests run")
+	case "trap":
+		dir := os.Getenv(closeDir)
+		sig := make(chan os.Signal, 1)
+		signal.Notify(sig, syscall.SIGTERM)
+		_ = os.WriteFile(filepath.Join(dir, "ready"), nil, 0o600)
+		<-sig
+		_ = os.WriteFile(filepath.Join(dir, "closed"), nil, 0o600)
+		os.Exit(0)
 	case "echo":
 		wd, _ := os.Getwd()
 		fmt.Printf("hello %s%s %s\n", os.Getenv(FamilyIconWidth), os.Getenv(FamilyPowerlineWidth), filepath.Base(wd))
@@ -271,4 +284,74 @@ func TestConPTYPopup(t *testing.T) {
 	if _, ok := ta.topView().(*termView); ok {
 		t.Error("the popup stays after its program ended")
 	}
+}
+
+// closeDir, set, makes TestConPTYCloseEndsRun the app it runs: a copy of this
+// test binary in a pseudo console of its own.
+const closeDir = "TERMINU__TEST_CLOSE"
+
+// TestConPTYCloseEndsRun: closing the console window (CTRL_CLOSE_EVENT, which
+// Go hands over as SIGTERM) ends Run as closing a unix terminal does
+// (TestHangupEndsRun): Run returns nil, so what main does after it still
+// runs, and the program in the app's Terminal is told to close first.
+func TestConPTYCloseEndsRun(t *testing.T) {
+	if dir := os.Getenv(closeDir); dir != "" {
+		closeApp(dir)
+		return
+	}
+	dir := t.TempDir()
+	exe, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	env := append(os.Environ(), closeDir+"="+dir, FamilyIconWidth+"=1", FamilyPowerlineWidth+"=1")
+	rw, proc, err := startPTY([]string{exe, "-test.run=^TestConPTYCloseEndsRun$"}, "", env, 80, 24)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := proc.(*winProcess)
+	go func() { _, _ = io.Copy(io.Discard, rw) }() // the console waits for what the app draws to be read
+	if !waitForFile(filepath.Join(dir, "ready"), 15*time.Second) {
+		_ = p.proc.Kill()
+		t.Fatal("the program in the app's Terminal never started")
+	}
+	p.stop() // the console window closes
+	select {
+	case <-p.done:
+	case <-time.After(15 * time.Second):
+		_ = p.proc.Kill()
+		t.Fatal("the app never ended")
+	}
+	if err := p.wait(); err != nil {
+		t.Errorf("the app did not end well: %v", err)
+	}
+	after, _ := os.ReadFile(filepath.Join(dir, "after"))
+	if want := "Run returned <nil>; the program was told to close: true"; string(after) != want {
+		t.Errorf("after Run: %q, want %q", after, want)
+	}
+}
+
+// closeApp is the app: a Terminal running the helper that notes when it is
+// ready and when it is told to close; after Run it waits a while for that,
+// as main waiting on a session would, and notes it.
+func closeApp(dir string) {
+	exe, _ := os.Executable()
+	inner := &Terminal{Command: []string{exe, "-test.run=^TestConPTYHelper$"}, Env: []string{helperEnv + "=trap", closeDir + "=" + dir}}
+	a := New("hangup")
+	a.Splash = func(int, int, int) ([]string, bool) { return []string{"hangup"}, true }
+	a.AddScreen(&Screen{Name: "Shell", Panels: []*Panel{{Label: "Shell", Body: inner}}})
+	a.Start = inner.Start
+	err := a.Run()
+	told := waitForFile(filepath.Join(dir, "closed"), 3*time.Second)
+	_ = os.WriteFile(filepath.Join(dir, "after"), fmt.Appendf(nil, "Run returned %v; the program was told to close: %v", err, told), 0o600)
+}
+
+// waitForFile reports whether path comes to be there within d.
+func waitForFile(path string, d time.Duration) bool {
+	for end := time.Now().Add(d); time.Now().Before(end); time.Sleep(20 * time.Millisecond) {
+		if _, err := os.Stat(path); err == nil {
+			return true
+		}
+	}
+	return false
 }

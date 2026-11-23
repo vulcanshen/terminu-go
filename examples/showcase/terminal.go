@@ -129,7 +129,7 @@ func (ts *terminalScreen) slowStart() tea.Cmd {
 	ts.shell.Stop()
 	ready := time.Now().Add(3 * time.Second)
 	ts.shell = &terminu.Terminal{Title: "Shell", Subject: "slow-host", Interactive: true,
-		Command:  []string{"sh", "-c", `echo "connecting to slow-host…"; sleep 3; echo connected; exec "${SHELL:-sh}"`},
+		Command:  slowStartCommand(),
 		NotReady: func() bool { return time.Now().Before(ready) }, OnLeave: ts.leftShell}
 	ts.shellP.Body = ts.shell
 	ts.shell.Enter()

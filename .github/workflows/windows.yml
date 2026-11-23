@@ -16,6 +16,7 @@ jobs:
           go-version-file: go.mod
       - run: go vet ./...
       - run: go test -run ConPTY -v .
+      - run: go test -run PowerShell -v ./examples/showcase
       - run: go test -race -run ConPTY .
         env:
           CGO_ENABLED: "1"

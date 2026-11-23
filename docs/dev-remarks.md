@@ -204,6 +204,7 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   `Run` 之後的收尾（存檔）跑不到。現在 `Run` 也聽 SIGHUP：先掛斷每個 `Terminal` 裡的程式（`running` 記著整個 process 開過、還沒結束的），
   再跟 SIGTERM 一樣送 `QuitMsg`，`Run` 回 nil。終端機斷掉時，讀 stdin 可能同時出錯，所以只要掛斷過，就不回那個錯。掛斷之後
   一直攔著 SIGHUP：shell 被關掉時會把掛斷轉給它底下的程式，這時 main 可能還在存檔。不另給 hook，收尾只放在 `Run` 之後。
+  Windows 沒有 SIGHUP：關掉主控台視窗是 `CTRL_CLOSE_EVENT`，Go 交成 SIGTERM，所以 Windows 上聽的是 SIGTERM，走同一條路（bubbletea 本來就把 SIGTERM 當 quit，但不會關掉 `Terminal` 裡的程式，`Run` 也可能回讀輸入的錯）。攔著的時候 Windows 會等幾秒才結束 app，`Run` 之後的收尾要在這段時間裡做完。測試 `TestConPTYCloseEndsRun` 在 ConPTY 裡跑一份測試程式，再關掉那個 pseudo console；這邊要一直讀它的輸出，不然 console 等著輸出被讀，app 會卡在畫畫面。
   - 測試在 PTY 裡跑一份測試程式，再關掉 PTY 的 master。測試這邊不能讀 PTY：有 `Read` 在等時，Go 要等它回來才真的關掉檔案，
     app 就收不到掛斷。
 - **差異清單疊在 panel 上，不換掉它的 Body**（tdp panel.9、note.8，v1.2.18-beta.1，gitreu 來的）：Diff 模式比兩個裝著許多項目的列、

@@ -515,8 +515,7 @@ func (ds *dialogsScreen) actionsForm() tea.Cmd {
 		if host == "" {
 			host = "the host"
 		}
-		return a.OpenTerminal(&terminu.Terminal{Title: "ssh-copy-id", Subject: host, Ends: true,
-			Command: []string{"sh", "-c", "echo Copying ~/.ssh/id_ed25519.pub to " + host + "; echo '(the showcase only pretends)'; sleep 2"}})
+		return a.OpenTerminal(&terminu.Terminal{Title: "ssh-copy-id", Subject: host, Ends: true, Command: copyKeyCommand(host)})
 	}, Back: func() bool {
 		f.Fields[3].Selected = 1
 		return true

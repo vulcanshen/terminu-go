@@ -148,6 +148,7 @@ go build -o /tmp/showcase ./examples/showcase
 - `[1] SHELL` 是 panel 裡的 shell：`Enter` 進去打字，`Alt-Esc` 出來（先問）。在外面按 `?`，最後一段 `TERMINAL` 寫 shell 裡的鍵。
   按 `M`（`Typing mode`）是展示場自己的模式裝著這個 shell：上框右側 `Typing`、外框換模式色，`Space`、`?`、`q` 都進 shell；`Esc` 出來、不問（K11）。出來之後在 panel 上按 `Esc` 是送一個 `Esc` 給 shell，`?` 那一列寫 `send the shell an Esc`。
 - `[2] SESSIONS` 每一列 `Enter` 開一個 terminal popup：`shell`、`keys`（`cat -v`，看每個鍵送了什麼）、`top`、`vi`。
+  Windows 上換成 Windows 有的程式：`shell` 是 `%ComSpec%`（cmd），`keys` 與 `top` 是 PowerShell 寫的（`keys` 印出 Windows 交給程式的每個鍵，`top` 在另一個畫面列出最吃 CPU 的程式、`q` 結束），`vi` 只說 Windows 沒有在終端機裡跑的編輯器；`Slow start` 與表單的 `Copy key` 用 cmd。
 - popup 裡 `Alt-t` 藏起來；`Alt-b` 讓展示場卡 2 秒（試 `Esc` 與 `Alt-Esc` 用），卡完會跳一個 toast。
 
 **K — Kinds**：清單分組與明細。
