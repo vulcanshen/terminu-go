@@ -3,6 +3,7 @@ package terminu
 import (
 	"io"
 	"os"
+	"runtime"
 	"slices"
 	"strconv"
 	"sync"
@@ -20,8 +21,8 @@ type Terminal struct {
 	// Title is what runs, in capitals ("SHELL", "ALTERM"); Subject what it
 	// runs on, as it is ("myhost"): the popup's title reads "ALTERM: myhost".
 	Title, Subject string
-	// Command is the program and its arguments: the user's shell ($SHELL)
-	// when empty.
+	// Command is the program and its arguments: the user's shell ($SHELL;
+	// %ComSpec% on Windows) when empty.
 	Command []string
 	Dir     string
 	// Env is added to the app's environment. TERMINU__ICON_WIDTH and
@@ -208,7 +209,7 @@ func (t *Terminal) Start() tea.Cmd {
 	env = append(env, t.Env...)
 	argv := t.Command
 	if len(argv) == 0 {
-		argv = []string{cmpOr(os.Getenv("SHELL"), "/bin/sh")}
+		argv = []string{userShell()}
 	}
 	pty, proc, err := startPTY(argv, t.Dir, env, w, h)
 	if err != nil {
@@ -226,6 +227,15 @@ func (t *Terminal) Start() tea.Cmd {
 	t.out = make(chan struct{}, 1)
 	go t.read(pty, proc)
 	return t.wait()
+}
+
+// userShell is the user's shell: $SHELL; on Windows, which has no $SHELL of
+// its own, the command interpreter, %ComSpec%.
+func userShell() string {
+	if runtime.GOOS == "windows" {
+		return cmpOr(os.Getenv("ComSpec"), "cmd.exe")
+	}
+	return cmpOr(os.Getenv("SHELL"), "/bin/sh")
 }
 
 // read copies what the program prints into the screen, sends back what the

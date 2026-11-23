@@ -1,0 +1,21 @@
+name: windows
+
+# The terminal component on Windows (ConPTY): its tests run the programs in a
+# real pseudo console, which only a Windows machine has.
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  conpty:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go vet ./...
+      - run: go test -run ConPTY -v .
+      - run: go test -race -run ConPTY .
+        env:
+          CGO_ENABLED: "1"

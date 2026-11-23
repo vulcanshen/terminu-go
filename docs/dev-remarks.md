@@ -256,7 +256,7 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   後面每一行都錯一行。所以上色前換成檔案裡沒有的 U+0085（regex 把它跟 `\r` 一樣當空白），上完色換回來。
 - **家族共用的設定 key**（Rules E3）：`hide_secrets_in_preview`、`input_tab_width` 是使用者的設定，lib 不讀設定檔；app 從自己的設定檔讀，
   設到 `App.HideSecretsInPreview`、`App.InputTabWidth`。
-- **PTY 只在 unix**：`terminal_other.go` 開不了 PTY，只在畫面上寫出原因。
+- **PTY 在 unix 與 Windows**：unix 用 creack/pty（`terminal_unix.go`）；Windows 用 ConPTY（`terminal_windows.go`，Windows 10 1809 起，x/sys 的 `CreatePseudoConsole`），程式照 os/exec 的規則找（PATH 上的名字；路徑沒寫副檔名時照 PATHEXT 補，相對路徑從 `Dir` 算），子程序不接 app 的標準輸出入（`STARTF_USESTDHANDLES`、不給 handle），不然 app 的被導向時（`go test`）它會寫到那裡去。ConPTY 的輸出要等 pseudo console 關掉才結束，所以子程序結束後另一個 goroutine 關它（還掛在同一個 console 的背景程式跟著結束；unix 是最後一個放開 PTY 的程式結束才算完）；`Stop` 也是關它，像關掉主控台視窗（`CTRL_CLOSE_EVENT`），對應 unix 的 SIGHUP。關的時候會等輸出讀完，不在 update loop 上關。沒有 ConPTY 的 Windows 與其他系統（`terminal_other.go`）開不了 PTY，只在畫面上寫出原因。沒給指令時跑使用者的 shell：`$SHELL`，Windows 是 `%ComSpec%`。Windows 的測試（`terminal_windows_test.go`，把測試執行檔自己當子程序）在 GitHub Actions 的 Windows runner 上跑。
 - **tdptest 還沒做的**（跟 harness 談定的第二版）：檔案檢查裡要判斷的（README 的 12 段（第 10 段只要連到 CHANGELOG）、`tdp K4`
   的引用、splash 對 `docs/icon.svg`；tdp v0.10.0 起 dev-remarks 與 `docs/<app>-terminu-fix.md` 不再是規定，不查）、`coverage.md` 標上 checklist 的條目編號、自動打開每個動作的 popup、把設定檔改壞再開、檢查 app 沒寫到
   沙盒以外。範本、檔案、Makefile、CHANGELOG 的檢查已經在 `Check` 裡（見「設計決定」）。
