@@ -67,6 +67,10 @@ func newTerminalScreen(s *showcase) *terminalScreen {
 			}},
 		{Label: "Slow start", Desc: "a shell that takes 3 seconds to connect", Scope: terminu.PanelScope, Do: ts.slowStart},
 	}}
+	// Out of it, Esc on the panel sends the shell an Esc, cancelling what it
+	// is doing (tdp K4, K11), and ? says so.
+	ts.shellP.OnEsc = func() tea.Cmd { ts.shell.Send([]byte{0x1b}); return nil }
+	ts.shellP.EscDesc = "send the shell an Esc"
 	// Inside the shell ? is the shell's own: its keys are told here (tdp M6).
 	ts.shellP.OtherKeys = []terminu.KeySection{{Title: "terminal", Rows: []terminu.KeyRow{
 		{Key: "Alt-Esc", Desc: "leave the shell, asked first"},

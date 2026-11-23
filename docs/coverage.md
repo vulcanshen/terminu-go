@@ -79,6 +79,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]iff`（M4：panel 的熱鍵優�
 | K3 | menu、confirm：`Enter` 執行 cursor 那一列 / 接受 | Space menu；D「Confirm」 | `TestMenuEnterRuns`、`TestConfirmEnterAccepts` |
 | K4 | `Esc` 關最上層 popup（含 toast，從最舊的開始，一次一個）；沒有 popup 時退出模式或往上一層（清 filter）；一次一層；永不離開 app | P：開 filter、進 Drag、疊兩層 popup 後連按 `Esc` | `TestK4EscOneLayer`、`TestK4EscNeverQuits`、`TestToastEscOldest`；展示場的 `TestFirstLaunch`（tdptest.Check：每個畫面、每個 panel 的 Space menu、global operation popup、`?` 一層層關） |
 | K4 | 多層 popup 只關最上層，底下原樣（例外：重新讀進來讓選取失效時疊在選取模式 menu 或 `?` 上的 note，跟它們一起關，note.9，見 note-99 那一列） | D「Stack: Space menu → Global operation → Quit」 | `TestK4EscOnlyTop` |
+| K4 | 沒有 popup、不在模式裡時，panel 上的 `Esc`「上一層」是什麼由 app 決定（例：清掉篩選、回上一層目錄、送一個 `Esc` 給 PTY 裡的程式，取消它正在做的事，K11），`?` 那一列怎麼寫也由 app 決定（M5）（user 2026-11-23，來自 ccodu）。lib：`Panel.OnEsc` 做，`Panel.EscDesc` 是 `?` 裡 `Esc` 那一列的說明，沒設寫 `one level up`；panel filter 與有差異的項目清單的那一層照舊是 lib 的（`clear the filter`、`one level up`） | T `[1] SHELL` 按 `?`：`Esc` 寫 `send the shell an Esc`；I `[2] FILES` 的 `FOLDERS` tab 進一個資料夾按 `?`：`one level up` | `TestEscDesc`、showcase 的 `TestTypingModeHoldsShell` |
 | K5 | panel 上 `Space` 開 / 關 Space menu；`Esc` 也能關 | 任一 panel | `TestK5SpaceToggles` |
 | K5 | 其他 popup 上 `Space` 不作用；唯一例外 checkbox 的選項（checkbox popup 的清單、表單上畫出來的 checkbox） | D「Confirm」上按 `Space`；I 的 `Namespaces`；D「Form: open at Port」的 `Agent` | `TestK5SpaceNoopOnPopups`、`TestCheckboxPopupSpace`、`TestFormCheckboxSpace` |
 | K5 | popup 的操作揭露在下框 hint 與 `?`，不在 popup 上疊 Space menu | 每種 popup | `TestK5NoMenuOnPopup` |

@@ -1534,8 +1534,10 @@ func (a *App) panelKeyRef(p *Panel) *noteView {
 	}
 	if l, ok := pb.(*List); ok && l.Filtering() {
 		core = append(core, KeyRow{Key: "Esc", Desc: "clear the filter"})
-	} else if p.level() != nil || p.OnEsc != nil {
+	} else if p.level() != nil {
 		core = append(core, KeyRow{Key: "Esc", Desc: "one level up"})
+	} else if p.OnEsc != nil {
+		core = append(core, KeyRow{Key: "Esc", Desc: cmpOr(p.EscDesc, "one level up")}) // the app's (tdp K4, M5)
 	}
 	for _, ck := range a.CoreKeys {
 		core = append(core, KeyRow{Key: ck.Key, Desc: ck.Desc})

@@ -1087,7 +1087,8 @@ func TestKeyStaysWhenEmpty(t *testing.T) {
 
 // A mode of the showcase's own holds [1] SHELL's PTY (tdp K11; K11-28): M
 // goes in, the frame naming the mode and the footer Esc:leave; Esc comes back
-// out, asking nothing.
+// out, asking nothing; out of it ? writes the panel's Esc as the app says
+// (EscDesc).
 func TestTypingModeHoldsShell(t *testing.T) {
 	s := newShowcase()
 	d := tdptest.Start(t, s.app, 120, 40)
@@ -1101,4 +1102,9 @@ func TestTypingModeHoldsShell(t *testing.T) {
 	if ts.shellP.InMode() != nil || d.Has("It keeps running") || d.Has("Typing") {
 		t.Errorf("Esc: in the mode %v:\n%s", ts.shellP.InMode() != nil, strings.Join(d.Screen(), "\n"))
 	}
+	d.Press("?")
+	if !d.Has("send the shell an Esc") || d.Has("one level up") {
+		t.Errorf("? on [1] SHELL writes its Esc:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Press("Esc")
 }

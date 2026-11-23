@@ -127,3 +127,22 @@ func TestK11ModePTYNeedsTerminal(t *testing.T) {
 	}()
 	(&Panel{Label: "Pods", Body: &Pager{}}).EnterMode(&Mode{Name: "Typing", PTY: true})
 }
+
+// TestEscDesc: the key reference writes the panel's Esc as the app says,
+// one level up when it says nothing (tdp K4, M5; from ccodu, the user).
+func TestEscDesc(t *testing.T) {
+	ta, _, _, p, _ := ptyModeApp(t)
+	ta.press("Esc") // out of the mode
+	ref := func() string {
+		ta.press("?")
+		defer ta.press("Esc")
+		return StripStyles(strings.Join(ta.topView().(*noteView).lines, "\n"))
+	}
+	if r := ref(); !strings.Contains(r, "one level up") {
+		t.Errorf("no EscDesc: one level up:\n%s", r)
+	}
+	p.EscDesc = "cancel what the agent is doing"
+	if r := ref(); !strings.Contains(r, "cancel what the agent is doing") || strings.Contains(r, "one level up") {
+		t.Errorf("EscDesc:\n%s", r)
+	}
+}

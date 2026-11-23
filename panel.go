@@ -364,6 +364,10 @@ type Panel struct {
 	// OnEsc is the app's "one level up" for Esc on this panel (tdp K4); it
 	// reports whether there was one.
 	OnEsc func() tea.Cmd
+	// EscDesc is what OnEsc does, as the key reference writes Esc ("cancel
+	// what the agent is doing"); "" writes "one level up". What a level up
+	// is, and how its row reads, are the app's (tdp K4, M5).
+	EscDesc string
 	// HintPressableOnly leaves what cannot run now out of the bottom-border
 	// hint (tdp M6: the app's choice); otherwise it is listed in the
 	// disabled colour, as in the Space menu and ?.
