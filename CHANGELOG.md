@@ -2,6 +2,20 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.3.6 — tdp v1.3.5
+
+A patch, with no change in tdp:
+
+- A terminal opens on Windows 10 1809 and later, in a ConPTY: `App.OpenTerminal`, the terminal popup and a panel's
+  PTY (`Terminal.Enter`, `Mode.PTY`, `Terminal.Send`) work there as on unix (tdp terminal.1–terminal.4, K10, K11; from
+  gittu, the user). The program is found as os/exec finds it, and `Stop` closes its console as closing a console
+  window does. A Windows without ConPTY cannot open one and says so on the screen, as other systems do. With no
+  `Command` a terminal runs `%ComSpec%` on Windows, `$SHELL` elsewhere. No new API and no new dependency
+- On Windows, closing the console window ends `Run` as closing a unix terminal does: the programs in Terminals are told
+  to close first and `Run` returns nil, so what main does after it still runs, within the few seconds Windows waits
+- On Windows the showcase's PTYs run programs Windows has: cmd and Windows PowerShell; `vi` says there is no editor in
+  a terminal there
+
 ## v1.3.5 — tdp v1.3.5
 
 A patch, with tdp's:
