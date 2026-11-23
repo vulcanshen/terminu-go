@@ -2,6 +2,15 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.3.4 — tdp v1.3.4
+
+A patch, with tdp's:
+
+- How a fixed-width slot is padded is the app's own, zeros in front (`01`) or blanks after (`1 `), inside a capsule too;
+  blanks padding the end of a capsule's text are part of the text, and a selected part fills them (tdp L2, panel.4;
+  L2-2, panel-38; from kbu, the user). Nothing in the lib changes: a panel's title and tabs, a screen chip and a popup's
+  tab already keep their trailing blanks as written, count them in the width and fill them when chosen. A test says so
+
 ## v1.3.3 — tdp v1.3.3
 
 A patch, with tdp's:
