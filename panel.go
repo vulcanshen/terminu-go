@@ -283,7 +283,11 @@ type Panel struct {
 	// key reference write it so too (components, upper case).
 	Name string
 	// Tabs are the panel's other tabs, after the label's own. Tab is the
-	// current one, 0 being the label's; h/l switch tabs and call OnTab.
+	// current one, 0 being the label's; h/l switch tabs and call OnTab. An
+	// action of some tabs only stays in Actions, Hidden on the others: its key
+	// is the panel's on every tab, doing nothing where it is hidden, never the
+	// global one on the same key (tdp M4). Taken out of Actions in OnTab, its
+	// key would go to the global one there.
 	Tabs  []string
 	Tab   int
 	OnTab func(tab int) tea.Cmd

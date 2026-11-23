@@ -1049,3 +1049,38 @@ func TestKeyStaysOnTab(t *testing.T) {
 		t.Errorf("K on [1] INPUTS:\n%s", strings.Join(d.Screen(), "\n"))
 	}
 }
+
+// A panel's key stays the panel's while its row is not shown (tdp M4, M6;
+// M4-5): with [1] PODS empty there is no row to diff, so D does nothing,
+// never the [D]IALOGS screen's key, and ? lists neither.
+func TestKeyStaysWhenEmpty(t *testing.T) {
+	s := newShowcase()
+	d := tdptest.Start(t, s.app, 120, 40)
+	ps := s.panels
+	empty := func() tea.Cmd {
+		for _, a := range ps.pods.Actions {
+			if a.Label == "Empty" {
+				return a.Do()
+			}
+		}
+		t.Fatal("no Empty on [1] PODS")
+		return nil
+	}
+	d.Press("P", "1")
+	d.Do(empty)
+	if !ps.podList.Empty() {
+		t.Fatal("[1] PODS is not empty")
+	}
+	d.Press("D")
+	if s.app.Screen() != ps.screen || ps.pods.InMode() != nil {
+		t.Errorf("D on an empty [1] PODS did something:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Press("?")
+	if d.Has("Diff") || d.Has("Dialogs") {
+		t.Errorf("? on an empty [1] PODS lists D:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Press("Esc", "2", "?") // [2] LOG has no D: the screen's key
+	if !d.Has("Dialogs") {
+		t.Errorf("? on [2] LOG lacks D:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+}

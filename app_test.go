@@ -921,3 +921,32 @@ func TestK9PopupAsksFirst(t *testing.T) {
 		t.Errorf("a flow asking of its own was asked twice: %d layers\n%s", len(tc.stack), tc.screenText())
 	}
 }
+
+// TestPanelFilterKeptWhenItemGoes: an action on an item of the filtered list
+// that moves it away or removes it keeps the filter, the cursor on an item
+// the filter shows: the one now in its place, or the one the app selects
+// (tdp panel.14; panel-198, from gittu, the user).
+func TestPanelFilterKeptWhenItemGoes(t *testing.T) {
+	ta := newTestApp(t)
+	ta.press("/", "1", "Enter", "j")
+	cur, _ := ta.list.Current()
+	at, shown := ta.list.cursor, len(ta.list.view)
+	var rows []Row
+	for _, r := range ta.list.Rows() {
+		if r.ID != cur.ID {
+			rows = append(rows, r)
+		}
+	}
+	ta.list.SetRows(rows) // the app's Delete
+	got, ok := ta.list.Current()
+	if !ta.list.Filtering() || len(ta.list.view) != shown-1 {
+		t.Fatalf("the filter went: filtering %v, %d shown, %d before", ta.list.Filtering(), len(ta.list.view), shown)
+	}
+	if !ok || got.ID == cur.ID || ta.list.cursor != at || !strings.Contains(got.Cells[0], "1") {
+		t.Errorf("the cursor is not on a shown item in the place of %s: %+v at %d", cur.ID, got, ta.list.cursor)
+	}
+	last := ta.list.rowID(ta.list.view[len(ta.list.view)-1])
+	if !ta.list.Select(last) || !ta.list.Filtering() {
+		t.Error("the app selecting a shown item: the filter went, or it is not shown")
+	}
+}

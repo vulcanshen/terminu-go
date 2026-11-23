@@ -2,6 +2,29 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.3.2 — tdp v1.3.2
+
+A patch, with tdp's:
+
+- A location row may say work running on its place (tdp panel.10, popup.4, panel-197; from gittu, the user):
+  `List.LocationWork` and `Panel.LocationWork`, each going with its own `Location`, follow the where in Green, a space
+  between, the loading icon turning in Green where the glyph sits; when it is `""` again the row's own glyph is back,
+  or none. With no `Location` the work is the row by itself; cut from the front, the work stays; it dims with the
+  focus. What the place is in the middle of stays `Location`'s, in Lavender, `LocationGlyph` telling it. A panel's own
+  `LocationWork` with no `Location` makes the row the panel's. The lib keeps the icon turning while a panel on the
+  screen has work, as for `Loading`. The showcase's [2] FILES has Merge half done and Push
+- A panel's key stays the panel's while its row is not shown (tdp M4, M6; M4-5, M4-6; from gittu, the user): an item
+  or panel action Hidden, or with the list empty no target, keeps its key; the body gets it first (a list's `/` its
+  filter), then nothing happens, never the global action on the same key. `RunAction` the same. On a panel with tabs
+  an action of some tabs stays in `Actions`, Hidden on the others, and its key does nothing there. The key reference
+  no longer lists a global key under one of the panel's, its row shown or not
+- `Action.Ask` asks every time; `Action.AskFor` may ask only when this run would lose something or reach further than
+  it usually does, the same state always asking the same way (tdp F6; F6-1, F6-6). Only the comments change: the lib
+  keeps nothing of the time before
+- Nothing else in the lib changes for tdp's K3 (Enter by each item as it stands, K3-2 removed; K3-15 only for an
+  action whose point is adding), K13 (K13-2, K13-6), M3 (an action may have no hotkey) and panel.14 (an action on an
+  item of the filtered list keeps the filter, panel-198): the lib already lets the app do so. Tests and coverage follow
+
 ## v1.3.1 — tdp v1.3.1
 
 A patch, with tdp's. Everything since v1.3.0, the betas v1.3.1-beta.1 and beta.2 included:

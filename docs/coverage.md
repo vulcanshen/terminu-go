@@ -1,6 +1,6 @@
-# tdp v1.3.1 coverage
+# tdp v1.3.2 coverage
 
-tdp v1.3.1 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
+tdp v1.3.2 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
 每個元件、規範列的每一種方案、寫到的每一種狀態與疊法，在展示場都按得到。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -153,7 +153,8 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]iff`（M4：panel 的熱鍵優�
 | M4 | global operation popup：從 Space menu 的 global 列 `Enter`，疊在 Space menu 上；一種 menu；全部全域動作；離開在這裡 | 任一 panel：`Space` → `Global operation` | `TestM4GlobalPopup` |
 | M4 | `Esc` 回到 Space menu；執行了照 T1；目前畫面的切換列停用 | 在 `[P]ANELS` 上看 `[P]anels` 那一列 | `TestM4EscBackToSpaceMenu`、`TestM4CurrentScreenDisabled` |
 | M4 | global 熱鍵在 panel 上直接按（沒有 popup 時）；跟 panel 熱鍵撞鍵時 panel 的優先、那個 panel 的 key reference 不列被蓋掉的 global 鍵；數字的 global 熱鍵只在 popup 裡；模式裡不作用 | P `[1] PODS` 的 `[D]iff` 蓋掉 global 的 `[D]ialogs` | `TestM4GlobalHotkeyOnPanel`、`TestM4PanelKeyWins` |
-| M4 | 蓋掉 global 鍵的 panel 熱鍵，在它那一列暫時不出現時（M6：沒有對象，例：清單空了的 `[M]ark all`）照樣是 panel 的：按下去什麼都不做，不會變成同一個鍵的全域動作；key reference 不列那一列，也不列被蓋掉的 global 鍵（M4-5，user 2026-11-23，來自 gittu）。lib：panel 登記了的鍵（item 與 panel 的動作，body 自己的也算），`Hidden` 或清單空了沒有對象時都不落到 global：先給 body（例：`/` 是清單的 filter），body 不收就什麼都不做；`RunAction` 一樣。lib 分不出只屬於某個 tab 的動作：用 `Hidden` 藏起來的算沒有對象，app 在 `OnTab` 換掉 `Actions` 的，那個鍵在別的 tab 上就不是這個 panel 的 | I `[2] FILES` 的 `LINES` tab 按 `K`：`[K] Last commit` 只在 `FILES` tab，這裡什麼都不做、不會跳到 `[K]INDS`，`?` 也不列 `K`；到 `[1] INPUTS` 按 `K` 才到 `[K]INDS` | `TestM4KeyStaysWhileRowHidden`、`TestPopup74RunActionFound`、showcase 的 `TestKeyStaysOnTab` |
+| M4 | 蓋掉 global 鍵的 panel 熱鍵，在它那一列暫時不出現時（M6：沒有對象，例：清單空了的 `[M]ark all`）照樣是 panel 的：按下去什麼都不做，不會變成同一個鍵的全域動作；key reference 不列那一列，也不列被蓋掉的 global 鍵（M4-5，user 2026-11-23，來自 gittu）。lib：panel 登記了的鍵（item 與 panel 的動作，body 自己的也算），`Hidden` 或清單空了沒有對象時都不落到 global：先給 body（例：`/` 是清單的 filter），body 不收就什麼都不做；`RunAction` 一樣 | P `[1] PODS` 按 `Space` 選 `Empty`：清單空了，`[D]iff` 不在；按 `D` 什麼都不做、不會跳到 `[D]IALOGS`，`?` 也不列 `D`；到 `[2] LOG` 按 `?` 才看得到 `[D]ialogs` | `TestM4KeyStaysWhileRowHidden`、`TestPopup74RunActionFound`、showcase 的 `TestKeyStaysWhenEmpty` |
+| M4 | 有 tab 的 panel，某一個 tab 用的鍵在每一個 tab 上都是 panel 的：在沒有那個動作的 tab 上什麼都不做，不會變成同一個鍵的全域動作；`?` 也不列被蓋掉的 global 鍵（M4-6，G114，user 2026-11-23）。lib：只屬於某些 tab 的動作照樣登記在 `Actions`、在別的 tab 上用 `Hidden` 藏起來，就照 M4-5 留在 panel（`Panel.Tabs` 的註解這樣寫）；app 在 `OnTab` 把它從 `Actions` 拿掉的話，lib 看不到別的 tab 的鍵，那個鍵就會落到 global，靠 app 守 | I `[2] FILES` 的 `LINES` tab 按 `K`：`[K] Last commit` 只在 `FILES` tab，這裡什麼都不做、不會跳到 `[K]INDS`，`?` 也不列 `K`；到 `[1] INPUTS` 按 `K` 才到 `[K]INDS` | showcase 的 `TestKeyStaysOnTab` |
 | M4 | key reference 唯讀、可捲、沒游標、不能執行 | 任一處按 `?` | `TestKeyReferenceReadOnly` |
 | M5 | 每一列：左邊動作名稱、右邊一句單行說明 | Space menu | `TestMenuRowLayout` |
 | M5 | 熱鍵標記：多字元的熱鍵碰上 label 開頭也不分大小寫（`go` 加 `Goto` → `[go]to`） | 測試驗 | `TestM5HotkeyMarking` |
@@ -423,6 +424,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]iff`（M4：panel 的熱鍵優�
 | panel.14 | 清單上 `Tab` 下一個 panel；清單上 `Esc` 清掉篩選；選了之後清單留著篩選、打字列變灰；清單上 `/` 回打字列接著打 | 同上 | `TestPanelFilterListKeys` |
 | panel.14 | focus 離開篩選留著；回來時直接在打字列上（`Tab` 經過停兩下） | 同上 + `Tab` 繞一圈 | `TestPanelFilterFocusReturn` |
 | panel.14 | app 自己的動作要換掉 panel 列的東西，或把它的 cursor 放到某一項上時（例：在別的 panel 移動 cursor，把這個 panel 帶到那一項；進到一項裡面，panel.10），不管篩選有沒有藏住那一項，都先像 `Esc` 一樣清掉篩選；只是 focus 離開不清（panel-180，來自 gittu）。lib：自己進去的兩個地方先清，app 不用叫：Diff 模式在第二列按 `Enter` 進有差異的項目清單（`DiffModeAction`）、`App.OpenDiff` 進清單；退回來時篩選已經沒了，cursor 在原本那一列；沒有差異（只跳 Info toast）時什麼都沒換，篩選留著。app 自己的動作先叫 `List.ClearFilter()` | I `[2] FILES` 的 `FOLDERS` tab：按 `/` 打 `rel` 再 `Enter` 進 `releases/`（進去時篩選清掉）；在 `releases/` 裡按 `/` 打 `v`、`Enter` 回清單，在 `v1/` 按 `D`、移到 `v2/` 按 `Enter`：篩選清掉，`Esc` 退回來兩列都在 | `TestDiffClearsFilter`、showcase 的 `TestCompareFolders` |
+| panel.14 | 使用者對篩選後的某一項做的動作讓那一項移走或消失時（例：stage 一個檔，它移到另一組；刪掉它），篩選留著，cursor 落在篩選看得到的項目上，落在哪一項由 app 決定（例：同一組的下一項）（panel-198，user 2026-11-23，來自 gittu）。lib：`List.SetRows` 不清篩選，cursor 那一項不在了就停在原來的位置、篩選看得到的那一項（清單變短時是最後一項）；app 要別的就 `List.Select` 篩選看得到的那一項 | 展示場的 `[x] Delete` 只跳 toast、不真的拿掉那一列；lib 的測試照 app 刪掉一列 | `TestPanelFilterKeptWhenItemGoes` |
 | panel.14 | 沒有 cursor 的 panel 搜自己的文字時（有 `/` 時）照 viewer 的搜尋（note.3），`Esc` 清掉命中的字，跟清掉篩選一樣往上一層（panel-156）：app 自己的 body 做（例：webu 的網頁）；lib 的 `Pager` 沒有 `/` | lib 不適用；展示場 P `[2] LOG` 沒有 `/` | — |
 | panel.16 | app 自己的內容：tdp 的元件和規則都裝不下的東西（例：玩到一半的遊戲、一張圖）由 app 畫成 panel 的內容；一個一個挑出來的東西不管怎麼排都是清單，照清單畫（panel-159）。框、`[N] label` 與 tab、hint、模式名、捲動位置、focus 與淡化、載入與錯誤跟其他 panel 一樣，內容怎麼畫是 app 的 | lib：app 自己實作 `Body`（`Draw`、`Key`、`Scroll`、`MoveKeys`），框、label、hint、捲動位置、淡化、`Loading`、`Fail` 由 panel 畫；放什麼靠 app 守。展示場沒有元件裝不下的內容 | `TestPanelError`、`TestPanelScrollPosition` |
 | panel.16 | 上面的鍵：模式外是 panel 的熱鍵（列在 Space menu、用 `[]` 標、不佔 core key 與移動字母）；`Enter` 對整個 panel 做最直覺的事；內容會移動的地方照 K12；在 app 自己的模式裡照 K11（panel-160） | lib：panel 的動作照一般登記（`Action`，panel 的範圍），`Enter` 是 `Key: "Enter"` 的 panel 動作，其他鍵送到 `Body.Key` | `TestK3EnterOnContentPanel`、`TestK12HotkeyCannotTakeMovement` |
