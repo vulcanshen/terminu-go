@@ -1651,6 +1651,9 @@ func (a *App) handleKey(msg tea.KeyMsg) tea.Cmd {
 	// In a PTY every key goes to the program, Esc and Ctrl-C too, but the
 	// exit key and the app's own keys (tdp K10).
 	if t := a.ptyFocus(); t != nil {
+		if t.inMode() {
+			return a.ptyModeKey(t, key, msg)
+		}
 		if t.mode != "" && key == "Space" { // the mode's Space menu, not the program's (tdp K11)
 			return a.terminalModeMenu(t)
 		}
@@ -2211,7 +2214,7 @@ func (a *App) footerHints() []KeyHint {
 		return []KeyHint{{"q", "quit"}}
 	}
 	p := s.Focused()
-	if t, ok := p.body().(*Terminal); ok && t.inside {
+	if t, ok := p.body().(*Terminal); ok && t.keysIn() {
 		return t.hint() // the exit key and the app's own (tdp screen)
 	}
 	switch {

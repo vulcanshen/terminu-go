@@ -55,6 +55,16 @@ func newTerminalScreen(s *showcase) *terminalScreen {
 				}
 				return nil
 			}},
+		// A mode of the showcase's own holding the shell's PTY: every key but
+		// Esc is the shell's, Esc comes back out asking nothing (tdp K11).
+		{Key: "M", Label: "Typing mode", Desc: "type to the shell in a mode; Esc comes back out", Scope: terminu.PanelScope,
+			Do: func() tea.Cmd {
+				ts.shellP.EnterMode(&terminu.Mode{Name: "Typing", Exit: "leave", PTY: true})
+				if !ts.shell.Running() {
+					return ts.shell.Start()
+				}
+				return nil
+			}},
 		{Label: "Slow start", Desc: "a shell that takes 3 seconds to connect", Scope: terminu.PanelScope, Do: ts.slowStart},
 	}}
 	// Inside the shell ? is the shell's own: its keys are told here (tdp M6).

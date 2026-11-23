@@ -88,8 +88,9 @@ type Terminal struct {
 	exited  bool
 	spoke   bool // the program has printed something since Start
 	err     error
-	back    int  // lines scrolled back into the history
-	inside  bool // a terminal in a panel: the focus is in it
+	back    int    // lines scrolled back into the history
+	inside  bool   // a terminal in a panel: the focus is in it
+	panel   *Panel // the panel whose mode holds it (Mode.PTY)
 	w, h    int
 	// cursorColour is the selection's cursor: the popup's layer colour, or a
 	// panel's cursor colour.
@@ -151,7 +152,18 @@ const selectKey = "Alt-v"
 
 // modes reports whether the terminal has its two modes now: interactive,
 // the keys not all handed to the program.
-func (t *Terminal) modes() bool { return t.Interactive && !t.AllKeys }
+func (t *Terminal) modes() bool { return t.Interactive && !t.AllKeys && !t.inMode() }
+
+// inMode reports whether a mode of the app's own holds the terminal now, the
+// innermost layer of its panel's (Mode.PTY, tdp K11).
+func (t *Terminal) inMode() bool {
+	p := t.panel
+	return p != nil && p.Body == t && p.mode != nil && p.mode.PTY
+}
+
+// keysIn reports whether keys go to the program now: the focus went in, or a
+// mode holds it.
+func (t *Terminal) keysIn() bool { return t.inside || t.inMode() }
 
 // fullScreen reports a program filling the whole screen: the alternate one.
 func (t *Terminal) fullScreen() bool {
@@ -275,6 +287,17 @@ func (t *Terminal) Enter() { t.inside = true }
 // Inside reports whether the focus is in the terminal.
 func (t *Terminal) Inside() bool { return t.inside }
 
+// Send writes b to the program as if typed, from outside its PTY: an Esc
+// that Esc on the panel sends to cancel what the program is doing (tdp K11,
+// K4). It does nothing while the program is not running. Call it as keys
+// come, from an action or OnMsg.
+func (t *Terminal) Send(b []byte) {
+	if t.exited || t.in == nil || len(b) == 0 {
+		return
+	}
+	_, _ = t.in.Write(b)
+}
+
 // Stop ends the program.
 func (t *Terminal) Stop() {
 	if t.proc != nil && !t.exited {
@@ -305,6 +328,9 @@ func (t *Terminal) hint() []KeyHint {
 		return []KeyHint{{"v", "select"}, {"Esc", "cancel"}}
 	}
 	h := []KeyHint{{t.exit(), t.exitVerb()}}
+	if t.inMode() {
+		h = []KeyHint{{"Esc", modeExit(t.panel)}} // the mode's Esc is the exit key (tdp K11)
+	}
 	for _, k := range t.Keys {
 		h = append(h, KeyHint{k.Key, k.Desc})
 	}
@@ -498,7 +524,8 @@ func (t *Terminal) key(a *App, key string, msg tea.KeyMsg) tea.Cmd {
 		// screen, q and Ctrl-C too (tdp K11).
 		t.leaveMode()
 	}
-	if key == t.exit() && (key == exitKey || t.ExitAsks) {
+	inMode := t.inMode() // Esc and Alt-Esc are the mode's then (ptyModeKey), the exit key is not
+	if !inMode && key == t.exit() && (key == exitKey || t.ExitAsks) {
 		// Alt-Esc and two Escs are the same bytes: it always asks (tdp K10).
 		verb := t.exitVerb()
 		name := cmpOr(t.Subject, t.Title)
@@ -508,7 +535,7 @@ func (t *Terminal) key(a *App, key string, msg tea.KeyMsg) tea.Cmd {
 		}
 		return a.Confirm(Ask{Title: Upper(verb[:1]) + verb[1:], Question: q, Verb: verb}, func() tea.Cmd { return t.leave(a) })
 	}
-	if key == t.exit() {
+	if !inMode && key == t.exit() {
 		return t.leave(a)
 	}
 	if t.modes() && key == selectKey {
@@ -549,6 +576,22 @@ func (t *Terminal) key(a *App, key string, msg tea.KeyMsg) tea.Cmd {
 		_, _ = t.in.Write(b)
 	}
 	return nil
+}
+
+// ptyModeKey is a key in a mode of the app's own holding the panel's PTY
+// (Mode.PTY, tdp K11): Esc leaves the mode, asking nothing, the PTY's exit
+// key; two Escs read as one Alt-Esc leave it and send the program one Esc;
+// every other key goes to the program as in K10.
+func (a *App) ptyModeKey(t *Terminal, key string, msg tea.KeyMsg) tea.Cmd {
+	switch key {
+	case "Esc":
+		return a.leavePanelMode(t.panel)
+	case "Alt-Esc":
+		cmd := a.leavePanelMode(t.panel)
+		t.Send([]byte{0x1b})
+		return cmd
+	}
+	return t.key(a, key, msg)
 }
 
 // leave is the exit key accepted: the focus comes out, and with Ends the
@@ -660,7 +703,7 @@ func encodeKey(msg tea.KeyMsg, appCursor, bracketed bool) []byte {
 
 // Draw draws the program's screen; its cursor shows while the focus is in it.
 func (t *Terminal) Draw(w, h int, focused bool) []string {
-	return t.lines(w, h, focused && t.inside)
+	return t.lines(w, h, focused && t.keysIn())
 }
 
 // Key does nothing: while the focus is in the terminal the app sends it
@@ -758,7 +801,7 @@ func (a *App) ptyFocus() *Terminal {
 	}
 	if s := a.Screen(); s != nil {
 		if p := s.Focused(); p != nil {
-			if t, ok := p.Body.(*Terminal); ok && t.inside {
+			if t, ok := p.Body.(*Terminal); ok && t.keysIn() {
 				return t
 			}
 		}

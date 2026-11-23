@@ -1084,3 +1084,21 @@ func TestKeyStaysWhenEmpty(t *testing.T) {
 		t.Errorf("? on [2] LOG lacks D:\n%s", strings.Join(d.Screen(), "\n"))
 	}
 }
+
+// A mode of the showcase's own holds [1] SHELL's PTY (tdp K11; K11-28): M
+// goes in, the frame naming the mode and the footer Esc:leave; Esc comes back
+// out, asking nothing.
+func TestTypingModeHoldsShell(t *testing.T) {
+	s := newShowcase()
+	d := tdptest.Start(t, s.app, 120, 40)
+	ts := s.terminal
+	defer func() { ts.shell.Stop() }()
+	d.Press("t", "1", "M")
+	if ts.shellP.InMode() == nil || !d.Has("Typing") || !d.Has("Esc:leave") || d.Has("Alt-Esc:leave") {
+		t.Fatalf("M: in the mode %v:\n%s", ts.shellP.InMode() != nil, strings.Join(d.Screen(), "\n"))
+	}
+	d.Press("Esc")
+	if ts.shellP.InMode() != nil || d.Has("It keeps running") || d.Has("Typing") {
+		t.Errorf("Esc: in the mode %v:\n%s", ts.shellP.InMode() != nil, strings.Join(d.Screen(), "\n"))
+	}
+}

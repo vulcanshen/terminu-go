@@ -146,6 +146,7 @@ go build -o /tmp/showcase ./examples/showcase
 
 **t — terminal**：PTY。
 - `[1] SHELL` 是 panel 裡的 shell：`Enter` 進去打字，`Alt-Esc` 出來（先問）。在外面按 `?`，最後一段 `TERMINAL` 寫 shell 裡的鍵。
+  按 `M`（`Typing mode`）是展示場自己的模式裝著這個 shell：上框右側 `Typing`、外框換模式色，`Space`、`?`、`q` 都進 shell；`Esc` 出來、不問（K11）。
 - `[2] SESSIONS` 每一列 `Enter` 開一個 terminal popup：`shell`、`keys`（`cat -v`，看每個鍵送了什麼）、`top`、`vi`。
 - popup 裡 `Alt-t` 藏起來；`Alt-b` 讓展示場卡 2 秒（試 `Esc` 與 `Alt-Esc` 用），卡完會跳一個 toast。
 

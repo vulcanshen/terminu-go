@@ -64,6 +64,18 @@ type Mode struct {
 	// Space menu, as a key's NoMenu does (tdp K11); Esc leaves as ever. A
 	// menu that would list nothing lists it all the same: it has a row.
 	NoLeaveRow bool
+	// PTY makes a mode of the app's own hold the panel's PTY, its Body a
+	// *Terminal (a program the user goes into to type to it, tdp K11): the
+	// mode shows itself as any does, its name on the frame and the frame in
+	// the mode's colour, and every key but Esc goes to the program as in K10,
+	// Space, ?, q and Ctrl-C too, so Keys and the mode's Space menu and ? are
+	// not used. Esc is the PTY's exit key: it leaves the mode as any mode's
+	// Esc, asking nothing, OnExit running; the footer writes it with Exit.
+	// Two Escs read as one Alt-Esc (the program busy) leave the mode and
+	// send the program one Esc. The Terminal's ExitKey, ExitAsks, Ends,
+	// OnLeave and its History and selection are for a PTY gone into by
+	// Terminal.Enter.
+	PTY bool
 	// Pause suspends Tab and the digits in the mode; pressing them then says
 	// to leave the mode first.
 	Pause bool
@@ -465,7 +477,23 @@ func (p *Panel) LeaveDiff() { p.levels = nil }
 // EnterMode puts the panel in m; Esc leaves it (tdp K11).
 func (p *Panel) EnterMode(m *Mode) {
 	p.noteKey(m)
+	p.holdPTY(m)
 	p.mode, p.under = m, nil
+}
+
+// holdPTY gives a mode holding the panel's PTY its Terminal (Mode.PTY, tdp
+// K11): the keys go in while the mode is the panel's innermost layer, the
+// Terminal's own way in by Enter set aside, its History or selection left.
+func (p *Panel) holdPTY(m *Mode) {
+	if !m.PTY {
+		return
+	}
+	t, ok := p.Body.(*Terminal)
+	if !ok {
+		panic("terminu: panel " + p.Label + ": a Mode with PTY needs the panel's Body to be a *Terminal (tdp K11)")
+	}
+	t.panel, t.inside = p, false
+	t.leaveMode()
 }
 
 // EnterLayer goes a layer further into the mode the panel is in, to m (tdp
@@ -474,6 +502,7 @@ func (p *Panel) EnterMode(m *Mode) {
 // back to the layer it was in. Out of a mode it is EnterMode.
 func (p *Panel) EnterLayer(m *Mode) {
 	p.noteKey(m)
+	p.holdPTY(m)
 	if p.mode != nil {
 		p.under = append(p.under, p.mode)
 	}
