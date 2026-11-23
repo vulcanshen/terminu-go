@@ -2,6 +2,21 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.3.5 — tdp v1.3.5
+
+A patch, with tdp's:
+
+- Picking up an item of a filtered list sets the filter aside while it is held: the whole list shows, the item at its
+  own place, and it moves past the rows the filter hid; dropping it or putting it back brings the filter back as it
+  was, its typing row too, the cursor on that item (tdp panel.8, panel.14; panel-199; from kbu, the user). `List.Hold`
+  sets the filter aside and `List.Drop` brings it back, so a Drag mode built on `Hold`, `MoveHeld` and `Drop` gets it
+  with no change. No new API
+- With no answer to OSC 11 there is no fade: an item's other rows take the fade's start flat across the whole inside,
+  to the right border; dimmed, the start dims as before (tdp color.2, panel.5; panel-200; from gittu, the user). The
+  OSC 11 query goes first, right after the width probes and ahead of the OSC 4s and the DA1, so a multiplexer holding
+  the answers behind an unanswered OSC 4 (tmux) no longer makes it miss the wait. The lib's terminal emulator answers a
+  program's OSC 11 only when the background is known, so a family app inside fades nothing either
+
 ## v1.3.4 — tdp v1.3.4
 
 A patch, with tdp's:
