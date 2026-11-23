@@ -153,6 +153,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]iff`（M4：panel 的熱鍵優�
 | M4 | global operation popup：從 Space menu 的 global 列 `Enter`，疊在 Space menu 上；一種 menu；全部全域動作；離開在這裡 | 任一 panel：`Space` → `Global operation` | `TestM4GlobalPopup` |
 | M4 | `Esc` 回到 Space menu；執行了照 T1；目前畫面的切換列停用 | 在 `[P]ANELS` 上看 `[P]anels` 那一列 | `TestM4EscBackToSpaceMenu`、`TestM4CurrentScreenDisabled` |
 | M4 | global 熱鍵在 panel 上直接按（沒有 popup 時）；跟 panel 熱鍵撞鍵時 panel 的優先、那個 panel 的 key reference 不列被蓋掉的 global 鍵；數字的 global 熱鍵只在 popup 裡；模式裡不作用 | P `[1] PODS` 的 `[D]iff` 蓋掉 global 的 `[D]ialogs` | `TestM4GlobalHotkeyOnPanel`、`TestM4PanelKeyWins` |
+| M4 | 蓋掉 global 鍵的 panel 熱鍵，在它那一列暫時不出現時（M6：沒有對象，例：清單空了的 `[M]ark all`）照樣是 panel 的：按下去什麼都不做，不會變成同一個鍵的全域動作；key reference 不列那一列，也不列被蓋掉的 global 鍵（M4-5，user 2026-11-23，來自 gittu）。lib：panel 登記了的鍵（item 與 panel 的動作，body 自己的也算），`Hidden` 或清單空了沒有對象時都不落到 global：先給 body（例：`/` 是清單的 filter），body 不收就什麼都不做；`RunAction` 一樣。lib 分不出只屬於某個 tab 的動作：用 `Hidden` 藏起來的算沒有對象，app 在 `OnTab` 換掉 `Actions` 的，那個鍵在別的 tab 上就不是這個 panel 的 | I `[2] FILES` 的 `LINES` tab 按 `K`：`[K] Last commit` 只在 `FILES` tab，這裡什麼都不做、不會跳到 `[K]INDS`，`?` 也不列 `K`；到 `[1] INPUTS` 按 `K` 才到 `[K]INDS` | `TestM4KeyStaysWhileRowHidden`、`TestPopup74RunActionFound`、showcase 的 `TestKeyStaysOnTab` |
 | M4 | key reference 唯讀、可捲、沒游標、不能執行 | 任一處按 `?` | `TestKeyReferenceReadOnly` |
 | M5 | 每一列：左邊動作名稱、右邊一句單行說明 | Space menu | `TestMenuRowLayout` |
 | M5 | 熱鍵標記：多字元的熱鍵碰上 label 開頭也不分大小寫（`go` 加 `Goto` → `[go]to`） | 測試驗 | `TestM5HotkeyMarking` |

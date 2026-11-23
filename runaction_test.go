@@ -145,24 +145,33 @@ func TestPopup74RunActionQuit(t *testing.T) {
 
 // TestPopup74RunActionFound: what RunAction finds is what the key runs on the
 // focused panel out of a mode (tdp M4): its Enter action, its own operations
-// before the global ones (a hidden one leaving its key to them, tdp M6), a
-// screen's key; an action opening a popup keeps the one that called under
-// it, as a menu stays (tdp T1).
+// before the global ones, a hidden one keeping its key and doing nothing, as
+// a key with none does (tdp M4, M6; M4-5), a screen's key; an action opening
+// a popup keeps the one that called under it, as a menu stays (tdp T1).
 func TestPopup74RunActionFound(t *testing.T) {
 	ta, _, _ := runApp(t)
 	hidden := true
-	ta.pods.Actions = append(ta.pods.Actions, Action{Key: "S", Label: "Stop", Desc: "the job", Scope: PanelScope,
-		Hidden: func() bool { return hidden }, Do: ta.record("stop")})
-	for _, c := range []struct {
+	stop := Action{Key: "S", Label: "Stop", Desc: "the job", Scope: PanelScope, Hidden: func() bool { return hidden }, Do: ta.record("stop")}
+	for i, c := range []struct {
 		key, ran string
 		hidden   bool
-	}{{"Enter", "logs", true}, {"x", "delete", true}, {"S", "start", true}, {"S", "stop", false}} {
+	}{{"Enter", "logs", true}, {"x", "delete", true}, {"S", "start", true}, {"S", "", true}, {"S", "stop", false}} {
+		if i == 3 { // the panel's own S, from here on
+			ta.pods.Actions = append(ta.pods.Actions, stop)
+		}
 		ta.ran, hidden = nil, c.hidden
 		ta.runPopup()
 		ta.settle()
 		ta.press(c.key)
 		if c.key == "x" { // it asks first
 			ta.press("Enter")
+		}
+		if c.ran == "" {
+			if _, ok := ta.topView().(*appPopup); !ok || len(ta.ran) != 0 {
+				t.Errorf("%s, its row hidden: %T on top, ran %v", c.key, ta.topView(), ta.ran)
+			}
+			ta.press("Esc")
+			continue
 		}
 		if ta.top() != nil || !slices.Equal(ta.ran, []string{c.ran}) {
 			t.Errorf("%s: %T on top, ran %v", c.key, ta.topView(), ta.ran)

@@ -1020,3 +1020,32 @@ func TestPushLocationWork(t *testing.T) {
 		t.Errorf("no merge, pushed: no glyph: %q", plain)
 	}
 }
+
+// A panel's key stays the panel's on a tab its row is not on (tdp M4, M6;
+// M4-5): [2] FILES' [K] Last commit is on the FILES tab only; on the
+// others K does nothing, never the [K]INDS screen's key, and ? lists
+// neither.
+func TestKeyStaysOnTab(t *testing.T) {
+	s := newShowcase()
+	d := tdptest.Start(t, s.app, 120, 40)
+	d.Press("I", "2", "l") // LINES
+	if s.inputs.tab != 1 {
+		t.Fatalf("tab %d, want LINES", s.inputs.tab)
+	}
+	d.Press("K")
+	if d.Has("[1] KINDS") || s.inputs.tab != 1 {
+		t.Errorf("K on LINES left [2] FILES:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Press("?")
+	if d.Has("Last commit") || d.Has("Kinds") {
+		t.Errorf("? on LINES lists K:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Press("Esc", "1", "?") // [1] INPUTS has no K: the screen's key
+	if !d.Has("Kinds") {
+		t.Errorf("? on [1] INPUTS lacks K:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Press("Esc", "K")
+	if !d.Has("[1] KINDS") {
+		t.Errorf("K on [1] INPUTS:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+}

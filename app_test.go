@@ -338,6 +338,51 @@ func TestM4PanelKeyWins(t *testing.T) {
 	}
 }
 
+// TestM4KeyStaysWhileRowHidden: a panel's own key over a global one stays the
+// panel's while its row is not shown (M6: no target, the list empty or
+// Hidden): pressing it does nothing, never the global action on the same key;
+// its ? lists neither (tdp M4, M6; M4-5, from gittu, the user).
+func TestM4KeyStaysWhileRowHidden(t *testing.T) {
+	ta := newTestApp(t)
+	ta.Global = append(ta.Global, Action{Key: "M", Label: "Merge", Desc: "a branch", Scope: GlobalScope, Do: ta.record("merge")})
+	hidden := false
+	ta.pods.Actions = append(ta.pods.Actions,
+		Action{Key: "M", Label: "Mark all", Desc: "every pod", Scope: ItemScope, Do: ta.record("mark all")},
+		Action{Key: "W", Label: "Watch", Desc: "the namespace", Scope: PanelScope, Hidden: func() bool { return hidden }, Do: ta.record("watch")})
+	ta.Global = append(ta.Global, Action{Key: "W", Label: "Wipe", Desc: "the cache", Scope: GlobalScope, Do: ta.record("wipe")})
+	keyRef := func() string {
+		ta.press("?")
+		defer ta.press("Esc")
+		return StripStyles(strings.Join(ta.topView().(*noteView).lines, "\n"))
+	}
+	ta.press("M", "W")
+	if !slices.Equal(ta.ran, []string{"mark all", "watch"}) {
+		t.Errorf("shown, the panel's: ran %v", ta.ran)
+	}
+	ta.ran = nil
+	ta.list.SetRows(nil) // no pod to mark: its row goes
+	hidden = true
+	ta.press("M", "W")
+	if len(ta.ran) != 0 || ta.top() != nil {
+		t.Errorf("not shown, the panel's keys did %v, %T open", ta.ran, ta.topView())
+	}
+	if ref := keyRef(); strings.Contains(ref, "Mark all") || strings.Contains(ref, "Merge") || strings.Contains(ref, "Watch") || strings.Contains(ref, "Wipe") {
+		t.Errorf("? lists a row not shown, or a global key under the panel's:\n%s", ref)
+	}
+	if ref := keyRef(); !strings.Contains(ref, "Start") {
+		t.Errorf("? lost a global key the panel has not:\n%s", ref)
+	}
+	ta.press("S")
+	if !slices.Equal(ta.ran, []string{"start"}) {
+		t.Errorf("a global key the panel has not still runs: ran %v", ta.ran)
+	}
+	ta.ran = nil
+	ta.press("2", "M", "W") // the log has neither: the global ones
+	if !slices.Equal(ta.ran, []string{"merge", "wipe"}) {
+		t.Errorf("on a panel without them, the global keys: ran %v", ta.ran)
+	}
+}
+
 func TestM4GlobalHotkeyOnPanel(t *testing.T) {
 	ta := newTestApp(t)
 	ta.press("S")

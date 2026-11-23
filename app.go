@@ -1204,6 +1204,21 @@ func (a *App) ownAction(p *Panel, key string) (Action, bool) {
 	return Action{}, false
 }
 
+// ownsKey reports whether key is one of p's own, its row shown or not: while
+// it is not (M6: no target, a list's [M]ark all with the list empty), the
+// key stays the panel's and does nothing, never the global one on the same
+// key (tdp M4).
+func (a *App) ownsKey(p *Panel, key string) bool {
+	for _, scope := range []Scope{ItemScope, PanelScope} {
+		for _, act := range a.panelActions(p, scope) {
+			if act.Key == key && key != "" {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // globalAction is the global operation on key (tdp M4).
 func (a *App) globalAction(key string) (Action, bool) {
 	for _, act := range a.globalActions() {
@@ -1255,6 +1270,9 @@ func (a *App) RunAction(key string) tea.Cmd {
 		act, ok = a.ownAction(p, key)
 	}
 	if !ok {
+		if p != nil && a.ownsKey(p, key) {
+			return nil
+		}
 		if act, ok = a.globalAction(key); !ok {
 			return nil
 		}
@@ -1482,20 +1500,17 @@ func (a *App) panelKeyRef(p *Panel) *noteView {
 		return KeyRow{Key: act.Key, Desc: plainLabel(act) + descTail(act.Desc), Disabled: act.disabled()}
 	}
 	var item, panel []KeyRow
-	own := map[string]bool{}
 	pb := p.body()
 	if pb != nil && pb.HasItem() {
 		for _, act := range a.panelActions(p, ItemScope) {
 			if act.Key != "" && !act.hidden() {
 				item = append(item, row(act))
-				own[act.Key] = true
 			}
 		}
 	}
 	for _, act := range a.panelActions(p, PanelScope) {
 		if act.Key != "" && !act.hidden() {
 			panel = append(panel, row(act))
-			own[act.Key] = true
 		}
 	}
 	var move []KeyRow
@@ -1530,7 +1545,8 @@ func (a *App) panelKeyRef(p *Panel) *noteView {
 	for _, act := range a.globalActions() {
 		// On a panel a digit jumps to a panel: a global one works only in the
 		// global operation popup (tdp K1), so it is not a key here.
-		if act.Key == "" || act.Key == "q" || isDigit(act.Key) || own[act.Key] || act.hidden() {
+		// Nor one under a key of the panel's, its row shown or not (tdp M4).
+		if act.Key == "" || act.Key == "q" || isDigit(act.Key) || a.ownsKey(p, act.Key) || act.hidden() {
 			continue
 		}
 		app = append(app, row(act))
@@ -1827,6 +1843,9 @@ func (a *App) panelKey(key string, msg tea.KeyMsg) tea.Cmd {
 		if done, cmd := b.Key(key, msg); done {
 			return cmd
 		}
+	}
+	if a.ownsKey(p, key) {
+		return nil
 	}
 	if act, ok := a.globalAction(key); ok {
 		if act.Label == "Quit" {
