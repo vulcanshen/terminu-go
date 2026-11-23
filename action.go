@@ -37,9 +37,11 @@ type Action struct {
 	// AskFor, when set, is asked when the action runs, after Hidden and
 	// Disabled, for the question it asks then (the name of the item under the
 	// cursor), or for whether it asks at all: an action may ask only when
-	// this run would lose something or reach further than it usually does
-	// (a switch that would drop unsaved changes, an amend of a commit already
-	// pushed), nil asking nothing. The same state always asks the same way,
+	// this run would lose something, reach further than it usually does, or
+	// carry something plainly wrong into what it makes (a switch that would
+	// drop unsaved changes, an amend of a commit already pushed, marking a
+	// file resolved while it still holds conflict markers), nil asking
+	// nothing. The same state always asks the same way,
 	// nothing else deciding it, whether it asked before included (tdp F6).
 	// It wins over Ask. Run from a menu, the confirm opens over the menu, so
 	// Esc on it goes back to the menu (tdp T1).
