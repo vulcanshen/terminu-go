@@ -34,7 +34,7 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   與清單的來源。
 - **上色**：自己寫 SGR（`Style.Render`，一律 24-bit），淡化（`Dim`）就是改寫每一列的 SGR。淡化往 `#0c0c13`（`dimTo`）靠，
   不是 Base：比 Base 暗的顏色也跟著變暗，膠囊串沒選中的段的 Mantle 被蓋住時就成了 Crust，不用另外寫特例。
-- **占好幾列的項目的淡出**（panel.5）：每一格先畫成 lib 自己的記號 `48;7;R;G;B;i;n`（起點與第幾格，`fadeSGR`），不是終端機看得懂的 SGR。淡化（`Dim`）只把記號裡的起點變暗，整個畫面畫完（`Frame`、`List.Draw` 的最後）`finishFades` 才照公式換成每一格真正的背景，跟終端機底色（`termBg`，OSC 11）差 2 以內的換成 `49`。先算好顏色再淡化的話，尾巴會被淡化成比旁邊沒塗的格子還暗，留下一條帶子；淡化前又不知道上面會不會再疊 popup，所以留到最後才算。
+- **占好幾列的項目的淡出**（panel.5）：每一格先畫成 lib 自己的記號 `48;7;R;G;B;i;n`（起點與第幾格，`fadeSGR`），不是終端機看得懂的 SGR。淡化（`Dim`）只把記號裡的起點變暗，整個畫面畫完（`Frame`、`List.Draw` 的最後）`finishFades` 才照公式換成每一格真正的背景，跟終端機底色（`termBg`，OSC 11）差 2 以內的換成 `49`。箭頭那幾格也帶記號（第幾格超過 `n`）：問得到底色時不塗；終端機沒回答 OSC 11（`termBgKnown` 是 false）時不淡出，每一格都是起點，箭頭那幾格也塗，整列到右邊框同一色（color.2、panel-200）。先算好顏色再淡化的話，尾巴會被淡化成比旁邊沒塗的格子還暗，留下一條帶子；淡化前又不知道上面會不會再疊 popup，所以留到最後才算。
   已知的限制：PTY 裡跑的家族 app 自己畫的淡出，到 lib 這邊只是一般的背景色，lib 分不出來；PTY 被 popup 蓋住時（F8）整個淡化一次，它的尾巴就會比旁邊沒塗的格子暗一點。裡面的 app 照 panel.5、外面照 F8，兩邊都照規範，接縫是兩個疊在一起才有的，不改 tdp（terminu 2026-11-22）。
 - **膠囊串**（`drawChain`）：串裡每一格都寫明前景與背景（沒選中的段與接縫是串色配 Mantle），只有兩端外側不塗，所以終端機的底
   是什麼顏色都一樣（kbu 回報的）。`[N]` 與第一個 tab 由 `Panel.capsules` 併成一段，中間的空白一個 powerline 符號寬；`drawChain`
@@ -91,7 +91,7 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
 - **PTY 的終端模擬器自己寫**（`vt.go`）：PTY 裡的程式被告知 icon 佔幾格（`TERMINU__ICON_WIDTH`），照它排版；模擬器放字的寬度要跟 lib
   的 `Width` 一樣，畫出來的每一列才會剛好是框裡的寬度。`charmbracelet/x/vt` 的寬度寫死成 `ansi.GraphemeWidth`（icon 一格）、換不了，
   而且帶進 bubbletea v2 那一套（ultraviolet、x/ansi v0.11）；`hinshun/vt10x` 每個字都當一格，連中文都不對。開 PTY 用
-  `creack/pty`（MIT，有 tag）。模擬器會回答家族 app 啟動時問的事（CPR、DA1、OSC 4 調色盤、OSC 11 底色：回答外面終端機的底色，裡面的 app 淡出才停在畫面真正的底色），在 PTY 裡跑另一個家族 app 也不用等探測逾時。
+  `creack/pty`（MIT，有 tag）。模擬器會回答家族 app 啟動時問的事（CPR、DA1、OSC 4 調色盤、OSC 11 底色：回答外面終端機的底色，裡面的 app 淡出才停在畫面真正的底色；外面沒回答時不回答，裡面的 app 也不淡出），在 PTY 裡跑另一個家族 app 也不用等探測逾時。
 - **連上色也不用 lip gloss**：lip gloss v1 的顏色要先設全域的 color profile（`lipgloss.SetColorProfile`），lib 去改它會改到用 lib 的 app；
   `Style.Render` 碰到多列字串還會用自己的寬度補空白。lib 要的只有「這段字用這個顏色」，自己寫 SGR 就夠了，輸出也一定是 24-bit
   （淡化的前提）。app 內容的顏色要用 lip gloss 照用，淡化照樣改得到它的 SGR。

@@ -853,6 +853,9 @@ func (t *vt) oscDone() {
 		if rest == "?" {
 			c := Text.RGB
 			if num == "11" {
+				if !termBgKnown {
+					return // not known here either: the program in it fades nothing (tdp color.2)
+				}
 				c = termBg // the screen's own background, for a family app's fades (tdp panel.5)
 			}
 			t.reply = append(t.reply, fmt.Sprintf("\x1b]%s;%s\x1b\\", num, xColor(c))...)

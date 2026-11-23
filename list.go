@@ -744,7 +744,7 @@ func (l *List) draw(w, h int, focused, own bool) []string {
 				out = append(out, row+Repeat(" ", arrow))
 				continue
 			}
-			out = append(out, fadeRow(row, DimRGB(DimRGB(mark.RGB)))+Repeat(" ", arrow))
+			out = append(out, fadeRow(row, DimRGB(DimRGB(mark.RGB)), arrow))
 			continue
 		}
 		// mark is the row's sign on a cursor block; shown, the one drawn
@@ -801,10 +801,13 @@ func (l *List) draw(w, h int, focused, own bool) []string {
 }
 
 // fadeRow is row on a background fading out from start across its cells
-// into the terminal's own, its text keeping its colours (tdp panel.5): each
-// cell carries a fade's mark (fadeSGR), so a dimmed panel dims the start and
-// the fade still ends in the terminal's background.
-func fadeRow(row string, start RGB) string {
+// into the terminal's own, its text keeping its colours (tdp panel.5), then
+// past blank cells (the arrow's room) the fade leaves unpainted: each cell
+// carries a fade's mark (fadeSGR), so a dimmed panel dims the start and the
+// fade still ends in the terminal's background, and with no fade (no answer
+// to OSC 11) the past cells take the start too, to the right border (tdp
+// color.2).
+func fadeRow(row string, start RGB, past int) string {
 	n := Width(row)
 	var b strings.Builder
 	col := 0
@@ -815,6 +818,9 @@ func fadeRow(row string, start RGB) string {
 		}
 		b.WriteString(seq)
 	})
+	for i := range past {
+		b.WriteString(fadeSGR(start, n+i, n) + " ")
+	}
 	return b.String() + "\x1b[0m"
 }
 

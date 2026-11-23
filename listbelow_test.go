@@ -137,6 +137,7 @@ func faded(t *testing.T, why, row string, start RGB, n int) {
 // of it unpainted, the arrow's cell too; no bar, no underline (tdp panel.5,
 // panel-181, from gittu).
 func TestListSeveralRows(t *testing.T) {
+	answered(t, Base.RGB)
 	l := belowList()
 	l.ToggleMark() // c0
 	l.Key("j", tea.KeyMsg{})
@@ -201,6 +202,7 @@ func TestListSeveralRows(t *testing.T) {
 // others keep the Yellow fade. Dimmed, the start dims and the fade still
 // ends in the terminal's background.
 func TestListAnchorSeveralRows(t *testing.T) {
+	answered(t, Base.RGB)
 	l := belowList()
 	l.Anchor, l.inMode = "4", true // c4, two rows below
 	n := 50 - Width(glyphHard)
@@ -242,9 +244,7 @@ func TestListAnchorSeveralRows(t *testing.T) {
 // background is not Base too: without the focus (tdp T2) and under a popup
 // (tdp F8), each dimming the start once more (tdp panel.5, panel-181).
 func TestListFadeDimmed(t *testing.T) {
-	old := termBg
-	t.Cleanup(func() { termBg = old })
-	termBg = RGB{0x30, 0x34, 0x46}
+	answered(t, RGB{0x30, 0x34, 0x46})
 	l := belowList()
 	l.Key("j", tea.KeyMsg{}) // c1
 	a := anySize(New("x"))
@@ -268,28 +268,44 @@ func TestListFadeDimmed(t *testing.T) {
 	check("under a popup", DimRGB(DimRGB(cursorFade)))
 }
 
+// answered is the terminal having answered OSC 11 with bg, for this test.
+func answered(t *testing.T, bg RGB) {
+	t.Helper()
+	oldBg, oldKnown := termBg, termBgKnown
+	t.Cleanup(func() { termBg, termBgKnown = oldBg, oldKnown })
+	termBg, termBgKnown = bg, true
+}
+
 // TestFadeBackgroundOSC11: the terminal's background is asked for with the
-// palette, before DA1 (OSC 11); its answer is where a fade ends, Base with
-// none (tdp color.2, color.4, panel.5); the lib's own terminal answers a
-// program in it with that background.
+// palette, first, ahead of the palette and DA1 (OSC 11), so a multiplexer
+// holding answers behind a colour left unanswered does not make it miss the
+// wait; its answer is where a fade ends (tdp color.2, color.4, panel.5); the
+// lib's own terminal answers a program in it with that background, and
+// nothing while it is not known.
 func TestFadeBackgroundOSC11(t *testing.T) {
-	q := probeQueries(false)
-	if at := strings.Index(q, "\x1b]11;?\x1b\\"); at < strings.LastIndex(q, "\x1b]4;") || at > strings.Index(q, "\x1b[c") {
-		t.Errorf("the background is not asked for after the palette, before DA1: %q", q)
+	for _, widths := range []bool{false, true} {
+		q := probeQueries(widths)
+		if at := strings.Index(q, "\x1b]11;?\x1b\\"); at < 0 || at > strings.Index(q, "\x1b]4;") || at > strings.Index(q, "\x1b[c") {
+			t.Errorf("the background is not asked for ahead of the palette and DA1: %q", q)
+		}
 	}
-	oldBg, oldPal := termBg, palette16
-	t.Cleanup(func() { termBg, palette16 = oldBg, oldPal })
-	termBg = Base.RGB
-	if _, done := parseAnswers("\x1b]4;1;rgb:f3/8b/a8\x07\x1b[?62;22c"); !done || termBg != Base.RGB {
-		t.Errorf("no answer: the background is %v, not Base", termBg)
+	oldBg, oldKnown, oldPal := termBg, termBgKnown, palette16
+	t.Cleanup(func() { termBg, termBgKnown, palette16 = oldBg, oldKnown, oldPal })
+	termBg, termBgKnown = Base.RGB, false
+	if _, done := parseAnswers("\x1b]4;1;rgb:f3/8b/a8\x07\x1b[?62;22c"); !done || termBgKnown {
+		t.Errorf("no answer: the background is known, %v", termBg)
+	}
+	if r := string(vtAfter(10, 5, "\x1b]11;?\x1b\\").reply); r != "" {
+		t.Errorf("not known: the lib's terminal answers %q", r)
 	}
 	for _, reply := range []string{
+		"\x1b]11;rgb:3030/3434/4646\x1b\\\x1b]4;1;rgb:f3/8b/a8\x07\x1b[?62;22c",
 		"\x1b]4;1;rgb:f3/8b/a8\x07\x1b]11;rgb:3030/3434/4646\x1b\\\x1b[?62;22c",
 		"\x1b]11;rgb:30/34/46\x07\x1b[?62;22c",
 	} {
-		termBg = Base.RGB
-		if _, done := parseAnswers(reply); !done || termBg != (RGB{0x30, 0x34, 0x46}) {
-			t.Errorf("%q: the background is %v", reply, termBg)
+		termBg, termBgKnown = Base.RGB, false
+		if _, done := parseAnswers(reply); !done || !termBgKnown || termBg != (RGB{0x30, 0x34, 0x46}) {
+			t.Errorf("%q: the background is %v, known %v", reply, termBg, termBgKnown)
 		}
 	}
 	if _, done := parseAnswers("\x1b]11;rgb:3030/34"); done {
@@ -297,6 +313,62 @@ func TestFadeBackgroundOSC11(t *testing.T) {
 	}
 	if r := string(vtAfter(10, 5, "\x1b]11;?\x1b\\").reply); r != "\x1b]11;rgb:3030/3434/4646\x1b\\" {
 		t.Errorf("the lib's terminal answers %q", r)
+	}
+}
+
+// TestPanel200NoOSC11Flat: with no answer to OSC 11 there is no fade: the
+// cursor's item's other rows take the fade's start flat across the whole
+// inside, the arrow's cells too, up to the right border, on a terminal whose
+// background is not Base (gittu's tmux display-popup, #11111a); dimmed, the
+// start dims as before (tdp color.2, panel.5, T2, F8; panel-200; from
+// gittu, the user).
+func TestPanel200NoOSC11Flat(t *testing.T) {
+	oldBg, oldKnown := termBg, termBgKnown
+	t.Cleanup(func() { termBg, termBgKnown = oldBg, oldKnown })
+	termBg, termBgKnown = Base.RGB, false
+	l := belowList()
+	l.Key("j", tea.KeyMsg{}) // c1
+	a := anySize(New("x"))
+	a.AddScreen(&Screen{Name: "S", Panels: []*Panel{{Label: "Commits", Body: l}, {Label: "Other", Body: &Pager{}}},
+		Layout: func(w, h int) []Rect { return []Rect{{0, 0, 60, h}, {60, 0, w - 60, h}} }})
+	a.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	check := func(why string, start RGB) {
+		t.Helper()
+		row, _ := lineWith(a.Frame(), "feat, v1.2")
+		bgs := cellBgs(row)
+		want := fmt.Sprintf("%d;%d;%d", start[0], start[1], start[2])
+		if len(bgs) < 60 || bgs[0] != "" || bgs[59] != "" {
+			t.Fatalf("%s: the frame's cells: %q", why, row)
+		}
+		for i, b := range bgs[1:59] {
+			if b != want {
+				t.Errorf("%s: inside cell %d is %q, want %s flat to the right border: %q", why, i, b, want, row)
+				break
+			}
+		}
+	}
+	check("with the focus", cursorFade)
+	a.Update(keyMsg("2"))
+	check("without the focus", DimRGB(cursorFade))
+	a.Confirm(Ask{Title: "Delete", Question: "Delete it?", Verb: "delete"}, func() tea.Cmd { return nil })
+	check("under a popup", DimRGB(DimRGB(cursorFade)))
+	// Off the cursor, nothing; the anchor's rows flat in its own colour.
+	if below, _ := lineWith(l.Draw(50, 14, true), "main"); slices.ContainsFunc(cellBgs(below), func(b string) bool { return b != "" }) {
+		t.Errorf("a row below off the cursor is painted: %q", below)
+	}
+	l.Anchor, l.inMode = "4", true
+	mid, _ := lineWith(l.Draw(50, 14, false), "main")
+	for _, b := range cellBgs(mid) {
+		if b != "60;55;51" {
+			t.Errorf("the anchor's row is not #3c3733 flat across its 50 cells: %q", mid)
+			break
+		}
+	}
+	// With an answer, the arrow's cells past the fade stay unpainted, on the
+	// narrowest fade too.
+	termBgKnown = true
+	if c, paint := fadeColor(cursorFade, 3, 2); paint {
+		t.Errorf("a cell past a fade of 2 is painted %v", c)
 	}
 }
 

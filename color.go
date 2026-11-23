@@ -228,9 +228,14 @@ func DimColor(c Color) Color {
 
 // --- the fade of an item's other rows (tdp panel.5, color.2) -------------
 
-// termBg is the terminal's own background, where a fade ends: Base until
-// Probe asks the terminal (OSC 11, tdp color.2, color.4).
-var termBg = Base.RGB
+// termBg is the terminal's own background, where a fade ends, and
+// termBgKnown that the terminal said it, answering Probe's OSC 11 (tdp
+// color.2, color.4). Until it does there is no fade: no colour it could end
+// in is known.
+var (
+	termBg      = Base.RGB
+	termBgKnown bool
+)
 
 // fadeSGR marks cell i of a fade n cells long from start into the terminal's
 // background. The mark is the lib's own, never sent to a terminal: Dim dims
@@ -251,8 +256,17 @@ var fadeMark = regexp.MustCompile(`\x1b\[48;7;(\d+);(\d+);(\d+);(\d+);(\d+)m`)
 // background: lerp(start, background, 1 − (1 − x)³), x going from 0 in the
 // first cell to 1 in the last, each channel rounded half up. It is false for
 // a cell within 2 of the background on every channel, left unpainted
-// (tdp panel.5).
+// (tdp panel.5); so is a cell past the fade's n (the arrow's room). With no
+// answer to OSC 11 every cell is start, those past n too: the rows take it
+// flat across the whole inside, a fade into a guessed colour stopping halfway
+// with a cut (tdp color.2, panel.5; panel-200).
 func fadeColor(start RGB, i, n int) (RGB, bool) {
+	switch {
+	case !termBgKnown:
+		return start, true
+	case i >= n:
+		return RGB{}, false
+	}
 	x := 0.0
 	if n > 1 {
 		x = float64(i) / float64(n-1)

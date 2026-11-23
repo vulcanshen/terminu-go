@@ -60,10 +60,11 @@ func (r ProbeResult) Lines() []string {
 // ssh (LC_TERMINU_ICON_WIDTH, LC_TERMINU_POWERLINE_WIDTH), then asking the
 // terminal where the cursor ended up after printing one (CPR, unix only). The palette
 // is asked for with OSC 4 at the same time; colours the terminal does not
-// report stay xterm's. The terminal's background is asked for with them
-// (OSC 11), for the fade of an item's other rows (tdp panel.5, color.2); with
-// no answer it is Base. Probe sets the lib's widths, palette and background
-// and reports what it found.
+// report stay xterm's. The terminal's background is asked for with them,
+// ahead of them (OSC 11), for the fade of an item's other rows (tdp panel.5,
+// color.2); with no answer there is no fade, those rows taking its start
+// flat. Probe sets the lib's widths, palette and background and reports what
+// it found.
 func Probe(app string) ProbeResult {
 	res := ProbeResult{IconCells: 1, PowerlineCells: 1, IconFrom: "default", PowerlineFrom: "default"}
 	iconSet := widthFromEnv(&res.IconCells, &res.IconFrom, EnvName(app, "icon width"), FamilyIconWidth, RemoteIconWidth)
@@ -130,7 +131,7 @@ func parseAnswers(b string) (ans answers, done bool) {
 				}
 			default:
 				if c, ok := rgbSpec(rest[:end]); ok {
-					termBg = c
+					termBg, termBgKnown = c, true
 				}
 			}
 			b = rest[end+term:]
@@ -211,17 +212,20 @@ func rgbSpec(spec string) (RGB, bool) {
 }
 
 // probeQueries is what Probe sends: an icon and a cursor position request, a
-// powerline symbol and another, the 16 palette colours, the background, then
-// DA1, which every terminal answers, so no reply is waited for past it.
+// powerline symbol and another, the background, the 16 palette colours, then
+// DA1, which every terminal answers, so no reply is waited for past it. The
+// background goes ahead of the palette: a multiplexer passes the answers back
+// in order, and one holding the rest behind a colour left unanswered (tmux,
+// about 500ms) would make it miss the wait (tdp color.4).
 func probeQueries(widths bool) string {
 	var b strings.Builder
 	if widths {
 		b.WriteString("\r" + iconProbe + "\x1b[6n\r" + powerlineProbe + "\x1b[6n")
 	}
+	b.WriteString("\x1b]11;?\x1b\\")
 	for i := range 16 {
 		b.WriteString("\x1b]4;" + strconv.Itoa(i) + ";?\x1b\\")
 	}
-	b.WriteString("\x1b]11;?\x1b\\")
 	b.WriteString("\x1b[c")
 	return b.String()
 }
