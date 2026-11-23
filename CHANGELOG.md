@@ -2,6 +2,26 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.3.3 — tdp v1.3.3
+
+A patch, with tdp's:
+
+- A mode of the app's own may hold its panel's PTY (tdp K11, K10, terminal.1, terminal.3; K11-28, K10-3, K10-4; from
+  ccodu, the user): `Mode.PTY`, on a panel whose Body is a `*Terminal`, holds the PTY while the mode is the innermost
+  layer. It shows itself as any mode; every key but `Esc` goes to the program, `Space`, `?`, `q` and `Ctrl-C` too, the
+  Terminal's own `Keys` working; `Esc` leaves the mode asking nothing, `OnExit` running, the footer writing `Esc` with
+  the mode's `Exit`; two Escs read as one `Alt-Esc` leave it and send one Esc. The Terminal's `ExitKey`, `ExitAsks`,
+  `Ends`, `OnLeave`, History and selection stay for a PTY gone into by `Enter`. A `Mode` with `PTY` on another Body
+  panics. The showcase's [1] SHELL has Typing mode on `M`
+- `Terminal.Send` writes to the program from outside its PTY, such as the Esc that `Esc` on the panel sends (tdp K4,
+  K11); nothing while the program does not run
+- `Panel.EscDesc` is what the panel's `OnEsc` does, as the key reference writes `Esc`; unset it writes "one level up" as
+  before (tdp K4, M5; from ccodu, the user). The panel filter and a level of the items that differ keep their own rows.
+  The showcase's [1] SHELL sends the shell an Esc with `Terminal.Send` on `Esc`, and its `?` says so
+- `Action.AskFor` may also ask only when this run would carry something plainly wrong into what it makes, such as
+  marking a file resolved while it still holds conflict markers (tdp F6; F6-6; from gittu, the user). Only the comment
+  changes: `AskFor` already asks or not by the state as the app sees it
+
 ## v1.3.2 — tdp v1.3.2
 
 A patch, with tdp's:
