@@ -8,7 +8,6 @@ import (
 	"compress/gzip"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -80,7 +79,7 @@ type SelfUpdate struct {
 type updateEnv struct {
 	exe          string
 	goos, goarch string
-	api, files   string // https://api.github.com, https://github.com
+	github       string // https://github.com
 	client       *http.Client
 	brew         func(args ...string) *exec.Cmd
 }
@@ -88,7 +87,7 @@ type updateEnv struct {
 // Run does the update, its words on stdout and stderr, and gives the exit
 // status.
 func (u SelfUpdate) Run(stdout, stderr io.Writer) int {
-	env := updateEnv{goos: runtime.GOOS, goarch: runtime.GOARCH, api: "https://api.github.com", files: "https://github.com",
+	env := updateEnv{goos: runtime.GOOS, goarch: runtime.GOARCH, github: "https://github.com",
 		client: &http.Client{Timeout: 2 * time.Minute},
 		brew:   func(args ...string) *exec.Cmd { return exec.Command("brew", args...) }}
 	return u.run(env, stdout, stderr)
@@ -191,20 +190,31 @@ func releaseGet(env updateEnv, url string) ([]byte, error) {
 }
 
 // latestRelease is the version of owner/app's latest release, without its
-// v. GitHub's latest is never a pre-release.
+// v. GitHub's latest is never a pre-release. It is where
+// github.com/<owner>/<app>/releases/latest leads, .../releases/tag/<tag>,
+// the redirect not followed. Not GitHub's API: that answers a network not
+// signed in 60 times an hour, all its programs counted together, and then
+// says 403.
 func latestRelease(env updateEnv, owner, app string) (string, error) {
-	url := env.api + "/repos/" + owner + "/" + app + "/releases/latest"
-	body, err := releaseGet(env, url)
+	url := env.github + "/" + owner + "/" + app + "/releases/latest"
+	client := *env.client
+	client.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+	resp, err := client.Get(url)
 	if err != nil {
 		return "", err
 	}
-	var release struct {
-		TagName string `json:"tag_name"`
+	resp.Body.Close()
+	if resp.StatusCode/100 != 3 {
+		return "", fmt.Errorf("%s: %s", url, resp.Status)
 	}
-	if err := json.Unmarshal(body, &release); err != nil || release.TagName == "" {
-		return "", fmt.Errorf("%s: no release tag in its answer", url)
+	to, err := resp.Location()
+	if err == nil {
+		if _, tag, ok := strings.Cut(to.Path, "/releases/tag/"); ok && tag != "" {
+			return strings.TrimPrefix(tag, "v"), nil
+		}
 	}
-	return strings.TrimPrefix(release.TagName, "v"), nil
+	// With no release yet, GitHub leads to the releases page.
+	return "", fmt.Errorf("%s: leads to %q, not a release", url, resp.Header.Get("Location"))
 }
 
 // newer reports whether version a is newer than b, as semver orders them:
@@ -329,7 +339,7 @@ func replaceExe(env updateEnv, owner, app, exe, version string) error {
 	defer tmp.Close()
 
 	file := func(name string) string {
-		return env.files + "/" + owner + "/" + app + "/releases/download/v" + version + "/" + name
+		return env.github + "/" + owner + "/" + app + "/releases/download/v" + version + "/" + name
 	}
 	name := releaseArchive(app, version, env.goos, env.goarch)
 	sums, err := releaseGet(env, file("checksums.txt"))

@@ -224,6 +224,7 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
     （`checkCompares`）照 cursor 那一列重填，同一列不重讀；換了列，明細裡進去的那幾層一起丟掉，它們是上一對的。模式跨兩個 panel：
     清單與明細各進一個 `Mode`（都叫 `Diff`，框都是模式色），`Mode.with` 是另一個 panel，`Pause` 照樣擋其他 panel、放行它；
     明細那一層的 `Mode.back` 讓 `Esc` 回清單而不是離開（`leavePanelMode`），清單那一層的 `OnExit` 把明細一起帶出模式。
+- **`SelfUpdate` 不用 GitHub 的 API 查最新版**（ccdrawu 回報）：沒登入的 API 一個 IP 每小時只能查 60 次，同一個網路上的程式一起算（公司、學校的 NAT 後面、CI 機器），用完就回 403，`<app> update` 就在使用者要用的時候失敗。改看 `github.com/<owner>/<app>/releases/latest`轉到哪裡（不跟著轉，`CheckRedirect` 回 `http.ErrUseLastResponse`）：轉到 `…/releases/tag/<tag>` 就是最新的正式版，GitHub 的 latest 不會是 pre-release，跟 API 的意思一樣；還沒有 release 時轉到 `…/releases`，說查不到。下載本來就走 `github.com` 的 `releases/download`，所以整個更新只靠 `github.com`。缺點是靠網頁的轉址，不是正式的 API；GitHub 改了轉址的樣子時，這裡會說查不到，而不是裝錯的版本。
 
 ## 已否決，不要重提
 

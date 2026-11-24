@@ -59,12 +59,20 @@ func newFakeReleases(t *testing.T, latest string) *fakeReleases {
 		f.hits++
 		dl := "/me/tool/releases/download/v" + f.latest + "/"
 		switch r.URL.Path {
-		case "/repos/me/tool/releases/latest":
-			if f.latest == "" {
-				http.Error(w, "no", http.StatusInternalServerError)
-				return
+		case "/me/tool/releases/latest":
+			// As github.com: to the latest release's page; with none yet,
+			// to the releases page.
+			to := f.srv.URL + "/me/tool/releases"
+			if f.latest != "" {
+				to += "/tag/v" + f.latest
 			}
-			_, _ = w.Write([]byte(`{"tag_name": "v` + f.latest + `"}`))
+			http.Redirect(w, r, to, http.StatusFound)
+		case "/me/tool/releases", "/me/tool/releases/tag/v" + f.latest:
+			_, _ = w.Write([]byte("<html>a page</html>"))
+		case "/repos/me/tool/releases/latest":
+			// GitHub's API, its 60 an hour used up: not asked.
+			w.Header().Set("X-Ratelimit-Remaining", "0")
+			http.Error(w, "API rate limit exceeded", http.StatusForbidden)
 		case dl + "checksums.txt":
 			tarSum := sum(f.tarball)
 			if f.badSum {
@@ -86,7 +94,7 @@ func newFakeReleases(t *testing.T, latest string) *fakeReleases {
 
 // env is the update's world: exe the running executable, on goos/amd64.
 func (f *fakeReleases) env(exe, goos string, brew func(args ...string) *exec.Cmd) updateEnv {
-	return updateEnv{exe: exe, goos: goos, goarch: "amd64", api: f.srv.URL, files: f.srv.URL, client: f.srv.Client(), brew: brew}
+	return updateEnv{exe: exe, goos: goos, goarch: "amd64", github: f.srv.URL, client: f.srv.Client(), brew: brew}
 }
 
 // installed puts an old tool at dir/rel and gives its path.
@@ -119,7 +127,9 @@ func runUpdate(u SelfUpdate, env updateEnv) (code int, stdout, stderr string, af
 // put in place of the running file, held to checksums.txt (a zip and the
 // file moved to .old on Windows); Homebrew runs brew upgrade <tap>/<app>;
 // Scoop prints the command to run. Progress on stdout, then the app's After
-// with the new executable.
+// with the new executable. The latest is where github.com's releases/latest
+// leads; the fake's API has used up its 60 an hour, as a shared network's
+// does.
 func TestE1Update(t *testing.T) {
 	u := SelfUpdate{App: "tool", Version: "1.2.0", Owner: "me", Tap: "me/tap"}
 	f := newFakeReleases(t, "1.3.0")
@@ -270,15 +280,22 @@ func TestE1UpdateNot(t *testing.T) {
 	f.badSum = false
 
 	// A platform the release does not have: nothing installed.
-	if code, _, errs, _ = runUpdate(u, updateEnv{exe: exe, goos: "linux", goarch: "riscv64", api: f.srv.URL, files: f.srv.URL, client: f.srv.Client()}); code != 1 ||
+	if code, _, errs, _ = runUpdate(u, updateEnv{exe: exe, goos: "linux", goarch: "riscv64", github: f.srv.URL, client: f.srv.Client()}); code != 1 ||
 		!strings.Contains(errs, "tool_1.3.0_linux_riscv64.tar.gz: 404") {
 		t.Errorf("no such platform: exit %d, %q", code, errs)
 	}
 
-	// The lookup fails.
+	// The lookup fails: no such repository; no release yet.
+	nobody := u
+	nobody.Owner = "nobody"
+	if code, _, errs, _ = runUpdate(nobody, f.env(exe, "linux", nil)); code != 1 ||
+		errs != "tool: Cannot look up the latest release: "+f.srv.URL+"/nobody/tool/releases/latest: 404 Not Found\n" {
+		t.Errorf("no such repository: exit %d, %q", code, errs)
+	}
 	f.latest = ""
-	if code, _, errs, _ = runUpdate(u, f.env(exe, "linux", nil)); code != 1 || !strings.HasPrefix(errs, "tool: Cannot look up the latest release: ") {
-		t.Errorf("the lookup failing: exit %d, %q", code, errs)
+	if code, _, errs, _ = runUpdate(u, f.env(exe, "linux", nil)); code != 1 ||
+		errs != "tool: Cannot look up the latest release: "+f.srv.URL+"/me/tool/releases/latest: leads to \""+f.srv.URL+"/me/tool/releases\", not a release\n" {
+		t.Errorf("no release yet: exit %d, %q", code, errs)
 	}
 
 	// The app's After failing is a failure.
