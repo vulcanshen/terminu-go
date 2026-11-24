@@ -2,6 +2,16 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.3.7 — tdp v1.3.5
+
+A patch, with no change in tdp:
+
+- `SelfUpdate` (`<app> update`, tdp E1) no longer asks GitHub's API for the latest release. Without signing in, the API
+  answers an IP 60 times an hour, every program on the same network counted together, and then says 403, so behind a
+  company or school NAT or on a CI machine the update failed (from ccdrawu). The latest is now the tag that
+  `github.com/<owner>/<app>/releases/latest` leads to, still never a pre-release; with no release yet, the update says
+  it cannot find one. The download already came from github.com. No new API: apps only move to v1.3.7
+
 ## v1.3.6 — tdp v1.3.5
 
 A patch, with no change in tdp:
