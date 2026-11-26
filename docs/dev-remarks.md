@@ -237,6 +237,12 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   （`Frame` 叫 `placeToasts`），線動了它就跟著那條邊。lib 不寫檔：`App.OnLines` 把整個 `Lines` 交給 app 寫進 state。
   - 不另給一種「版面樹」的 API：tree 表達不了 screen.9 的「四格的直線上下共用」，而且每個 app 都得改版面的寫法；從 Rect 找線，
     現有的 `Layout` 不用改就能調。
+- **只有一個 panel 的畫面讓那個 panel 拿數字鍵**（`Panel.Digits`，boxu 來的，user 接受，tdp 不改）：K1 把數字留給跳 panel，是因為
+  框上的 `[N]` 等於保證「按 N 到這裡」。畫面上只有一個位置有號碼時，`2`–`9` 沒有 panel、`1` 就是它自己，給它用不會讓任何 `[N]`
+  失信。是不是只有一個，每按一次鍵、每畫一次都重算（`Screen.digits`），用的是 `?` 的 `1–N`、footer 的 `Tab|1–N` 同一個 `count()`
+  （說明牌不算，L5 藏起來的位置算）：同一個畫面上一個鍵不會同時有兩種意思，也不會因為某個位置顯示或藏起來就換意思。`Run` 擋得到
+  的先擋（`checkDigits`）；執行中才多出來的不擋、不 panic，多出來的期間數字照 K1 跳 panel。hint 的範圍照 tdp 的鍵名寫法用 `–`。
+  - 用 Panel 的欄位，不交給 body 的 `Key`：只要宣告一處，lib 的 body（List、Pager）也能用。
 
 ## 已否決，不要重提
 

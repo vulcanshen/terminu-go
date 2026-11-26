@@ -344,6 +344,14 @@ type Panel struct {
 	// Actions are the panel's item and panel operations; a "Enter" key is
 	// what Enter does here (tdp K3).
 	Actions []Action
+	// Digits, when set, gives the panel the digit keys 1–9 while it is the
+	// one place on its screen with a number (Digits): its hint has them
+	// after Enter and h|l ("1–3:page") and its key reference in its move
+	// section, never in a mode, where they do what they do on any panel.
+	// While another place has a number, signs not counting and a hidden
+	// one (L5) counting, they jump to the panels as ever (tdp K1); Run
+	// refuses it on a screen with another such place.
+	Digits *Digits
 	// MinWidth and MinHeight are the least the user can make the panel by
 	// moving the lines around it (tdp screen.9: the app's); 10 × 3, its
 	// frame and a row, when unset. At 60 × 32 every panel is still side by
@@ -412,6 +420,7 @@ type Panel struct {
 	levels []*diffLevel // the lists of the items that differ gone into, the last shown (compare.go)
 	over   *diffOver    // a Diff mode's diff shown in the panel as the list's details (compare.go)
 	bodyY  int          // the rows from the panel's top to its body, at the last draw
+	digits int          // the digit keys that are its own, for this draw's hint (Screen.digits)
 	app    *App
 }
 
@@ -609,6 +618,10 @@ func (p *Panel) hint() (out []KeyHint, off []bool) {
 	// and no mode (tdp panel.1).
 	if len(p.Tabs) > 0 && p.mode == nil {
 		add("h|l", "tab", false)
+	}
+	// The digits while they are its own, a range of two or more (Digits).
+	if p.digits > 1 {
+		add("1–"+itoa(p.digits), p.Digits.Hint, false)
 	}
 	for _, a := range p.actions() {
 		if a.Key == "Enter" || a.Hint == "" || a.hidden() || !p.scopeApplies(a) {

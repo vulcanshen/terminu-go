@@ -353,6 +353,23 @@ app.OnLines = func(l terminu.Lines) tea.Cmd {
 }
 ```
 
+## 只有一個 panel 的畫面上的數字鍵
+
+在 panel 上，數字鍵 `1`–`9` 用來跳 panel（tdp K1）。畫面上只有一個 panel 有號碼時（說明牌沒有號碼），`2`–`9` 沒有 panel
+可跳，`1` 就是它自己，這時 `Panel.Digits` 可以把數字鍵拿去用，例如翻到第幾頁。lib 把範圍寫進它的 hint，放在 `Enter` 與 `h|l`
+後面（`1–3:page`；超過九個寫 `1–9`，只有一個就不寫），`?` 寫在移動那一區；Space menu 沒有這一列。在模式裡，數字鍵跟在一般
+panel 上一樣；在 filter 打字時照樣打進去。畫面上還有別的 panel 有號碼時，`Run` 不接受 `Digits`；之後多出一個（執行中加上的，
+或被帶頭 panel 藏起來的位置，tdp L5），它在的期間數字鍵回到跳 panel。使用者在哪一頁由 body 的 `Scroll()` 寫，例如 `2 of 3`。
+
+```go
+pins := &terminu.Panel{Label: "Pins", Body: grid, Digits: &terminu.Digits{
+	Count: grid.Pages, // 3 pages: 1–3:page
+	Hint:  "page",
+	Desc:  "go to page N",
+	Do:    func(n int) tea.Cmd { grid.ShowPage(n); return nil },
+}}
+```
+
 ## panel 框上的狀態
 
 panel 可以在框上放一個 app 自己、一直在的狀態：一個 glyph 加一段短字，例如 panel 監看的檔案最後一次讀進來的時間

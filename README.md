@@ -417,6 +417,25 @@ app.OnLines = func(l terminu.Lines) tea.Cmd {
 }
 ```
 
+## The digits on a screen of one panel
+
+On a panel the digits `1`–`9` jump to the panels (tdp K1). Where one panel is the only one on its screen with a number
+(signs have none), `2`–`9` have no panel to go to and `1` is that panel, so `Panel.Digits` may take them, for the
+pages of what it shows, say. The lib writes the range in its hint after `Enter` and `h|l` (`1–3:page`, `1–9` above
+nine, nothing for one) and in `?` among the moves; the Space menu has no row for them. In a mode they do what they do
+on any panel, and typing in a filter they are typed. `Run` refuses `Digits` on a screen with another panel that has a
+number; while one is there later (added while running, or a place its leading panel hides, tdp L5), the digits jump
+to the panels again. Your body's `Scroll()` writes where the user is, `2 of 3`.
+
+```go
+pins := &terminu.Panel{Label: "Pins", Body: grid, Digits: &terminu.Digits{
+	Count: grid.Pages, // 3 pages: 1–3:page
+	Hint:  "page",
+	Desc:  "go to page N",
+	Do:    func(n int) tea.Cmd { grid.ShowPage(n); return nil },
+}}
+```
+
 ## A status on a panel's frame
 
 A panel may show one lasting status of the app's own on its frame: a glyph and a short text, such as when a file the

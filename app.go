@@ -393,8 +393,8 @@ func (a *App) AddScreen(s *Screen) *Screen {
 		if p.Note != nil && slices.ContainsFunc(p.Actions, func(act Action) bool { return act.Key == "i" }) {
 			panic(fmt.Sprintf("terminu: panel [%d] %s: i opens an item's note in every app, and this panel has notes (tdp K13, panel.18)", i+1, p.Label))
 		}
-		if p.Sign != 0 && (len(p.Actions) > 0 || len(p.Tabs) > 0) {
-			panic(fmt.Sprintf("terminu: sign %s: a sign has no actions and no tabs, never taking the focus (tdp panel.17)", p.Label))
+		if p.Sign != 0 && (len(p.Actions) > 0 || len(p.Tabs) > 0 || p.Digits != nil) {
+			panic(fmt.Sprintf("terminu: sign %s: a sign has no actions, no tabs and no digits, never taking the focus (tdp panel.17)", p.Label))
 		}
 	}
 	for _, l := range s.Leads {
@@ -535,6 +535,9 @@ func (a *App) Run() error {
 		return err
 	}
 	if err := a.checkKeys(); err != nil {
+		return err
+	}
+	if err := a.checkDigits(); err != nil {
 		return err
 	}
 	Probe(a.Name)
@@ -1585,6 +1588,9 @@ func (a *App) panelKeyRef(p *Panel) *noteView {
 	if len(p.Tabs) > 0 {
 		move = append(move, KeyRow{Key: "h|l", Desc: "previous tab, next tab"})
 	}
+	if n := s.digits(p); n > 1 { // the panel's own (Panel.Digits)
+		move = append(move, KeyRow{Key: "1–" + itoa(n), Desc: p.Digits.Desc})
+	}
 	core := []KeyRow{{Key: "Space", Desc: "what you can do here"}, {Key: "?", Desc: "this list"}, {Key: "!", Desc: "the app log"}}
 	if s.count() > 1 {
 		tab := KeyRow{Key: "Tab", Desc: "next panel"}
@@ -1889,6 +1895,12 @@ func (a *App) panelKey(key string, msg tea.KeyMsg) tea.Cmd {
 		return a.resize(key)
 	}
 	if len(key) == 1 && key[0] >= '1' && key[0] <= '9' {
+		if own := s.digits(p); own > 0 { // the one place with a number: they are its own (Panel.Digits)
+			if d := int(key[0] - '0'); d <= own {
+				return p.Digits.Do(d)
+			}
+			return nil
+		}
 		if n := s.numbered(int(key[0] - '0')); n >= 0 { // the panels that can take the focus (tdp K1, panel.17)
 			return a.focusPanel(s, n)
 		}
@@ -2181,6 +2193,7 @@ func (a *App) panelArea(w, top, h int) []string {
 	}
 	if a.narrow(s) {
 		a.uncover(s.Focused(), Rect{W: w, H: h}, top, true)
+		s.Focused().digits = s.digits(s.Focused())
 		area = Pad2(s.Focused().draw(s.num(s.at()), w, h, true, false), w, h)
 		a.drawNoteHead(area, s.Focused(), Rect{W: w, H: h}, top, w)
 		return area
@@ -2200,6 +2213,7 @@ func (a *App) panelArea(w, top, h int) []string {
 			fp.hide = a.HideSecretsInPreview // the app's setting, as a file-picker's preview has it
 		}
 		p.setLabel(a.labelOf(p))
+		p.digits = s.digits(p)
 		a.uncover(p, r, top, i == s.at())
 		Composite(area, p.draw(s.num(i), r.W, r.H, i == s.at() && s.takes(i), p == pointed), r.X, r.Y, w)
 	}
