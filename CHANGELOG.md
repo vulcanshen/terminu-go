@@ -2,6 +2,27 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.3.9 — tdp v1.3.7
+
+A patch, with tdp's. Everything since v1.3.8, the beta v1.3.9-beta.1 included:
+
+- A mode is named by the -ing word of what is done in it (tdp panel.3, K11, K11-29): the selection mode is `Viewing`,
+  once selecting `Viewing:selecting`, and a viewer's hint writes `v:viewing`; the list's Diff mode is `Diffing`; a
+  reorder's held item is in `Dragging`. Layers join with `:` instead of `>`, and the mode's Space menu heading follows
+  (`DIFFING MODE`, `VIEWING:SELECTING MODE`), as does the label's opening, a frame a character. A mode of the app's own
+  is named the same way (`Playing`): an app that names one `Drag` or `Visual`, or sets `Selection.Name` to `Visual`,
+  changes that
+- A terminal has no History mode (tdp terminal.5, terminal-15 to terminal-17, terminal-25): on an interactive one
+  `PgUp` scrolls back a page at a time and `PgDn` forward again, with no mode, the frame keeping its colour and the
+  bottom border showing the position, `N-M of T`; `PgDn` to the bottom is the live screen. Any other key takes it back
+  to the live screen first and then goes on as there, the exit key and the app's own keys too; `Alt-v` alone starts
+  `Viewing` on the screen as it is, the cursor at the start of the first line in sight. `j|k`, `u|d` and `gg|G` go
+  through the history only in `Viewing`. `Terminal.Mode` is `Viewing` or nothing
+- The one panel of a screen may take the digits, as in v1.3.9-beta.1 (from boxu, the user; tdp is unchanged):
+  `Panel.Digits`, its range in the hint (`1–3:page`) and in `?`; `Run` refuses it on a screen with another panel that
+  has a number
+- The showcase: its own Drag mode is `Dragging`, and `[1] SHELL`'s `?` tells `PgUp|PgDn` and `Alt-v` as they are now
+
 ## v1.3.9-beta.1 — tdp v1.3.6
 
 - The one panel of a screen may take the digits (from boxu, the user; tdp is unchanged): where a panel is the only one
