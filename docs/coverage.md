@@ -346,15 +346,17 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]iff`（M4：panel 的熱鍵優�
 | screen.9 | 碰到線的 panel 全部跟著動；下面一個全寬的 panel 時，直的線只在上面（screen-39） | P：`[2] LOG` 按 `<`：它左邊的線往右，`[3] SETTINGS` 跟著一起變窄、`[1] PODS` 變寬；I：`[2]` 按 `+`：橫線只在右邊那欄，`[1]` 不動 | `TestScreen39SharedLine` |
 | screen.9 | 兩邊都有線時寬度動右邊、高度動下面；貼著右邊或底部的動另一邊，`>` 一定變寬、`+` 一定變高（screen-40） | P：`[2] LOG` 按 `>`（左邊的線往左）；`[3] SETTINGS` 按 `+`（上面的線往上） | `TestScreen40WhichLine` |
 | screen.9 | 最小尺寸由 app 給（`Panel.MinWidth`、`MinHeight`，沒給 10 × 3）；任何一個跟著動的 panel 到最小就停，最後一下動得比 2 欄少（screen-41） | P：`[2] LOG` 一直按 `>` 到 `[1] PODS` 剩 30 欄（展示場給的） | `TestScreen41Least` |
-| screen.9 | 沒有線能動時跳 Info toast：`[N] is already full width`、`… full height`、`[N] is at its minimum width`（擋住的 panel，有 focus 的優先）；說明牌用 label 點名（`LEGEND is at its minimum height`）；窄寬與 zoom 時那一個全寬也全高；toast 照樣進 App Log（screen-42） | P：`[1] PODS` 按 `+`；K：`[2]` 按 `+`（說明牌擋住）；`[N]arrow layout` 開著按 `>` | `TestScreen42NoLine`、`TestScreen9Sign` |
+| screen.9 | 沒有線能動時跳 Info toast：`[N] is already full width`、`… full height`、`[N] is at its minimum width`（擋住的 panel，有 focus 的優先）；說明牌跟著線動，擋住時用 label 點名（`LEGEND is at its minimum height`）；窄寬與 zoom 時那一個全寬也全高；toast 照樣進 App Log（screen-42、screen-39） | P：`[1] PODS` 按 `+`；K：`[2]` 按 `+`（說明牌擋住）；`[N]arrow layout` 開著按 `>` | `TestScreen42NoLine`、`TestScreen9Sign` |
 | screen.9 | 那個 toast 在那個 panel 上、本來會動的那條邊、框裡面：右上、左上、下方中間、上方中間；全寬算右邊、全高算下邊；`>` 與 `<` 同一個地方；好幾個往 panel 裡疊、最新的在邊上，每一疊最多 3 個；比 panel 寬的靠那一邊、不出畫面；線動了，toast 跟著那條邊（screen-43） | 同上，看 toast 在哪 | `TestScreen43ToastPlace` |
 | screen.9 | `=` 讓這個畫面每一條線回到預設；都在預設時在平常的位置跳 `The layout is already the default`（screen-44） | 任何畫面移幾條線後按 `=`，再按一次 | `TestScreen44Default` |
-| screen.9 | 線停在哪裡每個畫面各記各的，直線依終端機寬度、橫線依高度，同一個尺寸時再用；沒記過的用預設（screen-45）。lib：`App.Lines`（app 從 state 讀進來）；L5 藏起來的位置，它的線跟著不見，其他的留著，再出現時回到上次的地方，因為藏起來被 `Layout` 重排的線算另一條（terminu 定） | 展示場不存東西：同一次執行裡換寬度再換回來、換畫面再回來；重開 app 由 app 寫 state | `TestScreen45Kept`、`TestScreen9Hidden` |
-| screen.9 | 使用者移動線之前什麼都不寫；`=` 拿掉這個畫面這個寬度與這個高度記的；線移回預設位置就不記（screen-46）。lib：`App.OnLines` 在線動了或 `=` 改了東西時才叫。記著的線現在放不下（app 改了版面或最小尺寸）時，那個寬度或高度用預設，記著的值拿掉、交給 `OnLines` 寫回；不跳 toast、不做 `.bak`、不記 WARN，是 E3 唯一的例外（user 定） | 展示場不存東西 | `TestScreen46NothingWritten`、`TestScreen9Stale` |
+| screen.9 | 線停在哪裡每個畫面各記各的，直線依終端機寬度、橫線依高度，同一個尺寸時再用；沒記過的用預設（screen-45）。lib：`App.Lines`（app 從 state 讀進來） | 展示場不存東西：同一次執行裡換寬度再換回來、換畫面再回來；重開 app 由 app 寫 state | `TestScreen45Kept` |
+| screen.9 | L5 藏起來的位置，它的線跟著不見，其他的線留在使用者放的地方，再出現時線回到上次的地方；因為藏起來被 `Layout` 換到別處的線算另一條，有自己的預設與記憶（screen-50） | R：`[2] BRANCHES` 帶頭時在 `[4] DESCRIPTION` 按 `+` 與 `<`，按 `1` 換 `[1] CHANGES`（第五個位置收起，它上面那條線跟著不見，左右之間的線留著），再按 `2` 回來 | `TestScreen50Hidden`、showcase 的 `TestReviewLines` |
+| screen.9 | 使用者移動線之前什麼都不寫；`=` 拿掉這個畫面這個寬度與這個高度記的；線移回預設位置就不記（screen-46）。lib：`App.OnLines` 在線動了或 `=` 改了東西時才叫 | 展示場不存東西 | `TestScreen46NothingWritten` |
+| screen.9 | 記著的線放不下時（app 改了版面或某個 panel 的最小尺寸），那個寬度或高度用預設，記著的值拿掉（lib：每個 message 之後看一次，交給 `OnLines` 寫回）；不跳 toast、不做 `.bak`、不記 WARN，是 E3 唯一的例外（screen-51、E3-29） | 展示場不存東西 | `TestScreen51Stale` |
 | screen.9 | `[>] Wider`、`[<] Narrower`（`2 columns, kept for this width`）、`[+] Taller`、`[-] Shorter`（`1 row, kept for this height`）在每個 panel 的 Space menu 的 panel operation 最後，`[=] Default layout`（`this screen's lines back`）在 global operation popup 的 Quit 前面；每一句在 60 欄時放得下，menu 與 key reference 都是；按了只會跳 toast 的列停用，都在預設時 `[=]` 停用；在 menu 裡按停用列的熱鍵照 M6 不作用，只有在 panel 上按才用 toast 回答（screen-47，terminu 定） | 每個 panel 按 `Space`，再開 Global operation | `TestScreen47Menu` |
 | screen.9 | 只有一個 panel 的畫面不列那四列，global operation popup 也不列 `[=]`；按鍵照樣用 toast 回答（screen-48，terminu 定） | D 畫面（只有一個 panel）按 `Space`、`>`、`=` | `TestScreen48OnePanel` |
 | screen.9 | 在 panel 上 `>` `<` `+` `-` `=` 只拿來調整大小：`Run` 不讓 panel、畫面、global 的熱鍵用它們；mode 的鍵可以；在打字列、mode、PTY、popup 裡它們是那裡的鍵；key reference 把四個列在 panel operation、`=` 列在 app-wide（screen-49） | 每個 panel 按 `?` | `TestScreen49KeysKept`、`TestScreen9Typing` |
-| screen.9 | 調整大小不記進 App Log，跟篩選一樣；只記動不了時的 toast，跟每個 toast 一樣（note.7，user 定） | 移動線後按 `!` | `TestScreen42NoLine` |
+| screen.9 | 調整大小不記進 App Log，跟篩選一樣；只記動不了時的 toast，跟每個 toast 一樣（screen-52、note-77） | 移動線後按 `!` | `TestScreen52NotLogged`、`TestScreen42NoLine` |
 
 ## layout/panel
 

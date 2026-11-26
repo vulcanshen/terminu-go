@@ -553,12 +553,12 @@ func TestScreen9Typing(t *testing.T) {
 	}
 }
 
-// TestScreen9Hidden: a place hidden while its leading panel shows nothing
+// TestScreen50Hidden: a place hidden while its leading panel shows nothing
 // there takes its line with it; the lines it does not touch stay where the
 // user left them; shown again, its line is back where the user left it; a
 // line the Layout moves when it hides one is another line, with its own
-// default (tdp screen.9, L5).
-func TestScreen9Hidden(t *testing.T) {
+// default (tdp screen.9, L5, screen-50).
+func TestScreen50Hidden(t *testing.T) {
 	ta := &testApp{App: anySize(New("test"))}
 	mk := func(n string) *Panel { pg := &Pager{}; pg.SetLines([]string{n}); return &Panel{Label: n, Body: pg} }
 	changes, branches, diff, history, commits, files := mk("Changes"), mk("Branches"), mk("Diff"), mk("History"), mk("Commits"), mk("Files")
@@ -596,7 +596,7 @@ func TestScreen9Hidden(t *testing.T) {
 
 // TestScreen9Sign: a sign moves with the line, as it resizes with the
 // panels; at its least the toast names it by its label (tdp screen.9,
-// panel.17).
+// panel.17, screen-39, screen-42).
 func TestScreen9Sign(t *testing.T) {
 	ta, _, ps := resizeApp(t, 100, 31, stacked2, "Top", "Info")
 	ps[1].Sign, ps[1].MinHeight = SignDim, 14
@@ -610,12 +610,12 @@ func TestScreen9Sign(t *testing.T) {
 	}
 }
 
-// TestScreen9Stale: lines kept for a size that no longer fit (the app's
+// TestScreen51Stale: lines kept for a size that no longer fit (the app's
 // Layout or least sizes changed) are not used there: the default ones are,
-// and what is kept for that width or height is taken away and written, with
-// no toast and no WARN, E3's one exception; a size they fit keeps its own
-// (tdp screen.9).
-func TestScreen9Stale(t *testing.T) {
+// and what is kept for that width or height is taken out of the state, with
+// no toast, no copy and no WARN, E3's one exception; a size they fit keeps
+// its own (tdp screen.9, E3-29, screen-51).
+func TestScreen51Stale(t *testing.T) {
 	ta, _, ps := resizeApp(t, 100, 31, nil, "Left", "Right")
 	var written []Lines
 	ta.OnLines = func(l Lines) tea.Cmd { written = append(written, l); return nil }
@@ -639,5 +639,27 @@ func TestScreen9Stale(t *testing.T) {
 	ta.press(">")
 	if got := ta.Lines["Grid"].Widths[120]; !reflect.DeepEqual(got, map[string]int{"60": 62}) {
 		t.Errorf("after a move: %v", got)
+	}
+}
+
+// TestScreen52NotLogged: a line moved goes in no App Log, as a filter does
+// not; the toast when nothing moves does, as every toast (tdp screen.9,
+// note.7, note-77, screen-52).
+func TestScreen52NotLogged(t *testing.T) {
+	ta, _, ps := resizeApp(t, 100, 31, nil, "Left", "Right")
+	ps[1].MinWidth = 44 // five moves, the sixth press stopped
+	before := len(ta.logs.lines())
+	ta.press(">", ">", "<", ">", ">")
+	if got := ta.logs.lines()[before:]; len(got) != 0 {
+		t.Errorf("lines moved, logged: %q", got)
+	}
+	ta.press(">") // [2] at its least
+	got := ta.logs.lines()[before:]
+	if len(got) != 1 || !strings.Contains(got[0], "INFO") || !strings.HasSuffix(got[0], "[2] is at its minimum width") {
+		t.Errorf("the toast when nothing moves: %q", got)
+	}
+	ta.press("=", "=")
+	if got := ta.logs.lines()[before+1:]; len(got) != 1 || !strings.HasSuffix(got[0], "The layout is already the default") {
+		t.Errorf("= logs only its toast: %q", got)
 	}
 }

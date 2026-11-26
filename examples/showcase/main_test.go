@@ -960,6 +960,50 @@ func TestReviewFollows(t *testing.T) {
 	}
 }
 
+// The lines on REVIEW as its places hide (tdp screen.9, screen-50): with
+// BRANCHES leading, + and < on [4] DESCRIPTION move the line under it and
+// the one between the sides; CHANGES leading hides the fifth place and the
+// line under [4] with it, the one between the sides kept; BRANCHES again
+// brings the line under [4] back where it was.
+func TestReviewLines(t *testing.T) {
+	s := newShowcase()
+	d := tdptest.Start(t, s.app, 140, 40)
+	// corner is where the frame whose title has name starts: its row and
+	// column.
+	corner := func(name string) (int, int) {
+		t.Helper()
+		for y, l := range d.Screen() {
+			r := []rune(l)
+			if i := strings.Index(l, name); i >= 0 {
+				x := len([]rune(l[:i]))
+				for x > 0 && r[x] != '┌' && r[x] != '┏' {
+					x--
+				}
+				return y, x
+			}
+		}
+		t.Fatalf("no %s:\n%s", name, strings.Join(d.Screen(), "\n"))
+		return 0, 0
+	}
+	d.Press("R", "2", "4")
+	files0, _ := corner("[5] FILES")
+	_, side0 := corner("[4] DESCRIPTION")
+	d.Press("+", "<")
+	files1, _ := corner("[5] FILES")
+	_, side1 := corner("[4] DESCRIPTION")
+	if files1 != files0+1 || side1 != side0+2 {
+		t.Fatalf("+ and < on [4]: FILES from row %d to %d, the right side from %d to %d", files0, files1, side0, side1)
+	}
+	d.Press("1")
+	if _, x := corner("[4] HISTORY"); x != side1 || d.Has("FILES") {
+		t.Errorf("CHANGES leading: the right side at %d, want the line between the sides kept at %d", x, side1)
+	}
+	d.Press("2")
+	if y, _ := corner("[5] FILES"); y != files1 {
+		t.Errorf("BRANCHES again: FILES at row %d, want the line under [4] back at %d", y, files1)
+	}
+}
+
 // What the project is in the middle of, and work running on it, in [2]
 // FILES' location row (tdp panel.10, panel-197): Merge half done puts the
 // merge after the where in Lavender, its glyph telling it; Push puts
