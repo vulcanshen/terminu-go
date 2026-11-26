@@ -2,6 +2,19 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.3.8-beta.1 — tdp v1.3.5
+
+- The user moves the lines between panels (tdp main c3dae91 and f37bdd3, screen.9, screen-37 to screen-52; from gittu
+  and ccodu, the user): on a panel `>` and `<` make the focused panel 2 columns wider or narrower, `+` and `-` 1 row
+  taller or shorter, and `=` puts the screen's lines back as its `Layout` has them. The lib finds the lines in the
+  app's `Layout`, which stays the default: every panel on a line moves with it, a sign too. A line stops once a panel
+  it moves is at its least, `Panel.MinWidth` and `MinHeight` (10 × 3 when unset). With no line to move, an Info toast
+  on the panel's edge says why. Where the user left the lines is kept by screen and terminal size: `App.Lines` read
+  from the app's state, `App.OnLines` to write it; kept lines that no longer fit are dropped with nothing said. The
+  Space menu has `[>] Wider`, `[<] Narrower`, `[+] Taller` and `[-] Shorter`, the global operation popup `[=] Default
+  layout`. `Run` refuses `>` `<` `+` `-` `=` as a panel's, a screen's or a global hotkey: an app using them on a panel
+  changes that first
+
 ## v1.3.7 — tdp v1.3.5
 
 A patch, with no change in tdp:
