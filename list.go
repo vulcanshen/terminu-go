@@ -120,7 +120,7 @@ type List struct {
 	// batches of marked items).
 	Marks bool
 	// Draggable keeps that column too, for the swap glyph of the row held in
-	// a Drag mode (tdp panel): Hold, MoveHeld, Drop.
+	// a Dragging mode (tdp panel): Hold, MoveHeld, Drop.
 	Draggable bool
 	// Flags keeps that column in a list that cannot be marked for the rows'
 	// flags (Row.Flag), one a row (tdp panel.7). A list that can be marked
@@ -128,7 +128,7 @@ type List struct {
 	// AddScreen panics.
 	Flags bool
 	// Anchor is the ID of a row a mode keeps picked while the cursor moves
-	// on (a Diff mode's first pick, tdp K11): drawn whole in Yellow,
+	// on (a Diffing mode's first pick, tdp K11): drawn whole in Yellow,
 	// the mode's, with Base text, not bold and no arrow, as a selected range
 	// (tdp color, note). The cursor on it wins. "" is none.
 	Anchor string
@@ -188,7 +188,7 @@ type List struct {
 	// (NoteAt).
 	noteTop, noteBottom, noteCol int
 	marked                       map[string]bool
-	held                         bool // the row under the cursor is held in a Drag mode
+	held                         bool // the row under the cursor is held in a Dragging mode
 	inMode                       bool // the panel it is on is in a mode: the cursor is Subtext1
 
 	filter *lineEditor
@@ -306,10 +306,10 @@ func (l *List) SetMarked(ids []string) {
 	}
 }
 
-// Hold picks up the row under the cursor in the panel's Drag mode
+// Hold picks up the row under the cursor in the panel's Dragging mode
 // (tdp panel): it is drawn as the cursor in the mode's colour, Yellow,
 // with the swap glyph in its mark column, until Drop. It reports whether
-// there was a row. The Drag mode and its keys are the app's (Panel.EnterMode).
+// there was a row. The Dragging mode and its keys are the app's (Panel.EnterMode).
 // On a filtered list the filter is set aside while the row is held: its
 // typing row folded away, every row shown, the held one where it really is,
 // for only among all the rows can a move say what it swaps with (tdp
@@ -614,7 +614,7 @@ func locationRow(glyph, loc, work string, w int) string {
 
 // cursorColour is the colour the cursor of row r is drawn in, where the fade
 // of the item's other rows starts from (tdp panel.5): Subtext1 or the row's
-// own (tdp color.2), Yellow while held (Drag), dimmed once while typing in
+// own (tdp color.2), Yellow while held (Dragging), dimmed once while typing in
 // the filter (tdp P6).
 func (l *List) cursorColour(r int) Color {
 	colour := Subtext1

@@ -53,7 +53,10 @@ type KeySection struct {
 // Mode is a temporary state of a panel in which some keys mean something of
 // their own and Esc leaves (tdp K11).
 type Mode struct {
-	Name string // shown at the right of the top border: one word
+	// Name is shown at the right of the top border: the -ing word of what
+	// is done in it, one word ("Playing"), as tdp's are (Dragging,
+	// Viewing, Diffing; tdp panel.3, K11).
+	Name string
 	// Keys are the mode's own keys: the only ones that work besides the
 	// core keys of K11. They are listed in its key reference and the footer.
 	// Space is one of them only where the user put an action on it (ModeKey).
@@ -98,7 +101,7 @@ type Mode struct {
 	// version takes it away.
 	Inspect func() []string
 
-	// with is the other panel a mode spanning two is in (a Diff mode shown
+	// with is the other panel a mode spanning two is in (a Diffing mode shown
 	// in a list's details, tdp panel.9): Tab and its digit go to it, Pause
 	// or not.
 	with *Panel
@@ -133,7 +136,7 @@ type ModeKey struct {
 	// and ? lists it among the mode's keys, no longer among the core keys.
 	// The keys only that menu listed go in the footer then (NoFooter off);
 	// refusing Space when it is taken, the Warning saying what Space does
-	// now, and keeping Space for the menu in a mode of tdp's (Drag, Compare)
+	// now, and keeping Space for the menu in a mode of tdp's (Dragging, Diffing)
 	// are the app's. A ModeKey taking Space with no Do is the core key as
 	// ever, Space opening the menu. An arrow key with its letter in the
 	// same Keys is that letter, not written (tdp K12). g alone
@@ -418,7 +421,7 @@ type Panel struct {
 	mode   *Mode
 	under  []*Mode      // the layers mode is in, outermost first
 	levels []*diffLevel // the lists of the items that differ gone into, the last shown (compare.go)
-	over   *diffOver    // a Diff mode's diff shown in the panel as the list's details (compare.go)
+	over   *diffOver    // a Diffing mode's diff shown in the panel as the list's details (compare.go)
 	bodyY  int          // the rows from the panel's top to its body, at the last draw
 	digits int          // the digit keys that are its own, for this draw's hint (Screen.digits)
 	app    *App
@@ -433,7 +436,7 @@ func (p *Panel) level() *diffLevel {
 }
 
 // body is what the panel shows: the list of the items that differ it went
-// into (tdp panel.9), a Diff mode's diff shown in it as a list's details,
+// into (tdp panel.9), a Diffing mode's diff shown in it as a list's details,
 // or its Body.
 func (p *Panel) body() Body {
 	if d := p.level(); d != nil {
@@ -449,7 +452,7 @@ func (p *Panel) body() Body {
 // or its list's.
 func (p *Panel) location() (where, glyph, work string) {
 	where, glyph, work = p.Location, p.LocationGlyph, p.LocationWork
-	if p.over != nil && p.level() == nil { // a Diff mode's diff as the details: its own, none but a list's (tdp panel.9)
+	if p.over != nil && p.level() == nil { // a Diffing mode's diff as the details: its own, none but a list's (tdp panel.9)
 		where, glyph, work = "", "", ""
 	}
 	if list, _ := p.body().(*List); list != nil && (where == "" && work == "" || p.level() != nil) { // a list of the items that differ: its own (tdp panel.9)
@@ -459,7 +462,7 @@ func (p *Panel) location() (where, glyph, work string) {
 }
 
 // actions are the panel's actions as they are now: those of the list of the
-// items that differ it went into, none while a Diff mode's diff is shown in
+// items that differ it went into, none while a Diffing mode's diff is shown in
 // it (the mode's keys work there), or its Actions.
 func (p *Panel) actions() []Action {
 	if d := p.level(); d != nil {
@@ -490,7 +493,7 @@ func (p *Panel) upDiff() { p.levels = p.levels[:len(p.levels)-1] }
 // something in the panel (Enter on a branch putting its commit under the
 // cursor of the panel that went into a commit), as if Esc were pressed
 // until it is back. It does nothing when there is none. A mode the panel
-// is in stays: a Diff mode goes back to picking, its anchor kept.
+// is in stays: a Diffing mode goes back to picking, its anchor kept.
 func (p *Panel) LeaveDiff() { p.levels = nil }
 
 // EnterMode puts the panel in m; Esc leaves it (tdp K11).
@@ -516,7 +519,7 @@ func (p *Panel) holdPTY(m *Mode) {
 }
 
 // EnterLayer goes a layer further into the mode the panel is in, to m (tdp
-// K11): its name follows the mode's after ">" (Visual>select), its keys and
+// K11): its name follows the mode's after ":" (Viewing:selecting), its keys and
 // Exit are the ones that work, and Esc leaves m alone, running its OnExit,
 // back to the layer it was in. Out of a mode it is EnterMode.
 func (p *Panel) EnterLayer(m *Mode) {
@@ -791,7 +794,7 @@ func (p *Panel) draw(n, w, h int, focused, pointed bool) []string {
 // K11).
 func (p *Panel) modeName() string {
 	if p.mode != nil {
-		return strings.Join(p.modeLayers(), ">")
+		return strings.Join(p.modeLayers(), layerJoin)
 	}
 	if t, ok := p.body().(*Terminal); ok {
 		return t.modeName()

@@ -843,7 +843,7 @@ func TestK6HelpEverySurface(t *testing.T) {
 	}
 	ta = newTestApp(t)
 	v := testViewer()
-	v.Select = &Selection{Key: "v", Name: "Visual"}
+	v.Select = &Selection{Key: "v", Name: "Viewing"}
 	ta.Viewer(v)
 	ta.settle()
 	ta.press("v")
@@ -954,7 +954,7 @@ func covAMoveSurfaces() []covAMoveSurface {
 		{covAPopups()[4], moves, nil}, // the key reference
 		{covASurface{"viewer", func(ta *testApp) { v := testViewer(); v.Tabs = []string{"Events"}; ta.Viewer(v) }}, moves, nil},
 		{covASurface{"viewer's selection mode", func(ta *testApp) {
-			v := &Viewer{Title: "YAML", Lines: lines, Select: &Selection{Key: "v", Name: "Visual"}}
+			v := &Viewer{Title: "YAML", Lines: lines, Select: &Selection{Key: "v", Name: "Viewing"}}
 			ta.Viewer(v)
 			ta.settle()
 			ta.press("v", "j", "w")
@@ -1030,7 +1030,7 @@ func TestK12HomeEndOnlyTyping(t *testing.T) {
 
 // TestK12PgUpPgDnAreUD: PgUp|PgDn are u|d (K12-18). TestK7AliasEverywhere
 // presses them on the lists, menus, viewers and pickers; the modes with u|d
-// move the same (the Compare mode, a terminal's History), and no key
+// move the same (the Diffing mode, a terminal's Viewing), and no key
 // reference or mode menu lists them beside u|d.
 func TestK12PgUpPgDnAreUD(t *testing.T) {
 	for _, m := range []struct {
@@ -1038,7 +1038,11 @@ func TestK12PgUpPgDnAreUD(t *testing.T) {
 		open func() *testApp
 	}{
 		{"diff mode", func() *testApp { ta, _ := compareApp(t); ta.press("C"); return ta }},
-		{"history", func() *testApp { ta, _, _ := termWithHistory(t); ta.press("PgUp"); return ta }},
+		{"viewing on a terminal", func() *testApp {
+			ta, _, _ := termWithHistory(t)
+			ta.Update(altV)
+			return ta
+		}},
 	} {
 		after := func(keys []string) string {
 			ta := m.open()
@@ -1557,7 +1561,7 @@ func TestK12SpatialNoWrap(t *testing.T) {
 		t.Errorf("l on December: %v, want January of the next year", dv.day)
 	}
 	ta.press("Esc")
-	v := &Viewer{Title: "YAML", Lines: []string{"ab", "cd"}, Select: &Selection{Key: "v", Name: "Visual"}}
+	v := &Viewer{Title: "YAML", Lines: []string{"ab", "cd"}, Select: &Selection{Key: "v", Name: "Viewing"}}
 	ta.Viewer(v)
 	ta.settle()
 	ta.press("v", "k", "h")
@@ -1598,7 +1602,7 @@ func TestK12TextMotions(t *testing.T) {
 	ta.press("Esc")
 	var tabs []int
 	v := &Viewer{Title: "DevTools", Tabs: []string{"Console", "Network"}, Lines: []string{"kind: Pod"},
-		Select: &Selection{Key: "v", Name: "Visual"}, OnTab: func(i int) tea.Cmd { tabs = append(tabs, i); return nil }}
+		Select: &Selection{Key: "v", Name: "Viewing"}, OnTab: func(i int) tea.Cmd { tabs = append(tabs, i); return nil }}
 	ta.Viewer(v)
 	ta.settle()
 	ta.press("v", "l", "l")

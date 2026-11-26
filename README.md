@@ -209,7 +209,7 @@ password itself in a terminal popup. Not for Windows: use gsudo or the sudo Wind
 
 ## Diff
 
-`app.DiffModeAction(panel, list, terminu.DiffMode{Key: "D", Text: ...})` gives a list the Diff mode: the user picks
+`app.DiffModeAction(panel, list, terminu.DiffMode{Key: "D", Text: ...})` gives a list the Diffing mode: the user picks
 two rows and sees what differs, UNIFIED or SPLIT. Two rows that hold many (two directories, two namespaces, two
 commits) go in instead, to a list of the items that differ: `Many` says which rows hold many, and `Items` gives the
 items that differ between two of them, each a `terminu.DiffItem`. The lib draws that list in the panel, each item's
@@ -229,7 +229,7 @@ back. An action of yours that shows something else in that panel (Enter on a bra
 cursor) calls `panel.LeaveDiff()` first: it leaves every such list, as if `Esc` were pressed until the panel's rows
 are back, and does nothing when there is none.
 
-Going into such a list changes what the panel lists, so `OpenDiff` and the Diff mode clear the panel's filter first
+Going into such a list changes what the panel lists, so `OpenDiff` and the Diffing mode clear the panel's filter first
 (tdp panel.14). Do the same in an action of yours that changes what a panel lists or puts its cursor on a particular
 item (the cursor in another panel taking this one to an item, going into an item): call `list.ClearFilter()` first,
 whether or not the filter hides that item. The focus merely leaving the panel keeps the filter.
@@ -244,7 +244,7 @@ When what it shows holds many (a folder that is new, a commit), list the items t
 them (a new folder's items are all `DiffAdded`). Its `Enter` goes into that list in the panel: `app.OpenDiff(panel,
 terminu.DiffItem{Anchor: ..., Other: ..., Items: ...})` with the same items. None shows the Pager's `EmptyFact`.
 
-A list with a details panel (`panel.Details`) may show its Diff mode there instead, without opening anything or
+A list with a details panel (`panel.Details`) may show its Diffing mode there instead, without opening anything or
 going into the list: set `InDetails` (which way is yours). The mode then spans the list and its details, both
 frames in the mode's colour with `Diff` on them. The details follow the cursor, no key pressed: the lib shows the
 anchor against the row under the cursor there, as `SetDiff` and `SetDiffItems` draw it, from your `Text` and
@@ -276,7 +276,9 @@ end. Short of room, every one narrows and drops columns as before.
 ## Modes of your own
 
 `panel.EnterMode(&terminu.Mode{...})` puts a panel in a mode of the app's own (tdp K11): only the mode's `Keys` and the
-core keys work there, and `Esc` leaves. A `ModeKey` takes only the keys its `Keys` lists; the library adds none. List
+core keys work there, and `Esc` leaves. Name it as tdp's are, by the -ing word of what is done in it, one word
+(`Playing`, as `Dragging` and `Viewing`); `panel.EnterLayer` goes a layer in, the frame joining the names with `:`
+(`Viewing:selecting`, tdp panel.3). A `ModeKey` takes only the keys its `Keys` lists; the library adds none. List
 the arrow keys and `PgUp|PgDn` there yourself, as tdp K12 has them; `Key` is what the key reference and the footer
 write, the letters alone:
 
@@ -316,7 +318,7 @@ The user may put one of the mode's actions on `Space` as well; you never put one
 mode has no Space menu. The footer writes it first, where `Space:menu` was (`Space:drop ?:help …`), and `?` lists it
 among the mode's keys. The keys only that menu listed go in the footer then: take their `NoFooter` off. Refusing
 `Space` when an action has it already, the Warning saying what `Space` does now and to press `Esc` first for the menu,
-and keeping `Space` for the menu in a mode of tdp's (Drag, Diff) are yours. A `ModeKey` taking `Space` with no `Do`
+and keeping `Space` for the menu in a mode of tdp's (Dragging, Diffing) are yours. A `ModeKey` taking `Space` with no `Do`
 is still the core key, `Space` opening the menu.
 
 What the footer of a mode of your own writes between `Space:menu ?:help` and `Esc:<verb>` is up to you, core keys
@@ -468,7 +470,7 @@ positions still are; it returns the toasts that say what went, or, with the sele
 note over them that closes with them. When the source cannot be read any more, call
 `app.CannotReadAgain(viewer, "Cannot read notes.txt: it is gone")`: your words go in an Error toast, or in an error
 popup over that menu. A selection mode of your own, on a reader of your own in a panel, says that its selection is gone
-with `app.SelectionGone(panel, terminu.Warning, "Read again", "notes.txt changed: Visual left")` before it leaves the
+with `app.SelectionGone(panel, terminu.Warning, "Read again", "notes.txt changed: Viewing left")` before it leaves the
 mode: a toast, or the note over the mode's Space menu or `?`. A Pager that takes lines while it is open, by `Append` or
 `ReadAgain`, sets `Follow`. Content read again is not streaming: leave `Panel.Stream` off for it (tdp T2).
 

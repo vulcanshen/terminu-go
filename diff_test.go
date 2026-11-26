@@ -61,7 +61,7 @@ func TestCompareMany(t *testing.T) {
 	}
 	ta.toasts, ta.inspectT = nil, nil
 	ta.press("k", "Enter") // pod-04
-	if ta.pods.level() == nil || ta.pods.InMode() == nil || ta.pods.InMode().Name != "Diff" {
+	if ta.pods.level() == nil || ta.pods.InMode() == nil || ta.pods.InMode().Name != "Diffing" {
 		t.Fatalf("did not go in, in the mode:\n%s", ta.screenText())
 	}
 	text, frame := ta.screenText(), frameText(ta)
@@ -151,7 +151,7 @@ func TestCompareManyAnchorGone(t *testing.T) {
 	rows := ta.list.Rows()
 	ta.list.SetRows(append(rows[:3:3], rows[4:]...))
 	ta.press("j")
-	if ta.pods.InMode() != nil || ta.pods.level() != nil || !strings.Contains(ta.screenText(), "Diff ended: pod-03 is gone") {
+	if ta.pods.InMode() != nil || ta.pods.level() != nil || !strings.Contains(ta.screenText(), "Diffing ended: pod-03 is gone") {
 		t.Errorf("the anchor gone:\n%s", ta.screenText())
 	}
 }

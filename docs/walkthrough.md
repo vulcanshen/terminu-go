@@ -63,7 +63,7 @@ go build -o /tmp/showcase ./examples/showcase
 
 **P — Panels**：panel 的每一種長相與狀態。
 - `[1] PODS` 是一般清單：`j|k` `u|d` `gg|G` 移、`h|l` 換 tab（PODS／EVENTS）、`/` 篩選、`m` 標記、`x` 刪除（confirm）、
-  `s` 排序、`go` 跳到第一個沒在跑的、`D` Diff 模式（`[D]iff`，K13）、`X` 刪掉標記的、`r` 拖曳模式（`D[r]ag`，因為 `D` 給了 Diff；框與模式名變色，拿著的那一列 Yellow、標記欄畫上下箭頭；`j|k` 搬、到頭尾繞回，`Enter` 放下，`Esc` 放回）。先用 `/` 篩選再按 `r`：拿著的時候篩選先收起來、全部的 pod 都列出來，放下或放回後篩選照原樣回來，cursor 停在那個 pod 上。
+  `s` 排序、`go` 跳到第一個沒在跑的、`D` Diffing 模式（`[D]iff`，K13）、`X` 刪掉標記的、`r` 拖曳模式（`D[r]ag`，因為 `D` 給了 Diff；框與模式名 `Dragging` 變色，拿著的那一列 Yellow、標記欄畫上下箭頭；`j|k` 搬、到頭尾繞回，`Enter` 放下，`Esc` 放回）。先用 `/` 篩選再按 `r`：拿著的時候篩選先收起來、全部的 pod 都列出來，放下或放回後篩選照原樣回來，cursor 停在那個 pod 上。
   寬度有剩時（panel-184）：把終端機拉到 240 欄左右，Space menu 的 `Room left over` 一次換一種：放最後、`NAME` 填滿（`AGE` 靠到右邊）、
   平均、加大欄距，每換一次跳一個 Info toast 說是哪一種。
   `EVENTS` tab 是占好幾列的項目（panel-181～183）：事件的訊息在 REASON 底下，`BackOff` 兩列、`Pulled` 一列、`Started` 只有一列；
@@ -100,14 +100,14 @@ go build -o /tmp/showcase ./examples/showcase
     按 `M`（Show main.go）：`[2]` 先離開 commit 的每一層，回到檔案清單、cursor 在 `main.go`。
   - 比兩個資料夾（panel.9）：`FOLDERS` tab 進 `releases/`，在 `v1/` 按 `D`、移到 `v2/` 按 `Enter`：位置列 `releases/v1 ↔ releases/v2`，
     只列兩邊不一樣的項目（`+ NEWS.md`、`~ conf/`、`~ logo.png`、`~ main.go`、`- old-notes.txt`，一樣的 `README.md`、`docs/` 不列）；
-    `conf/` 再進一層；`Esc` 一層一層退回，最後回到 Diff 模式、anchor 還在。
+    `conf/` 再進一層；`Esc` 一層一層退回，最後回到 Diffing 模式、anchor 還在。
   - 位置列的狀態與工作（panel.10）：`Space` 選 `Merge half done`，位置後面接 Lavender 的 `Merging: feature/login`、開頭換成 merge 的 icon；再選 `Push`，後面接 Green 的 `Pushing…`、icon 換成轉著的 Green loading icon，三秒後換回 merge 的 icon。
 - `[3] CHANGES` 跟著 `[2]` 的 cursor（note.8 的 In a panel）：cursor 上那個檔跟它最後一次 commit 的差異，畫法跟 UNIFIED 一樣（只有改的段落、
   兩欄行號、`-` Red、`+` Green），不是 git 印的 patch；位置列是那個檔。在 `main.go` 上看得到改的那一行，按 `3` 再按 `Enter` 打開 Diff；
   沒改的檔寫 `No changes since 5d6e7f8`（`Enter` 停用），圖寫 `Not a text file`。在 `FOLDERS` tab 的 `releases/` 裡移到 `v2/`
   （最後一次 commit 之後新增的資料夾）：`[3]` 列出它有差異的項目、每一項帶標記，全部是 Green 的 `+`（note-106）；按 `3` 再按 `Enter`
   進到這份清單；`[2]` 的 cursor 一動，`[3]` 就離開清單、換成新的那一列。
-- Diff 模式放在明細裡（panel-185、panel-186）：在 `releases/` 裡按 `Space` 選 `Diff in [3]`，在 `v1/` 按 `D`：`[2]` 與 `[3]`
+- Diffing 模式放在明細裡（panel-185、panel-186）：在 `releases/` 裡按 `Space` 選 `Diff in [3]`，在 `v1/` 按 `D`：`[2]` 與 `[3]`
   兩個框都變黃、都寫 `Diff`，粗線還在 `[2]`；`[3]` 寫 `Move to another file or folder to diff with releases/v1`。按 `j` 到 `v2/`：
   不用按鍵，`[3]` 就列出 `releases/v1 ↔ releases/v2` 有差異的項目。按 `D`（或 `Enter`）focus 到 `[3]`，footer 寫 `Esc:back`；
   在 `conf/` 按 `Enter` 進去、在 `app.toml` 按 `Enter` 打開 Diff。之後一直按 `Esc`：視窗 → `conf/` → `[3]` → `[2]`（還在模式裡、
@@ -150,6 +150,7 @@ go build -o /tmp/showcase ./examples/showcase
 
 **t — terminal**：PTY。
 - `[1] SHELL` 是 panel 裡的 shell：`Enter` 進去打字，`Alt-Esc` 出來（先問）。在外面按 `?`，最後一段 `TERMINAL` 寫 shell 裡的鍵。
+  在裡面跑幾行（例：`ls -la /`）後按 `PgUp` 往回捲一頁、`PgDn` 捲回來：框不變色、沒有模式名，下框右邊是 `N-M of T`；捲回去時打任何字，畫面先回到即時畫面，字落在 shell 裡。捲回去時按 `Alt-v` 進選取模式 `Viewing`，游標在看得到的第一行行首（terminal-25），`gg|G` 走到歷史的頭尾，`v` 開始選、`y` 複製。
   按 `M`（`Typing mode`）是展示場自己的模式裝著這個 shell：上框右側 `Typing`、外框換模式色，`Space`、`?`、`q` 都進 shell；`Esc` 出來、不問（K11）。出來之後在 panel 上按 `Esc` 是送一個 `Esc` 給 shell，`?` 那一列寫 `send the shell an Esc`。
 - `[2] SESSIONS` 每一列 `Enter` 開一個 terminal popup：`shell`、`keys`（`cat -v`，看每個鍵送了什麼）、`top`、`vi`。
   Windows 上換成 Windows 有的程式：`shell` 是 `%ComSpec%`（cmd），`keys` 與 `top` 是 PowerShell 寫的（`keys` 印出 Windows 交給程式的每個鍵，`top` 在另一個畫面列出最吃 CPU 的程式、`q` 結束），`vi` 只說 Windows 沒有在終端機裡跑的編輯器；`Slow start` 與表單的 `Copy key` 用 cmd。

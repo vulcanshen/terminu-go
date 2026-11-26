@@ -17,7 +17,7 @@ var statusRe = regexp.MustCompile(`━ (/\S* \d+ of \d+) ━`)
 // text cut at its end with …, the numbers and the scroll position kept
 // (tdp note.3, panel.1, note-89).
 func TestSearchStatusBorder(t *testing.T) {
-	pairs := []KeyHint{{"/", "search"}, {"v", "visual"}, {"Esc", "close"}}
+	pairs := []KeyHint{{"/", "search"}, {"v", "viewing"}, {"Esc", "close"}}
 	draw := func(w int, s SearchStatus, scroll string) string {
 		b := box{width: w, lines: heavyLines, color: Peach, hintKey: Fg(Blue), hint: pairs, scroll: scroll, found: s}
 		out := b.draw()
@@ -50,7 +50,7 @@ func TestSearchStatusBorder(t *testing.T) {
 		if has("━ /goroutine 2 of 5 ━") {
 			// The pairs go as the hint's do (renderHints; Esc:close, a
 			// popup's last, stays).
-			sawPart = sawPart || has(":") && !(has("/:search") && has("v:visual") && has("Esc:close"))
+			sawPart = sawPart || has(":") && !(has("/:search") && has("v:viewing") && has("Esc:close"))
 			continue
 		}
 		sawCut = true

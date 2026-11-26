@@ -318,7 +318,7 @@ func (ps *panelsScreen) podActions() []terminu.Action {
 				ps.podList.ClearMarks()
 				return a.Toast(terminu.Info, fmt.Sprintf("Deleted %d pods", n))
 			}},
-		// D is the Diff mode's in every app, x and X delete (tdp K13): the
+		// D is the Diffing mode's in every app, x and X delete (tdp K13): the
 		// Drag goes on r, D[r]ag.
 		{Key: "r", Label: "Drag", Desc: "this pod to another place in the list", Scope: terminu.ItemScope,
 			Do: ps.startDrag},
@@ -414,7 +414,7 @@ func (ps *panelsScreen) notYet(what string) func() tea.Cmd {
 	return func() tea.Cmd { return ps.s.app.Toast(terminu.Info, "The "+what+" comes with the Inputs screen") }
 }
 
-// startDrag enters the Drag mode (tdp K11): j|k move the pod, Enter drops
+// startDrag enters the Dragging mode (tdp K11): j|k move the pod, Enter drops
 // it, Esc puts it back.
 func (ps *panelsScreen) startDrag() tea.Cmd {
 	ps.dragFrom = ps.current()
@@ -423,7 +423,7 @@ func (ps *panelsScreen) startDrag() tea.Cmd {
 	ps.podList.SortBy() // dragging sets the order by hand
 	ps.podList.Hold()
 	ps.pods.EnterMode(&terminu.Mode{
-		Name: "Drag", Exit: "cancel", Pause: true,
+		Name: "Dragging", Exit: "cancel", Pause: true,
 		Keys: []terminu.ModeKey{
 			{Key: "j|k", Keys: []string{"j", "k", "↓", "↑"}, Desc: "move it down, up", NoFooter: true,
 				Do: func(key string) tea.Cmd { ps.podList.MoveHeld(key == "j" || key == "↓"); return nil }},

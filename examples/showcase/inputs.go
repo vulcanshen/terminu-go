@@ -306,18 +306,18 @@ func newInputsScreen(s *showcase) *inputsScreen {
 	}
 	diffAt := len(is.files.Actions)
 	is.files.Actions = append(is.files.Actions, a.DiffModeAction(is.files, is.fileList, diff),
-		// [2] has a details panel, so the app may show the Diff mode there
+		// [2] has a details panel, so the app may show the Diffing mode there
 		// instead (tdp panel.9 "With a details panel"): the mode spans [2]
 		// and [3], [3] following the cursor with the anchor's diff.
-		terminu.Action{Label: "Diff in [3]", Desc: "show the Diff mode in [3] CHANGES, or open it as before", Scope: terminu.PanelScope,
+		terminu.Action{Label: "Diff in [3]", Desc: "show the Diffing mode in [3] CHANGES, or open it as before", Scope: terminu.PanelScope,
 			Hidden: func() bool { return is.tab != 2 },
 			Do: func() tea.Cmd {
 				diff.InDetails = !diff.InDetails
 				is.files.Actions[diffAt] = a.DiffModeAction(is.files, is.fileList, diff)
 				if diff.InDetails {
-					return a.Toast(terminu.Info, "The Diff mode shows in [3] CHANGES")
+					return a.Toast(terminu.Info, "The Diffing mode shows in [3] CHANGES")
 				}
-				return a.Toast(terminu.Info, "The Diff mode opens the diff, as before")
+				return a.Toast(terminu.Info, "The Diffing mode opens the diff, as before")
 			}})
 
 	// [3] CHANGES follows [2]'s cursor: the file under it against its last

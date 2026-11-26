@@ -57,14 +57,11 @@ func TestTerminalEmptyUntilItSpeaks(t *testing.T) {
 	}
 }
 
-// TestTerminalHistoryMode: PgUp goes into the History mode; its keys scroll
-// back, Esc goes back to the live screen, any other key leaves it and goes to
-// the program, q too (tdp terminal, tdp K11).
 // altV is Alt-v as the terminal sends it.
 var altV = tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("v"), Alt: true}
 
 // TestTerminalNotInteractive: a PTY the app opens to run one program has no
-// History mode and no selection: PgUp and Alt-v go to the program, the hint
+// scrolling back and no selection: PgUp and Alt-v go to the program, the hint
 // does not offer them (tdp terminal, terminal-21).
 func TestTerminalNotInteractive(t *testing.T) {
 	ta, term, sent := termWithHistory(t)
@@ -83,7 +80,7 @@ func TestTerminalNotInteractive(t *testing.T) {
 // TestTerminalFullScreen: while the program fills the whole screen (the
 // alternate one: vim, less) PgUp is the program's and the hint leaves
 // PgUp:history out; the selection holds that screen alone; back on the
-// normal screen PgUp goes into the history again (terminal-22).
+// normal screen PgUp scrolls back again (terminal-22).
 func TestTerminalFullScreen(t *testing.T) {
 	ta, term, sent := termWithHistory(t)
 	write := func(s string) {
@@ -101,20 +98,20 @@ func TestTerminalFullScreen(t *testing.T) {
 	}
 	ta.Update(altV)
 	ta.settle()
-	if term.Mode() != "Visual" || len(term.sel.Lines) != term.vt().h || term.sel.line != 0 {
+	if term.Mode() != "Viewing" || len(term.sel.Lines) != term.vt().h || term.sel.line != 0 {
 		t.Errorf("the selection holds the screen alone: %q, %d lines", term.Mode(), len(term.sel.Lines))
 	}
 	ta.press("Esc")
 	write("\x1b[?1049l")
 	ta.press("PgUp")
-	if term.Mode() != "History" {
-		t.Errorf("back on the normal screen PgUp is the history again: %q", term.Mode())
+	if term.Mode() != "" || term.back == 0 {
+		t.Errorf("back on the normal screen PgUp scrolls back again: %q %d", term.Mode(), term.back)
 	}
 }
 
 // TestTerminalAllKeys: when the user hands every key to the program, Alt-v
 // and PgUp|PgDn go to it; the app's own keys (the one taking them back) and
-// the exit key still work; taken back, the modes return (terminal-23).
+// the exit key still work; taken back, both return (terminal-23).
 func TestTerminalAllKeys(t *testing.T) {
 	ta, term, sent := termWithHistory(t)
 	term.AllKeys = true
@@ -131,54 +128,123 @@ func TestTerminalAllKeys(t *testing.T) {
 	ta.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("u"), Alt: true})
 	ta.settle()
 	ta.press("PgUp")
-	if term.AllKeys || term.Mode() != "History" {
-		t.Errorf("taken back, PgUp goes into the history: %v %q", term.AllKeys, term.Mode())
+	if term.AllKeys || term.back == 0 {
+		t.Errorf("taken back, PgUp scrolls back: %v %d", term.AllKeys, term.back)
 	}
 }
 
-func TestTerminalHistoryMode(t *testing.T) {
+// TestTerminal15ScrollBack: PgUp scrolls back a page at a time and PgDn
+// forward again, with no mode: no name on the frame, the footer as on the
+// live screen, and the position on the bottom border meanwhile, N-M of T,
+// sending nothing to the program (tdp terminal.5, terminal-15).
+func TestTerminal15ScrollBack(t *testing.T) {
 	ta, term, sent := termWithHistory(t)
+	vt := term.vt()
+	page, most := vt.h, len(vt.history)
+	position := func() string {
+		first := most - term.back + 1
+		return fmt.Sprintf("%d-%d of %d", first, first+page-1, most+page)
+	}
 	ta.press("PgUp")
-	if term.Mode() != "History" || term.back == 0 {
-		t.Fatalf("PgUp: the History mode, scrolled back: %q %d", term.Mode(), term.back)
+	p := ta.Screen().Focused()
+	if term.Mode() != "" || p.modeName() != "" || term.back != page {
+		t.Fatalf("PgUp: a page back with no mode: %q %q %d", term.Mode(), p.modeName(), term.back)
 	}
-	if top := StripStyles(ta.rowWith("History")); !strings.Contains(top, "┫History┣") {
-		t.Errorf("the mode on the frame: %q", top)
+	text := ta.screenText()
+	if strings.Contains(text, "┫") || !strings.Contains(text, position()) {
+		t.Errorf("no mode name, the position %q:\n%s", position(), text)
 	}
-	if f := StripStyles(ta.Frame()[ta.h-1]); !strings.Contains(f, "?:help j|k:scroll Esc:live") {
-		t.Errorf("the footer has the mode's keys: %q", f)
+	if f := StripStyles(ta.Frame()[ta.h-1]); !strings.Contains(f, "Alt-v:select PgUp:history") {
+		t.Errorf("the footer as on the live screen: %q", f)
 	}
-	back := term.back
-	ta.press("k")
-	if term.back != back+1 {
-		t.Errorf("k: a line further back: %d", term.back)
+	ta.press("PgUp")
+	if want := min(2*page, most); term.back != want || !strings.Contains(ta.screenText(), position()) {
+		t.Errorf("PgUp again: %d back, want %d, the position %q", term.back, want, position())
+	}
+	ta.press("PgDn")
+	if want := min(2*page, most) - page; term.back != want || !strings.Contains(ta.screenText(), position()) || sent.Len() != 0 {
+		t.Errorf("PgDn: a page forward, %d back, want %d, sent %q", term.back, want, sent.String())
+	}
+	for range most / page {
+		ta.press("PgUp")
+	}
+	if term.back != most {
+		t.Errorf("PgUp stops at the oldest line: %d of %d", term.back, most)
+	}
+}
+
+// TestTerminal16BackToLive: PgDn down to the bottom is the live screen, the
+// position gone; any other key, j|k, gg|G and the arrows too, takes the
+// screen back to the live one first and then goes to the program, q and ?
+// too (tdp terminal.5, terminal-16).
+func TestTerminal16BackToLive(t *testing.T) {
+	ta, term, sent := termWithHistory(t)
+	ta.press("PgUp", "PgDn")
+	if term.back != 0 || strings.Contains(ta.screenText(), " of ") || sent.Len() != 0 {
+		t.Errorf("PgDn to the bottom: the live screen, sending nothing: %d %q", term.back, sent.String())
+	}
+	ta.press("PgDn")
+	if sent.String() != "\x1b[6~" {
+		t.Errorf("PgDn on the live screen is the program's: %q", sent.String())
+	}
+	sent.Reset()
+	for _, c := range []struct{ key, sent string }{{"k", "k"}, {"j", "j"}, {"g", "g"}, {"G", "G"}, {"↑", "\x1b[A"}, {"q", "q"}, {"?", "?"}} {
+		ta.press("PgUp", c.key)
+		if term.back != 0 || term.Mode() != "" || !strings.HasSuffix(sent.String(), c.sent) {
+			t.Errorf("%s scrolled back: back %d, mode %q, sent %q", c.key, term.back, term.Mode(), sent.String())
+		}
+	}
+	if ta.quitting || ta.top() != nil {
+		t.Errorf("q or ? was the app's: quitting %v, %T open", ta.quitting, ta.topView())
+	}
+	term.Keys = []TerminalKey{{Key: "Alt-u", Desc: "unlock", Do: func() tea.Cmd { return nil }}}
+	ta.press("PgUp")
+	ta.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("u"), Alt: true})
+	if term.back != 0 {
+		t.Errorf("an app's own key: back to the live screen first: %d", term.back)
+	}
+}
+
+// TestTerminal17ViewingMoves: j|k, u|d and gg|G go through the history only
+// in the selection mode, Viewing: gg the oldest line, G the last
+// (tdp terminal.5, terminal-17).
+func TestTerminal17ViewingMoves(t *testing.T) {
+	ta, term, _ := termWithHistory(t)
+	ta.Update(altV)
+	ta.settle()
+	if term.Mode() != "Viewing" {
+		t.Fatalf("Alt-v: %q", term.Mode())
 	}
 	ta.press("g", "g")
-	if term.back != len(term.vt().history) {
-		t.Errorf("gg: the oldest line: %d", term.back)
+	if term.sel.line != 0 {
+		t.Errorf("gg: the oldest line: %d", term.sel.line)
 	}
 	ta.press("G")
-	if term.back != 0 || term.Mode() != "History" {
-		t.Errorf("G: the end, still in the mode: %d %q", term.back, term.Mode())
+	if term.sel.line != len(term.sel.Lines)-1 {
+		t.Errorf("G: the last line: %d of %d", term.sel.line, len(term.sel.Lines))
 	}
-	if sent.Len() != 0 {
-		t.Errorf("the mode's keys went to the program: %q", sent.String())
+	ta.press("k")
+	if term.sel.line != len(term.sel.Lines)-2 || term.Mode() != "Viewing" {
+		t.Errorf("k: a line up: %d", term.sel.line)
+	}
+}
+
+// TestTerminal25ViewingScrolledBack: Alt-v while scrolled back starts the
+// selection on the screen as it is, the cursor at the start of the first
+// line in sight, not back on the live screen first (tdp terminal.5,
+// terminal-25).
+func TestTerminal25ViewingScrolledBack(t *testing.T) {
+	ta, term, _ := termWithHistory(t)
+	ta.press("PgUp")
+	first := len(term.vt().history) - term.back
+	ta.Update(altV)
+	ta.settle()
+	if term.Mode() != "Viewing" || term.sel.line != first || term.sel.col != 0 || term.sel.top != first {
+		t.Errorf("Alt-v scrolled back: %q, line %d top %d, want %d", term.Mode(), term.sel.line, term.sel.top, first)
 	}
 	ta.press("Esc")
-	if term.Mode() != "" || sent.Len() != 0 {
-		t.Error("Esc goes back to the live screen, sending nothing")
-	}
-	ta.press("PgUp", "x")
-	if term.Mode() != "" || term.back != 0 || sent.String() != "x" {
-		t.Errorf("another key leaves the mode and goes to the program: %q %q", term.Mode(), sent.String())
-	}
-	ta.press("PgUp", "q")
-	if term.Mode() != "" || sent.String() != "xq" || ta.quitting {
-		t.Errorf("q too: %q, quitting %v", sent.String(), ta.quitting)
-	}
-	ta.press("PgUp", "?")
-	if n, ok := ta.topView().(*noteView); !ok || n.title != "HISTORY KEYS" {
-		t.Errorf("? is the mode's key reference: %T", ta.topView())
+	if term.Mode() != "" || term.back != 0 {
+		t.Errorf("Esc: the live screen: %q %d", term.Mode(), term.back)
 	}
 }
 
@@ -192,7 +258,7 @@ func TestTerminalSelectMode(t *testing.T) {
 		t.Errorf("the app's key in the footer: %q", f)
 	}
 	ta.press("Alt-v")
-	if term.Mode() != "Visual" {
+	if term.Mode() != "Viewing" {
 		t.Fatalf("the selection mode: %q", term.Mode())
 	}
 	before := ta.screenText()
@@ -202,7 +268,7 @@ func TestTerminalSelectMode(t *testing.T) {
 	if ta.screenText() != before {
 		t.Error("the screen holds still")
 	}
-	if top := StripStyles(ta.rowWith("Visual")); !strings.Contains(top, "┫Visual┣") {
+	if top := StripStyles(ta.rowWith("Viewing")); !strings.Contains(top, "┫Viewing┣") {
 		t.Errorf("the mode on the frame: %q", top)
 	}
 	ta.press("k", "v", "l", "l", "l", "y")

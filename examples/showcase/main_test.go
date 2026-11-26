@@ -690,7 +690,7 @@ func TestRoomLeftOver(t *testing.T) {
 	}
 }
 
-// D is the Diff mode's key in every app, written [D]iff; x deletes the item
+// D is the Diffing mode's key in every app, written [D]iff; x deletes the item
 // under the cursor, X many at once; nothing that removes for good is on D or
 // d (tdp K13, K13-1 to K13-3): [1] PODS has [D]iff, its Drag on r, D[r]ag,
 // [x] Delete and [X] Delete marked; [2] FILES' Diff is on D too.
@@ -715,14 +715,14 @@ func TestK13Keys(t *testing.T) {
 					t.Errorf("%s removes on %s", act.Label, act.Key)
 				}
 				if act.Label == "Diff" && act.Key != "Enter" && act.Key != "D" { // the mode's, not an Enter that opens one
-					t.Errorf("the Diff mode on %s in %s", act.Key, p.Label)
+					t.Errorf("the Diffing mode on %s in %s", act.Key, p.Label)
 				}
 			}
 		}
 	}
 }
 
-// [2] FILES may show its Diff mode in [3] CHANGES, its details (tdp
+// [2] FILES may show its Diffing mode in [3] CHANGES, its details (tdp
 // panel.9 "With a details panel", panel-185, panel-186): the showcase
 // switches between the two ways. The mode spans [2] and [3]; [3] follows
 // the cursor with the anchor's diff, an empty state on the anchor; D sends
@@ -743,7 +743,7 @@ func TestDiffInChanges(t *testing.T) {
 		}
 	}
 	d.Do(in.Do)
-	if !d.Has("The Diff mode shows in [3] CHANGES") {
+	if !d.Has("The Diffing mode shows in [3] CHANGES") {
 		t.Fatal("no toast")
 	}
 	d.Press("Esc", "D") // the toast closed; v1/ the anchor
@@ -785,11 +785,11 @@ func TestDiffInChanges(t *testing.T) {
 	d.Do(in.Do)
 	d.Press("Esc", "k", "D", "j", "Enter") // as before: v1/ against v2/, into the list in [2]
 	if s.app.Screen().Focused() != is.files || is.changes.InMode() != nil || !d.Has("releases/v1 ↔ releases/v2") {
-		t.Errorf("the Diff mode as before:\n%s", strings.Join(d.Screen(), "\n"))
+		t.Errorf("the Diffing mode as before:\n%s", strings.Join(d.Screen(), "\n"))
 	}
 }
 
-// In [3] the Diff mode says it cannot diff a row with the anchor, and shows
+// In [3] the Diffing mode says it cannot diff a row with the anchor, and shows
 // a side it cannot read as its error state, no error popup (tdp panel.9,
 // panel-187): assets/ against main.go, then against locked/.
 func TestDiffInChangesCannot(t *testing.T) {

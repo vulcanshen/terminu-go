@@ -168,7 +168,7 @@ func (a *App) selectModeMenu(v *Viewer, press func(key string) tea.Cmd) tea.Cmd 
 	return cmd
 }
 
-// reorderModeMenu is the Space menu of a reorder's Drag mode.
+// reorderModeMenu is the Space menu of a reorder's Dragging mode.
 func (a *App) reorderModeMenu(rv *reorderView) tea.Cmd {
 	do := func(key string) func() tea.Cmd {
 		return func() tea.Cmd { _, cmd := rv.dragKey(a, key); return cmd }
@@ -176,19 +176,11 @@ func (a *App) reorderModeMenu(rv *reorderView) tea.Cmd {
 	item := []Action{{Key: "Enter", Label: "Drop", Desc: "it here", Do: do("Enter")}}
 	// Leaving says the hint's verb, Esc:cancel (tdp menu.4).
 	keys := []Action{moveRow("h|k", "move it up"), moveRow("j|l", "move it down"), leaveRow("cancel", do("Esc"))}
-	return a.modeMenu(a.modeTitle(), "Drag", item, keys)
+	return a.modeMenu(a.modeTitle(), "Dragging", item, keys)
 }
 
-// terminalModeMenu is the Space menu of a terminal's History or selection
-// mode; Space no longer goes to the program there.
+// terminalModeMenu is the Space menu of a terminal's selection mode; Space
+// no longer goes to the program there.
 func (a *App) terminalModeMenu(t *Terminal) tea.Cmd {
-	if t.mode == visualMode {
-		return a.selectModeMenu(t.sel, func(key string) tea.Cmd { cmd, _ := t.modeKey(a, key); return cmd })
-	}
-	keys := []Action{
-		moveRow("j|k", "a line down, up"), moveRow("u|d", "half a page up, down"),
-		moveRow("gg|G", "the oldest line, the live screen's last"),
-		leaveRow("live", func() tea.Cmd { t.leaveMode(); return nil }),
-	}
-	return a.modeMenu(a.modeTitle(), historyMode, nil, keys)
+	return a.selectModeMenu(t.sel, func(key string) tea.Cmd { cmd, _ := t.modeKey(a, key); return cmd })
 }

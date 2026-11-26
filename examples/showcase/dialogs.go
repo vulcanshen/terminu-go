@@ -659,7 +659,7 @@ func (ds *dialogsScreen) devtools() tea.Cmd {
 	}
 	// h|l switch the tabs, and move the cursor in the selection mode (tdp K12).
 	// A Copy of the app's own takes the text instead of the clipboard.
-	v.Select = &terminu.Selection{Key: "v", Name: "Visual", Copy: func(text string) tea.Cmd {
+	v.Select = &terminu.Selection{Key: "v", Name: "Viewing", Copy: func(text string) tea.Cmd {
 		return ds.s.app.Toast(terminu.Success, fmt.Sprintf("Copied %d characters", len([]rune(text))))
 	}}
 	return ds.s.app.Viewer(v)

@@ -33,13 +33,13 @@ func TestNote9AppLogFollow(t *testing.T) {
 	top, line := v.top, v.line
 	ta.Log(Info, "came in with the cursor out")
 	if text := ta.screenText(); v.top != top || v.line != line || strings.Contains(text, "came in with the cursor out") {
-		t.Errorf("Visual: it followed: top %d line %d, were %d %d", v.top, v.line, top, line)
+		t.Errorf("Viewing: it followed: top %d line %d, were %d %d", v.top, v.line, top, line)
 	}
 	ta.press("v", "j")
 	top, line = v.top, v.line
 	ta.Log(Info, "came in while selecting")
 	if text := ta.screenText(); v.top != top || v.line != line || !v.selecting || strings.Contains(text, "came in while selecting") {
-		t.Errorf("Visual>select: it followed: top %d line %d, were %d %d", v.top, v.line, top, line)
+		t.Errorf("Viewing:selecting: it followed: top %d line %d, were %d %d", v.top, v.line, top, line)
 	}
 }
 

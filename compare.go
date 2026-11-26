@@ -11,7 +11,7 @@ import (
 
 const glyphCompare = "\U000F018A" // nf-md-compare: the Diff popup (tdp note.8)
 
-// DiffMode is what a list's Diff mode needs from the app (tdp panel.9,
+// DiffMode is what a list's Diffing mode needs from the app (tdp panel.9,
 // note.8): the key, which rows can be compared and their text. The lib does
 // the rest.
 type DiffMode struct {
@@ -76,7 +76,7 @@ type DiffMode struct {
 
 // Compare is DiffMode's old name.
 //
-// Deprecated: the mode is the Diff mode (tdp panel.9): use DiffMode. The
+// Deprecated: the mode is the Diffing mode (tdp panel.9): use DiffMode. The
 // name stays so that code using it still builds; a later minor version
 // takes it away.
 type Compare = DiffMode
@@ -148,7 +148,7 @@ func (d DiffItem) opens() bool { return d.Text != nil || d.Items != nil }
 // side by side (tdp note.8).
 const splitMin = 96
 
-// comparing is a Diff mode under way.
+// comparing is a Diffing mode under way.
 type comparing struct {
 	p    *Panel
 	l    *List
@@ -164,7 +164,7 @@ type comparing struct {
 }
 
 // DiffModeAction is l's Diff item action, for p's Actions: on a row c can
-// compare it enters the Diff mode (tdp K11, panel.9), that row the anchor
+// compare it enters the Diffing mode (tdp K11, panel.9), that row the anchor
 // (List.Anchor). In the mode j|k, u|d and gg|G move; c.Key or Enter opens
 // the Diff of the row under the cursor with the anchor, off on the anchor, on
 // a row c cannot compare and on a row that holds many against one that
@@ -191,7 +191,7 @@ func (a *App) DiffModeAction(p *Panel, l *List, c DiffMode) Action {
 
 // CompareAction is DiffModeAction's old name.
 //
-// Deprecated: the mode is the Diff mode (tdp panel.9): use DiffModeAction.
+// Deprecated: the mode is the Diffing mode (tdp panel.9): use DiffModeAction.
 // The name stays so that code using it still builds; a later minor version
 // takes it away.
 func (a *App) CompareAction(p *Panel, l *List, c Compare) Action { return a.DiffModeAction(p, l, c) }
@@ -259,7 +259,7 @@ func (a *App) startCompare(p *Panel, l *List, c DiffMode, anchor Row) {
 		}
 		return "with " + cm.name
 	}
-	cm.mode = &Mode{Name: "Diff", Exit: "leave", Pause: true, Keys: []ModeKey{
+	cm.mode = &Mode{Name: "Diffing", Exit: "leave", Pause: true, Keys: []ModeKey{
 		{Key: "j|k", Keys: []string{"j", "k", "↓", "↑"}, Desc: "down, up", NoFooter: true, Do: move},
 		{Key: "u|d", Keys: []string{"u", "d", "PgUp", "PgDn"}, Desc: "half a page up, down", NoFooter: true, Do: move},
 		{Key: "gg|G", Keys: []string{"gg", "G"}, Desc: "to the top, the bottom", NoFooter: true, Do: move},
@@ -276,7 +276,7 @@ func (a *App) startCompare(p *Panel, l *List, c DiffMode, anchor Row) {
 	a.comparings = append(a.comparings, cm)
 }
 
-// detailsMode is the Diff mode's layer in the list's details (tdp panel.9
+// detailsMode is the Diffing mode's layer in the list's details (tdp panel.9
 // "With a details panel"): its keys move there and open the item under its
 // cursor, Esc going back to the list.
 func (a *App) detailsMode(cm *comparing) *Mode {
@@ -320,7 +320,7 @@ func (a *App) detailsMode(cm *comparing) *Mode {
 		}
 		return nil
 	}
-	return &Mode{Name: "Diff", Exit: "back", Pause: true, with: cm.p, back: back, backDesc: "back to the list, still in Diff", Keys: []ModeKey{
+	return &Mode{Name: "Diffing", Exit: "back", Pause: true, with: cm.p, back: back, backDesc: "back to the list, still Diffing", Keys: []ModeKey{
 		{Key: "j|k", Keys: []string{"j", "k", "↓", "↑"}, Desc: "down, up", NoFooter: true, Disabled: still, Do: move},
 		{Key: "u|d", Keys: []string{"u", "d", "PgUp", "PgDn"}, Desc: "half a page up, down", NoFooter: true, Disabled: still, Do: move},
 		{Key: "gg|G", Keys: []string{"gg", "G"}, Desc: "to the top, the bottom", NoFooter: true, Disabled: still, Do: move},
@@ -328,7 +328,7 @@ func (a *App) detailsMode(cm *comparing) *Mode {
 	}}
 }
 
-// diffOver is a Diff mode's diff shown in a list's details, in place of its
+// diffOver is a Diffing mode's diff shown in a list's details, in place of its
 // body: body is what it shows, always in the mode, whose keys work on it
 // and fill its hint. shows is false for an empty state; items are body's
 // when it lists the items that differ; pair is the two rows, for Enter on
@@ -408,7 +408,7 @@ func (a *App) fillDetails(cm *comparing) {
 	}
 }
 
-// leaveDetails takes the Diff mode out of its list's details: they show
+// leaveDetails takes the Diffing mode out of its list's details: they show
 // the app's own content again, following the cursor's own row.
 func (cm *comparing) leaveDetails() {
 	det := cm.det
@@ -423,7 +423,7 @@ func (cm *comparing) leaveDetails() {
 	}
 }
 
-// diffState is what a Diff mode's details show with no diff: a sentence
+// diffState is what a Diffing mode's details show with no diff: a sentence
 // in Overlay0, or a failure, in Red (tdp panel.9, panel.15).
 type diffState struct {
 	fact string
@@ -509,7 +509,7 @@ func (cm *comparing) pairItem(anchor, other Row) DiffItem {
 // A comparison is as wide as the terminal but 2 (tdp F7) and opens on
 // UNIFIED; SPLIT is off narrower than 96 columns. An
 // error from Text or Items is an error popup. Mark is not used. p is out of
-// a mode: a Diff mode goes in so itself (DiffModeAction).
+// a mode: a Diffing mode goes in so itself (DiffModeAction).
 func (a *App) OpenDiff(p *Panel, item DiffItem) tea.Cmd { return a.openDiff(p, item) }
 
 func (a *App) openDiff(p *Panel, item DiffItem) tea.Cmd {
@@ -572,7 +572,7 @@ func itemAt(l *List, items []DiffItem) (DiffItem, bool) {
 
 // goInDiff goes into items, the items that differ in item, in p. It
 // changes what p lists, so p's filter is cleared first, whether or not it
-// hides the item (tdp panel.14): from OpenDiff and from a Diff mode
+// hides the item (tdp panel.14): from OpenDiff and from a Diffing mode
 // alike, the app having no way to clear it before.
 func (a *App) goInDiff(p *Panel, item DiffItem, items []DiffItem) {
 	if l, ok := p.body().(*List); ok && l.Filtering() {
@@ -696,7 +696,7 @@ func foldPath(s string, w int) []string {
 	return append(rows, s)
 }
 
-// checkCompares ends a Diff mode whose anchor is no longer in its list,
+// checkCompares ends a Diffing mode whose anchor is no longer in its list,
 // with a Warning toast, the lists gone into in it closed, and forgets the
 // ones left, their details too; a mode shown in its list's details shows
 // there the row now under the cursor.
@@ -712,7 +712,7 @@ func (a *App) checkCompares() tea.Cmd {
 			cm.p.LeaveMode()
 			cm.l.Anchor = ""
 			cm.leaveDetails()
-			cmds = append(cmds, a.Toast(Warning, "Diff ended: "+cm.name+" is gone"))
+			cmds = append(cmds, a.Toast(Warning, "Diffing ended: "+cm.name+" is gone"))
 			continue
 		}
 		if cm.det != nil {

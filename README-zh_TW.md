@@ -178,7 +178,7 @@ Success 記進 App Log。
 
 ## Diff
 
-`app.DiffModeAction(panel, list, terminu.DiffMode{Key: "D", Text: ...})` 讓清單有 Diff 模式：使用者挑兩列，在 Diff 裡看哪裡不一樣，
+`app.DiffModeAction(panel, list, terminu.DiffMode{Key: "D", Text: ...})` 讓清單有 Diffing 模式：使用者挑兩列，在 Diff 裡看哪裡不一樣，
 UNIFIED 或 SPLIT。兩列都裝著許多項目時（兩個資料夾、兩個 namespace、兩個 commit），改成進到一層「有差異的項目」清單：
 `Many` 說哪些列裝著許多項目，`Items` 給出兩列之間有差異的項目，一項一個 `terminu.DiffItem`。那層清單由 lib 畫在 panel 裡，
 每一項前面的標記（`DiffAdded` +、`DiffRemoved` -、`DiffChanged` ~）、`Enter`、`Esc` 與位置列也都是 lib 的。
@@ -194,7 +194,7 @@ app 自己的動作要顯示同一項的兩個版本時（commit 裡的一個檔
 取代原本的列，按 `Esc` 回到原本的列。app 自己的動作要在那個 panel 顯示別的東西時（例：在分支上按 `Enter`，把它的 commit
 放到 cursor 下），先叫 `panel.LeaveDiff()`：離開每一層這種清單，像一直按 `Esc` 到原本的列回來為止；沒有清單時什麼都不做。
 
-進到這種清單會換掉 panel 列的東西，所以 `OpenDiff` 與 Diff 模式進去之前會先清掉 panel 的篩選（tdp panel.14）。app 自己的動作要換掉
+進到這種清單會換掉 panel 列的東西，所以 `OpenDiff` 與 Diffing 模式進去之前會先清掉 panel 的篩選（tdp panel.14）。app 自己的動作要換掉
 panel 列的東西，或把它的 cursor 放到某一項上時（例：在別的 panel 移動 cursor，把這個 panel 帶到那一項；進到一項裡面），也一樣
 先叫 `list.ClearFilter()`，不管篩選有沒有藏住那一項。只是 focus 離開 panel，篩選留著。
 
@@ -207,7 +207,7 @@ panel 列的東西，或把它的 cursor 放到某一項上時（例：在別的
 進到那份清單：`app.OpenDiff(panel, terminu.DiffItem{Anchor: ..., Other: ..., Items: ...})`，給同樣的項目。一項都沒有時，顯示
 Pager 的 `EmptyFact`。
 
-有明細 panel（`panel.Details`）的清單，可以改把 Diff 模式放在明細裡，不打開視窗、也不進到清單裡：設 `InDetails`（用哪一種由 app
+有明細 panel（`panel.Details`）的清單，可以改把 Diffing 模式放在明細裡，不打開視窗、也不進到清單裡：設 `InDetails`（用哪一種由 app
 決定）。這時模式同時涵蓋清單與明細，兩個框都是模式顏色、都寫 `Diff`。明細跟著 cursor，不用按鍵：lib 用 app 的 `Text` 與
 `Items`，在明細裡畫出 anchor 跟 cursor 那一列的差異，畫法跟 `SetDiff`、`SetDiffItems` 一樣；cursor 在 anchor 上時是空狀態
 （`Move to another <Noun> to diff with <anchor>`：設 `Noun`，沒設時是 `item`），跟 anchor 一樣的列也是。在清單上按 Diff 鍵
@@ -232,6 +232,8 @@ Pager 的 `EmptyFact`。
 ## app 自己的模式
 
 `panel.EnterMode(&terminu.Mode{...})` 讓 panel 進入 app 自己的模式（tdp K11）：只有模式的 `Keys` 與 core key 作用，`Esc` 離開。
+名字照 tdp 的模式取：在模式裡正在做的事的 -ing 字，一個詞（`Playing`，跟 `Dragging`、`Viewing` 一樣）；`panel.EnterLayer`
+再進一層，框上用 `:` 把名字接起來（`Viewing:selecting`，tdp panel.3）。
 `ModeKey` 只收 `Keys` 列出來的鍵，lib 不會替你補：方向鍵與 `PgUp|PgDn` 照 tdp K12 自己列進去；key reference 與 footer
 寫的是 `Key`，只寫字母：
 
@@ -266,7 +268,7 @@ popup 就是唯一的一個（tdp K11）。
 `ModeKey`，例：`{Key: "Space", Desc: "drop", Do: drop}`：`Space` 就做那個動作，這個模式沒有 Space menu。footer 把它寫在
 最前面、原本 `Space:menu` 的位置（`Space:drop ?:help …`），`?` 把它列在模式的鍵裡。原本只列在那個 menu 裡的鍵，這時要
 放進 footer：拿掉它們的 `NoFooter`。`Space` 已經有動作時擋下、跳 Warning 說 `Space` 改做什麼與要 menu 先按 `Esc`、
-tdp 的模式（Drag、Diff）不讓放，都是 app 的事。收 `Space` 但沒有 `Do` 的 `ModeKey` 照樣是 core key，`Space` 開 menu。
+tdp 的模式（Dragging、Diffing）不讓放，都是 app 的事。收 `Space` 但沒有 `Do` 的 `ModeKey` 照樣是 core key，`Space` 開 menu。
 
 app 自己的模式的 footer，在 `Space:menu ?:help` 與 `Esc:<動詞>` 中間寫哪些鍵由 app 決定，core key 也可以（tdp K11、
 screen.2）。要寫 `q:quit`，給模式一個沒有 `Do` 的 `ModeKey`：`{Key: "q", Desc: "quit"}`。`q` 照樣進入離開流程，跟在任何
@@ -397,7 +399,7 @@ pager.ReadAgain(lines)              // panel 的 Pager，要設 Follow
 選取模式在位置還在的地方留著；回傳的是說明拿掉了什麼的 toast，選取模式的 Space menu 或 `?` 開著時則是疊在上面、跟它們
 一起關的 note。來源讀不到時呼叫 `app.CannotReadAgain(viewer, "Cannot read notes.txt: it is gone")`：app 的字放進 Error
 toast，或疊在那個 menu 上的 error popup。app 自己的閱讀 panel 有自己的選取模式時，選取失效用
-`app.SelectionGone(panel, terminu.Warning, "Read again", "notes.txt changed: Visual left")` 說，在離開模式之前叫：是 toast，
+`app.SelectionGone(panel, terminu.Warning, "Read again", "notes.txt changed: Viewing left")` 說，在離開模式之前叫：是 toast，
 或疊在模式的 Space menu、`?` 上的 note。開著時會給新的行的 Pager（`Append` 或 `ReadAgain`）要設 `Follow`。重新讀進來的內容不算串流：
 不要設 `Panel.Stream`（tdp T2）。
 

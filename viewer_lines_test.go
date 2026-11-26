@@ -38,7 +38,7 @@ func TestViewerLineNumbers(t *testing.T) {
 	ta.resize(80, 24)
 	lines := numberedLines(42)
 	lines[5] = strings.Repeat("word ", 30) // 150 cells: folds onto a second and a third row
-	v := &Viewer{Title: "YAML", Lines: lines, Select: &Selection{Key: "v", Name: "Visual"}}
+	v := &Viewer{Title: "YAML", Lines: lines, Select: &Selection{Key: "v", Name: "Viewing"}}
 	ta.Viewer(v)
 	ta.settle()
 	rows := viewerRows(ta)
@@ -110,7 +110,7 @@ func TestViewerCopyNoNumbers(t *testing.T) {
 	ta := newTestApp(t)
 	got := ""
 	v := &Viewer{Title: "YAML", Lines: []string{"kind: Pod", "metadata:", "  name: nginx"},
-		Select: &Selection{Key: "v", Name: "Visual", Copy: func(s string) tea.Cmd { got = s; return nil }}}
+		Select: &Selection{Key: "v", Name: "Viewing", Copy: func(s string) tea.Cmd { got = s; return nil }}}
 	ta.Viewer(v)
 	ta.settle()
 	ta.press("v", "v", "j", "$", "y")
@@ -127,7 +127,7 @@ func TestViewerTabs(t *testing.T) {
 		ta := newTestApp(t)
 		got := ""
 		v := &Viewer{Title: "File", Lang: lang, Lines: []string{"func main() {", "\tfmt.Println(\"x\")", "}"},
-			Select: &Selection{Key: "v", Name: "Visual", Copy: func(s string) tea.Cmd { got = s; return nil }}}
+			Select: &Selection{Key: "v", Name: "Viewing", Copy: func(s string) tea.Cmd { got = s; return nil }}}
 		ta.Viewer(v)
 		ta.settle()
 		check := func(when string) {
@@ -163,7 +163,7 @@ func TestViewerControlChars(t *testing.T) {
 		got := ""
 		ta.Viewer(&Viewer{Title: "File", Lang: lang,
 			Lines:  []string{"a := 1\r", "b\x07c\x7fd\re", "\tx", Fg(Red).Render("ERROR") + " y"},
-			Select: &Selection{Key: "v", Name: "Visual", Copy: func(s string) tea.Cmd { got = s; return nil }}})
+			Select: &Selection{Key: "v", Name: "Viewing", Copy: func(s string) tea.Cmd { got = s; return nil }}})
 		ta.settle()
 		for i, l := range ta.Frame() {
 			if Width(l) != ta.w || strings.ContainsAny(StripStyles(l), "\r\x07\x7f\t") {
@@ -208,7 +208,7 @@ func TestViewerFoldedScroll(t *testing.T) {
 	for i := range 10 {
 		lines = append(lines, fmt.Sprintf("%02d", i+1)+strings.Repeat("x", 98)) // one word of 100 cells: two rows each
 	}
-	v := &Viewer{Title: "Log", Lines: lines, Select: &Selection{Key: "v", Name: "Visual"}}
+	v := &Viewer{Title: "Log", Lines: lines, Select: &Selection{Key: "v", Name: "Viewing"}}
 	ta.Viewer(v)
 	ta.settle()
 	if !strings.Contains(ta.screenText(), " 1-4 of 10 ") {
@@ -389,7 +389,7 @@ func TestViewerSyntaxColours(t *testing.T) {
 	}
 	// A selection: Yellow, Base text, whatever the language.
 	ta = newTestApp(t)
-	ta.Viewer(&Viewer{Title: "YAML", Lines: text, Lang: "yaml", Select: &Selection{Key: "v", Name: "Visual"}})
+	ta.Viewer(&Viewer{Title: "YAML", Lines: text, Lang: "yaml", Select: &Selection{Key: "v", Name: "Viewing"}})
 	ta.settle()
 	ta.press("v", "v", "l", "l", "l")
 	for _, c := range covCCells(viewerRows(ta)[0]) {

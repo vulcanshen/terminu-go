@@ -88,7 +88,7 @@ type Action struct {
 	// show is a mode's movement key in its Space menu: shown, the cursor
 	// passing it, never run (tdp menu.4).
 	show bool
-	// inDetails is a Diff mode's action whose diff is shown in the panel's
+	// inDetails is a Diffing mode's action whose diff is shown in the panel's
 	// Details (DiffMode.InDetails): AddScreen checks there is one.
 	inDetails bool
 }

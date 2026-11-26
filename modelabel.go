@@ -15,11 +15,14 @@ import (
 // clock. Only the name moves: the mode and the frame's colour change at once
 // and keys work all the while. A switch halfway turns it where it is.
 //
-// A mode of several layers joins them with ">" (Visual>select). A layer more
+// A mode of several layers joins them with ":" (Viewing:selecting). A layer more
 // grows from the name's tail a character a frame, the right end still, a
 // layer less goes back the same way; leaving the whole mode from a layer
 // closes the whole name from its middle. The title keeps the longest name's
 // room all the while.
+
+// layerJoin joins a mode's layers in its name, no space (tdp panel.3).
+const layerJoin = ":"
 
 // labelTime is how long name takes to open or to close: a frame a character.
 func labelTime(name string) time.Duration {
@@ -140,9 +143,9 @@ func (a *App) syncLabels() tea.Cmd {
 		case name == l.name && l.dir < 0, name == "" && l.dir > 0:
 			*l = labelAnim{name: l.name, from: l.at(now), dir: -l.dir, start: now} // turned where it is
 		case name == "" || name == l.name:
-		case l.dir > 0 && strings.HasPrefix(name, l.name+">"): // a layer more
+		case l.dir > 0 && strings.HasPrefix(name, l.name+layerJoin): // a layer more
 			*l = labelAnim{name: name, base: l.name, tail: true, dir: 1, start: now}
-		case l.dir > 0 && strings.HasPrefix(l.name, name+">"): // a layer less
+		case l.dir > 0 && strings.HasPrefix(l.name, name+layerJoin): // a layer less
 			*l = labelAnim{name: l.name, base: name, tail: true, from: 1, dir: -1, start: now}
 		default:
 			*l = labelAnim{name: name, dir: 1, start: now}

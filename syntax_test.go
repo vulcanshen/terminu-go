@@ -519,7 +519,7 @@ func TestSyntaxCR(t *testing.T) {
 func TestViewerSelectionPlain(t *testing.T) {
 	line := "Some **bold** and *em* text"
 	ta := newTestApp(t)
-	ta.Viewer(&Viewer{Title: "README", Lines: []string{line, "# Title"}, Lang: "README.md", Select: &Selection{Key: "v", Name: "Visual"}})
+	ta.Viewer(&Viewer{Title: "README", Lines: []string{line, "# Title"}, Lang: "README.md", Select: &Selection{Key: "v", Name: "Viewing"}})
 	ta.settle()
 	bold := func() bool {
 		for _, c := range covCCells(viewerRows(ta)[0]) {

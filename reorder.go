@@ -7,7 +7,7 @@ import (
 )
 
 // Reorder puts a set of items in an order by hand (tdp reorder):
-// the panel's Drag mode in a popup. D picks up the item under the cursor,
+// the panel's Dragging mode in a popup. D picks up the item under the cursor,
 // j|k move it, Enter drops it; Enter with nothing held writes the order back.
 type Reorder struct {
 	Title, Glyph string
@@ -42,7 +42,7 @@ type reorderView struct {
 	cursor  int   // index into order
 	top     int
 	visible int
-	// held is set in the Drag mode; from and before are where the held item
+	// held is set in the Dragging mode; from and before are where the held item
 	// was picked up and the order then, for Esc to put it back.
 	held    bool
 	from    int
@@ -122,7 +122,7 @@ func (rv *reorderView) draw(w, h int, layer Color) []string {
 	}
 	box := popupBox{color: layer, glyph: rv.r.Glyph, title: popupTitle(rv.r.Title, rv.r.Subject), hint: rv.hint(), scroll: scroll}
 	if rv.held {
-		box.color = Yellow // the Drag mode marks its frame: the mode colour and its name (tdp K11)
+		box.color = Yellow // the Dragging mode marks its frame: the mode colour and its name (tdp K11)
 	}
 	lab := rv.labelFor(rv.modeName())
 	box.mode, box.closed, box.modeW = lab.name, 1-lab.shown, lab.room
@@ -131,7 +131,7 @@ func (rv *reorderView) draw(w, h int, layer Color) []string {
 
 func (rv *reorderView) modeName() string {
 	if rv.held {
-		return "Drag"
+		return "Dragging"
 	}
 	return ""
 }
@@ -188,7 +188,7 @@ func (rv *reorderView) key(a *App, key string, _ tea.KeyMsg) (bool, tea.Cmd) {
 	return true, nil
 }
 
-// dragKey is a key in the Drag mode: only its own keys and the core keys of
+// dragKey is a key in the Dragging mode: only its own keys and the core keys of
 // tdp K11 work.
 func (rv *reorderView) dragKey(a *App, key string) (bool, tea.Cmd) {
 	switch key {
@@ -253,7 +253,7 @@ func (rv *reorderView) cancel() tea.Cmd { return run(rv.r.OnCancel) }
 
 func (rv *reorderView) surface() string {
 	if rv.held {
-		return "Drag"
+		return "Dragging"
 	}
 	return rv.r.Title
 }
@@ -261,7 +261,7 @@ func (rv *reorderView) surface() string {
 func (rv *reorderView) keyRef() []refSection {
 	if rv.held {
 		// Only the mode's keys (tdp K11).
-		return []refSection{{title: "Drag", rows: []KeyRow{
+		return []refSection{{title: "Dragging", rows: []KeyRow{
 			{Key: "h|k", Desc: "move it up"},
 			{Key: "j|l", Desc: "move it down"},
 			{Key: "Enter", Desc: "drop it"},
@@ -271,7 +271,7 @@ func (rv *reorderView) keyRef() []refSection {
 	return []refSection{
 		{rows: []KeyRow{
 			{Key: "Enter", Desc: "apply the order"},
-			{Key: "D", Desc: "pick up the item to move it (Drag)"},
+			{Key: "D", Desc: "pick up the item to move it (Dragging)"},
 			{Key: "Esc", Desc: "cancel (asks first when the order changed)"},
 		}},
 		{title: "move", rows: oneWayKeys()},
@@ -291,6 +291,6 @@ func oneWayKeys() []KeyRow {
 
 func (rv *reorderView) typing() bool { return false }
 
-// inMode reports the Drag mode, where the app's own core keys do not work
+// inMode reports the Dragging mode, where the app's own core keys do not work
 // (tdp K11).
 func (rv *reorderView) inMode() bool { return rv.held }

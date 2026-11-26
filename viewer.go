@@ -36,7 +36,7 @@ type Viewer struct {
 	// Keys are the viewer's own hotkeys, first in its hint.
 	Keys []ViewerKey
 	// Select is its selection mode (tdp K11): every viewer has one
-	// (tdp note). Unset, it is v, Visual, y copying to the
+	// (tdp note). Unset, it is v, Viewing, y copying to the
 	// terminal's clipboard with a Success toast.
 	Select *Selection
 	// Deprecated: a viewer always wraps and never cuts a line with "…"
@@ -210,7 +210,7 @@ type ViewerKey struct {
 // the selected text to Copy and leaves; Esc leaves.
 type Selection struct {
 	Key     string // "v"
-	Name    string // the mode's name on the frame: "Visual"
+	Name    string // the mode's name on the frame: "Viewing"
 	CopyKey string // "y" when unset
 	// Copy takes the text copied. Unset, it goes on the terminal's
 	// clipboard and a Success toast says so (tdp note).
@@ -223,7 +223,7 @@ func (s *Selection) copyKey() string { return cmpOr(s.CopyKey, "y") }
 func (a *App) Viewer(v *Viewer) tea.Cmd {
 	v.numW, v.tabW = 0, a.inputTabWidth()
 	if v.Select == nil {
-		v.Select = &Selection{Key: "v", Name: "Visual"}
+		v.Select = &Selection{Key: "v", Name: "Viewing"}
 	}
 	if v.Search == nil && !slices.ContainsFunc(v.Keys, func(k ViewerKey) bool { return k.Key == "/" || k.Key == "n" || k.Key == "N" }) {
 		v.Search = &ViewerSearch{}
@@ -281,15 +281,14 @@ func (vv *viewerView) at(sw, sh int) (int, int) {
 
 func (vv *viewerView) modeName() string { return vv.v.modeName() }
 
-// modeName is the selection mode's name, its layers joined with ">" once
-// selecting (Visual>select; tdp panel.1); "" out of
-// it.
+// modeName is the selection mode's name, its layers joined with ":" once
+// selecting (Viewing:selecting; tdp panel.3); "" out of it.
 func (v *Viewer) modeName() string {
 	switch {
 	case v.inMode && v.selecting:
-		return cmpOr(v.Select.Name, "Select") + ">select"
+		return cmpOr(v.Select.Name, "Viewing") + layerJoin + "selecting"
 	case v.inMode:
-		return cmpOr(v.Select.Name, "Select")
+		return cmpOr(v.Select.Name, "Viewing")
 	}
 	return ""
 }
@@ -297,9 +296,9 @@ func (v *Viewer) modeName() string {
 // escDesc is what Esc does in the selection mode: a layer back, or out.
 func (v *Viewer) escDesc() string {
 	if v.selecting {
-		return "unselect, back to " + cmpOr(v.Select.Name, "Select")
+		return "unselect, back to " + cmpOr(v.Select.Name, "Viewing")
 	}
-	return "leave " + cmpOr(v.Select.Name, "Select")
+	return "leave " + cmpOr(v.Select.Name, "Viewing")
 }
 
 func (vv *viewerView) title() string {
@@ -1090,7 +1089,7 @@ func (vv *viewerView) keyRef() []refSection {
 		rows = append(rows, KeyRow{Key: "/", Desc: "search the text"})
 	}
 	if v.Select != nil {
-		rows = append(rows, KeyRow{Key: v.Select.Key, Desc: "select text (" + cmpOr(v.Select.Name, "Select") + ")"})
+		rows = append(rows, KeyRow{Key: v.Select.Key, Desc: "select text (" + cmpOr(v.Select.Name, "Viewing") + ")"})
 	}
 	rows = append(rows, KeyRow{Key: v.closeKeys(), Desc: "close"})
 	move = nil

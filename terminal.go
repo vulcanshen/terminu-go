@@ -36,19 +36,23 @@ type Terminal struct {
 	// Interactive marks a terminal the user types commands of their own in
 	// (a shell, an ssh session, kubectl exec), not one the app opens to run
 	// one program for one thing ($EDITOR, sudo asking for a password). It
-	// has the two modes of tdp terminal, which every other PTY
-	// leaves to its program, PgUp too:
-	//   - History, on PgUp: j|k, u|d, gg|G, PgUp|PgDn scroll back through
-	//     what went off the top, Esc goes back to the live screen, any other
-	//     key leaves the mode and goes to the program. While the program
-	//     fills the whole screen (vim, less, htop: the alternate screen),
-	//     PgUp is the program's and the hint leaves PgUp:history out.
-	//   - The selection, on Alt-v (the family's v, with Alt to get out of
-	//     the program): the screen holds still, what the program prints
-	//     meanwhile waiting; the cursor starts at the first line in sight
-	//     and goes up into the history too; v starts selecting, y copies,
-	//     Esc leaves. Copy takes the text; unset, it goes on the terminal's
-	//     clipboard with a Success toast.
+	// scrolls back and has the selection mode of tdp terminal, which every
+	// other PTY leaves to its program, PgUp too:
+	//   - PgUp scrolls back through what went off the top a page at a time,
+	//     PgDn forward again, with no mode: the frame keeps its colour and
+	//     the bottom border has the position meanwhile ("1-24 of 300").
+	//     PgDn to the bottom is the live screen again, and so is any other
+	//     key first, the key then going on as on the live screen. While the
+	//     program fills the whole screen (vim, less, htop: the alternate
+	//     screen), PgUp is the program's and the hint leaves PgUp:history
+	//     out.
+	//   - Viewing, the selection, on Alt-v (the family's v, with Alt to get
+	//     out of the program): the screen holds still, what the program
+	//     prints meanwhile waiting; the cursor starts at the first line in
+	//     sight, scrolled back or not, and goes up into the history too
+	//     (j|k, u|d, gg|G); v starts selecting, y copies, Esc leaves. Copy
+	//     takes the text; unset, it goes on the terminal's clipboard with a
+	//     Success toast.
 	Interactive bool
 	// AllKeys, while set, hands every key to the program but the exit key
 	// and the app's own Keys (the one that takes them back): the user gave
@@ -96,7 +100,7 @@ type Terminal struct {
 	// cursorColour is the selection's cursor: the popup's layer colour, or a
 	// panel's cursor colour.
 	cursorColour Color
-	// mode is the mode it is in: "", History or the selection's Visual;
+	// mode is the mode it is in: "" or the selection's, Viewing;
 	// sel is the screen held still for the selection, as a viewer's lines.
 	mode     string
 	sel      *Viewer
@@ -176,11 +180,8 @@ func (t *Terminal) fullScreen() bool {
 // exit is the exit key now.
 func (t *Terminal) exit() string { return cmpOr(t.ExitKey, exitKey) }
 
-// The modes a terminal has (tdp K11; tdp terminal).
-const (
-	historyMode = "History"
-	visualMode  = "Visual"
-)
+// viewingMode is the terminal's one mode, the selection (tdp K11, terminal.6).
+const viewingMode = "Viewing"
 
 // Mode is the mode the terminal is in, "" for none.
 func (t *Terminal) Mode() string { return t.mode }
@@ -330,11 +331,9 @@ func (t *Terminal) exitVerb() string {
 // (tdp terminal); in a mode, the mode's keys (tdp K11).
 func (t *Terminal) hint() []KeyHint {
 	switch {
-	case t.mode == historyMode:
-		return []KeyHint{{"?", "help"}, {"j|k", "scroll"}, {"Esc", "live"}}
-	case t.mode == visualMode && t.sel.selecting:
+	case t.mode == viewingMode && t.sel.selecting:
 		return []KeyHint{{"y", "copy"}, {"Esc", "unselect"}}
-	case t.mode == visualMode:
+	case t.mode == viewingMode:
 		return []KeyHint{{"v", "select"}, {"Esc", "cancel"}}
 	}
 	h := []KeyHint{{t.exit(), t.exitVerb()}}
@@ -371,7 +370,7 @@ func (t *Terminal) resize(w, h int) {
 // in Text with Base on it whatever shape it asks for (tdp terminal).
 func (t *Terminal) lines(w, h int, cursor bool) []string {
 	t.resize(w, h)
-	if t.mode == visualMode {
+	if t.mode == viewingMode {
 		return t.held(w, h)
 	}
 	t.mu.Lock()
@@ -433,10 +432,10 @@ func (t *Terminal) selectMode(a *App, layer Color) {
 		}
 	}
 	t.sel = &Viewer{Lines: lines, NoNumbers: true, tabW: a.inputTabWidth(),
-		Select: &Selection{Key: "v", Name: visualMode, Copy: copyText}}
+		Select: &Selection{Key: "v", Name: viewingMode, Copy: copyText}}
 	t.sel.sync()
 	t.sel.inMode, t.sel.line, t.sel.col, t.sel.top = true, first, 0, first
-	t.mode, t.back, t.cursorColour = visualMode, 0, layer
+	t.mode, t.back, t.cursorColour = viewingMode, 0, layer
 }
 
 // leaveMode goes back to the live screen.
@@ -460,31 +459,8 @@ func (t *Terminal) modeKey(a *App, key string) (cmd tea.Cmd, ok bool) {
 	if key == "?" {
 		return a.open(t.modeRef()), true
 	}
-	if key == "Esc" && !(t.mode == visualMode && t.sel.selecting) { // selecting: a layer back, below
+	if key == "Esc" && !(t.mode == viewingMode && t.sel.selecting) { // selecting: a layer back, below
 		t.leaveMode()
-		return nil, true
-	}
-	if t.mode == historyMode {
-		t.mu.Lock()
-		defer t.mu.Unlock()
-		half, most := max(t.vt().h/2, 1), len(t.vt().history)
-		switch key {
-		case "j":
-			t.back--
-		case "k":
-			t.back++
-		case "d", "PgDn":
-			t.back -= half
-		case "u", "PgUp":
-			t.back += half
-		case "gg":
-			t.back = most
-		case "G":
-			t.back = 0
-		default:
-			return nil, false
-		}
-		t.back = min(max(t.back, 0), most)
 		return nil, true
 	}
 	if key != "v" && key != "y" && key != "Esc" && !isMoveKey(key) {
@@ -497,22 +473,14 @@ func (t *Terminal) modeKey(a *App, key string) (cmd tea.Cmd, ok bool) {
 	return cmd, true
 }
 
-// modeRef is a mode's key reference (tdp K11).
+// modeRef is the selection mode's key reference (tdp K11).
 func (t *Terminal) modeRef() *noteView {
-	if t.mode == visualMode {
-		return keyReference(Upper(visualMode), (&viewerView{v: t.sel}).keyRef())
-	}
-	return keyReference(Upper(historyMode), []refSection{{title: historyMode, rows: []KeyRow{
-		{Key: "j|k", Desc: "a line down, up"},
-		{Key: "u|d", Desc: "half a page up, down"}, // PgUp|PgDn too, not listed (tdp K12)
-		{Key: "gg|G", Desc: "the oldest line, the live screen's last"},
-		{Key: "Esc", Desc: "back to the live screen"},
-	}}, {title: "the program", rows: []KeyRow{{Key: "any other", Desc: "leaves History and goes to the program"}}}})
+	return keyReference(Upper(viewingMode), (&viewerView{v: t.sel}).keyRef())
 }
 
 // scroll is the position in the history, when scrolled back.
 func (t *Terminal) scroll() string {
-	if t.mode == visualMode {
+	if t.mode == viewingMode {
 		// The cursor's line, N of M, as a viewer's selection (tdp note).
 		return scrollText(true, t.sel.line+1, 0, len(t.sel.Lines))
 	}
@@ -533,6 +501,23 @@ func (t *Terminal) key(a *App, key string, msg tea.KeyMsg) tea.Cmd {
 		// Not the mode's: it leaves the mode and goes on as in the live
 		// screen, q and Ctrl-C too (tdp K11).
 		t.leaveMode()
+	}
+	if t.modes() && !t.fullScreen() && (key == "PgUp" || key == "PgDn" && t.back > 0) {
+		// Back through the history a page at a time and forward again,
+		// with no mode: the frame keeps its colour (tdp terminal.5).
+		t.mu.Lock()
+		page, most := max(t.vt().h, 1), len(t.vt().history)
+		if key == "PgUp" {
+			t.back += page
+		} else {
+			t.back -= page
+		}
+		t.back = min(max(t.back, 0), most)
+		t.mu.Unlock()
+		return nil
+	}
+	if key != selectKey || !t.modes() {
+		t.back = 0 // any other key: the live screen first (tdp terminal.5)
 	}
 	inMode := t.inMode() // Esc and Alt-Esc are the mode's then (ptyModeKey), the exit key is not
 	if !inMode && key == t.exit() && (key == exitKey || t.ExitAsks) {
@@ -564,15 +549,6 @@ func (t *Terminal) key(a *App, key string, msg tea.KeyMsg) tea.Cmd {
 			return run(k.Do)
 		}
 	}
-	if t.modes() && key == "PgUp" && !t.fullScreen() {
-		// Back into the history: the History mode (tdp terminal).
-		t.mu.Lock()
-		t.back = min(t.back+max(t.vt().h/2, 1), len(t.vt().history))
-		t.mu.Unlock()
-		t.mode = historyMode
-		return nil
-	}
-	t.back = 0
 	if t.exited || t.in == nil {
 		return nil
 	}
@@ -752,10 +728,10 @@ type termView struct {
 
 func (tv *termView) modeName() string { return tv.t.modeName() }
 
-// modeName is the mode the terminal is in, its layers joined with ">"
-// (Visual>select).
+// modeName is the mode the terminal is in, its layers joined with ":"
+// (Viewing:selecting).
 func (t *Terminal) modeName() string {
-	if t.mode == visualMode && t.sel != nil {
+	if t.mode == viewingMode && t.sel != nil {
 		return t.sel.modeName()
 	}
 	return t.mode

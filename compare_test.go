@@ -50,7 +50,7 @@ func compareApp(t *testing.T) (*testApp, *bool) {
 func TestCompareMode(t *testing.T) {
 	ta, _ := compareApp(t)
 	ta.press("C")
-	if m := ta.pods.InMode(); m == nil || m.Name != "Diff" || ta.list.Anchor != "0" {
+	if m := ta.pods.InMode(); m == nil || m.Name != "Diffing" || ta.list.Anchor != "0" {
 		t.Fatalf("not in the compare mode: %v, anchor %q", m, ta.list.Anchor)
 	}
 	frame := strings.Join(ta.Frame(), "\n")
@@ -66,7 +66,7 @@ func TestCompareMode(t *testing.T) {
 		t.Error("compared a row that cannot be")
 	}
 	ta.press("Tab")
-	if ta.Screen().Focused() != ta.pods || !strings.Contains(ta.screenText(), "Press [Esc] to leave Diff first") {
+	if ta.Screen().Focused() != ta.pods || !strings.Contains(ta.screenText(), "Press [Esc] to leave Diffing first") {
 		t.Error("Tab left the mode's panel")
 	}
 	ta.toasts, ta.inspectT = nil, nil
@@ -105,7 +105,7 @@ func TestCompareMode(t *testing.T) {
 	for _, e := range ta.logs.entries {
 		logged = append(logged, e.text)
 	}
-	if want := []string{"Press [Esc] to leave Diff first", "No differences between pod-00 and pod-35"}; fmt.Sprint(logged) != fmt.Sprint(want) {
+	if want := []string{"Press [Esc] to leave Diffing first", "No differences between pod-00 and pod-35"}; fmt.Sprint(logged) != fmt.Sprint(want) {
 		t.Errorf("logged %q, want %q", logged, want)
 	}
 }
@@ -202,7 +202,7 @@ func TestCompareAnchorGone(t *testing.T) {
 	rows := ta.list.Rows()
 	ta.list.SetRows(rows[1:])
 	ta.press("j")
-	if ta.pods.InMode() != nil || ta.list.Anchor != "" || !strings.Contains(ta.screenText(), "Diff ended: pod-00 is gone") {
+	if ta.pods.InMode() != nil || ta.list.Anchor != "" || !strings.Contains(ta.screenText(), "Diffing ended: pod-00 is gone") {
 		t.Errorf("the anchor gone:\n%s", ta.screenText())
 	}
 }
@@ -312,7 +312,7 @@ func TestHintTab(t *testing.T) {
 	ta.press("Esc", "Esc")
 	ta.Viewer(&Viewer{Title: "Log", Lines: []string{"x"}})
 	ta.settle()
-	if fmt.Sprint(ta.topView().(*viewerView).hint()) != "[{/ search} {v visual} {Esc close}]" {
+	if fmt.Sprint(ta.topView().(*viewerView).hint()) != "[{/ search} {v viewing} {Esc close}]" {
 		t.Errorf("no tabs: %v", ta.topView().(*viewerView).hint())
 	}
 	ta.press("Esc")
@@ -439,9 +439,9 @@ func TestCompareWidth(t *testing.T) {
 	}
 }
 
-// TestCompareDeprecated: Compare and CompareAction, the Diff mode's old
+// TestCompareDeprecated: Compare and CompareAction, the Diffing mode's old
 // names, still build and give the same mode, so an app on them upgrades
-// without a change (tdp panel.9 renamed it the Diff mode).
+// without a change (tdp panel.9 renamed it the Diffing mode).
 func TestCompareDeprecated(t *testing.T) {
 	ta := newTestApp(t)
 	var c Compare = DiffMode{Key: "C", Text: func(r Row) (string, error) { return r.Cells[0], nil }}
@@ -451,14 +451,14 @@ func TestCompareDeprecated(t *testing.T) {
 	}
 	ta.pods.Actions = append(ta.pods.Actions, act)
 	ta.press("C")
-	if m := ta.pods.InMode(); m == nil || m.Name != "Diff" {
-		t.Errorf("not in the Diff mode: %v", m)
+	if m := ta.pods.InMode(); m == nil || m.Name != "Diffing" {
+		t.Errorf("not in the Diffing mode: %v", m)
 	}
 }
 
 // TestDiffError: a side that cannot be read is an error popup titled with
 // the Diff and the side, DIFF: <side>; one with no side to blame, with the
-// item (tdp note.8, panel.9: the Compare mode is the Diff mode).
+// item (tdp note.8, panel.9: the Compare mode is the Diffing mode).
 func TestDiffError(t *testing.T) {
 	ta := newTestApp(t)
 	ta.pods.Actions = append(ta.pods.Actions, ta.DiffModeAction(ta.pods, ta.list, DiffMode{Key: "C",

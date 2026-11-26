@@ -74,8 +74,8 @@ func newTerminalScreen(s *showcase) *terminalScreen {
 	// Inside the shell ? is the shell's own: its keys are told here (tdp M6).
 	ts.shellP.OtherKeys = []terminu.KeySection{{Title: "terminal", Rows: []terminu.KeyRow{
 		{Key: "Alt-Esc", Desc: "leave the shell, asked first"},
-		{Key: "PgUp", Desc: "the History mode: j|k, u|d, gg|G scroll back, Esc goes back"},
-		{Key: "Alt-v", Desc: "the selection mode: the screen holds still, v selects, y copies"},
+		{Key: "PgUp|PgDn", Desc: "a page back, forward; any other key, back to the live screen"},
+		{Key: "Alt-v", Desc: "Viewing, the selection: the screen holds still, v selects, y copies"},
 		{Key: "Ctrl-C", Desc: "to the shell, as every other key"},
 	}}}
 	ts.list = &terminu.List{Columns: []terminu.Column{{Title: "Session"}, {Title: "Status", Drop: 2}, {Title: "What", Shrink: true, Drop: 1}},

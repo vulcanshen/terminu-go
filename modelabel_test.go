@@ -62,8 +62,8 @@ func TestModeLabelOpens(t *testing.T) {
 	if !strings.Contains(ta.screenText(), "┫┣") {
 		t.Errorf("the viewer's mode name does not open from its middle:\n%s", ta.screenText())
 	}
-	clk.t = clk.t.Add(6 * 32 * time.Millisecond) // Visual: six characters, six frames after the first
-	if !strings.Contains(ta.screenText(), "┫Visual┣") {
+	clk.t = clk.t.Add(7 * 32 * time.Millisecond) // Viewing: seven characters, seven frames after the first
+	if !strings.Contains(ta.screenText(), "┫Viewing┣") {
 		t.Errorf("the viewer's mode name does not open:\n%s", ta.screenText())
 	}
 }
@@ -115,105 +115,105 @@ func TestModeLabelLayers(t *testing.T) {
 		}
 	}
 	ta.Update2(keyMsg("v"))
-	step(6*frameTime, "Visual")
+	step(7*frameTime, "Viewing")
 	ta.Update(labelMsg{})
 	_, right := label()
 	head := title()
 	ta.Update2(keyMsg("v")) // a layer more
-	step(0, "Visual")
-	step(frameTime, "Visual>")
-	step(frameTime, "Visual>s")
+	step(0, "Viewing")
+	step(frameTime, "Viewing:")
+	step(frameTime, "Viewing:s")
 	if _, r := label(); r != right || title() != head {
 		t.Errorf("the right end moved %d to %d, or the title %d to %d", right, r, head, title())
 	}
 	ta.Update2(keyMsg("Esc")) // halfway: turns where it is
-	step(frameTime, "Visual>")
+	step(frameTime, "Viewing:")
 	ta.Update2(keyMsg("v")) // and turns again
-	step(frameTime, "Visual>s")
-	step(6*frameTime, "Visual>select")
+	step(frameTime, "Viewing:s")
+	step(9*frameTime, "Viewing:selecting")
 	ta.Update(labelMsg{})
 	if text := ta.screenText(); !strings.Contains(text, "y:copy Esc:unselect") {
 		t.Errorf("selecting, the hint:\n%s", text)
 	}
 	ta.Update2(keyMsg("Esc")) // a layer less: from the tail
-	step(frameTime, "Visual>selec")
-	step(6*frameTime, "Visual")
+	step(frameTime, "Viewing:selectin")
+	step(10*frameTime, "Viewing")
 	ta.Update(labelMsg{})
 	if _, r := label(); r != right {
-		t.Errorf("back to Visual the right end is at %d, was %d", r, right)
+		t.Errorf("back to Viewing the right end is at %d, was %d", r, right)
 	}
 	ta.Update2(keyMsg("v"))
-	clk.t = clk.t.Add(7 * frameTime)
+	clk.t = clk.t.Add(11 * frameTime)
 	ta.Update(labelMsg{})
 	ta.Update2(keyMsg("y")) // out of the whole mode from a layer: closes from the middle
-	step(0, "Visual>select")
-	clk.t = clk.t.Add(2 * frameTime) // two characters off, one each end: from the tail it would be Visual>sele
-	if got, _ := label(); got != "isual>selec" {
+	step(0, "Viewing:selecting")
+	clk.t = clk.t.Add(2 * frameTime) // two characters off, one each end: from the tail it would be Viewing:selecti
+	if got, _ := label(); got != "iewing:selectin" {
 		t.Errorf("leaving with y does not close from the middle: %q", got)
 	}
 	takeClipboard()
 }
 
 // TestModeMenuLayers: the selection mode's Space menu once selecting names
-// the whole mode, VISUAL>SELECT MODE, and leaves with [Esc] Unselect.
+// the whole mode, VIEWING:SELECTING MODE, and leaves with [Esc] Unselect.
 func TestModeMenuLayers(t *testing.T) {
 	ta := newTestApp(t)
 	ta.Viewer(&Viewer{Title: "Log", Lines: []string{"one two"}})
 	ta.settle()
 	ta.press("v", "v", "Space")
-	if text := ta.screenText(); !strings.Contains(text, "VISUAL>SELECT MODE") || !strings.Contains(text, "[Esc] Unselect") {
+	if text := ta.screenText(); !strings.Contains(text, "VIEWING:SELECTING MODE") || !strings.Contains(text, "[Esc] Unselect") {
 		t.Errorf("the menu once selecting:\n%s", text)
 	}
 }
 
 // TestPanelModeLayers: a panel's own mode goes a layer in with EnterLayer:
-// Visual>select on the frame, grown from the tail, the layer's keys and verb
+// Viewing:selecting on the frame, grown from the tail, the layer's keys and verb
 // in the hint, its Space menu and its ?; Esc leaves the layer alone, running
-// its OnExit, back to Visual, then the whole mode; LeaveMode and EnterMode
+// its OnExit, back to Viewing, then the whole mode; LeaveMode and EnterMode
 // leave every layer (tdp K11, panel.1).
 func TestPanelModeLayers(t *testing.T) {
 	ta, clk := logApp(t)
 	var exits []string
-	sel := &Mode{Name: "select", Exit: "unselect", Pause: true, OnExit: func() tea.Cmd { exits = append(exits, "select"); return nil },
+	sel := &Mode{Name: "selecting", Exit: "unselect", Pause: true, OnExit: func() tea.Cmd { exits = append(exits, "selecting"); return nil },
 		Keys: []ModeKey{{Key: "y", Desc: "copy", Do: func(string) tea.Cmd { ta.pods.LeaveMode(); return nil }}}}
-	visual := &Mode{Name: "Visual", Exit: "cancel", OnExit: func() tea.Cmd { exits = append(exits, "Visual"); return nil },
+	visual := &Mode{Name: "Viewing", Exit: "cancel", OnExit: func() tea.Cmd { exits = append(exits, "Viewing"); return nil },
 		Keys: []ModeKey{{Key: "v", Desc: "select", Do: func(string) tea.Cmd { ta.pods.EnterLayer(sel); return nil }}}}
 	top := func() string { return StripStyles(ta.rowWith("PODS")) }
 	ta.pods.EnterMode(visual)
 	ta.press("v")
-	if ta.pods.InMode() != sel || !strings.Contains(top(), "┫Visual>select┣") {
+	if ta.pods.InMode() != sel || !strings.Contains(top(), "┫Viewing:selecting┣") {
 		t.Fatalf("EnterLayer: in %v, %q", ta.pods.InMode(), top())
 	}
 	if text := ta.screenText(); !strings.Contains(text, "y:copy Esc:unselect") {
 		t.Errorf("the layer's hint:\n%s", text)
 	}
 	ta.press("Space")
-	if text := ta.screenText(); !strings.Contains(text, "VISUAL>SELECT MODE") || !strings.Contains(text, "[Esc] Unselect") {
+	if text := ta.screenText(); !strings.Contains(text, "VIEWING:SELECTING MODE") || !strings.Contains(text, "[Esc] Unselect") {
 		t.Errorf("the layer's Space menu:\n%s", text)
 	}
 	ta.press("Esc", "?")
-	if n, ok := ta.topView().(*noteView); !ok || n.title != "VISUAL>SELECT KEYS" || !strings.Contains(ta.screenText(), "unselect, back to Visual") {
+	if n, ok := ta.topView().(*noteView); !ok || n.title != "VIEWING:SELECTING KEYS" || !strings.Contains(ta.screenText(), "unselect, back to Viewing") {
 		t.Errorf("the layer's key reference:\n%s", ta.screenText())
 	}
 	ta.press("?", "Tab")
-	if !strings.Contains(ta.screenText(), "Press [Esc] to leave Visual>select first") {
+	if !strings.Contains(ta.screenText(), "Press [Esc] to leave Viewing:selecting first") {
 		t.Errorf("Tab paused in the layer:\n%s", ta.screenText())
 	}
 	ta.press("Esc")
 	ta.Update2(keyMsg("Esc"))
-	if ta.pods.InMode() != visual || len(exits) != 1 || exits[0] != "select" {
+	if ta.pods.InMode() != visual || len(exits) != 1 || exits[0] != "selecting" {
 		t.Fatalf("Esc leaves the layer alone: in %v, OnExit ran %v", ta.pods.InMode(), exits)
 	}
 	clk.t = clk.t.Add(frameTime)
-	if !strings.Contains(top(), "┫Visual>selec┣") {
+	if !strings.Contains(top(), "┫Viewing:selectin┣") {
 		t.Errorf("a layer less goes back from the tail: %q", top())
 	}
 	ta.settle()
-	if !strings.Contains(top(), "┫Visual┣") || !strings.Contains(ta.screenText(), "Esc:cancel") {
-		t.Errorf("back to Visual: %q\n%s", top(), ta.screenText())
+	if !strings.Contains(top(), "┫Viewing┣") || !strings.Contains(ta.screenText(), "Esc:cancel") {
+		t.Errorf("back to Viewing: %q\n%s", top(), ta.screenText())
 	}
 	ta.press("Esc")
-	if ta.pods.InMode() != nil || len(exits) != 2 || exits[1] != "Visual" {
+	if ta.pods.InMode() != nil || len(exits) != 2 || exits[1] != "Viewing" {
 		t.Fatalf("the second Esc leaves the mode: in %v, OnExit ran %v", ta.pods.InMode(), exits)
 	}
 	ta.pods.EnterMode(visual)
@@ -223,7 +223,7 @@ func TestPanelModeLayers(t *testing.T) {
 	}
 	ta.pods.EnterLayer(sel) // out of a mode: EnterMode
 	ta.settle()
-	if !strings.Contains(top(), "┫select┣") {
+	if !strings.Contains(top(), "┫selecting┣") {
 		t.Errorf("EnterLayer out of a mode: %q", top())
 	}
 	ta.pods.EnterMode(visual)
@@ -251,11 +251,11 @@ func TestModeLabelLayersRoom(t *testing.T) {
 		return ""
 	}
 	ta.Update2(keyMsg("v"))
-	clk.t = clk.t.Add(6 * frameTime)
+	clk.t = clk.t.Add(7 * frameTime)
 	ta.Update(labelMsg{})
 	ta.Update2(keyMsg("v"))
 	first := title()
-	for range 7 {
+	for range 10 {
 		clk.t = clk.t.Add(frameTime)
 		if got := title(); got != first {
 			t.Fatalf("the title moved while the layer grew:\n%q\n%q", first, got)
@@ -263,34 +263,34 @@ func TestModeLabelLayersRoom(t *testing.T) {
 	}
 	ta.Update(labelMsg{})
 	ta.Update2(keyMsg("Esc"))
-	clk.t = clk.t.Add(7 * frameTime)
+	clk.t = clk.t.Add(10 * frameTime)
 	ta.Update(labelMsg{})
 	ta.Update2(keyMsg("v"))
-	clk.t = clk.t.Add(2 * frameTime) // Visual>s, growing
+	clk.t = clk.t.Add(2 * frameTime) // Viewing:s, growing
 	ta.Update2(keyMsg("y"))
 	clk.t = clk.t.Add(2 * frameTime)
-	if !strings.Contains(ta.screenText(), "┫isual>┣") {
+	if !strings.Contains(ta.screenText(), "┫iewing:┣") {
 		t.Errorf("y while growing does not close from the middle:\n%s", ta.screenText())
 	}
 	takeClipboard()
 }
 
 // TestTerminalSelectEscLayer: on a PTY too Esc goes a layer back: selecting,
-// back to Visual; then out (K11-3).
+// back to Viewing; then out (K11-3).
 func TestTerminalSelectEscLayer(t *testing.T) {
 	ta, term, _ := termWithHistory(t)
 	ta.Update(altV)
 	ta.settle()
 	ta.press("v")
-	if term.modeName() != "Visual>select" {
+	if term.modeName() != "Viewing:selecting" {
 		t.Fatalf("selecting on a PTY: %q", term.modeName())
 	}
 	ta.press("Esc")
-	if term.Mode() != "Visual" || term.sel.selecting {
+	if term.Mode() != "Viewing" || term.sel.selecting {
 		t.Errorf("Esc while selecting: %q, selecting %v", term.Mode(), term.sel.selecting)
 	}
 	ta.press("Esc")
 	if term.Mode() != "" {
-		t.Errorf("Esc in Visual: still %q", term.Mode())
+		t.Errorf("Esc in Viewing: still %q", term.Mode())
 	}
 }

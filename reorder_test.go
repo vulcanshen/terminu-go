@@ -57,8 +57,8 @@ func TestReorderDrag(t *testing.T) {
 	}
 	lines, _ := covFDraw(ta)
 	text := covFText(lines)
-	if !strings.Contains(text[0], "┫Drag┣") || !strings.Contains(lines[0], Fg(Yellow).Render("┏")) {
-		t.Errorf("the Drag mode on the frame, in Yellow: %q", text[0])
+	if !strings.Contains(text[0], "┫Dragging┣") || !strings.Contains(lines[0], Fg(Yellow).Render("┏")) {
+		t.Errorf("the Dragging mode on the frame, in Yellow: %q", text[0])
 	}
 	if !strings.Contains(lines[3], On(Yellow).Render(" "+Pad(Pad(glyphSwap, 2)+"Cost", 31))) || !strings.Contains(lines[3], Fg(Yellow).Render(glyphHard)) {
 		t.Errorf("the held item in Yellow with the swap glyph: %q", text[3])
@@ -169,7 +169,7 @@ func TestReorderEsc(t *testing.T) {
 	}
 }
 
-// In the Drag mode only its own keys and the core keys of tdp K11 work.
+// In the Dragging mode only its own keys and the core keys of tdp K11 work.
 func TestReorderDragModeKeys(t *testing.T) {
 	ta := newTestApp(t)
 	ta.CoreKeys = []CoreKey{{Key: "!", Desc: "the app log", Do: ta.record("log")}}
@@ -183,8 +183,8 @@ func TestReorderDragModeKeys(t *testing.T) {
 		t.Errorf("other keys did something: held %v, cursor %d, ran %v, %d layers", rv.held, rv.cursor, ta.ran, len(ta.stack))
 	}
 	ta.press("?")
-	if n, ok := ta.topView().(*noteView); !ok || n.title != "DRAG KEYS" {
-		t.Fatalf("? while holding is the Drag mode's keys: %T", ta.topView())
+	if n, ok := ta.topView().(*noteView); !ok || n.title != "DRAGGING KEYS" {
+		t.Fatalf("? while holding is the Dragging mode's keys: %T", ta.topView())
 	}
 	text := ta.screenText()
 	if !strings.Contains(text, "j|l    move it down") || !strings.Contains(text, "h|k    move it up") || strings.Contains(text, "apply the order") {
@@ -229,7 +229,7 @@ func TestReorderScroll(t *testing.T) {
 	}
 }
 
-// The panel's Drag mode: the held row as the cursor in Yellow, the swap
+// The panel's Dragging mode: the held row as the cursor in Yellow, the swap
 // glyph in the mark column, wrapping at the ends (tdp panel).
 func TestPanelDragHeldRow(t *testing.T) {
 	ta := newTestApp(t)
@@ -324,7 +324,7 @@ func TestK11PopupModeCoreKeys(t *testing.T) {
 	ta := newTestApp(t)
 	ta.CoreKeys = []CoreKey{{Key: "!", Desc: "the app log", Do: ta.record("log")}}
 	v := testViewer()
-	v.Select = &Selection{Key: "v", Name: "Visual"}
+	v.Select = &Selection{Key: "v", Name: "Viewing"}
 	ta.Viewer(v)
 	ta.settle()
 	ta.press("!")

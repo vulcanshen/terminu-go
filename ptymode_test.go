@@ -88,7 +88,7 @@ func TestK11ModeHoldsPTY(t *testing.T) {
 }
 
 // TestK11ModeHoldsPTYOverExitKey: in the mode the Terminal's own exit key is
-// a key like any for the program, and its History is not there: PgUp is the
+// a key like any for the program, and it does not scroll back: PgUp is the
 // program's (tdp K11).
 func TestK11ModeHoldsPTYOverExitKey(t *testing.T) {
 	ta, term, sent, p, _ := ptyModeApp(t)

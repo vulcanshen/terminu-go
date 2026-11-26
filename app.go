@@ -294,7 +294,7 @@ type App struct {
 	quitConfirm popupView
 	anim        bool
 	timers      []tea.Cmd          // the lib's own timers started while a message is handled (sendTimers)
-	comparings  []*comparing       // the Diff modes under way (compare.go)
+	comparings  []*comparing       // the Diffing modes under way (compare.go)
 	labels      map[any]*labelAnim // the mode names opening and closing, by frame (modelabel.go)
 	labelTick   bool               // a tick for them on its way
 	spin        bool
@@ -433,7 +433,7 @@ func checkToDetails(s *Screen, p *Panel, act Action) error {
 	noDetails := p.Details == nil || p.Details == p || !s.detailsShown(p) || p.Details.Sign != 0
 	switch {
 	case act.inDetails && noDetails:
-		return fmt.Errorf("its Diff mode is shown in the details, and its panel's Details is not another panel of the screen (tdp panel.9)")
+		return fmt.Errorf("its Diffing mode is shown in the details, and its panel's Details is not another panel of the screen (tdp panel.9)")
 	case act.ToDetails == nil:
 		return nil
 	case act.Key != "Enter":
@@ -1677,7 +1677,7 @@ func (a *App) modeKeyRef(p *Panel) *noteView {
 	}
 	back := ", back to before " + p.mode.Name
 	if l := p.modeLayers(); len(l) > 1 {
-		back = ", back to " + strings.Join(l[:len(l)-1], ">")
+		back = ", back to " + strings.Join(l[:len(l)-1], layerJoin)
 	}
 	switch {
 	case p.inDiff():

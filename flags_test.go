@@ -84,7 +84,7 @@ func TestPanelListGroupsFlags(t *testing.T) {
 	}
 }
 
-// TestPanelFlagsDrag: the row held in a Drag mode shows the swap glyph in
+// TestPanelFlagsDrag: the row held in a Dragging mode shows the swap glyph in
 // its mark column, and its flag again once it is put down (tdp panel.8).
 func TestPanelFlagsDrag(t *testing.T) {
 	withWidths(t, 1, 1)

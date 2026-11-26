@@ -141,7 +141,7 @@ func TestNote9ReadAgainSearch(t *testing.T) {
 
 // TestNote9ReadAgainSelect: read again in the selection mode, its positions
 // are kept, not its text: both still there, nothing changes and y copies the
-// new text; where the selection started gone, back to Visual with a
+// new text; where the selection started gone, back to Viewing with a
 // Warning; the cursor's place gone, the mode is left with a Warning; the
 // source unreadable, the mode is left with no toast of the lib's (tdp
 // note.9, note-96, note-97, note-98).
@@ -150,7 +150,7 @@ func TestNote9ReadAgainSelect(t *testing.T) {
 	open := func() (*testApp, *Viewer) {
 		ta := newTestApp(t)
 		v := &Viewer{Title: "File", Subject: "notes.txt", Lines: fileLines(80),
-			Select: &Selection{Key: "v", Name: "Visual", Copy: func(s string) tea.Cmd { copied = s; return nil }}}
+			Select: &Selection{Key: "v", Name: "Viewing", Copy: func(s string) tea.Cmd { copied = s; return nil }}}
 		ta.Viewer(v)
 		ta.settle()
 		ta.screenText()
@@ -187,7 +187,7 @@ func TestNote9ReadAgainSelect(t *testing.T) {
 	ta.ReadAgain(v, fileLines(15))              // lines 0 to 14
 	ta.settle()
 	text = ta.screenText()
-	if v.inMode || v.selecting || !strings.Contains(text, "notes.txt changed under the cursor: Visual left") {
+	if v.inMode || v.selecting || !strings.Contains(text, "notes.txt changed under the cursor: Viewing left") {
 		t.Errorf("the cursor gone: in %v selecting %v\n%s", v.inMode, v.selecting, text)
 	}
 

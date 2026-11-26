@@ -18,10 +18,10 @@ func dialogOpeners() map[string]func(*testApp) {
 	}
 	return map[string]func(*testApp){
 		"viewer": func(ta *testApp) {
-			ta.Viewer(&Viewer{Title: "YAML", Subject: "pod/nginx", Lines: lines, Select: &Selection{Key: "v", Name: "Visual"}})
+			ta.Viewer(&Viewer{Title: "YAML", Subject: "pod/nginx", Lines: lines, Select: &Selection{Key: "v", Name: "Viewing"}})
 		},
 		"viewer mode": func(ta *testApp) {
-			ta.Viewer(&Viewer{Title: "YAML", Subject: strings.Repeat("very long ", 20), Lines: lines, Select: &Selection{Key: "v", Name: "Visual"}})
+			ta.Viewer(&Viewer{Title: "YAML", Subject: strings.Repeat("very long ", 20), Lines: lines, Select: &Selection{Key: "v", Name: "Viewing"}})
 			ta.settle()
 			ta.press("v", "j", "w", "$")
 		},
@@ -66,7 +66,7 @@ func TestViewerSelectsByDefault(t *testing.T) {
 	takeClipboard()
 	ta.Viewer(testViewer())
 	ta.settle()
-	if h := StripStyles(ta.rowWith("Esc:close")); !strings.Contains(h, "v:visual Esc:close") {
+	if h := StripStyles(ta.rowWith("Esc:close")); !strings.Contains(h, "v:viewing Esc:close") {
 		t.Errorf("v in its hint: %q", h)
 	}
 	ta.press("v", "v", "l", "l", "y")
@@ -88,7 +88,7 @@ func TestViewerAlwaysWraps(t *testing.T) {
 	digits := strings.Repeat("0123456789", 6) // 60 characters
 	var got string
 	ta.Viewer(&Viewer{Title: "Info", Lines: []string{"NAME    SIZE", digits, "end"}, NoWrap: true, NoNumbers: true,
-		Select: &Selection{Key: "v", Name: "Visual", Copy: func(s string) tea.Cmd { got = s; return nil }}})
+		Select: &Selection{Key: "v", Name: "Viewing", Copy: func(s string) tea.Cmd { got = s; return nil }}})
 	ta.settle()
 	lines, _ := covFDraw(ta)
 	text := covFText(lines)
@@ -160,7 +160,7 @@ func TestViewerSearch(t *testing.T) {
 	v := &Viewer{Title: "YAML", Lines: lines, Search: &ViewerSearch{Title: "Search", Prompt: "Find in the YAML"}}
 	ta.Viewer(v)
 	ta.settle()
-	if h := fmt.Sprint(ta.topView().(*viewerView).hint()); h != "[{/ search} {v visual} {Esc close}]" {
+	if h := fmt.Sprint(ta.topView().(*viewerView).hint()); h != "[{/ search} {v viewing} {Esc close}]" {
 		t.Errorf("hint: %s", h)
 	}
 	inSight := func(line int) bool { return v.top <= line && line < v.top+v.visible }
@@ -441,7 +441,7 @@ func TestNoteKeys(t *testing.T) {
 	copied := 0
 	v := testViewer()
 	v.Keys = []ViewerKey{{Key: "y", Desc: "copy", Do: func() tea.Cmd { copied++; return nil }}}
-	v.Select = &Selection{Key: "v", Name: "Visual"}
+	v.Select = &Selection{Key: "v", Name: "Viewing"}
 	ta.Viewer(v)
 	ta.settle()
 	vv := ta.topView().(*viewerView)
@@ -481,7 +481,7 @@ func TestNoteHotkeysAndMode(t *testing.T) {
 	got, ran := "", 0
 	v := &Viewer{Title: "YAML", Lines: []string{"kind: Pod", "metadata:", "  name: nginx"},
 		Keys:   []ViewerKey{{Key: "c", Desc: "count", Do: func() tea.Cmd { ran++; return nil }}},
-		Select: &Selection{Key: "v", Name: "Visual", Copy: func(s string) tea.Cmd { got = s; return nil }}}
+		Select: &Selection{Key: "v", Name: "Viewing", Copy: func(s string) tea.Cmd { got = s; return nil }}}
 	ta.Viewer(v)
 	ta.settle()
 	ta.press("v")
@@ -495,7 +495,7 @@ func TestNoteHotkeysAndMode(t *testing.T) {
 		t.Error("the cursor is a block of the layer colour")
 	}
 	text := ta.screenText()
-	if !strings.Contains(text, "┫Visual┣") {
+	if !strings.Contains(text, "┫Viewing┣") {
 		t.Errorf("the mode name is not on the frame:\n%s", text)
 	}
 	if !strings.Contains(strings.Join(ta.Frame(), "\n"), "38;2;249;226;175") {
@@ -530,7 +530,7 @@ func TestNoteHotkeysAndMode(t *testing.T) {
 	if got != "Pod" {
 		t.Errorf("the selection starts at the cursor: %q", got)
 	}
-	// Esc a layer at a time: selecting, back to Visual, the cursor where it
+	// Esc a layer at a time: selecting, back to Viewing, the cursor where it
 	// is; then out of the whole mode, and only the mode (note-37, K11-3).
 	ta.press("v", "l", "v", "l", "Esc")
 	if !v.inMode || v.selecting || v.col != 2 || ta.top() == nil {
@@ -546,7 +546,7 @@ func TestViewerSelectScrollPosition(t *testing.T) {
 	ta := newTestApp(t)
 	ta.resize(80, 20)
 	v := testViewer()
-	v.Select = &Selection{Key: "v", Name: "Visual"}
+	v.Select = &Selection{Key: "v", Name: "Viewing"}
 	ta.Viewer(v)
 	ta.settle()
 	ta.press("d")

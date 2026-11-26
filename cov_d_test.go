@@ -265,7 +265,7 @@ func TestPopupHintOrder(t *testing.T) {
 		{"viewer", func(ta *testApp) {
 			v := testViewer()
 			v.Keys = []ViewerKey{{Key: "y", Desc: "copy"}}
-			v.Select = &Selection{Key: "v", Name: "Visual"}
+			v.Select = &Selection{Key: "v", Name: "Viewing"}
 			ta.Viewer(v)
 		}, "y / v Esc"},
 		{"checkbox list", func(ta *testApp) { ta.Checks(Checks{Title: "Namespaces", Options: []string{"a", "b"}}) }, "Enter Space Tab|/ Esc"},

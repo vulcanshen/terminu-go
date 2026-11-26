@@ -30,7 +30,7 @@ func TestModeSpaceMenu(t *testing.T) {
 	ta.press("Space")
 	m := menuOnTop(t, ta)
 	text := ta.screenText()
-	for _, want := range []string{"[1] PODS", "ITEM OPERATION", "[C] Diff", "with pod-00", "DIFF MODE", "j|k", "down, up", "[Esc] Leave"} {
+	for _, want := range []string{"[1] PODS", "ITEM OPERATION", "[C] Diff", "with pod-00", "DIFFING MODE", "j|k", "down, up", "[Esc] Leave"} {
 		if !strings.Contains(text, want) {
 			t.Errorf("%q is not in the menu:\n%s", want, text)
 		}
@@ -69,8 +69,8 @@ func TestModeSpaceMenu(t *testing.T) {
 }
 
 // TestModeSpaceMenuInPopups: in a viewer's selection mode [v] Select, then
-// Cop[y], titled as the viewer; in a reorder's Drag mode [Enter] Drop;
-// in a terminal's History Space opens its menu, not the program's
+// Cop[y], titled as the viewer; in a reorder's Dragging mode [Enter] Drop;
+// in a terminal's Viewing Space opens its menu, not the program's
 // (K5-3, reorder-19).
 func TestModeSpaceMenuInPopups(t *testing.T) {
 	ta := newTestApp(t)
@@ -78,7 +78,7 @@ func TestModeSpaceMenuInPopups(t *testing.T) {
 	ta.settle()
 	ta.press("v", "Space")
 	m := menuOnTop(t, ta)
-	if text := ta.screenText(); !strings.Contains(text, "[v] Select") || !strings.Contains(text, "VISUAL MODE") || !strings.Contains(m.cased, "LOG") {
+	if text := ta.screenText(); !strings.Contains(text, "[v] Select") || !strings.Contains(text, "VIEWING MODE") || !strings.Contains(m.cased, "LOG") {
 		t.Errorf("the selection mode's menu (%q):\n%s", m.cased, text)
 	}
 	ta.press("Enter", "l", "Space")
@@ -96,8 +96,8 @@ func TestModeSpaceMenuInPopups(t *testing.T) {
 	ta.settle()
 	rv := ta.topView().(*reorderView)
 	ta.press("D", "j", "Space")
-	if text := ta.screenText(); !strings.Contains(text, "[Enter] Drop") || !strings.Contains(text, "DRAG MODE") || !strings.Contains(text, "[Esc] Cancel") {
-		t.Errorf("the Drag mode's menu:\n%s", ta.screenText())
+	if text := ta.screenText(); !strings.Contains(text, "[Enter] Drop") || !strings.Contains(text, "DRAGGING MODE") || !strings.Contains(text, "[Esc] Cancel") {
+		t.Errorf("the Dragging mode's menu:\n%s", ta.screenText())
 	}
 	ta.press("Enter")
 	if rv.held || ta.topView() != rv {
@@ -107,15 +107,16 @@ func TestModeSpaceMenuInPopups(t *testing.T) {
 	ta.covBCloseAll()
 
 	ta2, term, sent := termWithHistory(t)
-	ta2.press("PgUp")
+	ta2.Update(altV)
+	ta2.settle()
 	before := sent.String()
 	ta2.press("Space")
 	menuOnTop(t, ta2)
-	if sent.String() != before || !strings.Contains(ta2.screenText(), "[Esc] Live") {
-		t.Errorf("Space in History: sent %q, menu:\n%s", sent.String()[len(before):], ta2.screenText())
+	if text := ta2.screenText(); sent.String() != before || !strings.Contains(text, "VIEWING MODE") || !strings.Contains(text, "[Esc] Cancel") {
+		t.Errorf("Space in Viewing: sent %q, menu:\n%s", sent.String()[len(before):], text)
 	}
-	ta2.press("Enter")
+	ta2.press("j", "Enter")
 	if term.Mode() != "" {
-		t.Errorf("[Esc] Live from the menu: still %q", term.Mode())
+		t.Errorf("[Esc] Cancel from the menu: still %q", term.Mode())
 	}
 }

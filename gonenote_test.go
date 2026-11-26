@@ -40,7 +40,7 @@ func goneNoteOnTop(t *testing.T, ta *testApp, kind ToastKind, title string, rows
 func TestNote99ViewerGoneNote(t *testing.T) {
 	for _, opener := range []string{"Space", "?"} {
 		for _, closer := range []string{"Enter", "Esc"} {
-			// Where the selection started gone: back to Visual.
+			// Where the selection started gone: back to Viewing.
 			ta, v := openFile(t, fileLines(80))
 			v.ScrollTo(10)
 			ta.press("j", "j", "j", "j", "j", "v", "v", "k", "k", "k", "k", "k", "k", "k", "k", opener)
@@ -64,7 +64,7 @@ func TestNote99ViewerGoneNote(t *testing.T) {
 			ta.press("v", "v", "j", "j", "j", "j", "j", opener)
 			ta.ReadAgain(v, fileLines(15))
 			ta.settle()
-			goneNoteOnTop(t, ta, Warning, "READ AGAIN: notes.txt", "notes.txt changed under the cursor: Visual left")
+			goneNoteOnTop(t, ta, Warning, "READ AGAIN: notes.txt", "notes.txt changed under the cursor: Viewing left")
 			ta.press(closer)
 			if vv, ok := ta.topView().(*viewerView); !ok || vv.v != v || v.inMode {
 				t.Errorf("%s then %s, cursor gone: back on %T, in %v", opener, closer, ta.topView(), v.inMode)
@@ -134,7 +134,7 @@ func TestNote100ViewerCannotRead(t *testing.T) {
 // note-100).
 func TestNote99SelectionGone(t *testing.T) {
 	visual := func(ta *testApp) *Mode {
-		m := &Mode{Name: "Visual", Exit: "leave", Keys: []ModeKey{{Key: "y", Desc: "copy", Do: func(string) tea.Cmd { return nil }}}}
+		m := &Mode{Name: "Viewing", Exit: "leave", Keys: []ModeKey{{Key: "y", Desc: "copy", Do: func(string) tea.Cmd { return nil }}}}
 		ta.pods.EnterMode(m)
 		return m
 	}
@@ -153,9 +153,9 @@ func TestNote99SelectionGone(t *testing.T) {
 		if under == nil || under.mode != ta.pods {
 			t.Fatalf("%s: the mode's popup is not on top", c.opener)
 		}
-		ta.SelectionGone(ta.pods, c.kind, "Read again", "README.md changed: Visual left")
+		ta.SelectionGone(ta.pods, c.kind, "Read again", "README.md changed: Viewing left")
 		ta.settle()
-		goneNoteOnTop(t, ta, c.kind, "READ AGAIN", "README.md changed: Visual left")
+		goneNoteOnTop(t, ta, c.kind, "READ AGAIN", "README.md changed: Viewing left")
 		if c.leave {
 			ta.pods.LeaveMode()
 			ta.settle()

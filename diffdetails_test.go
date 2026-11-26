@@ -8,7 +8,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// detailsApp is a test app whose [1] FILES list shows its Diff mode in its
+// detailsApp is a test app whose [1] FILES list shows its Diffing mode in its
 // details, [2] CHANGES, which otherwise shows the row under the cursor; [3]
 // is another panel. Rows: a.txt, b.txt (one line changed), c.txt (as
 // a.txt), d.bin (not compared), e.txt (cannot be read), v1/, v2/ and v3/
@@ -71,7 +71,7 @@ func detFrame(ta *testApp, p *Panel) []string {
 	return p.draw(i+1, 60, 12, s.Focused() == p, false)
 }
 
-// TestDiffInDetails: a list's Diff mode shown in its details (tdp panel.9
+// TestDiffInDetails: a list's Diffing mode shown in its details (tdp panel.9
 // "With a details panel", panel-185): the mode spans both frames, each in
 // the mode's colour with Diff on it, the heavy line on the one with the
 // focus, which stays on the list; the details follow the cursor: an empty
@@ -84,10 +84,10 @@ func TestDiffInDetails(t *testing.T) {
 		t.Fatalf("the details show the cursor's row:\n%s", ta.screenText())
 	}
 	ta.press("D")
-	if m := files.InMode(); m == nil || m.Name != "Diff" {
+	if m := files.InMode(); m == nil || m.Name != "Diffing" {
 		t.Fatalf("the list is not in the mode: %v", m)
 	}
-	if m := changes.InMode(); m == nil || m.Name != "Diff" {
+	if m := changes.InMode(); m == nil || m.Name != "Diffing" {
 		t.Fatalf("the details are not in the mode: %v", m)
 	}
 	if ta.Screen().Focused() != files {
@@ -169,7 +169,7 @@ func TestDiffInDetails(t *testing.T) {
 	}
 }
 
-// TestDiffInDetailsKeys: in a Diff mode shown in the details (tdp panel.9,
+// TestDiffInDetailsKeys: in a Diffing mode shown in the details (tdp panel.9,
 // panel-186), the diff key or Enter on the list sends the focus to the
 // details, off where they have nothing; there Enter opens an item's diff or
 // goes in; Esc goes back the way the user came: the diff, a level, the
@@ -216,7 +216,7 @@ func TestDiffInDetailsKeys(t *testing.T) {
 		t.Error("2 did not go to the details")
 	}
 	ta.press("3")
-	if focused() != changes || !strings.Contains(ta.screenText(), "Press [Esc] to leave Diff first") {
+	if focused() != changes || !strings.Contains(ta.screenText(), "Press [Esc] to leave Diffing first") {
 		t.Error("3 left the mode's two panels")
 	}
 	ta.toasts, ta.inspectT = nil, nil
@@ -252,7 +252,7 @@ func TestDiffInDetailsKeys(t *testing.T) {
 
 	// The key reference and the Space menu of the details.
 	ta.press("D", "k", "D", "?") // v2/ against v1/
-	if text := ta.screenText(); !strings.Contains(text, "back to the list, still in Diff") {
+	if text := ta.screenText(); !strings.Contains(text, "back to the list, still Diffing") {
 		t.Errorf("the details' key reference:\n%s", text)
 	}
 	ta.press("Esc", "Space")
@@ -299,13 +299,13 @@ func TestDiffInDetailsEnds(t *testing.T) {
 	if files.InMode() != nil || changes.InMode() != nil || changes.over != nil {
 		t.Error("the anchor gone did not end the mode in the details")
 	}
-	if !strings.Contains(ta.screenText(), "Diff ended: v1/ is gone") {
+	if !strings.Contains(ta.screenText(), "Diffing ended: v1/ is gone") {
 		t.Error("no Warning toast")
 	}
 
 	defer func() {
 		if recover() == nil {
-			t.Error("a Diff mode in no details was taken")
+			t.Error("a Diffing mode in no details was taken")
 		}
 	}()
 	a := New("x")
@@ -333,7 +333,7 @@ func hintText(p *Panel) string {
 // mode's keys, not the panel's own actions, which do not work there; the
 // movement keys and the core keys the footer has (Space, ?, Esc) are left
 // out, a key that cannot be pressed now drawn off, or left out on a panel
-// that hints only what can be pressed (tdp K11, panel.1, M6). A Diff mode in
+// that hints only what can be pressed (tdp K11, panel.1, M6). A Diffing mode in
 // the details writes each panel's own layer; out of the mode the panel's
 // actions are back.
 func TestK11ModeHint(t *testing.T) {
@@ -343,11 +343,11 @@ func TestK11ModeHint(t *testing.T) {
 	}
 	ta.press("C")
 	if h := hintText(ta.pods); h != "!C|Enter:diff" {
-		t.Errorf("in the Diff mode, on the anchor: %q", h)
+		t.Errorf("in the Diffing mode, on the anchor: %q", h)
 	}
 	ta.press("j")
 	if h := hintText(ta.pods); h != "C|Enter:diff" {
-		t.Errorf("in the Diff mode: %q", h)
+		t.Errorf("in the Diffing mode: %q", h)
 	}
 	ta.pods.HintPressableOnly = true
 	ta.press("k")
@@ -364,7 +364,7 @@ func TestK11ModeHint(t *testing.T) {
 	ta = newTestApp(t)
 	ta.press("D")
 	if h := hintText(ta.pods); h != "Enter:drop" {
-		t.Errorf("the app's Drag mode: %q", h)
+		t.Errorf("the app's Dragging mode: %q", h)
 	}
 
 	// In the details, each panel its own layer.
