@@ -2,6 +2,16 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.3.9-beta.1 — tdp v1.3.6
+
+- The one panel of a screen may take the digits (from boxu, the user; tdp is unchanged): where a panel is the only one
+  on its screen with a number (signs have none, a place hidden by its leading panel has one), `2`–`9` have no panel to
+  jump to and `1` is that panel, so `Panel.Digits` may take them, for the pages of what it shows, say. `Do` runs for
+  `1` to `Count`, the hint writes the range after `Enter` and `h|l` (`1–3:page`, `1–9` above nine, nothing for one),
+  `?` lists it among the moves, the Space menu has no row. In a mode and typing in a filter they do what they did.
+  `Run` refuses `Digits` on a screen with another panel that has a number, `AddScreen` on a sign; one added while
+  running gives the digits back to jumping while it is there. The body's `Scroll()` writes the page, `2 of 3`
+
 ## v1.3.8 — tdp v1.3.6
 
 A patch, with tdp's. Everything since v1.3.7, the beta v1.3.8-beta.1 included:
