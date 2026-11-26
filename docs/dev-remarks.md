@@ -1,7 +1,7 @@
 # terminu-go 開發者備忘
 
 terminu-go 是 terminu design principle（tdp）的 Go 實作：給 app 呼叫的 lib，加上展示場 `examples/showcase`。遵循 terminu design
-principle，目前對應 tdp v1.3.7。lib 只照 tdp 最新 tag 的文字做；規範沒寫或照做不好用的地方回報給 tdp，不在 lib 裡自己決定。
+principle，目前對應 tdp v1.3.8。lib 只照 tdp 最新 tag 的文字做；規範沒寫或照做不好用的地方回報給 tdp，不在 lib 裡自己決定。
 
 ## 運作方式
 
@@ -238,7 +238,7 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
   （`Frame` 叫 `placeToasts`），線動了它就跟著那條邊。lib 不寫檔：`App.OnLines` 把整個 `Lines` 交給 app 寫進 state。
   - 不另給一種「版面樹」的 API：tree 表達不了 screen.9 的「四格的直線上下共用」，而且每個 app 都得改版面的寫法；從 Rect 找線，
     現有的 `Layout` 不用改就能調。
-- **只有一個 panel 的畫面讓那個 panel 拿數字鍵**（`Panel.Digits`，boxu 來的，user 接受，tdp 不改）：K1 把數字留給跳 panel，是因為
+- **只有一個 panel 的畫面讓那個 panel 拿數字鍵**（`Panel.Digits`，boxu 來的，user 接受；tdp v1.3.8 寫進 K1，K1-10）：K1 把數字留給跳 panel，是因為
   框上的 `[N]` 等於保證「按 N 到這裡」。畫面上只有一個位置有號碼時，`2`–`9` 沒有 panel、`1` 就是它自己，給它用不會讓任何 `[N]`
   失信。是不是只有一個，每按一次鍵、每畫一次都重算（`Screen.digits`），用的是 `?` 的 `1–N`、footer 的 `Tab|1–N` 同一個 `count()`
   （說明牌不算，L5 藏起來的位置算）：同一個畫面上一個鍵不會同時有兩種意思，也不會因為某個位置顯示或藏起來就換意思。`Run` 擋得到

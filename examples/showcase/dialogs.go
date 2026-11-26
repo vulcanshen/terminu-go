@@ -161,6 +161,25 @@ func newDialogsScreen(s *showcase) *dialogsScreen {
 				return nil
 			}},
 	}}
+	// The one panel with a number on its screen takes the digits: they go to
+	// the first scenario of each kind (tdp K1-10).
+	var kinds []string
+	for _, sc := range scenarios {
+		if !slices.Contains(kinds, sc.kind) {
+			kinds = append(kinds, sc.kind)
+		}
+	}
+	panel.Digits = &terminu.Digits{Count: func() int { return len(kinds) }, Hint: "kind",
+		Desc: "to the first scenario of each kind",
+		Do: func(n int) tea.Cmd {
+			for _, sc := range scenarios {
+				if sc.kind == kinds[n-1] {
+					ds.list.Select(sc.name)
+					break
+				}
+			}
+			return nil
+		}}
 	ds.screen = &terminu.Screen{Name: "Dialogs", Key: "D", Desc: "every kind of dialog, and how they stack",
 		Panels: []*terminu.Panel{panel}}
 	return ds

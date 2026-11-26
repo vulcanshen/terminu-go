@@ -422,8 +422,8 @@ app.OnLines = func(l terminu.Lines) tea.Cmd {
 ## The digits on a screen of one panel
 
 On a panel the digits `1`–`9` jump to the panels (tdp K1). Where one panel is the only one on its screen with a number
-(signs have none), `2`–`9` have no panel to go to and `1` is that panel, so `Panel.Digits` may take them, for the
-pages of what it shows, say. The lib writes the range in its hint after `Enter` and `h|l` (`1–3:page`, `1–9` above
+(signs have none), `2`–`9` have no panel to go to and `1` is that panel, so `Panel.Digits` may take them (tdp K1-10), for
+the pages of what it shows, say. The lib writes the range in its hint after `Enter` and `h|l` (`1–3:page`, `1–9` above
 nine, nothing for one) and in `?` among the moves; the Space menu has no row for them. In a mode they do what they do
 on any panel, and typing in a filter they are typed. `Run` refuses `Digits` on a screen with another panel that has a
 number; while one is there later (added while running, or a place its leading panel hides, tdp L5), the digits jump
@@ -616,7 +616,7 @@ delete its on-screen code and its E5 code; E1, E3, E6, E7 and its own icon stay.
 
 ## Which terminu design
 
-terminu-go implements **tdp v1.3.7**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
+terminu-go implements **tdp v1.3.8**. The tdp version each release implements is listed in the [CHANGELOG](CHANGELOG.md).
 
 ## Links
 

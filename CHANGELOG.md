@@ -2,6 +2,19 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.3.10 — tdp v1.3.8
+
+A patch, with tdp's:
+
+- tdp K1 lets the one panel with a number on its screen take the digits (K1-10), as `Panel.Digits` has done since
+  v1.3.9: the lib is unchanged, and the READMEs and dev-remarks point to K1-10. The showcase's `[1] DIALOGS` takes
+  them: `1`–`7` go to the first scenario of each kind, `1–7:kind` in its hint
+- tdp E3 keeps an entry of the user's data whose thing outside the app is not there as written (E3-43): no toast, no
+  WARN, never left out when the file is written; E3-41's warning once and leaving out is not for data. The lib does
+  E3-41 for no app, so nothing in it changes; an app that drops such entries from its data changes that
+- A viewer's hint writes `v:viewing` for a `Selection` with no `Name`, as its mode, its `?` and its toasts already did
+  (tdp note.4)
+
 ## v1.3.9 — tdp v1.3.7
 
 A patch, with tdp's. Everything since v1.3.8, the beta v1.3.9-beta.1 included:

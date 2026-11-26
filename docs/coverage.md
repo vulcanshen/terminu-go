@@ -1,6 +1,6 @@
-# tdp v1.3.7 coverage
+# tdp v1.3.8 coverage
 
-tdp v1.3.7 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
+tdp v1.3.8 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
 每個元件、規範列的每一種方案、寫到的每一種狀態與疊法，在展示場都按得到。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -59,7 +59,8 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]iff`（M4：panel 的熱鍵優�
 | K1 | panel 上按 `!` 打開 App Log；`!` 不能當熱鍵、也不能當 app 自己的 core key | 任一 panel 按 `!` | `TestAppLogOnBang`；展示場的 `TestFirstLaunch`（tdptest.Check 在每個畫面開一次） |
 | K1 | letter hotkey 不能佔用 core key；app 可另定自己的 core key，定了就在所有 surface 一樣 | lib：登記時拒絕（`Run` 也檢查 global 與畫面的鍵）；`App.CoreKeys`：展示場的 `%` 在每個 panel 與 popup 都開展示場的狀態，打字列上是字元 | `TestK1HotkeyCannotTakeCoreKey`、`TestK1CustomCoreKeyEverywhere` |
 | K1 | 數字鍵：panel 上（沒有 popup 時）跳到目前畫面的第 N 個 panel；沒有那個號碼不作用；換畫面就是那個畫面的 panel | P 按 `1` `2` `3`、按 `4`（不作用）；換到 I 按 `2` | `TestK1DigitsJumpPanels`、`TestK1DigitsPerScreen` |
-| K1 | app 不能在 panel 上登記數字熱鍵；popup 裡數字自由（select 選項的數字熱鍵）；數字的 global 熱鍵只在 global operation popup 裡按 | lib：登記時拒絕；I 的 `Profile`（`[1] clock`）；global operation popup 的 `[1] About`（在 panel 上按 `1` 是跳 panel，`?` 也不列它） | `TestK1DigitHotkeyRejectedOnPanel`、`TestK1DigitsFreeInPopups`、`TestM4DigitGlobalOnlyInPopup`、`TestK1DigitGlobalNotInPanelKeyRef` |
+| K1 | app 不能在 panel 上登記數字熱鍵（畫面上唯一有號碼的 panel 例外，見下一列）；popup 裡數字自由（select 選項的數字熱鍵）；數字的 global 熱鍵只在 global operation popup 裡按 | lib：登記時拒絕；I 的 `Profile`（`[1] clock`）；global operation popup 的 `[1] About`（在 panel 上按 `1` 是跳 panel，`?` 也不列它） | `TestK1DigitHotkeyRejectedOnPanel`、`TestK1DigitsFreeInPopups`、`TestM4DigitGlobalOnlyInPopup`、`TestK1DigitGlobalNotInPanelKeyRef` |
+| K1 | 畫面上唯一有號碼的 panel（L5 藏起來的位置也算、說明牌不算）可以拿 `1`–`9` 做自己的事：hint 寫 `1–N:<動詞>`，放在 `Enter` 與 `h\|l:tab` 後面（只有一個時不寫），`?` 裡有一列；超過 N 的數字不作用；畫面上一出現第二個有號碼的 panel，數字回去跳 panel，那一組和那一列跟著拿掉；在模式裡、在 filter 打字時照那裡的做法（K1-10，來自 boxu） | lib：`Panel.Digits`（`Count`、`Hint`、`Desc`、`Do`），是不是唯一一個，每按一次鍵、每畫一次重算；畫面上還有別的有號碼的 panel 時 `Run` 不接受，執行中才多出來的，在的期間數字照 K1 跳 panel。D `[1] DIALOGS`：hint 有 `1–7:kind`，按 `6` 到第一個 toast 的情境、按 `8` 不作用，`?` 的移動區有 `1–7` 那一列 | `TestDigitsPages`、`TestDigitsKeyReference`、`TestDigitsSecondPanel`、`TestDigitsModeAndFilter`、`TestDigitsRefused`、showcase 的 `TestDialogsDigits` |
 | K2 | `Tab`：畫面上換 panel、最後一個回到第一個；不跨畫面、不離開 popup | P 按 `Tab` 走過三個 panel | `TestK2TabCyclesPanels`、`TestK2TabStaysInPopup` |
 | K2 | 有動作區的 popup：欄位區與動作區，回來時停在離開前那一項；一定有 `Shift-Tab`；各區裡的項目用 hjkl。表單與 color picker（色版與 `Choose`） | D「Form: New host」、「Form: long」、「Form: with actions」；I 的 `Background`（color） | `TestFormTabBlocks`、`TestFormActionAreaMoves`、`TestColorPickerTab` |
 | K2 | 有好幾塊的 popup（finder、datetime picker）：在塊之間 | I `[2] FILES` 的 `[/] Find`；I 的 `Meeting`（datetime） | `TestFinderTabBlocks`、`TestDatetimePicker` |
@@ -282,8 +283,9 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]iff`（M4：panel 的熱鍵優�
 | E3 | 只給這一次執行用的檔案（例：從 pipe 讀進來的內容）放在系統的暫存目錄（`$TMPDIR`、`%TEMP%`），不在 config、data、cache 的位置，app 結束時刪掉（E3-26） | lib 不適用：lib 不建檔；展示場沒有這種檔 | — |
 | E3 | 沒有畫面時（不打開 app、直接印出來的指令），設定、狀態或資料讀不了：不動任何檔案、什麼都不印，路徑與原因寫到 stderr，以 exit status 1 結束（E3-27、E1） | lib：`CannotReadText(path, err)` 是那一句（`<path> can't be read: <reason>`，家目錄寫 `~`），跟有畫面時按 `Esc`、`Run` 回傳的同一句；展示場 `showcase settings broken`：stderr 兩行（那一句、`Open showcase to move it aside and start fresh`），stdout 什麼都沒有，exit 1 | `TestE3NoScreenLines`、showcase 的 `TestCommandLine` |
 | E3 | 沒有畫面時，E3 的每個 toast、每一筆 WARN 與 INFO、error popup 說的話都寫到 stderr，一件一行，開頭 `<app>: `，跟 TUI 同一句話；讀不了的檔可以多一行說怎麼辦；TUI 會繼續的地方（搬不動、值不合規則），指令也繼續，exit status 看指令自己的事有沒有做完（E3-40，tdp #24）。lib：不用 App 的 `Notice.Lines()`、`NoLongerUsedLines(paths...)`、`CannotReadText(path, err)`；app 自己的句子（位置搬了、不讀的 key）照它的 toast 與 INFO 寫 | `showcase settings \| cat`：pipe 只收到設定（`color: "#89b4fa"` …），終端機上四行 `showcase: …`（toast 那一行、兩筆 WARN、`No longer used`），exit 0 | `TestE3NoScreenLines`、showcase 的 `TestCommandLine` |
-| E3 | 值指到 app 外面的東西（例：狀態裡記著的 namespace）時，拿名字就能用的直接用、不用等；外面回答說其中一筆不在了，就少了那一筆繼續，跳 Warning、記一筆 WARN，下次寫檔時拿掉它，下次啟動不再警告（E3-41，來自 kbu） | lib 不適用：讀外面的東西、寫狀態的是 app；警告用 `App.Notify` 與 `Notice`；展示場不讀 app 外面的東西 | — |
+| E3 | 值指到 app 外面的東西（例：狀態裡記著的 namespace）時，拿名字就能用的直接用、不用等；外面回答說其中一筆不在了，就少了那一筆繼續，跳 Warning、記一筆 WARN，下次寫檔時拿掉它，下次啟動不再警告；使用者的資料不這樣做，見下面 E3-43 那一列（E3-41，來自 kbu） | lib 不適用：讀外面的東西、寫狀態的是 app；警告用 `App.Notify` 與 `Notice`；展示場不讀 app 外面的東西 | — |
 | E3 | 找到之前用不了的東西（例：啟動後才查到的種類），找完之前先用預設值，找完還是沒有才警告（E3-42，來自 kbu） | lib 不適用：什麼時候找完是 app 的；展示場沒有這種東西 | — |
+| E3 | 使用者的資料（例：釘選的 container、收藏、要監看的名字）裡指到 app 外面的一筆，東西不在時照原樣留著：不跳 toast、不記 WARN，app 再寫檔時也不拿掉；東西回來了，那一筆照常作用；只有使用者自己能移除（E3-43，來自 boxu） | lib 不適用：讀外面的東西、寫資料的是 app；lib 沒有替 app 拿掉這種一筆的 helper（`Misfit` 的 taken out 是不合規則的一筆，不是指到的東西不在）；展示場不讀 app 外面的東西 | — |
 | E4 | 需要 Nerd Font 與 truecolor（lib 的 README 寫明）；PUA glyph 在程式碼裡寫成 code point | 看 README；掃原始碼找不到 PUA 字元 | `TestE4NoLiteralPUA` |
 | E5 | 量的是游標實際前進幾格；所有量寬度的地方走同一個函式（含疊 popup）；畫到終端機用 bubbletea v1 的 renderer：它整列重寫改變的列，icon 佔兩格也對得上（`proto/c1` 這個原型在 icon 佔兩格的 tmux 裡逐字比對過） | `SHOWCASE__ICON_WIDTH=2`；`proto/c1/tmux-check.sh` 的作法 | `TestL4EveryRowFullWidth`（icon 兩格）、`TestE5OutputDropsEraseRight`（renderer 量錯寬度、在列尾補的「清到行尾」拿掉）、`TestVTWideCharacters`（PTY 裡的字也照同一個寬度放） |
 | E5 | icon 與 powerline 符號（U+E0A0–U+E0D7）各量各的；啟動時 CPR 探測（unix）；順序 `<APP>__ICON_WIDTH` → `TERMINU__ICON_WIDTH` → `LC_TERMINU_ICON_WIDTH`（隔著 ssh 帶過來的）→ 探測，powerline 照 `<APP>__POWERLINE_WIDTH` → `TERMINU__POWERLINE_WIDTH` → `LC_TERMINU_POWERLINE_WIDTH` → 探測；Windows 預設一格；輸入從 pipe 來（`git log \| app`）照樣探測：lib 從控制終端機 `/dev/tty` 讀回覆，pipe 不讀 | 在 icon 佔兩格的 tmux 裡啟動看 statusbar（寫出兩種寬度） | `TestE5WidthOrder`、`TestE5ProbeCPR`、`TestE5ProbePipedStdin` |

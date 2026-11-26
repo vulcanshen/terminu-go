@@ -122,6 +122,8 @@ go build -o /tmp/showcase ./examples/showcase
 - `[1] DIALOGS` 每一列是一個情境，`Enter` 打開：各種 menu（分組、兩步、工作清單、很長）、confirm、表單、viewer（選取模式按 `v` 兩次）、
   有 tab 的 popup（也有選取模式：平常 `h|l` 切 tab，`v` 之後 `h|l` 移游標）、loading popup、error popup（短的與長的）、toast、
   好幾層疊在一起。每一列的說明寫了要看什麼。
+- `[1] DIALOGS` 是這個畫面唯一有號碼的 panel，數字鍵歸它（K1-10）：`1`–`7` 跳到每一種的第一個情境（menu、confirm、表單、note、
+  app 自己的、toast、疊法），hint 寫 `1–7:kind`，`?` 也有一列；`8`、`9` 不作用。
 - 「Viewer: a watched file」是一個會變的檔案，每 3 秒重新讀一次：變長、變短、同樣長但改了幾行、跟上一次一樣、讀不到兩輪（Error toast
   只跳第一輪）、換一種讀不到（再跳一次）、又讀得到，再從頭。捲到結尾時跟著新的結尾；按 `/` 找 `needle`，命中跟著新內容走；按 `v`
   兩次選一段，選到的行不見時跳 Warning；選的時候按 `Space` 或 `?` 開著，就改疊一個 Peach 的 note，`Enter` 或 `Esc` 連同 menu 一起關。

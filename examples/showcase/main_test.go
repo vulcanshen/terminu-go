@@ -1190,3 +1190,32 @@ func TestDragSetsFilterAside(t *testing.T) {
 		t.Errorf("put back: filtering %v, the cursor on %s, at %d:\n%s", l.Filtering(), ps.current(), at(pod), strings.Join(d.Screen(), "\n"))
 	}
 }
+
+// TestDialogsDigits: the one panel with a number on its screen takes the
+// digits, 1–7 to the first scenario of each kind, written in its hint and
+// its ?; a digit past 7 does nothing (tdp K1-10).
+func TestDialogsDigits(t *testing.T) {
+	s := newShowcase()
+	d := tdptest.Start(t, s.app, 120, 40)
+	d.Do(func() tea.Cmd { return s.app.ShowScreen(s.dialogs.screen) })
+	at := func() string { r, _ := s.dialogs.list.Current(); return r.ID }
+	if !d.Has("Enter:open 1–7:kind") {
+		t.Errorf("no 1–7:kind in the hint:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+	d.Press("6")
+	if at() != "Values that do not fit" {
+		t.Errorf("6: at %q, not the first toast", at())
+	}
+	d.Press("8")
+	if at() != "Values that do not fit" {
+		t.Errorf("8 moved the cursor to %q", at())
+	}
+	d.Press("1")
+	if at() != "Menu: Open with" {
+		t.Errorf("1: at %q, not the first menu", at())
+	}
+	d.Press("?")
+	if !d.Has("1–7       to the first scenario of each kind") {
+		t.Errorf("no 1–7 row in ?:\n%s", strings.Join(d.Screen(), "\n"))
+	}
+}
