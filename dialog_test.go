@@ -823,3 +823,20 @@ func TestMessageRows(t *testing.T) {
 		t.Error("a \\n inside a row is not drawn by its name")
 	}
 }
+
+// TestViewerSelectionUnnamed: a Selection with no Name, the app's Copy on
+// it, is Viewing all the same: its hint v:viewing, its name on the frame
+// (tdp note.4, K11-29).
+func TestViewerSelectionUnnamed(t *testing.T) {
+	ta := newTestApp(t)
+	ta.Viewer(&Viewer{Title: "YAML", Lines: []string{"one two"},
+		Select: &Selection{Key: "v", Copy: func(string) tea.Cmd { return nil }}})
+	ta.settle()
+	if h := StripStyles(ta.rowWith("Esc:close")); !strings.Contains(h, "v:viewing Esc:close") {
+		t.Errorf("the hint with no Name: %q", h)
+	}
+	ta.press("v")
+	if !strings.Contains(ta.screenText(), "┫Viewing┣") {
+		t.Errorf("the mode with no Name:\n%s", ta.screenText())
+	}
+}

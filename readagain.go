@@ -72,7 +72,7 @@ func (a *App) ReadAgain(v *Viewer, lines []string) tea.Cmd {
 	switch {
 	case v.inMode && !v.there(v.line, v.col):
 		v.inMode, v.selecting = false, false
-		cmds = append(cmds, a.viewerGone(v, Warning, "Read again", subject+" changed under the cursor: "+cmpOr(v.Select.Name, "Viewing")+" left"))
+		cmds = append(cmds, a.viewerGone(v, Warning, "Read again", subject+" changed under the cursor: "+v.Select.name()+" left"))
 	case v.selecting && !v.there(v.fromL, v.fromC):
 		v.selecting = false
 		cmds = append(cmds, a.viewerGone(v, Warning, "Read again", subject+" changed: where the selection started is gone"))

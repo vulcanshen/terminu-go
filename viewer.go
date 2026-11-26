@@ -219,6 +219,9 @@ type Selection struct {
 
 func (s *Selection) copyKey() string { return cmpOr(s.CopyKey, "y") }
 
+// name is the mode's name, Viewing when Name is unset (tdp note.4).
+func (s *Selection) name() string { return cmpOr(s.Name, "Viewing") }
+
 // Viewer opens a viewer.
 func (a *App) Viewer(v *Viewer) tea.Cmd {
 	v.numW, v.tabW = 0, a.inputTabWidth()
@@ -286,9 +289,9 @@ func (vv *viewerView) modeName() string { return vv.v.modeName() }
 func (v *Viewer) modeName() string {
 	switch {
 	case v.inMode && v.selecting:
-		return cmpOr(v.Select.Name, "Viewing") + layerJoin + "selecting"
+		return v.Select.name() + layerJoin + "selecting"
 	case v.inMode:
-		return cmpOr(v.Select.Name, "Viewing")
+		return v.Select.name()
 	}
 	return ""
 }
@@ -296,9 +299,9 @@ func (v *Viewer) modeName() string {
 // escDesc is what Esc does in the selection mode: a layer back, or out.
 func (v *Viewer) escDesc() string {
 	if v.selecting {
-		return "unselect, back to " + cmpOr(v.Select.Name, "Viewing")
+		return "unselect, back to " + v.Select.name()
 	}
-	return "leave " + cmpOr(v.Select.Name, "Viewing")
+	return "leave " + v.Select.name()
 }
 
 func (vv *viewerView) title() string {
@@ -328,7 +331,7 @@ func (vv *viewerView) hint() []KeyHint {
 		h = append(h, KeyHint{"/", "search"}) // n|N move between the hits: not in the hint (tdp popup)
 	}
 	if v.Select != nil {
-		h = append(h, KeyHint{v.Select.Key, strings.ToLower(cmpOr(v.Select.Name, "select"))})
+		h = append(h, KeyHint{v.Select.Key, strings.ToLower(v.Select.name())})
 	}
 	return append(h, KeyHint{v.closeKeys(), "close"})
 }
@@ -1089,7 +1092,7 @@ func (vv *viewerView) keyRef() []refSection {
 		rows = append(rows, KeyRow{Key: "/", Desc: "search the text"})
 	}
 	if v.Select != nil {
-		rows = append(rows, KeyRow{Key: v.Select.Key, Desc: "select text (" + cmpOr(v.Select.Name, "Viewing") + ")"})
+		rows = append(rows, KeyRow{Key: v.Select.Key, Desc: "select text (" + v.Select.name() + ")"})
 	}
 	rows = append(rows, KeyRow{Key: v.closeKeys(), Desc: "close"})
 	move = nil
