@@ -134,8 +134,10 @@ func newKindsScreen(a *terminu.App) *kindsScreen {
 	// smallest screen's 60 × 32.
 	legend := &terminu.Pager{}
 	legend.SetLines([]string{terminu.Fg(terminu.Green).Render(glyphFlag) + " the kind it opens on", "Cluster-wide: read-only"})
-	ks.legend = &terminu.Panel{Label: "Legend", Body: legend, Sign: terminu.SignLit}
-	ks.summary = &terminu.Panel{Label: "Summary", Body: &terminu.Pager{}, Sign: terminu.SignDim}
+	// The signs keep their rows: a line that would shrink one stops, its
+	// toast naming it by its label (tdp screen.9).
+	ks.legend = &terminu.Panel{Label: "Legend", Body: legend, Sign: terminu.SignLit, MinHeight: 4}
+	ks.summary = &terminu.Panel{Label: "Summary", Body: &terminu.Pager{}, Sign: terminu.SignDim, MinHeight: 4}
 	ks.setRows()
 	ks.screen = &terminu.Screen{Name: "Kinds", Key: "K", Desc: "a list in groups and details that follow its cursor",
 		Panels: []*terminu.Panel{kindsPanel, ks.details, ks.legend, ks.summary}, NarrowBelow: 60, Layout: ks.layout}

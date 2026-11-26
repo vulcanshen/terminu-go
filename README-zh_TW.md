@@ -334,6 +334,25 @@ keys.SetLines([]string{"h|l  move", "k    rotate"})
 sign := &terminu.Panel{Label: "Keys", Body: keys, Sign: terminu.SignLit}
 ```
 
+## 移動 panel 之間的線
+
+使用者在 panel 上，從有 focus 的那個移動 panel 之間的線（tdp screen.9）：`>`、`<` 讓它寬或窄 2 欄，`+`、`-` 高或矮 1 列，
+`=` 讓這個畫面的線回到你的 `Layout` 的樣子。lib 從 `Layout` 找線：panel 共用的邊，panel 沿著它接多遠，線就多長，接著它的
+panel 一起動。panel 最小能多小用 `MinWidth`、`MinHeight` 給（沒給是 10 × 3）；60 × 32 時所有 panel 仍要並排（tdp L1）。這五個鍵
+在 panel 上是 lib 的：`Run` 不讓 panel、畫面或 global 的熱鍵用它們（mode 與 app 自己的 popup 照樣可以用）。線停在哪裡由 app
+記在自己的 state（tdp E3），依畫面與終端機大小：`Run` 之前讀進 `App.Lines`，`App.OnLines` 拿到的寫回去。使用者移動線之前不會叫它。
+
+```go
+app.Lines = state.Lines // a terminu.Lines, as read from your state file
+app.OnLines = func(l terminu.Lines) tea.Cmd {
+	state.Lines = l
+	if err := state.Save(); err != nil {
+		return app.Toast(terminu.Error, "state.yaml could not be written: "+err.Error())
+	}
+	return nil
+}
+```
+
 ## panel 框上的狀態
 
 panel 可以在框上放一個 app 自己、一直在的狀態：一個 glyph 加一段短字，例如 panel 監看的檔案最後一次讀進來的時間
@@ -475,7 +494,7 @@ tdp E8 對任何共用的 lib 只留三點：用 lib 的 app 不另外做 lib �
 | 畫面的規定（K、M、L、F、X、T、S1–S4、components） | 做到 | 全部展示出來 | lib 給的，自己不另外做 |
 | E1 `version`、`help` | — | 要 | 自己做 |
 | E2 環境變數的命名 | lib 自己讀的變數掛在 app 的名字底下（例：`<APP>__ICON_WIDTH`） | 照 E2（例：`SHOWCASE__…`） | 自己的變數照 E2 |
-| E3 設定與資料的位置 | — | 不存東西，不適用 | 自己做 |
+| E3 設定與資料的位置 | —（使用者移動過的 panel 之間的線，從 `App.OnLines` 交給 app） | 不存東西，不適用 | 自己做，`App.Lines` 也在裡面 |
 | E4 需求 | README 寫明 | — | README 寫明 |
 | E5 icon 的實際寬度 | 做到：探測（icon 與 powerline 符號）、顯示寬度函式、替子程序設 `TERMINU__ICON_WIDTH` 與 `TERMINU__POWERLINE_WIDTH`、啟動時讀 `LC_TERMINU_ICON_WIDTH` 與 `LC_TERMINU_POWERLINE_WIDTH`；E5 的測試裡單獨量每一種 popup 的框（popup 是 lib 畫的） | — | lib 給的；有 ssh 的 app 連線時自己送 `LC_TERMINU_*`。E5 的測試只測自己的整個畫面：自己的版面加上自己會開的 popup，照 E5 的寬度與尺寸，每一列都滿寬 |
 | E6 發布 | 打 git tag（Go module），沒有 binary；L4 的畫面測試要有 | 不發布；L4 的畫面測試要有 | 照 E6（畫面測試照上一列的分工）；家族的範本與 repo 的檢查在 [terminu-harness](https://github.com/vulcanshen/terminu-harness) |

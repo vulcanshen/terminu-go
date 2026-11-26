@@ -49,9 +49,13 @@ go build -o /tmp/showcase ./examples/showcase
 | `q`、`Ctrl-C` | 離開（先問） |
 | `!` | App Log（每個 app 都有）：toast、error popup 與展示場記下的事；footer 有沒看過的錯誤時寫成 `!:N errors`；模式裡與打字列上不作用 |
 | `%` | 展示場自己的 core key（Rules K1）：在每個 panel 與 popup 上都打開展示場現在的狀態；打字列上是字元 |
+| `>` `<` `+` `-` | 有 focus 的 panel 寬或窄 2 欄、高或矮 1 列（screen.9）：動的是它邊上的線，線上的 panel 一起動；動不了時在那個 panel 的邊上跳 toast 說為什麼 |
+| `=` | 這個畫面的線全部回到預設 |
 
 - P 的 `[1] PODS` 上按 `D` 是這個 panel 自己的 `[D]iff`，不會換到 Dialogs 畫面（panel 的熱鍵優先，Rules M4）。要去 Dialogs，
   先 `Tab` 到別的 panel 再按 `D`，或從 Global operation 選。
+- 調整大小：P 的 `[1] PODS` 最少 30 欄（展示場給的），在 `[2] LOG` 一直按 `>` 到停；K 的兩塊說明牌留著自己的 4 列，`[2]` 按 `+`
+  會說 `LEGEND is at its minimum height`。線依終端機寬度、高度記：拉寬再拉回來，線回到剛才的地方；展示場不存東西，重開就是預設。
 - Global operation 裡有展示場自己的開關：`[N]arrow layout`（不管多寬都一次畫一個 panel）、`[1] About`（數字的 global 熱鍵，
   只在這個 popup 裡按得到）、`[S]tart task`（chip 列下的進度條）、`Hide secrets in preview`。
 

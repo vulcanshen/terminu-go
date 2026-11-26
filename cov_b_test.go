@@ -328,7 +328,7 @@ func TestM4GlobalPopup(t *testing.T) {
 			labels = append(labels, r.label)
 		}
 	}
-	if want := []string{"[P]anels", "[O]ther", "[S]tart", "[q]uit"}; !slices.Equal(labels, want) {
+	if want := []string{"[P]anels", "[O]ther", "[S]tart", "[=] Default layout", "[q]uit"}; !slices.Equal(labels, want) {
 		t.Errorf("rows %q, want every global operation %q", labels, want)
 	}
 	if !strings.Contains(ta.screenText(), "GLOBAL OPERATION") {

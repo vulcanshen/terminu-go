@@ -136,14 +136,14 @@ func TestP3ScopeRequired(t *testing.T) {
 	got := sections()
 	want := map[string][]string{
 		"item operation":  {"Logs", "mark", "Delete", "Drag"},
-		"panel operation": {"Refresh", "Delete marked", "Filter"}, // a batch of marks is the panel's
+		"panel operation": {"Refresh", "Delete marked", "Filter", "Wider", "Narrower", "Taller", "Shorter"}, // a batch of marks is the panel's; the resize keys the lib's (tdp screen.9)
 		"untitled":        {"Global operation"},
 	}
 	if fmt.Sprint(got) != fmt.Sprint(want) {
 		t.Errorf("[1] PODS Space menu by section:\n got %v\nwant %v", got, want)
 	}
 	ta.press("Esc", "3", "Space")
-	if got := sections(); !slices.Equal(got["panel operation"], []string{"Reset"}) {
+	if got := sections(); !slices.Equal(got["panel operation"], []string{"Reset", "Wider", "Narrower", "Taller", "Shorter"}) {
 		t.Errorf("an action about [3] only is in [3]'s menu: %v", got)
 	}
 	ta.press("G", "Enter")
@@ -153,7 +153,7 @@ func TestP3ScopeRequired(t *testing.T) {
 			global = append(global, r.action.Label)
 		}
 	}
-	if want := []string{"Panels", "Other", "Start", "Quit"}; !slices.Equal(global, want) {
+	if want := []string{"Panels", "Other", "Start", "Default layout", "Quit"}; !slices.Equal(global, want) {
 		t.Errorf("the global operation popup holds switching screens, the app's global ones and quitting: %v, want %v", global, want)
 	}
 }

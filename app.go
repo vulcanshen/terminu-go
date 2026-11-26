@@ -245,6 +245,19 @@ type App struct {
 	OnResize func(w, h int) tea.Cmd
 	// ForceNarrow draws every screen narrow (for showing the narrow layout).
 	ForceNarrow bool
+	// Lines is where the user moved the lines between panels, by screen and
+	// terminal size (tdp screen.9): the app reads it from its state (tdp E3)
+	// before Run. On a panel > and < make the focused panel wider and
+	// narrower by 2 columns, + and - taller and shorter by 1 row, = puts the
+	// screen's lines back as its Layout has them; no hotkey on a panel may
+	// take these keys. A line kept for this width or height is used again
+	// whenever the terminal is that wide or that high.
+	Lines Lines
+	// OnLines, when set, gets Lines each time the user moves a line or
+	// presses = and something changes, for the app to write to its state;
+	// it is never called before the user moves one. Its command runs (a
+	// toast if the state could not be written).
+	OnLines func(Lines) tea.Cmd
 	// Start runs when the program starts.
 	Start func() tea.Cmd
 	// Splash is the family's easter egg, opened with V on a panel (Rules S).
@@ -584,7 +597,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmd = a.OnMsg(msg)
 		}
 	}
-	cmd = tea.Batch(cmd, a.moved(), a.fetch(), a.checkCompares(), a.syncInspect(), a.sendTimers(), a.syncLabels())
+	cmd = tea.Batch(cmd, a.moved(), a.fetch(), a.checkCompares(), a.syncInspect(), a.sendTimers(), a.syncLabels(), a.dropStale())
 	if !a.spin && a.loading() {
 		a.spin = true
 		cmd = tea.Batch(cmd, a.after(spinTime, spinMsg{}))
@@ -952,19 +965,36 @@ func (a *App) Toast(kind ToastKind, text ...string) tea.Cmd {
 const maxToasts = 3
 
 // showToast shows a toast that is logged already.
-func (a *App) showToast(kind ToastKind, text []string) tea.Cmd {
+func (a *App) showToast(kind ToastKind, text []string) tea.Cmd { return a.showToastAt(kind, text, nil) }
+
+// edgeToast shows an Info toast on side of panel p, logged as every toast
+// is (tdp screen.9, note.7).
+func (a *App) edgeToast(p *Panel, side int, text string) tea.Cmd {
+	a.Log(Info, text)
+	return a.showToastAt(Info, []string{text}, &edgeAnchor{panel: p, side: side})
+}
+
+// showToastAt shows a toast at the bottom, or on a panel's edge: each place
+// a stack of its own, at most maxToasts in it.
+func (a *App) showToastAt(kind ToastKind, text []string, at *edgeAnchor) tea.Cmd {
 	a.toastSeq++
 	id := a.toastSeq
 	for _, t := range a.toasts {
-		if v := t.view.(*toastView); !t.closing && v.kind == kind && slices.Equal(v.text, text) {
+		if v := t.view.(*toastView); !t.closing && v.kind == kind && slices.Equal(v.text, text) && sameAnchor(v.at, at) {
 			v.id, v.count, v.most = id, v.count+1, a.ToastLines // the same words: its time starts over, its title counts them
 			a.placeToasts()
 			return a.own(a.after(kind.duration(), toastDone{id}))
 		}
 	}
-	a.toasts = append(a.toasts, &layer{view: &toastView{kind: kind, text: text, id: id, most: a.ToastLines, count: 1}, frame: 1, toast: true})
-	if showing := a.showingToasts(); len(showing) > maxToasts {
-		a.closeToast(showing[0]) // the oldest pushed out
+	a.toasts = append(a.toasts, &layer{view: &toastView{kind: kind, text: text, id: id, most: a.ToastLines, count: 1, at: at}, frame: 1, toast: true})
+	var stack []*layer
+	for _, t := range a.showingToasts() {
+		if sameAnchor(t.view.(*toastView).at, at) {
+			stack = append(stack, t)
+		}
+	}
+	if len(stack) > maxToasts {
+		a.closeToast(stack[0]) // the oldest pushed out
 	}
 	a.placeToasts()
 	return tea.Batch(a.animate(), a.own(a.after(kind.duration(), toastDone{id})))
@@ -994,7 +1024,11 @@ func (a *App) closeToast(t *layer) {
 // newest's bottom border on the third row from the bottom, each older one
 // right above it, a closing one keeping its place until it is gone; the
 // oldest showing has the hint, Esc closing it first (tdp toast.3). The
-// inspect toast goes where the newest does.
+// inspect toast goes where the newest does. A resize key's toast stacks on
+// its panel's edge instead (tdp screen.9): inside the frame, the newest
+// nearest the edge; one wider than the panel keeps to that side, over the
+// panel next to it, never off the screen. Its panel not drawn now, it stays
+// where it was.
 func (a *App) placeToasts() {
 	first := true
 	for _, t := range a.toasts {
@@ -1002,11 +1036,32 @@ func (a *App) placeToasts() {
 		first = first && t.closing
 	}
 	y := a.h - 2
+	used := map[edgeAnchor]int{} // the rows each edge's stack takes
 	for i := len(a.toasts) - 1; i >= 0; i-- {
 		l := a.toasts[i]
 		l.w, l.h = l.view.measure(a.w, a.h)
-		y -= l.h
-		l.x, l.y = (a.w-l.w)/2, y
+		at := l.view.(*toastView).at
+		if at == nil {
+			y -= l.h
+			l.x, l.y = (a.w-l.w)/2, y
+			continue
+		}
+		r, ok := a.panelRect(at.panel)
+		if !ok {
+			continue
+		}
+		in := used[*at]
+		used[*at] += l.h
+		x, ty := r.X+(r.W-l.w)/2, r.Y+1+in // the top edge: at the top, in the middle
+		switch at.side {
+		case sideRight:
+			x = r.X + r.W - 1 - l.w
+		case sideLeft:
+			x = r.X + 1
+		case sideBottom:
+			ty = r.Y + r.H - 1 - l.h - in
+		}
+		l.x, l.y = min(max(x, 0), max(a.w-l.w, 0)), min(max(ty, 0), max(a.h-l.h, 0))
 	}
 	if l := a.inspectT; l != nil {
 		l.w, l.h = l.view.measure(a.w, a.h)
@@ -1396,6 +1451,9 @@ func (a *App) panelActions(p *Panel, scope Scope) []Action {
 			}
 		}
 	}
+	if scope == PanelScope {
+		out = append(out, a.resizeActions(p)...) // the lib's, last (tdp screen.9)
+	}
 	return out
 }
 
@@ -1443,6 +1501,9 @@ func (a *App) globalActions() []Action {
 		}
 	}
 	out = append(out, a.Global...)
+	if act, ok := a.defaultLayoutAction(); ok {
+		out = append(out, act) // the lib's (tdp screen.9)
+	}
 	return append(out, a.quitAction())
 }
 
@@ -1819,6 +1880,14 @@ func (a *App) panelKey(key string, msg tea.KeyMsg) tea.Cmd {
 			return a.runAction(*act, false)
 		}
 	}
+	// The resize keys always answer, a line moved or a toast saying why
+	// not (tdp screen.9, M6).
+	if key == "=" {
+		return a.defaultLayout()
+	}
+	if isResizeKey(key) {
+		return a.resize(key)
+	}
 	if len(key) == 1 && key[0] >= '1' && key[0] <= '9' {
 		if n := s.numbered(int(key[0] - '0')); n >= 0 { // the panels that can take the focus (tdp K1, panel.17)
 			return a.focusPanel(s, n)
@@ -2012,6 +2081,7 @@ func (a *App) Frame() []string {
 		rows, first, dx := l.drawFrame(full, color)
 		Composite(lines, rows, l.x+dx, l.y+first, w)
 	}
+	a.placeToasts() // a toast on a panel's edge goes with it (tdp screen.9)
 	toasts := a.toasts
 	if t := a.inspectT; t != nil && len(a.toasts) == 0 { // an ordinary toast hides it, back once they are gone
 		toasts = []*layer{t}
@@ -2115,30 +2185,8 @@ func (a *App) panelArea(w, top, h int) []string {
 		a.drawNoteHead(area, s.Focused(), Rect{W: w, H: h}, top, w)
 		return area
 	}
-	var rects []Rect
-	if s.Layout != nil {
-		rects = s.Layout(w, h)
-	} else { // side by side, the shown places sharing the width (tdp L5)
-		shown := 0
-		for i := range s.Panels {
-			if !s.hidden[i] {
-				shown++
-			}
-		}
-		x, k := 0, 0
-		for i := range s.Panels {
-			if s.hidden[i] {
-				rects = append(rects, Rect{})
-				continue
-			}
-			pw := w / max(shown, 1)
-			if k++; k == shown {
-				pw = w - x
-			}
-			rects = append(rects, Rect{X: x, Y: 0, W: pw, H: h})
-			x += pw
-		}
-	}
+	// The app's Layout, its lines where the user left them (tdp screen.9).
+	rects := a.layoutOf(s, w, h).rects
 	pointed := s.pointed(len(rects))
 	for i, p := range s.Panels {
 		if i >= len(rects) {

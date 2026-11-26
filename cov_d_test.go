@@ -319,14 +319,14 @@ func TestMenuLiveRows(t *testing.T) {
 
 func TestPopupHintDrop(t *testing.T) {
 	ta := newTestApp(t)
-	ta.resize(26, 12) // the Space menu is 24 wide and scrolls: 1 of 7
+	ta.resize(27, 12) // the Space menu is 25 wide and scrolls: 1 of 11
 	ta.press("Space")
 	l := ta.top()
 	bottom := covDTop(ta)[l.h-1]
 	if keys := covDHintKeys(ta, l); fmt.Sprint(keys) != "[Esc]" || !strings.Contains(bottom, "Esc:close ") {
 		t.Errorf("both do not fit: the pair before Esc goes whole, Esc:close stays: %q", bottom)
 	}
-	if !strings.HasSuffix(bottom, " 1 of 7 ━┛") {
+	if !strings.HasSuffix(bottom, " 1 of 11 ━┛") {
 		t.Errorf("the scroll position stays: %q", bottom)
 	}
 	// One pair at a time from the one before Esc (tdp popup).
@@ -460,7 +460,7 @@ func TestPopupFrameTextSpacing(t *testing.T) {
 	if !strings.HasPrefix(p[0], "┏━"+glyphRoundLeft) || !strings.HasSuffix(p[0], "━┓") {
 		t.Errorf("one segment between a corner and the title: %q", p[0])
 	}
-	if !strings.HasPrefix(p[l.h-1], "┗━ Enter:run") || !strings.HasSuffix(p[l.h-1], " 1 of 7 ━┛") {
+	if !strings.HasPrefix(p[l.h-1], "┗━ Enter:run") || !strings.HasSuffix(p[l.h-1], " 1 of 11 ━┛") {
 		t.Errorf("one segment between a corner and the hint, the scroll position: %q", p[l.h-1])
 	}
 }
@@ -690,20 +690,22 @@ func TestLoadingTickOnlyWhenLoading(t *testing.T) {
 
 func TestPopupScroll(t *testing.T) {
 	ta := newTestApp(t)
-	ta.resize(120, 12) // six of the menu's eleven rows show
+	ta.resize(120, 12) // six of the menu's fifteen rows show
 	ta.press("Space")
 	l := ta.top()
 	first := covDTop(ta)
-	ta.press("j", "j", "j", "j", "j", "j") // down to Global operation, the last row
+	// Down to Global operation, the last row: Taller and Shorter, disabled
+	// on a panel already full height, are passed by (tdp M6).
+	ta.press("j", "j", "j", "j", "j", "j", "j", "j")
 	p := covDTop(ta)
 	if p[0] != first[0] || p[1] != covDBlank(l.w) || p[l.h-2] != covDBlank(l.w) || !strings.HasPrefix(p[l.h-1], "┗━ Enter:run") {
 		t.Errorf("the frame and the margins do not scroll:\n%s", strings.Join(p, "\n"))
 	}
-	if !strings.Contains(p[l.h-3], "Global operation") || !strings.Contains(p[3], "PANEL OPERATION") {
+	if !strings.Contains(p[l.h-3], "Global operation") || !strings.Contains(p[3], "[<] Narrower") {
 		t.Errorf("scrolling the least puts the cursor on the last row, not the middle:\n%s", strings.Join(p, "\n"))
 	}
-	ta.press("k") // [/] Filter: still in sight, nothing scrolls
-	if q := covDTop(ta); q[2] != p[2] || q[3] != p[3] || !strings.Contains(covDCursor(ta), "[/] Filter") {
+	ta.press("k") // [<] Narrower: still in sight, nothing scrolls
+	if q := covDTop(ta); q[2] != p[2] || q[l.h-4] != p[l.h-4] || !strings.Contains(covDCursor(ta), "[<] Narrower") {
 		t.Errorf("the content scrolled while the cursor was in sight:\n%s", strings.Join(q, "\n"))
 	}
 }
@@ -719,12 +721,12 @@ func TestPopupScrollPosition(t *testing.T) {
 	ta.press("Space")
 	l := ta.top()
 	bottom := covDRows(ta, l)[l.h-1]
-	if !strings.HasSuffix(StripStyles(bottom), " 1 of 7 ━┛") || !strings.Contains(bottom, Fg(LayerColor(1)).Render(" 1 of 7 ")) {
+	if !strings.HasSuffix(StripStyles(bottom), " 1 of 11 ━┛") || !strings.Contains(bottom, Fg(LayerColor(1)).Render(" 1 of 11 ")) {
 		t.Errorf("N of M for the cursor, in the layer colour: %q", StripStyles(bottom))
 	}
 	ta.press("j", "j", "j", "j") // headings and separators do not count
-	if bottom := covDTop(ta)[l.h-1]; !strings.HasSuffix(bottom, " 5 of 7 ━┛") {
-		t.Errorf("Refresh is the fifth of seven rows: %q", bottom)
+	if bottom := covDTop(ta)[l.h-1]; !strings.HasSuffix(bottom, " 5 of 11 ━┛") {
+		t.Errorf("Refresh is the fifth of eleven rows: %q", bottom)
 	}
 	// A note has no cursor: the lines in sight.
 	ta.press("Esc")
@@ -909,7 +911,7 @@ func TestMenuSeparator(t *testing.T) {
 	ta.press("Space")
 	l := ta.top()
 	rows := covDRows(ta, l)
-	for _, i := range []int{7, 11} {
+	for _, i := range []int{7, 15} {
 		if got, want := StripStyles(rows[i]), "┃ "+Repeat("╌", l.w-4)+" ┃"; got != want {
 			t.Errorf("row %d: a dashed separator not touching the frame: %q", i, got)
 		}

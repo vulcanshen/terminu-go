@@ -344,6 +344,12 @@ type Panel struct {
 	// Actions are the panel's item and panel operations; a "Enter" key is
 	// what Enter does here (tdp K3).
 	Actions []Action
+	// MinWidth and MinHeight are the least the user can make the panel by
+	// moving the lines around it (tdp screen.9: the app's); 10 × 3, its
+	// frame and a row, when unset. At 60 × 32 every panel is still side by
+	// side (tdp L1), so they are at most what the Layout gives it there. A
+	// line stops once any panel it moves is at its least, a sign's too.
+	MinWidth, MinHeight int
 	// Details is the panel that shows the item under this panel's cursor
 	// (tdp panel.13): the "Enter" action may send the
 	// focus there (Action.ToDetails).

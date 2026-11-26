@@ -682,7 +682,7 @@ func TestTwoCellColumnGap(t *testing.T) {
 	}
 	// A label and its description, at the widest row of a menu.
 	ta.press("Space")
-	if s := "Global operation  actions for the whole app"; !strings.Contains(ta.screenText(), s) {
+	if s := "[<] Narrower  2 columns, kept for this width"; !strings.Contains(ta.screenText(), s) {
 		t.Errorf("menu: %q missing", s)
 	}
 	// A key and what it does.

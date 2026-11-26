@@ -46,8 +46,10 @@ func (a *App) typingOrMode() bool {
 }
 
 // checkKeys refuses hotkeys that are not the app's to take: a global or a
-// screen key on a core key or a movement letter (tdp K1, K12), and any
-// hotkey on one of the app's own core keys.
+// screen key on a core key or a movement letter (tdp K1, K12), any hotkey
+// on one of the app's own core keys, and a panel's, a screen's or a global
+// one on a resize key, > < + - = (tdp screen.9). A mode's keys and a popup
+// of the app's own may use those.
 func (a *App) checkKeys() error {
 	for _, ck := range a.CoreKeys {
 		if err := checkPanelKey(ck.Key); err != nil || ck.Key == "" {
@@ -57,6 +59,9 @@ func (a *App) checkKeys() error {
 	taken := func(where, key string) error {
 		if a.coreKey(key) != nil {
 			return fmt.Errorf("terminu: %s takes %s, a core key of the app (Rules K1)", where, key)
+		}
+		if isResizeKey(key) { // on a panel they only resize (tdp screen.9)
+			return fmt.Errorf("terminu: %s takes %s, a key that resizes the panels (tdp screen.9)", where, key)
 		}
 		return nil
 	}

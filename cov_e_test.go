@@ -786,6 +786,7 @@ func TestNoteLayout(t *testing.T) {
 	if l := ta.top(); l.w != 78 {
 		t.Errorf("a viewer takes the most width, 78 on 80 columns: %d", l.w)
 	}
+	ta.resize(80, 40) // the whole key reference in sight
 	ta.press("Esc", "?")
 	_, plain = covEPopup(ta)
 	l := ta.top()

@@ -49,6 +49,22 @@ type toastView struct {
 	// oldest is the oldest showing, with the hint (tdp toast.2, toast.3).
 	count  int
 	oldest bool
+	// at, when set, puts it on a panel's edge, not at the bottom: a resize
+	// key's answer (tdp screen.9, toast.2).
+	at *edgeAnchor
+}
+
+// edgeAnchor is a panel's side a toast stands on, inside its frame (tdp
+// screen.9): the right one at the top right, the left one at the top left,
+// the bottom one at the bottom in the middle, the top one at the top in the
+// middle. Toasts on the same side stack into the panel.
+type edgeAnchor struct {
+	panel *Panel
+	side  int
+}
+
+func sameAnchor(a, b *edgeAnchor) bool {
+	return a == nil && b == nil || a != nil && b != nil && *a == *b
 }
 
 type toastDone struct{ id int }

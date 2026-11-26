@@ -395,6 +395,28 @@ keys.SetLines([]string{"h|l  move", "k    rotate"})
 sign := &terminu.Panel{Label: "Keys", Body: keys, Sign: terminu.SignLit}
 ```
 
+## Moving the lines between panels
+
+On a panel the user moves the lines between the panels from the focused one (tdp screen.9): `>` and `<` make it 2
+columns wider or narrower, `+` and `-` 1 row taller or shorter, `=` puts the screen's lines back as your `Layout` has
+them. The lib finds the lines in your `Layout`: an edge panels share, as long as they touch along it, every panel on it
+moving with it. Give a panel the least it may be with `MinWidth` and `MinHeight` (10 × 3 when unset); at 60 × 32 every
+panel is still side by side (tdp L1). On a panel these five keys are the lib's: `Run` refuses them as a panel's, a
+screen's or a global hotkey (a mode and a popup of your own may still use them). Where the user left the lines is
+yours to keep in your state (tdp E3), by screen and terminal size: read it into `App.Lines` before `Run`, and write
+what `App.OnLines` gets. It is not called before the user moves a line.
+
+```go
+app.Lines = state.Lines // a terminu.Lines, as read from your state file
+app.OnLines = func(l terminu.Lines) tea.Cmd {
+	state.Lines = l
+	if err := state.Save(); err != nil {
+		return app.Toast(terminu.Error, "state.yaml could not be written: "+err.Error())
+	}
+	return nil
+}
+```
+
 ## A status on a panel's frame
 
 A panel may show one lasting status of the app's own on its frame: a glyph and a short text, such as when a file the
@@ -560,7 +582,7 @@ who draws what, and the lib does not do its own thing. How the work splits betwe
 | The on-screen rules (K, M, L, F, X, T, S1–S4, components) | covers them | shows all of them | from the lib, not done again |
 | E1 `version`, `help` | — | yes | its own |
 | E2 naming environment variables | the variables the lib reads hang under the app's name (e.g. `<APP>__ICON_WIDTH`) | as E2 (e.g. `SHOWCASE__…`) | its own variables follow E2 |
-| E3 where config and data live | — | stores nothing, not applicable | its own |
+| E3 where config and data live | — (where the user moved the lines between panels it hands over in `App.OnLines`) | stores nothing, not applicable | its own, `App.Lines` among it |
 | E4 requirements | stated in the README | — | stated in the README |
 | E5 the actual icon width | covers it: the probe (icons and powerline symbols), the display-width functions, setting `TERMINU__ICON_WIDTH` and `TERMINU__POWERLINE_WIDTH` for subprocesses, reading `LC_TERMINU_ICON_WIDTH` and `LC_TERMINU_POWERLINE_WIDTH` at startup; in E5's tests, measuring the bare box of each kind of popup (the lib draws the popups) | — | from the lib; an app with ssh sends `LC_TERMINU_*` itself when connecting. E5's tests cover its own whole screen only: its own layout plus the popups it opens, at E5's widths and sizes, every line full width |
 | E6 releases | a git tag (a Go module), no binary; the L4 screen tests are required | not released; the L4 screen tests are required | as E6 (the screen tests split as in the row above); the family's templates and the repository checks are in [terminu-harness](https://github.com/vulcanshen/terminu-harness) |

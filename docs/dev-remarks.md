@@ -225,6 +225,18 @@ lib 建在 bubbletea v1（v1.3.10）與 lipgloss v1（v1.1.0）上，跟家族�
     清單與明細各進一個 `Mode`（都叫 `Diff`，框都是模式色），`Mode.with` 是另一個 panel，`Pause` 照樣擋其他 panel、放行它；
     明細那一層的 `Mode.back` 讓 `Esc` 回清單而不是離開（`leavePanelMode`），清單那一層的 `OnExit` 把明細一起帶出模式。
 - **`SelfUpdate` 不用 GitHub 的 API 查最新版**（ccdrawu 回報）：沒登入的 API 一個 IP 每小時只能查 60 次，同一個網路上的程式一起算（公司、學校的 NAT 後面、CI 機器），用完就回 403，`<app> update` 就在使用者要用的時候失敗。改看 `github.com/<owner>/<app>/releases/latest`轉到哪裡（不跟著轉，`CheckRedirect` 回 `http.ErrUseLastResponse`）：轉到 `…/releases/tag/<tag>` 就是最新的正式版，GitHub 的 latest 不會是 pre-release，跟 API 的意思一樣；還沒有 release 時轉到 `…/releases`，說查不到。下載本來就走 `github.com` 的 `releases/download`，所以整個更新只靠 `github.com`。缺點是靠網頁的轉址，不是正式的 API；GitHub 改了轉址的樣子時，這裡會說查不到，而不是裝錯的版本。
+- **使用者移動 panel 之間的線**（tdp screen.9，gittu 與 ccodu 來的）：app 照舊只給 `Layout`（預設版面）與每個 panel 的最小寬高，
+  lib 從預設的 Rect 找線（`resize.go` 的 `findLines`）：同一個 x（或 y）上，panel 的邊沿著它一路接著（碰到也算），就是一條線，兩邊
+  都要有 panel。哪幾個 panel 在一條線上照預設版面認，之後不變：使用者把兩條線移到同一個位置，它們還是兩條，原本對齊的才一起動。
+  現在的版面是「預設的 Rect，邊換成它那條線現在的位置」（`place`）。一條線用它在預設版面的位置認（`"52"`，同一個位置第二條是
+  `"52#2"`，由上往下或由左往右數），依終端機寬度（直線）或高度（橫線）記：L5 藏起來的位置，它的線跟著不見，沒受影響的線預設位置
+  不變，所以照樣用記著的；被 `Layout` 重排的線預設位置換了，就是另一條，有自己的記憶。記著的值一個方向一起套用，套上去有 panel
+  比最小還小（app 改了版面或最小尺寸）就整個方向用預設，那個寬度或高度記的拿掉（`dropStale`，每個 message 之後看一次，
+  交給 `OnLines` 寫回），什麼都不說（user 定：E3 唯一的例外）。最小尺寸比預設版面給的還大時，
+  以預設的為準，線不會因此動不了。動不了時的 toast 站在 panel 的邊上（`toastView.at`），每一個邊自己一疊；每一格畫面重排一次
+  （`Frame` 叫 `placeToasts`），線動了它就跟著那條邊。lib 不寫檔：`App.OnLines` 把整個 `Lines` 交給 app 寫進 state。
+  - 不另給一種「版面樹」的 API：tree 表達不了 screen.9 的「四格的直線上下共用」，而且每個 app 都得改版面的寫法；從 Rect 找線，
+    現有的 `Layout` 不用改就能調。
 
 ## 已否決，不要重提
 

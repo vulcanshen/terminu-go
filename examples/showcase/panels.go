@@ -56,7 +56,8 @@ func newPanelsScreen(s *showcase) *panelsScreen {
 	}
 	ps.podList.SetRows(podRows())
 	ps.podList.SortBy(terminu.SortKey{Col: 0})
-	ps.pods = &terminu.Panel{Label: "Pods", Tabs: []string{"Events"}, Body: ps.podList, LoadingText: "loading pods…"}
+	// The pods keep 30 columns however the lines move (tdp screen.9).
+	ps.pods = &terminu.Panel{Label: "Pods", Tabs: []string{"Events"}, Body: ps.podList, LoadingText: "loading pods…", MinWidth: 30}
 	ps.pods.OnTab = ps.switchTab
 	ps.pods.Actions = ps.podActions()
 	// A pod that is not running says why in its note: the head shows under
