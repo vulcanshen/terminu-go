@@ -2,6 +2,33 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.3.8 — tdp v1.3.6
+
+A patch, with tdp's. Everything since v1.3.7, the beta v1.3.8-beta.1 included:
+
+- The user moves the lines between panels (tdp screen.9, screen-37 to screen-52; M6, toast.2, note.7, E3 and L1 make
+  room for it; from gittu and ccodu, the user): on a panel `>` and `<` make the focused panel 2 columns wider or
+  narrower, `+` and `-` 1 row taller or shorter, and `=` puts the screen's lines back as its `Layout` has them. The lib
+  finds the lines in the app's `Layout`, which stays the default: every panel on a line moves with it, a sign too; a
+  line runs as far as panels meet along it. A panel with a line on both sides moves the right one for its width and
+  the one below for its height, the other one against the area's right or bottom edge. A line stops once a panel it
+  moves is at its least, `Panel.MinWidth` and `MinHeight` (10 × 3 when unset), a press near it moving what is left.
+  With no line to move, an Info toast says why on the panel's edge that would move, inside its frame, naming the panel
+  that stops it by its `[N]` or a sign by its label; narrow or zoomed, the one panel is full width and height
+- Where the user left the lines is kept by screen, by the terminal's width for upright lines and its height for level
+  ones: `App.Lines` is read from the app's state before `Run`, and `App.OnLines` gets it to write once a line moves or
+  `=` changes something, never before. A place hidden by its leading panel (L5) takes its line with it and gets it
+  back; kept lines that no longer fit go back to the default and are taken out, with nothing said (E3's one
+  exception). Resizing is not in the App Log; the toast when nothing moves is
+- The Space menu has `[>] Wider`, `[<] Narrower` (`2 columns, kept for this width`), `[+] Taller` and `[-] Shorter`
+  (`1 row, kept for this height`) among each panel's operations, the global operation popup `[=] Default layout`
+  (`this screen's lines back`): disabled when the key would only answer with a toast, and not there on a screen with
+  one panel. In a menu a disabled row's hotkey does nothing; on a panel the keys always answer
+- `Run` refuses `>` `<` `+` `-` `=` as a panel's, a screen's or a global hotkey: an app using them on a panel changes
+  that first. A mode's keys and a popup of the app's own may still use them
+- The showcase: [1] PODS keeps 30 columns and the KINDS signs their 4 rows; it stores nothing, so the lines are kept
+  for the run only
+
 ## v1.3.8-beta.1 — tdp v1.3.5
 
 - The user moves the lines between panels (tdp main c3dae91 and f37bdd3, screen.9, screen-37 to screen-52; from gittu
