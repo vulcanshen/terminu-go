@@ -1,6 +1,6 @@
-# tdp v1.3.8 coverage
+# tdp v1.3.9 coverage
 
-tdp v1.3.8 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
+tdp v1.3.9 逐條整理成清單：**規範出處 → 展示場的哪裡、怎麼按到 → 測試名稱**。這份清單就是展示場「所有的組合」的定義：
 每個元件、規範列的每一種方案、寫到的每一種狀態與疊法，在展示場都按得到。看不到畫面的規定寫怎麼驗。
 
 - 「展示場」欄是位置，「測試」欄是測試名稱，都寫好了。位置或名稱改了就改這裡。
@@ -292,7 +292,7 @@ P `[1] PODS` 上的 `D` 是這個 panel 的 `[D]iff`（M4：panel 的熱鍵優�
 | E5 | 有 PTY 的 app 開子程序時設 `TERMINU__ICON_WIDTH`、`TERMINU__POWERLINE_WIDTH`（自己的格數） | T `[1] SHELL` 裡 `echo $TERMINU__ICON_WIDTH $TERMINU__POWERLINE_WIDTH` | `TestE5ChildEnv` |
 | E5 | 疊 popup 不當掉：比畫面寬、高、兩邊都大都切，不 panic | 縮小終端機再開 popup | `TestE5CompositeOversized` |
 | E6 | lib：git tag，沒有 binary；展示場不發布；L4 的畫面測試兩邊都要；家族 app 的範本與 repo 的檢查在 terminu-harness（tdp v1.2.0），lib 與展示場不套 | — | `TestL4EveryRowFullWidth` |
-| E7 | lib 的 README 自己的結構（安裝 `go get`、快速開始是程式碼、寫明展示場怎麼跑；設定段寫出 E3 的共用設定 key 怎麼交給 lib）。開發者文件不在 tdp 的範圍裡（P5）：`docs/dev-remarks.md` 是這個 repo 自己留的 | 對照這個 repo 的 README | — |
+| E7 | lib 的 README 自己的結構（安裝 `go get`、快速開始是程式碼、寫明展示場怎麼跑；設定段寫出 E3 的共用設定 key 怎麼交給 lib）；第 1 段的 icon（E7-4）不放：lib 不是 app，沒有 E6 的 `docs/icon.svg`，展示場不發布、沒有 README。開發者文件不在 tdp 的範圍裡（P5）：`docs/dev-remarks.md` 是這個 repo 自己留的 | 對照這個 repo 的 README | — |
 | E8 | 三點：用 lib 的 app 不另外做 lib 做到的、畫面測試照誰畫的分、lib 不自己另做（做不到或不好用的回報成 tdp 的缺漏，規範改了 lib 才跟著改）；lib 與 app 的分工表在 README（tdp v1.2.0 從 E8 搬過來） | 做不到的回報成盲點（G），定案後補進 tdp | —、`TestCanvas`（lib：`App.Canvas`，lib 管不到的畫面照樣用 confirm、toast、input） |
 
 ## color

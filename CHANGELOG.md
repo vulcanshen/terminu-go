@@ -2,6 +2,15 @@
 
 Each release names the version of terminu design (tdp) it implements.
 
+## v1.3.11 — tdp v1.3.9
+
+A patch, with tdp's:
+
+- tdp E7 puts an app's icon in the first section of its README (E7-4): `docs/icon.svg` under the title and above the
+  badges, centred, 128 wide, its alt text `<app> icon`. The lib is unchanged. terminu-go's own README keeps a
+  structure of its own (the split table, tdp E8): a library, not an app, it has no `docs/icon.svg` (E6) and puts no
+  icon in; the showcase is not released and has no README. An app on the lib puts its icon in as E7 says
+
 ## v1.3.10 — tdp v1.3.8
 
 A patch, with tdp's:
